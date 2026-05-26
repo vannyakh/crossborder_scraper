@@ -9,11 +9,45 @@ export function useGatewayPromptsQuery() {
   })
 }
 
-export function useAgentRunsQuery() {
+export function useAgentRunsQuery(limit = 30) {
   return useQuery({
-    queryKey: queryKeys.agentRuns,
-    queryFn: () => api<{ items: import('../../lib/api').AgentRunRecord[] }>('/gateway/runs'),
+    queryKey: [...queryKeys.agentRuns, limit] as const,
+    queryFn: () =>
+      api<{ items: import('../../lib/api').AgentRunRecord[] }>(`/gateway/runs?limit=${limit}`),
     refetchInterval: 15_000,
+  })
+}
+
+export function useGatewayToolsQuery() {
+  return useQuery({
+    queryKey: queryKeys.gatewayTools,
+    queryFn: () => api<{ items: import('../../lib/api').GatewayTool[] }>('/gateway/tools'),
+    staleTime: 60_000,
+  })
+}
+
+export function useGatewayWorkflowsQuery() {
+  return useQuery({
+    queryKey: queryKeys.gatewayWorkflows,
+    queryFn: () => api<{ items: import('../../lib/api').GatewayWorkflow[] }>('/gateway/workflows'),
+    staleTime: 60_000,
+  })
+}
+
+export function useRunWorkflowMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { workflowId: string; inputs: Record<string, unknown> }) =>
+      api<import('../../lib/api').GatewayWorkflowRunResponse>(
+        `/gateway/workflows/${payload.workflowId}/run`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ inputs: payload.inputs }),
+        },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agentRuns })
+    },
   })
 }
 

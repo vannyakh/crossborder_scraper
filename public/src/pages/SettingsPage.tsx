@@ -1,6 +1,6 @@
 import { Box, Flex } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   AiSettingsSection,
   MarketplacesSettingsSection,
@@ -8,11 +8,15 @@ import {
   PricingSettingsSection,
   ProxySettingsSection,
   ScrapeSettingsSection,
-  ServiceSettingsSection,
 } from '../components/settings/SettingsSectionPanels'
 import { SettingsSaveBar } from '../components/settings/SettingsSaveBar'
 import { SettingsSidebar } from '../components/settings/SettingsSidebar'
-import type { SettingsSectionId } from '../components/settings/settings-sections'
+import {
+  DEFAULT_SETTINGS_SECTION,
+  isSettingsSectionId,
+  settingsSectionPath,
+  type SettingsSectionId,
+} from '../components/settings/settings-sections'
 import { usePanelSettingsForm } from '../components/settings/use-panel-settings-form'
 import { useLLMHealthQuery } from '../hooks'
 import { useMotionEnabled, useMotionTransition } from '../hooks/use-motion-props'
@@ -41,21 +45,31 @@ function SettingsSectionContent({
       return <PricingSettingsSection form={form} />
     case 'marketplaces':
       return <MarketplacesSettingsSection form={form} />
-    case 'service':
-      return <ServiceSettingsSection form={form} health={health} />
     default:
       return null
   }
 }
 
 export function SettingsPage() {
-  const [section, setSection] = useState<SettingsSectionId>('ai')
+  const { section: sectionParam } = useParams<{ section?: string }>()
+  const navigate = useNavigate()
+  const section = isSettingsSectionId(sectionParam) ? sectionParam : DEFAULT_SETTINGS_SECTION
   const form = usePanelSettingsForm()
   const healthQuery = useLLMHealthQuery(Boolean(form.panel?.ai_enabled))
   const health = form.checkMutation.data ?? healthQuery.data
   const motionEnabled = useMotionEnabled()
   const transition = useMotionTransition(0.2)
-  const showTest = section === 'ai' || section === 'service'
+  const showTest = section === 'ai'
+
+  if (!isSettingsSectionId(sectionParam)) {
+    return <Navigate to={settingsSectionPath(DEFAULT_SETTINGS_SECTION)} replace />
+  }
+
+  const setSection = (id: SettingsSectionId) => {
+    if (id !== section) {
+      navigate(settingsSectionPath(id), { replace: true })
+    }
+  }
 
   return (
     <Flex

@@ -22,6 +22,7 @@ import {
 } from './ShellChrome'
 import { copyPanelAccess } from '../../lib/panel-access'
 import { PanelAccessClip } from './PanelAccessClip'
+import { RouteProgress } from './RouteProgress'
 import { SidebarNav } from './SidebarNav'
 
 const MotionAside = motion.create(Box)
@@ -61,6 +62,7 @@ export function AppShell() {
 
   return (
     <Flex h="100dvh" maxH="100dvh" className="app-shell" position="relative" overflow="hidden">
+      <RouteProgress />
       <AnimatePresence>
         {mobileOpen ? (
           <MotionOverlay

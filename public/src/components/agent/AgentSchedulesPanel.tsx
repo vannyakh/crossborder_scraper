@@ -9,13 +9,12 @@ import {
   SimpleGrid,
   Text,
   Textarea,
-  VStack,
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { fieldStyles } from '../ui/field-styles'
+import { Section, SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import {
-  useAgentRunsQuery,
   useAgentSchedulesQuery,
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
@@ -29,11 +28,11 @@ const CRON_PRESETS = [
   { label: 'Every 6 hours', value: '0 */6 * * *' },
   { label: 'Daily 09:00', value: '0 9 * * *' },
   { label: 'Weekly Mon', value: '0 0 * * 1' },
+  { label: 'Custom…', value: '__custom__' },
 ]
 
 export function AgentSchedulesPanel() {
   const schedulesQuery = useAgentSchedulesQuery()
-  const runsQuery = useAgentRunsQuery()
   const promptsQuery = useGatewayPromptsQuery()
   const createMutation = useCreateScheduleMutation()
   const updateMutation = useUpdateScheduleMutation()
@@ -41,14 +40,15 @@ export function AgentSchedulesPanel() {
   const runNowMutation = useRunScheduleNowMutation()
 
   const [name, setName] = useState('Catalog monitor')
-  const [cron, setCron] = useState('0 9 * * *')
+  const [cronPreset, setCronPreset] = useState('0 9 * * *')
+  const [cronCustom, setCronCustom] = useState('0 9 * * *')
+  const cron = cronPreset === '__custom__' ? cronCustom : cronPreset
   const [promptId, setPromptId] = useState('catalog_monitor')
   const [message, setMessage] = useState(
     'Run catalog and marketplace health snapshot. Report actions needed.',
   )
 
   const schedules = schedulesQuery.data?.items ?? []
-  const runs = runsQuery.data?.items ?? []
   const prompts = promptsQuery.data?.items ?? []
 
   async function handleCreate() {
@@ -62,8 +62,8 @@ export function AgentSchedulesPanel() {
   }
 
   return (
-    <VStack align="stretch" gap={4}>
-      <Box p={3} borderWidth="1px" borderColor="border.subtle" borderRadius="input" bg="bg.input">
+    <Section title="Cron schedules" description="Background agent tasks with libs/prompts system prompts" mt={0}>
+      <SectionCard mb={4}>
         <Text fontSize="sm" fontWeight="medium" mb={3}>
           New cron schedule
         </Text>
@@ -79,15 +79,33 @@ export function AgentSchedulesPanel() {
               Cron
             </Field.Label>
             <NativeSelect.Root {...fieldStyles} size="sm">
-              <NativeSelect.Field value={cron} onChange={(e) => setCron(e.target.value)}>
+              <NativeSelect.Field
+                value={cronPreset}
+                onChange={(e) => setCronPreset(e.target.value)}
+              >
                 {CRON_PRESETS.map((p) => (
                   <option key={p.value} value={p.value}>
-                    {p.label} ({p.value})
+                    {p.label}
+                    {p.value !== '__custom__' ? ` (${p.value})` : ''}
                   </option>
                 ))}
               </NativeSelect.Field>
             </NativeSelect.Root>
           </Field.Root>
+          {cronPreset === '__custom__' ? (
+            <Field.Root gridColumn={{ md: '1 / -1' }}>
+              <Field.Label fontSize="xs" color="fg.muted">
+                Custom cron expression
+              </Field.Label>
+              <Input
+                {...fieldStyles}
+                fontFamily="mono"
+                value={cronCustom}
+                onChange={(e) => setCronCustom(e.target.value)}
+                placeholder="0 9 * * *"
+              />
+            </Field.Root>
+          ) : null}
           <Field.Root gridColumn={{ md: '1 / -1' }}>
             <Field.Label fontSize="xs" color="fg.muted">
               Prompt (libs/prompts)
@@ -119,12 +137,9 @@ export function AgentSchedulesPanel() {
         >
           Add schedule
         </Button>
-      </Box>
+      </SectionCard>
 
-      <VStack align="stretch" gap={2}>
-        <Text fontSize="sm" fontWeight="medium">
-          Active schedules
-        </Text>
+      <SectionCard>
         {schedules.length === 0 ? (
           <Text fontSize="sm" color="fg.muted">
             No schedules — copy config/agent_schedules.example.json or create one above.
@@ -165,8 +180,14 @@ export function AgentSchedulesPanel() {
                 {s.cron} · {s.prompt_id}
               </Text>
               {s.next_run_at ? (
-                <Text fontSize="xs" color="fg.subtle" mt={1}>
+                <Text fontSize="xs" color="fg.subtle" mt={1} lineClamp={1} truncate>
                   Next: {s.next_run_at}
+                  {s.last_run_at ? ` · Last: ${s.last_run_at}` : ''}
+                </Text>
+              ) : null}
+              {s.last_error ? (
+                <Text fontSize="xs" color="red.500" mt={1} lineClamp={2}>
+                  {s.last_error}
                 </Text>
               ) : null}
               <HStack mt={2} gap={2}>
@@ -191,27 +212,7 @@ export function AgentSchedulesPanel() {
             </Box>
           ))
         )}
-      </VStack>
-
-      <VStack align="stretch" gap={2}>
-        <Text fontSize="sm" fontWeight="medium">
-          Recent runs (background + manual)
-        </Text>
-        {runs.slice(0, 8).map((r) => (
-          <Box key={r.id} p={2} borderRadius="input" borderWidth="1px" borderColor="border.subtle" fontSize="xs">
-            <HStack justify="space-between">
-              <Text fontWeight="medium">{r.schedule_name ?? r.trigger ?? 'agent'}</Text>
-              <StatusBadge
-                status={r.ok ? 'success' : r.status === 'running' ? 'neutral' : 'danger'}
-                label={r.status ?? 'unknown'}
-              />
-            </HStack>
-            <Text color="fg.muted" mt={1} truncate>
-              {r.response ?? r.error ?? r.message}
-            </Text>
-          </Box>
-        ))}
-      </VStack>
-    </VStack>
+      </SectionCard>
+    </Section>
   )
 }

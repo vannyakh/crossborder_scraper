@@ -350,7 +350,49 @@ export type GatewayStatus = {
   clients: string[]
   tools_count: number
   workflows_count: number
+  schedules_count?: number
+  enabled_schedules_count?: number
+  recent_failed_runs?: number
   runtime: RuntimeStatus
+}
+
+export type GatewayTool = {
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+}
+
+export type GatewayWorkflow = {
+  id: string
+  label: string
+  description: string
+  inputs: string[]
+  steps: string[]
+}
+
+export type GatewayWorkflowRunResponse = {
+  workflow: string
+  status: string
+  steps: Record<string, unknown>[]
+  context: Record<string, unknown>
+}
+
+export type ServiceGatewaySummary = {
+  service: string
+  version: string
+  control_plane: string
+  clients: string[]
+  tools_count: number
+  workflows_count: number
+  schedules_count: number
+  enabled_schedules_count: number
+  recent_failed_runs: number
+}
+
+export type ServiceOverview = {
+  runtime: RuntimeStatus
+  gateway: ServiceGatewaySummary
+  llm: LLMHealth | null
 }
 
 export type GatewayAgentResponse = {

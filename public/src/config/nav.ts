@@ -1,4 +1,14 @@
-import { Bot, FolderOpen, Home, Package, ScrollText, Settings, type LucideIcon } from 'lucide-react'
+import {
+  Activity,
+  Bot,
+  FolderOpen,
+  Home,
+  Package,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react'
+import { AGENT_NAV, agentSectionPath } from '../components/agent/agent-sections'
+import { SERVICE_NAV, serviceSectionPath } from '../components/service/service-sections'
 
 export type NavLinkItem = {
   kind: 'link'
@@ -12,6 +22,8 @@ export type NavChildLink = {
   to: string
   label: string
   end?: boolean
+  /** Roadmap / not yet available */
+  soon?: boolean
 }
 
 export type NavGroupItem = {
@@ -23,6 +35,20 @@ export type NavGroupItem = {
 }
 
 export type NavEntry = NavLinkItem | NavGroupItem
+
+const serviceNavChildren: NavChildLink[] = [
+  ...SERVICE_NAV.map((item) => ({
+    to: serviceSectionPath(item.id),
+    label: item.label,
+    soon: item.comingSoon,
+  })),
+  { to: '/logs', label: 'Logs' },
+]
+
+const agentNavChildren: NavChildLink[] = AGENT_NAV.map((item) => ({
+  to: agentSectionPath(item.id),
+  label: item.label,
+}))
 
 export const navEntries: NavEntry[] = [
   { kind: 'link', to: '/', label: 'Overview', icon: Home, end: true },
@@ -37,8 +63,20 @@ export const navEntries: NavEntry[] = [
     ],
   },
   { kind: 'link', to: '/files', label: 'Files', icon: FolderOpen },
-  { kind: 'link', to: '/logs', label: 'Logs', icon: ScrollText },
-  { kind: 'link', to: '/agent', label: 'Agent', icon: Bot },
+  {
+    kind: 'group',
+    id: 'service',
+    label: 'Service',
+    icon: Activity,
+    children: serviceNavChildren,
+  },
+  {
+    kind: 'group',
+    id: 'agent',
+    label: 'Agent',
+    icon: Bot,
+    children: agentNavChildren,
+  },
   { kind: 'link', to: '/settings', label: 'Settings', icon: Settings },
 ]
 

@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { AgentPage } from '../pages/AgentPage'
 import { BatchesPage } from '../pages/BatchesPage'
@@ -10,6 +10,7 @@ import { NotFoundPage } from '../pages/NotFoundPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
 import { ProductsPage } from '../pages/ProductsPage'
 import { SettingsPage } from '../pages/SettingsPage'
+import { ServicePage } from '../pages/ServicePage'
 import { AuthGuard } from './guards/AuthGuard'
 import { GuestGuard } from './guards/GuestGuard'
 
@@ -32,8 +33,10 @@ const router = createBrowserRouter(
             { path: 'products/:id', element: <ProductDetailPage /> },
             { path: 'files', element: <FilesPage /> },
             { path: 'logs', element: <LogsPage /> },
-            { path: 'agent', element: <AgentPage /> },
-            { path: 'settings', element: <SettingsPage /> },
+            { path: 'agent/:section?', element: <AgentPage /> },
+            { path: 'service/:section?', element: <ServicePage /> },
+            { path: 'settings/service', element: <Navigate to="/service/health" replace /> },
+            { path: 'settings/:section?', element: <SettingsPage /> },
           ],
         },
       ],

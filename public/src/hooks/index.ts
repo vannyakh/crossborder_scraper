@@ -24,10 +24,14 @@ export {
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
   useGatewayPromptsQuery,
+  useGatewayToolsQuery,
+  useGatewayWorkflowsQuery,
   useRunAgentMutation,
   useRunScheduleNowMutation,
+  useRunWorkflowMutation,
   useUpdateScheduleMutation,
 } from './queries/use-agent-query'
+export { useServiceOverviewQuery } from './queries/use-service-overview-query'
 export { useExportProductMutation } from './mutations/use-export-mutations'
 export { useRuntimeStatusQuery, useMarketplacesQuery } from './queries/use-runtime-query'
 export { useGatewayStatusQuery } from './queries/use-gateway-query'

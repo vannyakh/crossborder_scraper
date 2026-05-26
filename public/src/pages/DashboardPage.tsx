@@ -59,7 +59,7 @@ export function DashboardPage() {
       id: 'agent',
       title: 'Gateway agent',
       description: 'LLM tool loop, prompts, and cron schedules.',
-      to: '/agent',
+      to: '/agent/chat',
       status:
         runtime?.ai?.ai_agent_enabled && enabledSchedules > 0
           ? `${enabledSchedules} schedules`

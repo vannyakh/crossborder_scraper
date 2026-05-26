@@ -1,5 +1,4 @@
 import {
-  Activity,
   Bot,
   Globe,
   Network,
@@ -16,7 +15,6 @@ export type SettingsSectionId =
   | 'proxy'
   | 'pricing'
   | 'marketplaces'
-  | 'service'
 
 export type SettingsNavItem = {
   id: SettingsSectionId
@@ -62,14 +60,18 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     description: 'Export platform credentials',
     icon: Store,
   },
-  {
-    id: 'service',
-    label: 'Service status',
-    description: 'Runtime, LLM health, batches',
-    icon: Activity,
-  },
 ]
 
 export const SETTINGS_SECTION_MAP = Object.fromEntries(
   SETTINGS_NAV.map((item) => [item.id, item]),
 ) as Record<SettingsSectionId, SettingsNavItem>
+
+export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = 'ai'
+
+export function isSettingsSectionId(value: string | undefined): value is SettingsSectionId {
+  return value !== undefined && value in SETTINGS_SECTION_MAP
+}
+
+export function settingsSectionPath(section: SettingsSectionId): string {
+  return `/settings/${section}`
+}

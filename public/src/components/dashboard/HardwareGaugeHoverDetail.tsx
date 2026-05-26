@@ -195,7 +195,7 @@ function HoverDetailPanel({
           </Text>
         </HStack>
         <Link asChild fontSize="xs" color={`${accentPalette}.500`} fontWeight="medium">
-          <RouterLink to="/settings">Config</RouterLink>
+          <RouterLink to="/service/overview">Service</RouterLink>
         </Link>
       </HStack>
 

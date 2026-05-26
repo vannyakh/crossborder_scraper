@@ -278,7 +278,28 @@ class GatewayStatusResponse(BaseModel):
     clients: list[str]
     tools_count: int
     workflows_count: int
+    schedules_count: int = 0
+    enabled_schedules_count: int = 0
+    recent_failed_runs: int = 0
     runtime: dict[str, Any]
+
+
+class ServiceGatewaySummary(BaseModel):
+    service: str
+    version: str
+    control_plane: str
+    clients: list[str]
+    tools_count: int
+    workflows_count: int
+    schedules_count: int = 0
+    enabled_schedules_count: int = 0
+    recent_failed_runs: int = 0
+
+
+class ServiceOverviewResponse(BaseModel):
+    runtime: dict[str, Any]
+    gateway: ServiceGatewaySummary
+    llm: dict[str, Any] | None = None
 
 
 class GatewayToolListResponse(BaseModel):
@@ -491,6 +512,8 @@ __all__ = [
     "GatewayWorkflowListResponse",
     "GatewayWorkflowRunRequest",
     "GatewayWorkflowRunResponse",
+    "ServiceGatewaySummary",
+    "ServiceOverviewResponse",
     "AIConfigUpdate",
     "PanelConfigResponse",
     "PanelConfigUpdate",

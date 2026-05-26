@@ -243,7 +243,10 @@ button:focus-visible {
 }
 
 .sidebar-flyout__link {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 0.65rem;
   border-radius: calc(var(--radius-input) - 1px);
@@ -257,6 +260,18 @@ button:focus-visible {
   transition:
     background-color var(--motion-duration),
     color var(--motion-duration);
+}
+
+.sidebar-flyout__soon {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--chakra-colors-fg-muted, #8b949e);
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  background: var(--chakra-colors-bg-muted, rgba(128, 128, 128, 0.15));
 }
 
 .sidebar-flyout__link:hover {
@@ -273,4 +288,20 @@ button:focus-visible {
 .sidebar-flyout__link--active:hover {
   color: var(--app-accent);
   background-color: var(--nav-active-bg);
+}
+
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: var(--app-accent);
+  height: 2px;
+  z-index: 10000;
+}
+
+#nprogress .peg {
+  box-shadow:
+    0 0 10px var(--app-accent),
+    0 0 5px var(--app-accent);
 }

@@ -14,7 +14,6 @@ import { Section, SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { MarketplaceIntegrationsPanel } from './MarketplaceIntegrationsPanel'
-import { RuntimeStatusPanel } from './RuntimeStatusPanel'
 import type { PanelSettingsForm } from './use-panel-settings-form'
 import type { LLMHealth } from '../../lib/api'
 
@@ -397,46 +396,5 @@ export function MarketplacesSettingsSection({ form }: { form: PanelSettingsForm 
         />
       </SectionCard>
     </Section>
-  )
-}
-
-export function ServiceSettingsSection({
-  form,
-  health,
-}: {
-  form: PanelSettingsForm
-  health?: LLMHealth
-}) {
-  return (
-    <Box>
-      <RuntimeStatusPanel />
-      {health ? (
-        <Section title="LLM health" description="Last provider probe result" mt={5}>
-          <SectionCard>
-            <HStack gap={2} mb={2}>
-              <StatusBadge status={healthTone(health.ok)} label={health.status} />
-              {health.model ? (
-                <Text fontSize="sm" color="fg.muted">
-                  {health.model}
-                </Text>
-              ) : null}
-            </HStack>
-            <Text fontSize="sm" color="fg.muted">
-              {health.message}
-            </Text>
-            {health.base_url ? (
-              <Text mt={2} fontSize="xs" color="fg.subtle" fontFamily="mono">
-                {health.base_url}
-              </Text>
-            ) : null}
-          </SectionCard>
-        </Section>
-      ) : null}
-      {form.message && form.message.includes('LLM') ? (
-        <Text mt={3} fontSize="sm" color="fg.muted">
-          {form.message}
-        </Text>
-      ) : null}
-    </Box>
   )
 }

@@ -87,7 +87,10 @@ export function SidebarFlyoutMenu({
                             .join(' ')
                         }
                       >
-                        {child.label}
+                        <span>{child.label}</span>
+                        {child.soon ? (
+                          <span className="sidebar-flyout__soon">Soon</span>
+                        ) : null}
                       </NavLink>
                     </Box>
                   )

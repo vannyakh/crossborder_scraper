@@ -1,4 +1,4 @@
-import { Box, Button, VStack } from '@chakra-ui/react'
+import { Badge, Box, Button, VStack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -122,6 +122,20 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
                         collapsed={false}
                         label={child.label}
                         indent
+                        trailing={
+                          child.soon ? (
+                            <Badge
+                              size="xs"
+                              variant="subtle"
+                              colorPalette="gray"
+                              borderRadius="full"
+                              fontSize="2xs"
+                              px={1.5}
+                            >
+                              Soon
+                            </Badge>
+                          ) : undefined
+                        }
                       />
                     </NavLink>
                   </Box>
