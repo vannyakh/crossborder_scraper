@@ -12,8 +12,23 @@ export type PageTransitionStyle = 'none' | 'fade' | 'slide' | 'slide-up' | 'scal
 
 export type MotionSpeed = 'fast' | 'normal' | 'slow'
 
+export type PanelBranding = {
+  logoUrl: string | null
+  faviconUrl: string | null
+}
+
+export type PanelMainBackground = {
+  enabled: boolean
+  lightUrl: string | null
+  darkUrl: string | null
+  imageOpacity: number
+  contentOpacity: number
+}
+
 export type ThemeConfig = {
   accent: AccentKey
+  /** When set, overrides preset accent color (hex). */
+  customAccentHex: string | null
   radius: RadiusScale
   fontScale: FontScale
   density: Density
@@ -21,10 +36,15 @@ export type ThemeConfig = {
   pageTransitions: boolean
   pageTransition: PageTransitionStyle
   motionSpeed: MotionSpeed
+  sidebarOpacity: number
+  branding: PanelBranding
+  mainBackground: PanelMainBackground
+  loginBackgroundEnabled: boolean
 }
 
 export const defaultThemeConfig: ThemeConfig = {
-  accent: 'blue',
+  accent: 'green',
+  customAccentHex: '#20a53a',
   radius: 'md',
   fontScale: 'md',
   density: 'comfortable',
@@ -32,6 +52,19 @@ export const defaultThemeConfig: ThemeConfig = {
   pageTransitions: true,
   pageTransition: 'slide',
   motionSpeed: 'normal',
+  sidebarOpacity: 100,
+  branding: {
+    logoUrl: null,
+    faviconUrl: null,
+  },
+  mainBackground: {
+    enabled: false,
+    lightUrl: null,
+    darkUrl: null,
+    imageOpacity: 100,
+    contentOpacity: 100,
+  },
+  loginBackgroundEnabled: false,
 }
 
 /** Chakra colorPalette names for accent-driven controls */
@@ -100,7 +133,23 @@ const motionDurationValues: Record<MotionSpeed, string> = {
 }
 
 export function mergeThemeConfig(partial?: Partial<ThemeConfig> | null): ThemeConfig {
-  return { ...defaultThemeConfig, ...partial }
+  if (!partial) return { ...defaultThemeConfig }
+  return {
+    ...defaultThemeConfig,
+    ...partial,
+    branding: { ...defaultThemeConfig.branding, ...partial.branding },
+    mainBackground: { ...defaultThemeConfig.mainBackground, ...partial.mainBackground },
+  }
+}
+
+export function resolveThemeAccentHex(
+  config: ThemeConfig,
+  resolved: 'light' | 'dark',
+): string {
+  if (config.customAccentHex?.trim()) {
+    return config.customAccentHex.trim()
+  }
+  return getAccentColor(config.accent, resolved)
 }
 
 export function getAccentColor(accent: AccentKey, resolved: 'light' | 'dark'): string {

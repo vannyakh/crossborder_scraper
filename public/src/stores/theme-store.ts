@@ -52,13 +52,17 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'crossborder-theme',
-      version: 2,
+      version: 3,
       partialize: (s) => ({ mode: s.mode, config: s.config }),
       migrate: (persisted) => {
         const state = persisted as { mode?: ColorMode; config?: Partial<ThemeConfig> }
+        const merged = mergeThemeConfig(state.config)
+        if (!state.config?.customAccentHex && merged.accent === 'blue') {
+          merged.customAccentHex = '#2563eb'
+        }
         return {
           mode: state.mode ?? 'dark',
-          config: mergeThemeConfig(state.config),
+          config: merged,
         }
       },
       onRehydrateStorage: () => (state) => {

@@ -64,51 +64,13 @@ function SettingsField({
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <HStack justify="space-between" py={1.5} fontSize="sm" borderBottomWidth="1px" borderColor="border.subtle">
-      <Text color="fg.muted">{label}</Text>
-      <Text fontWeight="medium" fontFamily="mono" fontSize="xs">
-        {value}
-      </Text>
-    </HStack>
-  )
-}
-
 function healthTone(ok: boolean | undefined): 'success' | 'danger' | 'neutral' {
   if (ok === true) return 'success'
   if (ok === false) return 'danger'
   return 'neutral'
 }
 
-export function PanelInfoSection({ form }: { form: PanelSettingsForm }) {
-  const { panel, isLoading } = form
-  return (
-    <Section title="Panel" description="Configuration storage and paths" mt={0}>
-      <SectionCard>
-        {isLoading || !panel ? (
-          <Text fontSize="sm" color="fg.muted">
-            Loading…
-          </Text>
-        ) : (
-          <Box>
-            <InfoRow label="Config file" value={panel.ui_config_path} />
-            <InfoRow label="Config directory" value={panel.config_dir} />
-            <InfoRow
-              label="Secrets source"
-              value={panel.secrets_from_panel_config ? 'Panel JSON' : 'Environment'}
-            />
-            <Text mt={4} fontSize="xs" color="fg.muted" lineHeight="short">
-              Panel login credentials (<code>PANEL_*</code>) stay in <code>.env</code>. All scrape,
-              AI, proxy, and marketplace settings are stored in{' '}
-              <code>{panel.ui_config_path}</code>.
-            </Text>
-          </Box>
-        )}
-      </SectionCard>
-    </Section>
-  )
-}
+export { PanelAppearanceSection } from './PanelAppearanceSection'
 
 export function AiSettingsSection({
   form,

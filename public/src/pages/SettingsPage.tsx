@@ -4,7 +4,7 @@ import { Navigate, useParams } from 'react-router-dom'
 import {
   AiSettingsSection,
   MarketplacesSettingsSection,
-  PanelInfoSection,
+  PanelAppearanceSection,
   PricingSettingsSection,
   ProxySettingsSection,
   ScrapeSettingsSection,
@@ -33,7 +33,7 @@ function SettingsSectionContent({
 }) {
   switch (section) {
     case 'panel':
-      return <PanelInfoSection form={form} />
+      return <PanelAppearanceSection form={form} />
     case 'ai':
       return <AiSettingsSection form={form} health={health} />
     case 'scrape':

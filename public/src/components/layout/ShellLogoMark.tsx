@@ -1,5 +1,6 @@
 import { Box, HStack } from '@chakra-ui/react'
 import logoSvg from '../../../public/images/logo.svg?raw'
+import { useThemeStore } from '../../stores/theme-store'
 
 export function ShellLogoMark({
   collapsed,
@@ -10,7 +11,13 @@ export function ShellLogoMark({
   label: string
   onClick?: () => void
 }) {
-  const mark = (
+  const logoUrl = useThemeStore((s) => s.config.branding.logoUrl)
+
+  const mark = logoUrl ? (
+    <Box className="shell-logo-mark shell-logo-mark--image" role="img" aria-label={label}>
+      <img src={logoUrl} alt="" />
+    </Box>
+  ) : (
     <Box
       className="shell-logo-mark"
       role={onClick ? undefined : 'img'}

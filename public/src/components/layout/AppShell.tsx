@@ -23,6 +23,7 @@ import {
 import { copyPanelAccess } from '../../lib/panel-access'
 import { PanelAccessClip } from './PanelAccessClip'
 import { RouteProgress } from './RouteProgress'
+import { usePanelAppearance } from '../../hooks/use-panel-appearance'
 import { SidebarNav } from './SidebarNav'
 
 const MotionAside = motion.create(Box)
@@ -48,6 +49,7 @@ function SidebarHeader({
 }
 
 export function AppShell() {
+  usePanelAppearance()
   const { data: stats } = useStatsQuery()
   const panelAccess = usePanelAccessQuery()
   const access = panelAccess.data ?? fallbackPanelAccess()
@@ -129,7 +131,7 @@ export function AppShell() {
         </ShellFooter>
       </MotionAside>
 
-      <Flex className="app-main-column" direction="column" w="full">
+      <Flex className="app-main-column panel-main-surface" direction="column" w="full">
         <AppNavbar />
 
         <ShellMainContent>

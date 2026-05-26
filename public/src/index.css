@@ -178,6 +178,138 @@ button:focus-visible {
   height: 100%;
 }
 
+.shell-logo-mark--image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.app-sidebar {
+  opacity: var(--sidebar-opacity, 1);
+}
+
+.panel-main-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.panel-main-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--panel-main-bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: var(--panel-main-bg-opacity, 0);
+}
+
+.panel-main-surface > * {
+  position: relative;
+  z-index: 1;
+  opacity: var(--panel-content-opacity, 1);
+}
+
+/* —— Settings: panel theme (aaPanel-style) —— */
+.theme-pick-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.theme-pick-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 72px;
+  padding: 0;
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-input);
+  background: var(--chakra-colors-bg-subtle, #161b22);
+  cursor: pointer;
+  transition:
+    border-color var(--motion-duration) ease,
+    box-shadow var(--motion-duration) ease;
+}
+
+.theme-pick-card:hover {
+  border-color: color-mix(in srgb, var(--app-accent) 40%, var(--app-border));
+}
+
+.theme-pick-card.is-active {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-accent) 35%, transparent);
+}
+
+.theme-pick-card__dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--app-accent);
+  box-shadow: 0 0 0 2px var(--chakra-colors-bg-panel, #0d1117);
+}
+
+.theme-pick-card__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  color: var(--chakra-colors-fg-muted, #8b949e);
+}
+
+.theme-pick-card__label {
+  width: 100%;
+  padding: 6px 4px 8px;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--chakra-colors-fg-muted, #8b949e);
+  border-top: 1px solid var(--app-border);
+}
+
+.theme-color-block {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+}
+
+.theme-color-input {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.panel-image-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-input);
+  background: var(--chakra-colors-bg-subtle, #161b22);
+  overflow: hidden;
+}
+
+.panel-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 /* —— Collapsed sidebar icon rail —— */
 .app-sidebar[data-collapsed] {
   align-items: center;

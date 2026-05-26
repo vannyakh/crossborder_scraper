@@ -2,7 +2,7 @@ import {
   Bot,
   Globe,
   Network,
-  PanelTop,
+  Palette,
   Store,
   Tags,
   type LucideIcon,
@@ -26,9 +26,9 @@ export type SettingsNavItem = {
 export const SETTINGS_NAV: SettingsNavItem[] = [
   {
     id: 'panel',
-    label: 'Panel',
-    description: 'Config file and storage paths',
-    icon: PanelTop,
+    label: 'Panel theme',
+    description: 'Theme style, colors, logo, and backgrounds',
+    icon: Palette,
   },
   {
     id: 'ai',

@@ -1,14 +1,17 @@
 import {
-  getAccentColor,
-  getAccentMuted,
   getDensityScale,
   getFontScaleValue,
   getMotionDuration,
   getRadiusValue,
   mergeThemeConfig,
+  resolveThemeAccentHex,
   type ColorMode,
   type ThemeConfig,
 } from './config'
+
+function accentMutedFromHex(accent: string, isDark: boolean): string {
+  return `color-mix(in srgb, ${accent} ${isDark ? '18%' : '12%'}, transparent)`
+}
 
 export function resolveColorMode(mode: ColorMode): 'light' | 'dark' {
   if (mode === 'system') {
@@ -47,8 +50,9 @@ export function applyThemeConfigToDocument(
 ) {
   const root = document.documentElement
   const merged = mergeThemeConfig(config)
-  const accent = getAccentColor(merged.accent, resolved)
-  const accentMuted = getAccentMuted(merged.accent, resolved)
+  const isDark = resolved === 'dark'
+  const accent = resolveThemeAccentHex(merged, resolved)
+  const accentMuted = accentMutedFromHex(accent, isDark)
   const radius = getRadiusValue(merged.radius)
   const compact = merged.density === 'compact'
 
@@ -77,7 +81,27 @@ export function applyThemeConfigToDocument(
   root.style.setProperty('--shell-padding-inline', compact ? '0.75rem' : '1rem')
   root.style.setProperty('--content-gap', compact ? '0.75rem' : '1rem')
 
-  const isDark = resolved === 'dark'
+  const sidebarOpacity = Math.min(100, Math.max(1, merged.sidebarOpacity ?? 100)) / 100
+  root.style.setProperty('--sidebar-opacity', String(sidebarOpacity))
+
+  const mainBg =
+    merged.mainBackground.enabled &&
+    (isDark ? merged.mainBackground.darkUrl : merged.mainBackground.lightUrl)
+  const mainBgUrl = mainBg
+    ? isDark
+      ? merged.mainBackground.darkUrl
+      : merged.mainBackground.lightUrl
+    : null
+  root.style.setProperty('--panel-main-bg-image', mainBgUrl ? `url("${mainBgUrl}")` : 'none')
+  root.style.setProperty(
+    '--panel-main-bg-opacity',
+    String(Math.min(100, Math.max(1, merged.mainBackground.imageOpacity)) / 100),
+  )
+  root.style.setProperty(
+    '--panel-content-opacity',
+    String(Math.min(100, Math.max(1, merged.mainBackground.contentOpacity)) / 100),
+  )
+
   const chartFg = isDark ? '#c9d1d9' : '#374151'
   const chartMuted = isDark ? '#8b949e' : '#6b7280'
   const chartGrid = isDark ? '#30363d' : '#e5e7eb'
