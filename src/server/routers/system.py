@@ -6,9 +6,9 @@ from config import get_settings
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.manager import get_manager
-from server.panel_bind import get_panel_bind_info
+from server.core.panel_bind import get_panel_bind_info
 from server.schemas import PanelAccessResponse, PanelConfigResponse, PanelConfigUpdate, StatsResponse
-from server.service_logs import append_service_log
+from server.services.audit import log_operation
 
 public_router = APIRouter(tags=["system"])
 protected = protected_router(tags=["system"])
@@ -49,8 +49,7 @@ async def patch_panel_config(
     if not updates:
         raise HTTPException(status_code=400, detail="no fields to update")
     result = get_manager().update_panel_config(updates)
-    append_service_log(
-        "operation",
+    log_operation(
         user=username,
         operation_type="Panel configuration",
         details=f"Updated settings: {', '.join(sorted(updates.keys()))}",

@@ -1,4 +1,4 @@
-"""Backward-compatible re-exports — prefer server.stores.service_logs."""
+"""Persistent JSON stores (logs, schedules re-exported from gateway)."""
 
 from server.stores.service_logs import (
     LogCategory,

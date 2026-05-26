@@ -19,7 +19,7 @@ from gateway.schedules_store import (
     update_schedule_run_meta,
 )
 from server.manager import get_manager
-from server.service_logs import append_service_log
+from server.services.audit import log_cron
 
 
 def _parse_iso(value: str | None) -> datetime | None:
@@ -144,9 +144,7 @@ class AgentScheduler:
                     "prompt_id": result.get("prompt_id"),
                 },
             )
-            append_service_log(
-                "cron",
-                user="system",
+            log_cron(
                 operation_type="Cron job" if trigger == "cron" else "Agent schedule",
                 details=(
                     f"{schedule.get('name')}: {status} — "
@@ -167,9 +165,7 @@ class AgentScheduler:
                     "error": str(exc),
                 },
             )
-            append_service_log(
-                "cron",
-                user="system",
+            log_cron(
                 operation_type="Cron job" if trigger == "cron" else "Agent schedule",
                 details=f"{schedule.get('name')}: failed — {exc}",
                 meta={"run_id": run_id, "schedule_id": schedule_id, "trigger": trigger},

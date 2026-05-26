@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
@@ -17,6 +16,7 @@ from gateway.schedules_store import (
 )
 from gateway.tools import TOOL_DEFINITIONS
 from gateway.workflows import WORKFLOW_TEMPLATES, run_workflow
+from server.core.constants import APP_VERSION
 from server.deps import protected_router
 from server.manager import get_manager
 from server.schemas import (
@@ -34,18 +34,17 @@ from server.schemas import (
     GatewayWorkflowRunRequest,
     GatewayWorkflowRunResponse,
 )
+from server.services.runtime import get_service_runtime
 
 router = protected_router(prefix="/gateway", tags=["gateway"])
-SERVICE_STARTED_AT = datetime.utcnow()
 
 
 @router.get("/status", response_model=GatewayStatusResponse)
 async def gateway_status() -> GatewayStatusResponse:
-    mgr = get_manager()
-    runtime = mgr.get_runtime_status(started_at=SERVICE_STARTED_AT)
+    runtime = get_service_runtime(get_manager())
     return GatewayStatusResponse(
         service="crossborder-scraper-gateway",
-        version="0.4.0",
+        version=APP_VERSION,
         control_plane="fastapi",
         clients=["web-ui", "cli", "agent", "cron"],
         tools_count=len(TOOL_DEFINITIONS),

@@ -144,35 +144,9 @@ async def _list_products(manager: Any, *, limit: int = 10) -> dict[str, Any]:
 
 
 async def _list_marketplaces(manager: Any) -> dict[str, Any]:
-    from config.ui_store import load_marketplaces_config
-    from export.registry import EXPORTERS, get_exporter
+    from server.services.marketplace import list_marketplace_items
 
-    configured = load_marketplaces_config()
-    items = []
-    for key in EXPORTERS:
-        exporter = get_exporter(key)  # type: ignore[arg-type]
-        entry = configured.get(key, {})
-        items.append(
-            {
-                "id": key,
-                "label": entry.get("label") or key,
-                "configured": exporter.validate_credentials(),
-                "supports_export": True,
-            }
-        )
-    for platform_id, entry in configured.items():
-        if platform_id in EXPORTERS:
-            continue
-        creds = entry.get("credentials") or {}
-        items.append(
-            {
-                "id": platform_id,
-                "label": entry.get("label") or platform_id,
-                "configured": bool(entry.get("enabled") and any(creds.values())),
-                "supports_export": False,
-            }
-        )
-    return {"items": items}
+    return {"items": list_marketplace_items()}
 
 
 async def _submit_batch(
@@ -187,9 +161,9 @@ async def _submit_batch(
 
 
 async def _runtime_status(manager: Any) -> dict[str, Any]:
-    from datetime import datetime
+    from server.services.runtime import get_service_runtime
 
-    return manager.get_runtime_status(started_at=datetime.utcnow())
+    return get_service_runtime(manager)
 
 
 def tools_for_llm() -> list[dict[str, Any]]:

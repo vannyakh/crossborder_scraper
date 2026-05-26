@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from config import get_settings
 from server.auth import verify_panel_credentials
-from server.service_logs import append_service_log
+from server.services.audit import log_operation
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -40,8 +40,7 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
         client_ip = f"{request.client.host}:{request.client.port}"
 
     if not settings.panel_auth_enabled:
-        append_service_log(
-            "operation",
+        log_operation(
             user=body.username,
             operation_type="Login",
             details=f"Login IP: {client_ip} — auth disabled",
@@ -55,8 +54,7 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
         )
 
     if not verify_panel_credentials(body.username, body.password):
-        append_service_log(
-            "operation",
+        log_operation(
             user=body.username,
             operation_type="Login",
             details=f"Login IP: {client_ip} — failed",
@@ -66,8 +64,7 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
             detail="Invalid username or password",
         )
 
-    append_service_log(
-        "operation",
+    log_operation(
         user=body.username,
         operation_type="Login",
         details=f"Login IP: {client_ip} — successfully logged in",

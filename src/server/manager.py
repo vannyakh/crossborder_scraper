@@ -19,7 +19,8 @@ from core.engine.jobs import JobStatus
 from export.registry import get_exporter
 from pipeline.normalize import to_export_listing
 from pipeline.storage import ProductStore
-from server.events import batch_events
+from server.core.constants import APP_VERSION
+from server.core.events import batch_events
 
 
 class ScrapeManager:
@@ -167,7 +168,7 @@ class ScrapeManager:
         uptime = (datetime.utcnow() - started_at).total_seconds()
         return {
             "service": "crossborder-scraper",
-            "version": "0.3.0",
+            "version": APP_VERSION,
             "started_at": started_at,
             "uptime_seconds": round(uptime, 1),
             "running_batches": running_batches,
@@ -199,7 +200,7 @@ class ScrapeManager:
         session_id: str | None = None,
         submitted_by: str | None = None,
     ) -> str:
-        from server.service_logs import append_service_log
+        from server.services.audit import log_run
 
         engine = ScrapeEngine(self.settings, max_workers=workers)
         jobs = [
@@ -234,8 +235,7 @@ class ScrapeManager:
                 "batch_started",
                 {"batch_id": batch_id, "total": len(jobs)},
             )
-            append_service_log(
-                "run",
+            log_run(
                 user=batch_user,
                 operation_type="Scrape batch",
                 details=f"Batch {batch_id} started ({len(jobs)} jobs, workers={workers or self.settings.max_concurrent_jobs})",
@@ -291,8 +291,7 @@ class ScrapeManager:
                     st["status"] = "completed"
                     self._live_status[batch_id] = st
                 self.store.finish_batch(batch_id, final, status="completed")
-                append_service_log(
-                    "run",
+                log_run(
                     user=batch_user,
                     operation_type="Scrape batch",
                     details=(
@@ -312,8 +311,7 @@ class ScrapeManager:
                 report = self._live_reports.get(batch_id, report)
                 report.finished_at = datetime.utcnow()
                 self.store.finish_batch(batch_id, report, status="cancelled")
-                append_service_log(
-                    "run",
+                log_run(
                     user=batch_user,
                     operation_type="Scrape batch",
                     details=f"Batch {batch_id} cancelled",

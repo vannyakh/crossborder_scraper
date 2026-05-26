@@ -4,7 +4,7 @@ from fastapi import HTTPException, Query
 
 from server.deps import protected_router
 from server.schemas import MessageResponse, ServiceLogListResponse
-from server.service_logs import (
+from server.stores.service_logs import (
     clear_service_logs,
     import_agent_runs_to_cron_logs,
     list_service_logs,

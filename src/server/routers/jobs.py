@@ -1,12 +1,14 @@
+import asyncio
+
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from core.engine.jobs import BatchReport
 from server.auth import require_panel_auth
+from server.core.events import batch_events, sse_frame
 from server.deps import protected_router
-from server.events import batch_events, sse_frame
 from server.manager import get_manager
-from server.service_logs import append_service_log
+from server.services.audit import log_operation
 from server.schemas import (
     MessageResponse,
     ScrapeSingleRequest,
@@ -33,8 +35,7 @@ async def submit(
         session_id=req.session_id,
         submitted_by=username,
     )
-    append_service_log(
-        "operation",
+    log_operation(
         user=username,
         operation_type="Batch submit",
         details=f"Submitted batch {batch_id} with {len(req.urls)} URL(s)",

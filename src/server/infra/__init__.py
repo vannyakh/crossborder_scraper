@@ -1,4 +1,4 @@
-"""Backward-compatible re-exports — prefer server.infra.spa_static."""
+"""Infrastructure helpers (SPA static, future middleware)."""
 
 from server.infra.spa_static import SPAStaticFiles
 
