@@ -2,25 +2,39 @@ import {
   Box,
   Button,
   HStack,
-  Input,
-  NativeSelect,
+  Separator,
   Table,
   Tabs,
   Text,
 } from '@chakra-ui/react'
-import { Search } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { RefreshCw, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { ListPagination } from '../components/list-page/ListPagination'
+import { ListSearchBar } from '../components/list-page/ListSearchBar'
 import { Toolbar } from '../components/layout/Toolbar'
 import { DataList, DataListEmpty } from '../components/ui/DataList'
+import { SectionCard, SubtitleText } from '../components/ui/Section'
 import { useAccentPalette } from '../hooks/use-ui-config'
 import { useClearLogsMutation, useLogsQuery } from '../hooks/queries/use-logs-query'
 import type { LogCategory } from '../lib/api'
 
-const LOG_TABS: { id: LogCategory; label: string }[] = [
-  { id: 'operation', label: 'Operation logs' },
-  { id: 'run', label: 'Run logs' },
-  { id: 'cron', label: 'Cron logs' },
+const LOG_TABS: { id: LogCategory; label: string; description: string }[] = [
+  {
+    id: 'operation',
+    label: 'Operation',
+    description: 'Panel actions, settings, and user operations',
+  },
+  {
+    id: 'run',
+    label: 'Run',
+    description: 'Scrape batch jobs and per-URL outcomes',
+  },
+  {
+    id: 'cron',
+    label: 'Cron',
+    description: 'Scheduled agent tasks and manual executes',
+  },
 ]
 
 function formatLogTime(iso: string): string {
@@ -33,16 +47,18 @@ function formatLogTime(iso: string): string {
   }
 }
 
+function parseLogCategory(value: string | null): LogCategory | null {
+  if (value === 'cron' || value === 'run' || value === 'operation') return value
+  return null
+}
+
 export function LogsPage() {
   const accentPalette = useAccentPalette()
   const [searchParams] = useSearchParams()
-  const initialCategory = searchParams.get('category')
+  const initialCategory = parseLogCategory(searchParams.get('category'))
   const initialQ = searchParams.get('q') ?? ''
-  const [category, setCategory] = useState<LogCategory>(
-    initialCategory === 'cron' || initialCategory === 'run' || initialCategory === 'operation'
-      ? initialCategory
-      : 'operation',
-  )
+
+  const [category, setCategory] = useState<LogCategory>(initialCategory ?? 'operation')
   const [q, setQ] = useState(initialQ)
   const [search, setSearch] = useState(initialQ)
   const [limit, setLimit] = useState(20)
@@ -57,12 +73,15 @@ export function LogsPage() {
   })
   const clearMutation = useClearLogsMutation()
 
+  const activeTab = LOG_TABS.find((t) => t.id === category) ?? LOG_TABS[0]
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / limit))
+  const items = data?.items ?? []
+
   useEffect(() => {
-    const paramCategory = searchParams.get('category')
+    const paramCategory = parseLogCategory(searchParams.get('category'))
     const paramQ = searchParams.get('q') ?? ''
-    if (paramCategory === 'cron' || paramCategory === 'run' || paramCategory === 'operation') {
-      setCategory(paramCategory)
-    }
+    if (paramCategory) setCategory(paramCategory)
     if (paramQ) {
       setQ(paramQ)
       setSearch(paramQ)
@@ -70,194 +89,192 @@ export function LogsPage() {
     }
   }, [searchParams])
 
-  const total = data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / limit))
-  const items = data?.items ?? []
-
-  const pageNumbers = useMemo(() => {
-    const pages: number[] = []
-    const start = Math.max(1, page - 2)
-    const end = Math.min(totalPages, start + 4)
-    for (let i = start; i <= end; i += 1) pages.push(i)
-    return pages
-  }, [page, totalPages])
-
   function onTabChange(next: LogCategory) {
     setCategory(next)
     setPage(1)
   }
 
-  function onSearchSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function applySearch() {
     setSearch(q.trim())
     setPage(1)
   }
 
   async function onClear() {
-    const label = LOG_TABS.find((t) => t.id === category)?.label ?? category
-    if (!confirm(`Clear all ${label}?`)) return
+    if (!confirm(`Clear all ${activeTab.label.toLowerCase()} logs?`)) return
     await clearMutation.mutateAsync(category)
     setPage(1)
   }
 
   return (
     <>
-      <Toolbar title="Logs" description="Operation, scrape runs, and cron agent history" />
+      <Toolbar
+        title="Logs"
+        description="Operation, scrape runs, and cron agent history"
+        actions={
+          <HStack gap={2}>
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              loading={isFetching}
+              onClick={() => void refetch()}
+            >
+              <RefreshCw size={14} />
+              Refresh
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              colorPalette="red"
+              loading={clearMutation.isPending}
+              onClick={() => void onClear()}
+            >
+              <Trash2 size={14} />
+              Clear
+            </Button>
+          </HStack>
+        }
+      />
 
-      <Tabs.Root
-        value={category}
-        onValueChange={(e) => onTabChange(e.value as LogCategory)}
-        variant="line"
-        colorPalette={accentPalette}
-        mb={4}
-      >
-        <Tabs.List borderColor="border.subtle">
-          {LOG_TABS.map((tab) => (
-            <Tabs.Trigger key={tab.id} value={tab.id} fontSize="sm" px={3}>
-              {tab.label}
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
-      </Tabs.Root>
+      <SectionCard p={0} mb={0} overflow="hidden">
+        <Box px={{ base: 3, md: 4 }} pt={{ base: 3, md: 4 }}>
+          <Tabs.Root
+            value={category}
+            onValueChange={(e) => onTabChange(e.value as LogCategory)}
+            variant="line"
+            colorPalette={accentPalette}
+          >
+            <Tabs.List borderColor="border.subtle" gap={1}>
+              {LOG_TABS.map((tab) => (
+                <Tabs.Trigger key={tab.id} value={tab.id} fontSize="sm" px={3}>
+                  {tab.label}
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+          </Tabs.Root>
+          <SubtitleText mt={2}>{activeTab.description}</SubtitleText>
+        </Box>
 
-      <HStack justify="space-between" flexWrap="wrap" gap={3} mb={3}>
-        <HStack gap={2}>
+        <Separator borderColor="border.subtle" />
+
+        <HStack
+          px={{ base: 3, md: 4 }}
+          py={3}
+          gap={3}
+          flexWrap="wrap"
+          justify="space-between"
+          align="center"
+        >
+          <Box
+            as="form"
+            flex="1"
+            minW={{ base: 'full', sm: '280px' }}
+            onSubmit={(e) => {
+              e.preventDefault()
+              applySearch()
+            }}
+          >
+            <ListSearchBar
+              value={q}
+              onChange={setQ}
+              placeholder="Search user, type, or details…"
+            />
+          </Box>
           <Button
             size="sm"
             colorPalette={accentPalette}
-            borderRadius="var(--radius-input)"
-            loading={isFetching}
-            onClick={() => void refetch()}
+            borderRadius="input"
+            onClick={applySearch}
           >
-            Refresh
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            borderColor="border.subtle"
-            borderRadius="var(--radius-input)"
-            loading={clearMutation.isPending}
-            onClick={() => void onClear()}
-          >
-            Clear logs
+            Search
           </Button>
         </HStack>
 
-        <Box as="form" onSubmit={onSearchSubmit} maxW="280px" w="full">
-          <HStack
-            borderWidth="1px"
-            borderColor="border.subtle"
-            borderRadius="var(--radius-input)"
-            px={2}
-            bg="bg.panel"
+        <Separator borderColor="border.subtle" />
+
+        {error ? (
+          <Box px={{ base: 3, md: 4 }} py={3}>
+            <Text fontSize="sm" color="red.500">
+              {String((error as Error).message || error)}
+            </Text>
+          </Box>
+        ) : null}
+
+        {isLoading ? (
+          <DataListEmpty>Loading…</DataListEmpty>
+        ) : items.length === 0 ? (
+          <DataListEmpty>No log entries in this category.</DataListEmpty>
+        ) : (
+          <DataList
+            borderWidth={0}
+            borderRadius={0}
+            borderTopWidth="1px"
+            maxH="min(62vh, 600px)"
           >
-            <Search size={14} strokeWidth={2} color="var(--chakra-colors-fg-muted)" />
-            <Input
-              size="sm"
-              variant="flushed"
-              border="none"
-              placeholder="Search logs…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </HStack>
-        </Box>
-      </HStack>
-
-      {error ? (
-        <Text fontSize="sm" color="red.500" mb={3}>
-          {String((error as Error).message || error)}
-        </Text>
-      ) : null}
-
-      {isLoading ? (
-        <DataListEmpty>Loading…</DataListEmpty>
-      ) : items.length === 0 ? (
-        <DataListEmpty>No log entries.</DataListEmpty>
-      ) : (
-        <DataList>
-          <Table.Header bg="bg.panelHover" position="sticky" top={0} zIndex={1}>
-            <Table.Row>
-              <Table.ColumnHeader w="120px">User</Table.ColumnHeader>
-              <Table.ColumnHeader w="160px">Operation type</Table.ColumnHeader>
-              <Table.ColumnHeader>Details</Table.ColumnHeader>
-              <Table.ColumnHeader w="180px" textAlign="right">
-                Operating time
-              </Table.ColumnHeader>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {items.map((row) => (
-              <Table.Row key={row.id} _hover={{ bg: 'bg.panelHover' }}>
-                <Table.Cell fontSize="sm" color="fg.muted">
-                  {row.user}
-                </Table.Cell>
-                <Table.Cell fontSize="sm">{row.operation_type}</Table.Cell>
-                <Table.Cell fontSize="sm" color="fg.muted" maxW="480px">
-                  <Text lineClamp={2} title={row.details}>
-                    {row.details}
-                  </Text>
-                </Table.Cell>
-                <Table.Cell fontSize="sm" color="fg.muted" textAlign="right" whiteSpace="nowrap">
-                  {formatLogTime(row.created_at)}
-                </Table.Cell>
+            <Table.Header bg="bg.panelHover" position="sticky" top={0} zIndex={1}>
+              <Table.Row>
+                <Table.ColumnHeader w="100px">User</Table.ColumnHeader>
+                <Table.ColumnHeader w="140px">Type</Table.ColumnHeader>
+                <Table.ColumnHeader>Details</Table.ColumnHeader>
+                <Table.ColumnHeader w="168px" textAlign="right">
+                  Time
+                </Table.ColumnHeader>
               </Table.Row>
-            ))}
-          </Table.Body>
-        </DataList>
-      )}
+            </Table.Header>
+            <Table.Body>
+              {items.map((row, index) => (
+                <Table.Row
+                  key={row.id}
+                  _hover={{ bg: 'bg.panelHover' }}
+                  borderBottomWidth={index < items.length - 1 ? '1px' : undefined}
+                  borderColor="border.subtle"
+                >
+                  <Table.Cell fontSize="sm" color="fg.muted" verticalAlign="top">
+                    {row.user}
+                  </Table.Cell>
+                  <Table.Cell fontSize="sm" fontWeight="medium" verticalAlign="top">
+                    {row.operation_type}
+                  </Table.Cell>
+                  <Table.Cell fontSize="sm" color="fg.muted" verticalAlign="top" maxW="0">
+                    <Text lineClamp={3} title={row.details} wordBreak="break-word">
+                      {row.details}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell
+                    fontSize="xs"
+                    fontFamily="mono"
+                    color="fg.subtle"
+                    textAlign="right"
+                    whiteSpace="nowrap"
+                    verticalAlign="top"
+                  >
+                    {formatLogTime(row.created_at)}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </DataList>
+        )}
 
-      <HStack justify="flex-end" mt={4} gap={2} flexWrap="wrap" fontSize="sm">
-        <Button
-          size="xs"
-          variant="outline"
-          borderColor="border.subtle"
-          disabled={page <= 1}
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-        >
-          ‹
-        </Button>
-        {pageNumbers.map((n) => (
-          <Button
-            key={n}
-            size="xs"
-            variant={n === page ? 'solid' : 'outline'}
-            colorPalette={n === page ? accentPalette : undefined}
-            borderColor="border.subtle"
-            onClick={() => setPage(n)}
-          >
-            {n}
-          </Button>
-        ))}
-        <Button
-          size="xs"
-          variant="outline"
-          borderColor="border.subtle"
-          disabled={page >= totalPages}
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-        >
-          ›
-        </Button>
-        <NativeSelect.Root size="xs" w="auto">
-          <NativeSelect.Field
-            value={String(limit)}
-            onChange={(e) => {
-              setLimit(Number(e.target.value))
-              setPage(1)
-            }}
-            borderRadius="var(--radius-input)"
-          >
-            {[10, 20, 50, 100].map((n) => (
-              <option key={n} value={n}>
-                {n} / page
-              </option>
-            ))}
-          </NativeSelect.Field>
-        </NativeSelect.Root>
-        <Text color="fg.muted" fontSize="xs">
-          Total {total}
-        </Text>
-      </HStack>
+        {total > 0 ? (
+          <Box px={{ base: 3, md: 4 }} pb={{ base: 3, md: 4 }}>
+            <ListPagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={limit}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setLimit(size)
+                setPage(1)
+              }}
+            />
+          </Box>
+        ) : null}
+      </SectionCard>
     </>
   )
 }

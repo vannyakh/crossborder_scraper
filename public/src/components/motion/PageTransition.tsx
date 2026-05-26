@@ -51,7 +51,15 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   if (disabled) {
     return (
-      <Box key={location.pathname} w="full" minW={0}>
+      <Box
+        key={location.pathname}
+        w="full"
+        minW={0}
+        flex="1 1 auto"
+        minH={0}
+        display="flex"
+        flexDirection="column"
+      >
         {children}
       </Box>
     )
@@ -66,6 +74,10 @@ export function PageTransition({ children }: { children: ReactNode }) {
         key={location.pathname}
         w="full"
         minW={0}
+        flex="1 1 auto"
+        minH={0}
+        display="flex"
+        flexDirection="column"
         initial={variants.initial}
         animate={variants.animate}
         exit={variants.exit}

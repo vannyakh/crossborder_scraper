@@ -30,7 +30,7 @@ export const AGENT_NAV: AgentNavItem[] = [
   {
     id: 'chat',
     label: 'Chat',
-    description: 'Send prompts and inspect tool traces',
+    description: 'Direct gateway chat session for quick interventions',
     icon: MessageSquare,
     group: 'channel',
   },

@@ -42,11 +42,27 @@ export function AgentPage() {
     return <Navigate to={agentSectionPath(DEFAULT_AGENT_SECTION)} replace />
   }
 
+  const isChat = section === 'chat'
+
   return (
-    <Box flex={1} minW={0} w="full">
+    <Box
+      flex={1}
+      minH={0}
+      minW={0}
+      w="full"
+      display="flex"
+      flexDirection="column"
+      className={isChat ? 'agent-page agent-page--chat' : undefined}
+    >
       <AnimatePresence mode="wait" initial={false}>
         <MotionBox
           key={section}
+          flex={isChat ? 1 : undefined}
+          minH={isChat ? 0 : undefined}
+          h={isChat ? '100%' : undefined}
+          display={isChat ? 'flex' : undefined}
+          flexDirection={isChat ? 'column' : undefined}
+          w="full"
           initial={motionEnabled ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           exit={motionEnabled ? { opacity: 0, y: -6 } : undefined}
