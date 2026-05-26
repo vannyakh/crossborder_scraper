@@ -1,312 +1,253 @@
-import { useEffect, useMemo, useState } from 'react'
 import {
-  api,
-  type BatchReport,
-  type BatchStatus,
-  type Config,
-  type Stats,
-  useInterval,
-} from '../lib/api'
+  Box,
+  Button,
+  Checkbox,
+  Field,
+  Grid,
+  HStack,
+  NativeSelect,
+  Separator,
+  SimpleGrid,
+  Text,
+  Textarea,
+  VStack,
+} from '@chakra-ui/react'
+import { motion } from 'motion/react'
+import { FadeIn } from '../components/motion/FadeIn'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel'
+import { StatCard } from '../components/ui/StatCard'
+import { StatusBadge } from '../components/ui/StatusBadge'
+import { fieldStyles } from '../components/ui/field-styles'
+import { useDashboard } from '../hooks/use-dashboard'
 
-const inputClass =
-  'w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 text-slate-100 outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20'
+const MotionBox = motion.create(Box)
 
 export function DashboardPage() {
-  const [config, setConfig] = useState<Config | null>(null)
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [urlsText, setUrlsText] = useState(
-    'https://detail.1688.com/offer/XXXXXXXX.html\nhttps://www.aliexpress.com/item/YYYYYYYY.html',
-  )
-  const [workers, setWorkers] = useState<number>(3)
-  const [useAi, setUseAi] = useState<boolean>(false)
-  const [save, setSave] = useState<boolean>(true)
-
-  const [batchId, setBatchId] = useState<string>('')
-  const [status, setStatus] = useState<BatchStatus | null>(null)
-  const [result, setResult] = useState<BatchReport | null>(null)
-  const [busy, setBusy] = useState<boolean>(false)
-  const [err, setErr] = useState<string>('')
-
-  const urls = useMemo(
-    () =>
-      urlsText
-        .split('\n')
-        .map((s) => s.trim())
-        .filter((s) => s && !s.startsWith('#')),
-    [urlsText],
-  )
-
-  async function loadConfig() {
-    try {
-      const [c, s] = await Promise.all([api<Config>('/config'), api<Stats>('/stats')])
-      setConfig(c)
-      setStats(s)
-      if (typeof c.max_concurrent_jobs === 'number') setWorkers(c.max_concurrent_jobs)
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    }
-  }
-
-  async function loadStatus(id: string) {
-    if (!id) return
-    try {
-      const s = await api<BatchStatus>(`/jobs/${id}/status`)
-      setStatus(s)
-      if (!s.running) {
-        const r = await api<BatchReport>(`/jobs/${id}/result`)
-        setResult(r)
-      }
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    }
-  }
-
-  useEffect(() => {
-    void loadConfig()
-  }, [])
-
-  useInterval(() => {
-    if (batchId) void loadStatus(batchId)
-  }, batchId ? 1500 : null)
-
-  async function submit() {
-    setErr('')
-    setBusy(true)
-    setStatus(null)
-    setResult(null)
-    try {
-      const payload = { urls, workers: Number(workers) || null, use_ai: useAi, save }
-      const resp = await api<{ batch_id: string; total: number }>('/jobs/submit', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      setBatchId(resp.batch_id)
-      await loadStatus(resp.batch_id)
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const apiReady = Boolean(config)
+  const {
+    urlsText,
+    workers,
+    useAi,
+    save,
+    urls,
+    setUrlsText,
+    setWorkers,
+    setUseAi,
+    setSave,
+    config,
+    stats,
+    apiReady,
+    batchId,
+    status,
+    result,
+    isRunning,
+    submit,
+    clear,
+    isSubmitting,
+    error,
+  } = useDashboard()
 
   return (
-    <>
-      <div className="mb-4 flex items-center justify-end">
-        <span
-          className={[
-            'rounded-full border px-2.5 py-1 text-xs font-medium',
-            apiReady
-              ? 'border-emerald-500/30 text-emerald-400'
-              : 'border-rose-500/30 text-rose-400',
-          ].join(' ')}
-        >
-          {apiReady ? 'API ready' : 'API not ready'}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap gap-3.5">
-        <section className="min-w-[min(100%,320px)] flex-1 basis-[520px] rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl shadow-black/35">
-          <h2 className="text-base font-bold">Submit jobs</h2>
-          <p className="mt-1 text-xs text-slate-400">
-            Paste product URLs (one per line). The API runs Playwright workers with cookies/proxies.
-          </p>
-
-          <label className="mt-3 block text-xs text-slate-400">URLs</label>
-          <textarea
-            className={`${inputClass} min-h-[140px] resize-y`}
-            value={urlsText}
-            onChange={(e) => setUrlsText(e.target.value)}
+    <VStack align="stretch" gap={5}>
+      <PageHeader
+        title="Dashboard"
+        description="Submit scrape jobs and monitor the engine in real time."
+        action={
+          <StatusBadge
+            status={apiReady ? 'success' : 'danger'}
+            label={apiReady ? 'API ready' : 'API offline'}
           />
+        }
+      />
 
-          <div className="mt-3 flex flex-wrap gap-3">
-            <div className="min-w-[140px] flex-1">
-              <label className="block text-xs text-slate-400">Workers</label>
-              <input
-                type="number"
-                min={1}
-                className={inputClass}
-                value={workers}
-                onChange={(e) => setWorkers(Number(e.target.value))}
-              />
-            </div>
-            <div className="min-w-[140px] flex-1">
-              <label className="block text-xs text-slate-400">AI extraction</label>
-              <select
-                className={inputClass}
-                value={useAi ? 'true' : 'false'}
-                onChange={(e) => setUseAi(e.target.value === 'true')}
+      <Grid templateColumns={{ base: '1fr', xl: '1fr 1fr' }} gap={4}>
+        <FadeIn delay={0.05}>
+          <Panel h="full">
+            <PanelHeader
+              title="Submit jobs"
+              description="Paste product URLs (one per line). Workers use cookies and proxies from the server."
+            />
+            <PanelBody>
+              <Field.Root>
+                <Field.Label color="fg.muted" fontSize="xs">
+                  URLs
+                </Field.Label>
+                <Textarea
+                  {...fieldStyles}
+                  minH="140px"
+                  value={urlsText}
+                  onChange={(e) => setUrlsText(e.target.value)}
+                />
+              </Field.Root>
+
+              <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3} mt={4}>
+                <Field.Root>
+                  <Field.Label color="fg.muted" fontSize="xs">
+                    Workers
+                  </Field.Label>
+                  <NativeSelect.Root>
+                    <NativeSelect.Field
+                      {...fieldStyles}
+                      value={String(workers)}
+                      onChange={(e) => setWorkers(Number(e.target.value))}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                  </NativeSelect.Root>
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label color="fg.muted" fontSize="xs">
+                    AI extraction
+                  </Field.Label>
+                  <NativeSelect.Root>
+                    <NativeSelect.Field
+                      {...fieldStyles}
+                      value={useAi ? 'true' : 'false'}
+                      onChange={(e) => setUseAi(e.target.value === 'true')}
+                    >
+                      <option value="false">Auto / Disabled</option>
+                      <option value="true">Force AI</option>
+                    </NativeSelect.Field>
+                  </NativeSelect.Root>
+                </Field.Root>
+              </SimpleGrid>
+
+              <Checkbox.Root
+                mt={4}
+                checked={save}
+                onCheckedChange={(e) => setSave(!!e.checked)}
+                colorPalette="purple"
               >
-                <option value="false">Auto / Disabled</option>
-                <option value="true">Force AI</option>
-              </select>
-            </div>
-          </div>
+                <Checkbox.HiddenInput />
+                <Checkbox.Control />
+                <Checkbox.Label fontSize="sm" color="fg.muted">
+                  Save results (SQLite + JSON)
+                </Checkbox.Label>
+              </Checkbox.Root>
 
-          <label className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-            <input
-              type="checkbox"
-              className="rounded border-white/20"
-              checked={save}
-              onChange={(e) => setSave(e.target.checked)}
-            />
-            Save results (SQLite + JSON)
-          </label>
+              <HStack mt={4} gap={2} flexWrap="wrap">
+                <Button
+                  colorPalette="purple"
+                  borderRadius="input"
+                  loading={isSubmitting}
+                  disabled={urls.length === 0}
+                  onClick={() => void submit()}
+                >
+                  {isSubmitting ? 'Submitting…' : `Submit (${urls.length})`}
+                </Button>
+                <Button
+                  variant="outline"
+                  borderColor="border.subtle"
+                  borderRadius="input"
+                  onClick={clear}
+                >
+                  Clear
+                </Button>
+              </HStack>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="cursor-pointer rounded-xl border border-violet-400/30 bg-linear-to-b from-violet-500/95 to-violet-600/75 px-3 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-55"
-              disabled={busy || urls.length === 0}
-              onClick={() => void submit()}
-            >
-              {busy ? 'Submitting...' : `Submit (${urls.length})`}
-            </button>
-            <button
-              type="button"
-              className="cursor-pointer rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm font-bold text-slate-200"
-              onClick={() => {
-                setBatchId('')
-                setStatus(null)
-                setResult(null)
-                setErr('')
-              }}
-            >
-              Clear
-            </button>
-          </div>
+              {error ? (
+                <>
+                  <Separator my={4} borderColor="border.subtle" />
+                  <Text fontSize="sm" color="red.400">
+                    {error}
+                  </Text>
+                </>
+              ) : null}
+            </PanelBody>
+          </Panel>
+        </FadeIn>
 
-          {err ? (
-            <>
-              <hr className="my-3.5 border-white/10" />
-              <p className="text-xs text-rose-400">{err}</p>
-            </>
-          ) : null}
-        </section>
+        <FadeIn delay={0.1}>
+          <Panel h="full">
+            <PanelHeader title="Engine & batch" description="Live config from the API server." />
+            <PanelBody>
+              <SimpleGrid columns={{ base: 2, sm: 3 }} gap={3}>
+                <StatCard label="Workers" value={config?.max_concurrent_jobs ?? '—'} />
+                <StatCard label="Products" value={stats?.products ?? '—'} tone="accent" />
+                <StatCard label="Files" value={stats?.output_files ?? '—'} />
+                <StatCard label="AI" value={String(config?.ai_enabled ?? false)} />
+                <StatCard
+                  label="Proxy"
+                  value={config?.proxy_list_path?.split(/[/\\]/).pop() ?? '—'}
+                  mono
+                  small
+                />
+                <StatCard
+                  label="Completed"
+                  value={status ? `${status.completed}/${status.total}` : '—'}
+                />
+                <StatCard label="Success" value={status?.success ?? '—'} tone="success" />
+                <StatCard label="Failed" value={status?.failed ?? '—'} tone="danger" />
+              </SimpleGrid>
 
-        <section className="min-w-[min(100%,320px)] flex-1 basis-[520px] rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl shadow-black/35">
-          <h2 className="text-base font-bold">Engine config</h2>
-          <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-            <Stat label="Workers default" value={config?.max_concurrent_jobs ?? '—'} />
-            <Stat
-              label="Proxy list"
-              value={config?.proxy_list_path ?? '—'}
-              mono
-              small
-            />
-            <Stat label="AI enabled" value={String(config?.ai_enabled ?? false)} />
-            <Stat label="Stored products" value={stats?.products ?? '—'} />
-            <Stat label="Output files" value={stats?.output_files ?? '—'} />
-          </dl>
+              <Separator my={4} borderColor="border.subtle" />
 
-          <hr className="my-3.5 border-white/10" />
+              <Text fontSize="xs" color="fg.muted">
+                Batch ID
+              </Text>
+              <Text fontFamily="mono" fontSize="sm" mt={1} wordBreak="break-all">
+                {batchId || '—'}
+              </Text>
+              {isRunning ? (
+                <Text mt={2} fontSize="xs" color="accent">
+                  Running — refreshing every 1.5s
+                </Text>
+              ) : null}
+            </PanelBody>
+          </Panel>
+        </FadeIn>
+      </Grid>
 
-          <h2 className="text-base font-bold">Batch</h2>
-          <p className="mt-1 text-xs text-slate-400">Current batch id:</p>
-          <p className="mt-1.5 break-all font-mono text-sm">{batchId || '—'}</p>
-
-          <hr className="my-3.5 border-white/10" />
-
-          <dl className="grid gap-3 sm:grid-cols-3">
-            <Stat
-              label="Completed"
-              value={status ? `${status.completed}/${status.total}` : '—'}
-            />
-            <Stat label="Success" value={status?.success ?? '—'} valueClass="text-emerald-400" />
-            <Stat label="Failed" value={status?.failed ?? '—'} valueClass="text-rose-400" />
-          </dl>
-
-          {status?.running ? (
-            <p className="mt-2.5 text-xs text-slate-400">Running… auto-refresh every 1.5s</p>
-          ) : null}
-        </section>
-      </div>
-
-      <section className="mt-3.5 w-full rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl shadow-black/35">
-        <h2 className="text-base font-bold">Results</h2>
-        <p className="mt-1 text-xs text-slate-400">When the batch finishes, results appear here.</p>
-        <hr className="my-3.5 border-white/10" />
-
-        {!result ? (
-          <p className="text-xs text-slate-400">No results yet.</p>
-        ) : (
-          <ul className="grid gap-2.5">
-            {result.results.map((r) => (
-              <li
-                key={r.job_id}
-                className="rounded-xl border border-white/10 bg-white/3 p-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="break-all text-sm text-slate-100/95">{r.url}</p>
-                  <span
-                    className={[
-                      'shrink-0 rounded-full border px-2 py-0.5 text-xs',
-                      r.status === 'success'
-                        ? 'border-emerald-500/30 text-emerald-400'
-                        : 'border-rose-500/30 text-rose-400',
-                    ].join(' ')}
+      <FadeIn delay={0.15}>
+        <Panel>
+          <PanelHeader
+            title="Results"
+            description="Job outcomes appear when the batch completes."
+          />
+          <PanelBody>
+            {!result ? (
+              <Text fontSize="sm" color="fg.muted">
+                No results yet.
+              </Text>
+            ) : (
+              <VStack align="stretch" gap={2}>
+                {result.results.map((r, i) => (
+                  <MotionBox
+                    key={r.job_id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.3 }}
+                    p={3}
+                    borderRadius="card"
+                    borderWidth="1px"
+                    borderColor="border.subtle"
+                    bg="bg.elevated"
                   >
-                    {r.status}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2.5 text-xs text-slate-400">
-                  <span>
-                    job: <span className="font-mono">{r.job_id}</span>
-                  </span>
-                  <span>t: {r.duration_seconds ?? 0}s</span>
-                  <span>
-                    proxy: <span className="font-mono">{r.proxy_used || '—'}</span>
-                  </span>
-                  <span>ai: {String(Boolean(r.ai_used))}</span>
-                  {r.product?.title ? (
-                    <span>title: {r.product.title.slice(0, 80)}</span>
-                  ) : null}
-                  {r.error ? <span className="text-rose-400">error: {r.error}</span> : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <p className="mt-4 text-xs text-slate-400">
-        Tip: multi-account cookies with{' '}
-        <code className="font-mono text-slate-300">python main.py login 1688 --session seller_a</code>
-        , proxies in <code className="font-mono text-slate-300">config/proxies.txt</code>.
-      </p>
-    </>
-  )
-}
-
-function Stat({
-  label,
-  value,
-  mono,
-  small,
-  valueClass = '',
-}: {
-  label: string
-  value: string | number
-  mono?: boolean
-  small?: boolean
-  valueClass?: string
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/3 p-3">
-      <dt className="text-xs text-slate-400">{label}</dt>
-      <dd
-        className={[
-          'mt-1 font-black',
-          small ? 'text-xs' : 'text-xl',
-          mono ? 'font-mono break-all' : '',
-          valueClass,
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
-        {value}
-      </dd>
-    </div>
+                    <HStack justify="space-between" align="flex-start" gap={2}>
+                      <Text fontSize="sm" wordBreak="break-all" flex={1}>
+                        {r.url}
+                      </Text>
+                      <StatusBadge status={r.status === 'success' ? 'success' : 'danger'} />
+                    </HStack>
+                    <HStack mt={2} gap={3} flexWrap="wrap" fontSize="xs" color="fg.muted">
+                      <Text fontFamily="mono">job {r.job_id}</Text>
+                      <Text>{r.duration_seconds ?? 0}s</Text>
+                      <Text fontFamily="mono">proxy {r.proxy_used || '—'}</Text>
+                      {r.product?.title ? <Text>{r.product.title.slice(0, 80)}</Text> : null}
+                      {r.error ? <Text color="red.400">error: {r.error}</Text> : null}
+                    </HStack>
+                  </MotionBox>
+                ))}
+              </VStack>
+            )}
+          </PanelBody>
+        </Panel>
+      </FadeIn>
+    </VStack>
   )
 }

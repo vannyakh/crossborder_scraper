@@ -22,13 +22,12 @@ Chinese B2B sites ([1688.com](https://www.1688.com/)) rarely expose stable publi
 # Install uv (once)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-cd www.1688.com
-uv venv
+cd crossborder_scraper
+uv sync
 source .venv/Scripts/activate   # Windows Git Bash
 # .venv\Scripts\activate       # Windows CMD/PowerShell
 
-uv pip install -e .
-playwright install chromium
+uv run playwright install chromium
 ```
 
 ### 2. Configure
@@ -191,19 +190,28 @@ python main.py batch urls.txt [--workers N] [--ai]
 
 ## Web service (monitor & control)
 
-Run the API locally:
+Run the API locally (from this repo root, using **this project's** `.venv`):
 
 ```bash
-uvicorn server.app:app --host 0.0.0.0 --port 8000
+# Recommended — uses crossborder_scraper/.venv (ignores other VIRTUAL_ENV)
+uv run serve
+
+# Alternatives
+uv run python -m uvicorn server.app:app --host 0.0.0.0 --port 8000
+source .venv/Scripts/activate   # Git Bash on Windows
+python -m uvicorn server.app:app --host 0.0.0.0 --port 8000
 ```
+
+If you see `uvicorn: command not found`, your shell is using another project's venv
+(e.g. `www.1688.com`). Run `deactivate`, then `uv sync` in this folder, then `uv run serve`.
 
 Endpoints:
 
-- `GET /health`
-- `GET /config`
-- `POST /jobs/submit` → returns `batch_id`
-- `GET /jobs/{batch_id}/status`
-- `GET /jobs/{batch_id}/result`
+- `GET /health` · `GET /config` · `GET /stats`
+- **Jobs:** `POST /jobs/submit` · `POST /jobs/scrape` (single URL) · `GET /jobs/{id}/status` · `GET /jobs/{id}/result` · `POST /jobs/{id}/cancel`
+- **Batches:** `GET /batches` · `GET /batches/{id}` (persisted history)
+- **Products:** `GET /products` · `GET /products/{id}` · `DELETE /products/{id}` · `POST /products/export`
+- **Files:** `GET /files` · `GET /files/{path}` · `DELETE /files/{path}` (output JSON/HTML)
 
 Example submit:
 

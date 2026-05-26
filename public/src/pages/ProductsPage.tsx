@@ -1,98 +1,111 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { api, type ProductSummary } from '../lib/api'
+import { Box, Button, HStack, Link, Text, VStack } from '@chakra-ui/react'
+import { motion } from 'motion/react'
+import { Link as RouterLink } from 'react-router-dom'
+import { FadeIn } from '../components/motion/FadeIn'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Panel, PanelBody } from '../components/ui/Panel'
+import { useDeleteProductMutation, useProductsQuery } from '../hooks'
 
-const cardClass =
-  'rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl shadow-black/35'
+const MotionBox = motion.create(Box)
 
 export function ProductsPage() {
-  const [items, setItems] = useState<ProductSummary[]>([])
-  const [total, setTotal] = useState(0)
-  const [err, setErr] = useState('')
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading, error, refetch } = useProductsQuery()
+  const deleteMutation = useDeleteProductMutation()
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setErr('')
-    try {
-      const data = await api<{ items: ProductSummary[]; total: number }>('/products?limit=100')
-      setItems(data.items)
-      setTotal(data.total)
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
+  const err = error ? String((error as Error).message || error) : ''
 
   async function remove(id: number) {
     if (!confirm('Delete this product from the database?')) return
-    await api(`/products/${id}`, { method: 'DELETE' })
-    void load()
+    await deleteMutation.mutateAsync(id)
   }
 
   return (
-    <div className={cardClass}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold">Products</h2>
-          <p className="mt-1 text-xs text-slate-400">
-            Scraped products stored in SQLite ({total} total)
-          </p>
-        </div>
-        <button
-          type="button"
-          className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-sm font-semibold"
-          onClick={() => void load()}
-        >
-          Refresh
-        </button>
-      </div>
-
-      {err ? <p className="mt-3 text-xs text-rose-400">{err}</p> : null}
-      {loading ? <p className="mt-4 text-xs text-slate-400">Loading…</p> : null}
-
-      {!loading && items.length === 0 ? (
-        <p className="mt-4 text-xs text-slate-400">No products yet. Run a scrape from the dashboard.</p>
-      ) : null}
-
-      <ul className="mt-4 grid gap-2">
-        {items.map((p) => (
-          <li
-            key={p.id}
-            className="rounded-xl border border-white/10 bg-white/3 p-3"
+    <VStack align="stretch" gap={5}>
+      <PageHeader
+        title="Products"
+        description={`${total} scraped products in SQLite.`}
+        action={
+          <Button
+            size="sm"
+            variant="outline"
+            borderColor="border.subtle"
+            onClick={() => void refetch()}
+            loading={isLoading}
           >
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-slate-100">{p.title}</p>
-                <p className="mt-1 break-all text-xs text-slate-400">{p.source_url}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {p.source} · {p.source_product_id} · updated {new Date(p.updated_at).toLocaleString()}
-                </p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <Link
-                  to={`/products/${p.id}`}
-                  className="rounded-lg border border-violet-500/30 px-2 py-1 text-xs text-violet-300"
-                >
-                  View
-                </Link>
-                <button
-                  type="button"
-                  className="rounded-lg border border-rose-500/30 px-2 py-1 text-xs text-rose-400"
-                  onClick={() => void remove(p.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            Refresh
+          </Button>
+        }
+      />
+
+      <FadeIn>
+        <Panel>
+          <PanelBody>
+            {err ? (
+              <Text fontSize="sm" color="red.400" mb={3}>
+                {err}
+              </Text>
+            ) : null}
+            {isLoading ? (
+              <Text fontSize="sm" color="fg.muted">
+                Loading…
+              </Text>
+            ) : items.length === 0 ? (
+              <Text fontSize="sm" color="fg.muted">
+                No products yet. Run a scrape from the dashboard.
+              </Text>
+            ) : (
+              <VStack align="stretch" gap={2}>
+                {items.map((p, i) => (
+                  <MotionBox
+                    key={p.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.025 }}
+                    p={4}
+                    borderRadius="card"
+                    borderWidth="1px"
+                    borderColor="border.subtle"
+                    bg="bg.elevated"
+                  >
+                    <HStack justify="space-between" align="flex-start" gap={3}>
+                      <Box flex={1} minW={0}>
+                        <Text fontWeight="semibold">{p.title}</Text>
+                        <Text mt={1} fontSize="xs" color="fg.muted" wordBreak="break-all">
+                          {p.source_url}
+                        </Text>
+                        <Text mt={1} fontSize="xs" color="fg.subtle">
+                          {p.source} · {p.source_product_id} ·{' '}
+                          {new Date(p.updated_at).toLocaleString()}
+                        </Text>
+                      </Box>
+                      <HStack gap={2} flexShrink={0}>
+                        <Link asChild>
+                          <RouterLink to={`/products/${p.id}`}>
+                            <Button size="xs" variant="outline" colorPalette="purple">
+                              View
+                            </Button>
+                          </RouterLink>
+                        </Link>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorPalette="red"
+                          loading={deleteMutation.isPending}
+                          onClick={() => void remove(p.id)}
+                        >
+                          Delete
+                        </Button>
+                      </HStack>
+                    </HStack>
+                  </MotionBox>
+                ))}
+              </VStack>
+            )}
+          </PanelBody>
+        </Panel>
+      </FadeIn>
+    </VStack>
   )
 }

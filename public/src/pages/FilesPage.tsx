@@ -1,78 +1,105 @@
-import { useCallback, useEffect, useState } from 'react'
-import { api, formatBytes, type FileEntry } from '../lib/api'
+import { Box, Button, HStack, Link, Text, VStack } from '@chakra-ui/react'
+import { motion } from 'motion/react'
+import { FadeIn } from '../components/motion/FadeIn'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Panel, PanelBody } from '../components/ui/Panel'
+import { useDeleteFileMutation, useFilesQuery } from '../hooks'
+import { formatBytes } from '../lib/utils'
 
-const cardClass =
-  'rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl shadow-black/35'
+const MotionBox = motion.create(Box)
 
 export function FilesPage() {
-  const [items, setItems] = useState<FileEntry[]>([])
-  const [outputDir, setOutputDir] = useState('')
-  const [err, setErr] = useState('')
+  const { data, isLoading, error, refetch } = useFilesQuery()
+  const deleteMutation = useDeleteFileMutation()
 
-  const load = useCallback(async () => {
-    setErr('')
-    try {
-      const data = await api<{ items: FileEntry[]; output_dir: string }>('/files')
-      setItems(data.items)
-      setOutputDir(data.output_dir)
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const items = data?.items ?? []
+  const outputDir = data?.output_dir ?? 'data/output'
+  const err = error ? String((error as Error).message || error) : ''
 
   async function remove(path: string) {
     if (!confirm(`Delete ${path}?`)) return
-    await api(`/files/${encodeURIComponent(path)}`, { method: 'DELETE' })
-    void load()
+    await deleteMutation.mutateAsync(path)
   }
 
   return (
-    <div className={cardClass}>
-      <h2 className="text-base font-bold">Output files</h2>
-      <p className="mt-1 text-xs text-slate-400">
-        JSON and raw HTML under <code className="font-mono text-slate-300">{outputDir || 'data/output'}</code>
-      </p>
-      {err ? <p className="mt-2 text-xs text-rose-400">{err}</p> : null}
-
-      <ul className="mt-4 grid gap-2">
-        {items.map((f) => (
-          <li
-            key={f.path}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/3 p-3 text-sm"
+    <VStack align="stretch" gap={5}>
+      <PageHeader
+        title="Output files"
+        description={`JSON and HTML artifacts under ${outputDir}.`}
+        action={
+          <Button
+            size="sm"
+            variant="outline"
+            borderColor="border.subtle"
+            onClick={() => void refetch()}
+            loading={isLoading}
           >
-            <div className="min-w-0">
-              <p className="font-mono text-slate-200">{f.path}</p>
-              <p className="text-xs text-slate-500">
-                {f.kind} · {formatBytes(f.size_bytes)} · {new Date(f.modified_at).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <a
-                href={`/files/${f.path}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-violet-500/30 px-2 py-1 text-xs text-violet-300"
-              >
-                Open
-              </a>
-              <button
-                type="button"
-                className="rounded-lg border border-rose-500/30 px-2 py-1 text-xs text-rose-400"
-                onClick={() => void remove(f.path)}
-              >
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {items.length === 0 ? (
-        <p className="mt-4 text-xs text-slate-400">No output files yet.</p>
-      ) : null}
-    </div>
+            Refresh
+          </Button>
+        }
+      />
+
+      <FadeIn>
+        <Panel>
+          <PanelBody>
+            {err ? (
+              <Text fontSize="sm" color="red.400" mb={3}>
+                {err}
+              </Text>
+            ) : null}
+
+            <VStack align="stretch" gap={2}>
+              {items.map((f, i) => (
+                <MotionBox
+                  key={f.path}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  p={3}
+                  borderRadius="card"
+                  borderWidth="1px"
+                  borderColor="border.subtle"
+                  bg="bg.elevated"
+                >
+                  <HStack justify="space-between" align="flex-start" gap={3}>
+                    <Box flex={1} minW={0}>
+                      <Text fontFamily="mono" fontSize="sm">
+                        {f.path}
+                      </Text>
+                      <Text fontSize="xs" color="fg.subtle" mt={1}>
+                        {f.kind} · {formatBytes(f.size_bytes)} ·{' '}
+                        {new Date(f.modified_at).toLocaleString()}
+                      </Text>
+                    </Box>
+                    <HStack gap={2} flexShrink={0}>
+                      <Link href={`/files/${f.path}`} target="_blank" rel="noreferrer">
+                        <Button size="xs" variant="outline" colorPalette="purple">
+                          Open
+                        </Button>
+                      </Link>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        colorPalette="red"
+                        loading={deleteMutation.isPending}
+                        onClick={() => void remove(f.path)}
+                      >
+                        Delete
+                      </Button>
+                    </HStack>
+                  </HStack>
+                </MotionBox>
+              ))}
+            </VStack>
+
+            {items.length === 0 && !isLoading ? (
+              <Text fontSize="sm" color="fg.muted" mt={2}>
+                No output files yet.
+              </Text>
+            ) : null}
+          </PanelBody>
+        </Panel>
+      </FadeIn>
+    </VStack>
   )
 }

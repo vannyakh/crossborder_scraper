@@ -1,0 +1,12 @@
+export const queryKeys = {
+  health: ['health'] as const,
+  config: ['config'] as const,
+  stats: ['stats'] as const,
+  batches: (limit = 50) => ['batches', { limit }] as const,
+  batch: (id: string) => ['batches', id] as const,
+  batchStatus: (id: string) => ['jobs', id, 'status'] as const,
+  batchResult: (id: string) => ['jobs', id, 'result'] as const,
+  products: (limit = 100) => ['products', { limit }] as const,
+  product: (id: number) => ['products', id] as const,
+  files: ['files'] as const,
+}

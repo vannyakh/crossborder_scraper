@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-
 export type Config = {
   max_concurrent_jobs: number
   proxy_list_path: string | null
@@ -55,6 +53,20 @@ export type BatchReport = {
   finished_at?: string | null
 }
 
+export type BatchSummary = {
+  batch_id: string
+  status: string
+  total: number
+  completed: number
+  success: number
+  failed: number
+  workers: number | null
+  use_ai: boolean
+  save_results: boolean
+  started_at: string
+  finished_at: string | null
+}
+
 export type ProductSummary = {
   id: number
   source: string
@@ -73,33 +85,9 @@ export type FileEntry = {
   kind: string
 }
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { 'content-type': 'application/json', ...(init?.headers || {}) },
-    ...init,
-  })
-  const ct = res.headers.get('content-type') || ''
-  const data = ct.includes('application/json') ? await res.json() : await res.text()
-  if (!res.ok) {
-    const detail =
-      typeof data === 'object' && data !== null && 'detail' in data
-        ? JSON.stringify((data as { detail: unknown }).detail)
-        : JSON.stringify(data)
-    throw new Error(`HTTP ${res.status} ${res.statusText}: ${detail}`)
-  }
-  return data as T
-}
-
-export function useInterval(cb: () => void, delayMs: number | null) {
-  useEffect(() => {
-    if (delayMs == null) return
-    const id = window.setInterval(cb, delayMs)
-    return () => window.clearInterval(id)
-  }, [cb, delayMs])
-}
-
-export function formatBytes(n: number) {
-  if (n < 1024) return `${n} B`
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`
+export type SubmitJobsPayload = {
+  urls: string[]
+  workers: number | null
+  use_ai: boolean
+  save: boolean
 }

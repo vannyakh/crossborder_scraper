@@ -1,129 +1,162 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { api, type BatchReport } from '../lib/api'
+import { Box, Button, Grid, HStack, Link, Text, VStack } from '@chakra-ui/react'
+import { motion } from 'motion/react'
+import { Link as RouterLink } from 'react-router-dom'
+import { FadeIn } from '../components/motion/FadeIn'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel'
+import { StatusBadge } from '../components/ui/StatusBadge'
+import {
+  useBatchesQuery,
+  useCancelBatchMutation,
+  useSelectedBatchQuery,
+} from '../hooks'
+import { useUiStore } from '../stores/ui-store'
 
-const cardClass =
-  'rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl shadow-black/35'
+const MotionBox = motion.create(Box)
 
-type BatchSummary = {
-  batch_id: string
-  status: string
-  total: number
-  completed: number
-  success: number
-  failed: number
-  started_at: string
-  finished_at: string | null
+function statusTone(s: string): 'running' | 'success' | 'neutral' | 'danger' {
+  if (s === 'running') return 'running'
+  if (s === 'completed') return 'success'
+  if (s === 'cancelled') return 'neutral'
+  return 'danger'
 }
 
 export function BatchesPage() {
-  const [items, setItems] = useState<BatchSummary[]>([])
-  const [selected, setSelected] = useState<BatchReport | null>(null)
-  const [err, setErr] = useState('')
+  const { data, isLoading, error, refetch } = useBatchesQuery()
+  const selectedBatchId = useUiStore((s) => s.selectedBatchId)
+  const setSelectedBatchId = useUiStore((s) => s.setSelectedBatchId)
+  const { data: selected } = useSelectedBatchQuery()
+  const cancelMutation = useCancelBatchMutation()
 
-  const load = useCallback(async () => {
-    setErr('')
-    try {
-      const data = await api<{ items: BatchSummary[] }>('/batches?limit=50')
-      setItems(data.items)
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-    const id = window.setInterval(() => void load(), 3000)
-    return () => window.clearInterval(id)
-  }, [load])
-
-  async function openBatch(batchId: string) {
-    try {
-      const detail = await api<BatchReport>(`/batches/${batchId}`)
-      setSelected(detail)
-    } catch (e) {
-      setErr(String((e as Error).message || e))
-    }
-  }
-
-  async function cancel(batchId: string) {
-    await api(`/jobs/${batchId}/cancel`, { method: 'POST' })
-    void load()
-  }
-
-  const statusColor = (s: string) =>
-    s === 'running'
-      ? 'text-amber-400'
-      : s === 'completed'
-        ? 'text-emerald-400'
-        : s === 'cancelled'
-          ? 'text-slate-400'
-          : 'text-rose-400'
+  const items = data?.items ?? []
+  const err = error ? String((error as Error).message || error) : ''
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
-      <section className={`${cardClass} min-w-0 flex-1`}>
-        <h2 className="text-base font-bold">Batch history</h2>
-        <p className="mt-1 text-xs text-slate-400">All scrape runs persisted by the server</p>
-        {err ? <p className="mt-2 text-xs text-rose-400">{err}</p> : null}
+    <VStack align="stretch" gap={5}>
+      <PageHeader
+        title="Batches"
+        description="Server-persisted scrape runs and per-job outcomes."
+        action={
+          <Button
+            variant="outline"
+            borderColor="border.subtle"
+            size="sm"
+            loading={isLoading}
+            onClick={() => void refetch()}
+          >
+            Refresh
+          </Button>
+        }
+      />
 
-        <ul className="mt-4 grid gap-2">
-          {items.map((b) => (
-            <li
-              key={b.batch_id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/3 p-3"
-            >
-              <button
-                type="button"
-                className="text-left"
-                onClick={() => void openBatch(b.batch_id)}
-              >
-                <span className="font-mono text-sm">{b.batch_id}</span>
-                <span className={`ml-2 text-xs ${statusColor(b.status)}`}>{b.status}</span>
-                <p className="mt-1 text-xs text-slate-400">
-                  {b.success}/{b.total} ok · {new Date(b.started_at).toLocaleString()}
-                </p>
-              </button>
-              {b.status === 'running' ? (
-                <button
-                  type="button"
-                  className="rounded-lg border border-rose-500/30 px-2 py-1 text-xs text-rose-400"
-                  onClick={() => void cancel(b.batch_id)}
-                >
-                  Cancel
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-        {items.length === 0 ? (
-          <p className="mt-4 text-xs text-slate-400">No batches yet.</p>
-        ) : null}
-      </section>
-
-      {selected ? (
-        <section className={`${cardClass} min-w-0 flex-1`}>
-          <h2 className="text-base font-bold">Batch {selected.batch_id}</h2>
-          <p className="mt-1 text-xs text-slate-400">
-            <Link to="/" className="text-violet-300">
-              Submit more jobs
-            </Link>
-          </p>
-          <ul className="mt-4 max-h-[60vh] grid gap-2 overflow-auto">
-            {(selected.results || []).map((r) => (
-              <li key={r.job_id} className="rounded-lg border border-white/10 p-2 text-xs">
-                <span className={r.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}>
-                  {r.status}
-                </span>{' '}
-                <span className="break-all text-slate-300">{r.url}</span>
-                {r.product?.title ? (
-                  <p className="mt-1 text-slate-400">{r.product.title}</p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {err ? (
+        <Text fontSize="sm" color="red.400">
+          {err}
+        </Text>
       ) : null}
-    </div>
+
+      <Grid templateColumns={{ base: '1fr', lg: selectedBatchId ? '1fr 1fr' : '1fr' }} gap={4}>
+        <FadeIn>
+          <Panel>
+            <PanelHeader title="History" description="Click a batch to inspect results." />
+            <PanelBody>
+              <VStack align="stretch" gap={2}>
+                {items.map((b, i) => (
+                  <MotionBox
+                    key={b.batch_id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    p={3}
+                    borderRadius="card"
+                    borderWidth="1px"
+                    borderColor={selectedBatchId === b.batch_id ? 'brand.emphasis' : 'border.subtle'}
+                    bg="bg.elevated"
+                  >
+                    <HStack justify="space-between" align="flex-start" gap={2}>
+                      <Box
+                        as="button"
+                        textAlign="left"
+                        flex={1}
+                        onClick={() => setSelectedBatchId(b.batch_id)}
+                        cursor="pointer"
+                      >
+                        <HStack gap={2}>
+                          <Text fontFamily="mono" fontSize="sm">
+                            {b.batch_id}
+                          </Text>
+                          <StatusBadge status={statusTone(b.status)} label={b.status} />
+                        </HStack>
+                        <Text mt={1} fontSize="xs" color="fg.muted">
+                          {b.success}/{b.total} ok · {new Date(b.started_at).toLocaleString()}
+                        </Text>
+                      </Box>
+                      {b.status === 'running' ? (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorPalette="red"
+                          loading={cancelMutation.isPending}
+                          onClick={() => void cancelMutation.mutateAsync(b.batch_id)}
+                        >
+                          Cancel
+                        </Button>
+                      ) : null}
+                    </HStack>
+                  </MotionBox>
+                ))}
+                {items.length === 0 && !isLoading ? (
+                  <Text fontSize="sm" color="fg.muted">
+                    No batches yet.
+                  </Text>
+                ) : null}
+              </VStack>
+            </PanelBody>
+          </Panel>
+        </FadeIn>
+
+        {selectedBatchId && selected ? (
+          <FadeIn delay={0.08}>
+            <Panel>
+              <PanelHeader
+                title={`Batch ${selected.batch_id}`}
+                action={
+                  <Link asChild fontSize="sm" color="brand.emphasis">
+                    <RouterLink to="/">Submit jobs →</RouterLink>
+                  </Link>
+                }
+              />
+              <PanelBody maxH="65vh" overflowY="auto">
+                <VStack align="stretch" gap={2}>
+                  {(selected.results || []).map((r) => (
+                    <Box
+                      key={r.job_id}
+                      p={2}
+                      borderRadius="input"
+                      borderWidth="1px"
+                      borderColor="border.subtle"
+                      fontSize="xs"
+                    >
+                      <StatusBadge
+                        status={r.status === 'success' ? 'success' : 'danger'}
+                        label={r.status}
+                      />
+                      <Text mt={1} wordBreak="break-all" color="fg.muted">
+                        {r.url}
+                      </Text>
+                      {r.product?.title ? (
+                        <Text mt={1} color="fg.subtle">
+                          {r.product.title}
+                        </Text>
+                      ) : null}
+                    </Box>
+                  ))}
+                </VStack>
+              </PanelBody>
+            </Panel>
+          </FadeIn>
+        ) : null}
+      </Grid>
+    </VStack>
   )
 }

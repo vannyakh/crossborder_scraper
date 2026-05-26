@@ -1,26 +1,38 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { RootLayout } from '../layouts/RootLayout'
+import { AppShell } from '../components/layout/AppShell'
 import { BatchesPage } from '../pages/BatchesPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { FilesPage } from '../pages/FilesPage'
+import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
 import { ProductsPage } from '../pages/ProductsPage'
+import { AuthGuard } from './guards/AuthGuard'
+import { GuestGuard } from './guards/GuestGuard'
 
 const router = createBrowserRouter(
   [
     {
-      path: '/',
-      element: <RootLayout />,
+      element: <GuestGuard />,
+      children: [{ path: '/login', element: <LoginPage /> }],
+    },
+    {
+      element: <AuthGuard />,
       children: [
-        { index: true, element: <DashboardPage /> },
-        { path: 'batches', element: <BatchesPage /> },
-        { path: 'products', element: <ProductsPage /> },
-        { path: 'products/:id', element: <ProductDetailPage /> },
-        { path: 'files', element: <FilesPage /> },
-        { path: '*', element: <NotFoundPage /> },
+        {
+          path: '/',
+          element: <AppShell />,
+          children: [
+            { index: true, element: <DashboardPage /> },
+            { path: 'batches', element: <BatchesPage /> },
+            { path: 'products', element: <ProductsPage /> },
+            { path: 'products/:id', element: <ProductDetailPage /> },
+            { path: 'files', element: <FilesPage /> },
+          ],
+        },
       ],
     },
+    { path: '*', element: <NotFoundPage /> },
   ],
   { basename: '/ui' },
 )
