@@ -1,7 +1,9 @@
 from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
 
 from core.engine.jobs import BatchReport
 from server.deps import protected_router
+from server.events import batch_events, sse_frame
 from server.manager import get_manager
 from server.schemas import (
     MessageResponse,
@@ -60,6 +62,42 @@ async def batch_status(batch_id: str) -> StatusResponse:
     if not st:
         raise HTTPException(status_code=404, detail="batch not found")
     return StatusResponse(**st)
+
+
+@router.get("/{batch_id}/stream")
+async def batch_stream(batch_id: str) -> StreamingResponse:
+    mgr = get_manager()
+    st = mgr.get_batch_status(batch_id)
+    if not st:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    async def event_generator():
+        queue = batch_events.subscribe(batch_id)
+        yield sse_frame("status", st)
+        try:
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=20.0)
+                except TimeoutError:
+                    yield sse_frame("heartbeat", {"batch_id": batch_id})
+                    continue
+                if event is None:
+                    break
+                yield sse_frame(event.type, event.data)
+                if event.type in ("batch_complete", "batch_cancelled", "batch_failed"):
+                    break
+        finally:
+            batch_events.unsubscribe(batch_id, queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/{batch_id}/result")

@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from config.credentials import ensure_panel_credentials, print_panel_credentials
-from server.routers import auth, batches, files, jobs, products, system
+from server.routers import ai, auth, batches, files, jobs, products, runtime, system
 from server.spa_static import SPAStaticFiles
 
 
@@ -28,6 +28,8 @@ _ui_dist = _repo_root / "public" / "dist"
 
 app.include_router(auth.router)
 app.include_router(system.router)
+app.include_router(ai.router)
+app.include_router(runtime.router)
 app.include_router(jobs.router)
 app.include_router(batches.router)
 app.include_router(products.router)

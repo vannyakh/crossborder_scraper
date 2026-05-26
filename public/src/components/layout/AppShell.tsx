@@ -27,7 +27,7 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   return (
     <ShellHeaderRow justify={collapsed ? 'center' : 'flex-start'} bg="bg.sidebar">
       <ShellLogoMark collapsed={collapsed} label="Crossborder" />
-      <ShellBrandText collapsed={collapsed} title="Crossborder" subtitle="Scraper" />
+      <ShellBrandText collapsed={collapsed} title="Crossborder" />
     </ShellHeaderRow>
   )
 }

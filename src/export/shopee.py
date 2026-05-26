@@ -43,7 +43,7 @@ class ShopeeExporter(BaseExporter):
 
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
-            raise ValueError("Shopee API credentials missing. Set SHOPEE_* in .env")
+            raise ValueError("Shopee API credentials missing. Configure Shopee in Settings → Marketplaces.")
 
         path = "/api/v2/product/add_item"
         timestamp = int(time.time())

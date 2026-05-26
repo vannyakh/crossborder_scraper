@@ -11,6 +11,38 @@ from loguru import logger
 _ENV_KEYS = ("PANEL_USERNAME", "PANEL_PASSWORD", "PANEL_AUTH_ENABLED")
 
 
+def clean_env_file(env_path: Path | None = None) -> list[str]:
+    """
+    Remove UI-preference keys from .env (they belong in config/ui_config.json).
+
+    Returns env var names that were removed.
+    """
+    from config.ui_store import ENV_UI_VAR_NAMES
+
+    env_path = env_path or _repo_env_path()
+    if not env_path.exists():
+        return []
+
+    removed: list[str] = []
+    kept: list[str] = []
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#") or "=" not in raw:
+            kept.append(raw)
+            continue
+        key = raw.split("=", 1)[0].strip()
+        if key in ENV_UI_VAR_NAMES:
+            removed.append(key)
+            continue
+        kept.append(raw)
+
+    while kept and not kept[-1].strip():
+        kept.pop()
+
+    env_path.write_text("\n".join(kept).rstrip() + "\n", encoding="utf-8")
+    return removed
+
+
 def _repo_env_path() -> Path:
     return Path(__file__).resolve().parents[2] / ".env"
 
@@ -97,8 +129,20 @@ def ensure_panel_credentials(
         },
     )
 
+    _migrate_ui_prefs(env_path)
+
     logger.info("Generated panel credentials → {}", env_path)
     return username, password, True
+
+
+def _migrate_ui_prefs(env_path: Path) -> None:
+    """Move UI preference keys from .env into config/ui_config.json, then strip them."""
+    from config.ui_store import load_ui_config
+
+    load_ui_config()
+    removed = clean_env_file(env_path)
+    if removed:
+        logger.info("Moved UI prefs to config/ui_config.json; removed from .env: {}", ", ".join(removed))
 
 
 def print_panel_credentials(username: str, password: str, *, env_path: Path | None = None) -> None:

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 const DEFAULT_URLS = `https://detail.1688.com/offer/XXXXXXXX.html
 https://www.aliexpress.com/item/YYYYYYYY.html`
@@ -18,23 +19,31 @@ type ScrapeState = {
   resetForm: () => void
 }
 
-export const useScrapeStore = create<ScrapeState>((set) => ({
-  urlsText: DEFAULT_URLS,
-  workers: 3,
-  useAi: false,
-  save: true,
-  activeBatchId: '',
-  setUrlsText: (urlsText) => set({ urlsText }),
-  setWorkers: (workers) => set({ workers }),
-  setUseAi: (useAi) => set({ useAi }),
-  setSave: (save) => set({ save }),
-  setActiveBatchId: (activeBatchId) => set({ activeBatchId }),
-  clearActiveBatch: () => set({ activeBatchId: '' }),
-  resetForm: () =>
-    set({
+export const useScrapeStore = create<ScrapeState>()(
+  persist(
+    (set) => ({
       urlsText: DEFAULT_URLS,
       workers: 3,
       useAi: false,
       save: true,
+      activeBatchId: '',
+      setUrlsText: (urlsText) => set({ urlsText }),
+      setWorkers: (workers) => set({ workers }),
+      setUseAi: (useAi) => set({ useAi }),
+      setSave: (save) => set({ save }),
+      setActiveBatchId: (activeBatchId) => set({ activeBatchId }),
+      clearActiveBatch: () => set({ activeBatchId: '' }),
+      resetForm: () =>
+        set({
+          urlsText: DEFAULT_URLS,
+          workers: 3,
+          useAi: false,
+          save: true,
+        }),
     }),
-}))
+    {
+      name: 'crossborder-scrape',
+      partialize: (state) => ({ activeBatchId: state.activeBatchId }),
+    },
+  ),
+)

@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   Checkbox,
   Field,
@@ -12,6 +11,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Toolbar } from '../components/layout/Toolbar'
+import { BatchJobList } from '../components/batches/BatchJobList'
 import { Stagger, StaggerItem } from '../components/motion/Stagger'
 import { fieldStyles } from '../components/ui/field-styles'
 import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel'
@@ -37,6 +37,8 @@ export function DashboardPage() {
     status,
     result,
     isRunning,
+    isConnected,
+    liveResults,
     submit,
     clear,
     isSubmitting,
@@ -160,7 +162,7 @@ export function DashboardPage() {
             </SimpleGrid>
             {isRunning ? (
               <Text mt={2} fontSize="xs" color="brand.emphasis">
-                Running…
+                {isConnected ? 'Live stream connected…' : 'Connecting to live stream…'}
               </Text>
             ) : null}
           </PanelBody>
@@ -168,32 +170,15 @@ export function DashboardPage() {
         </StaggerItem>
       </Grid>
 
-      {result ? (
+      {(result || liveResults.length > 0) ? (
         <StaggerItem>
         <Panel mt={4}>
-          <PanelHeader title="Results" description={`${result.results.length} jobs`} />
+          <PanelHeader
+            title="Results"
+            description={`${(result?.results ?? liveResults).length} jobs`}
+          />
           <PanelBody p={0}>
-            <Box maxH="320px" overflowY="auto">
-              {result.results.map((r) => (
-                <HStack
-                  key={r.job_id}
-                  px={4}
-                  py={2}
-                  borderBottomWidth="1px"
-                  borderColor="border.subtle"
-                  fontSize="sm"
-                  _last={{ borderBottomWidth: 0 }}
-                >
-                  <StatusBadge status={r.status === 'success' ? 'success' : 'danger'} label={r.status} />
-                  <Text flex={1} truncate title={r.url}>
-                    {r.url}
-                  </Text>
-                  <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-                    {r.duration_seconds ?? 0}s
-                  </Text>
-                </HStack>
-              ))}
-            </Box>
+            <BatchJobList results={result?.results ?? liveResults} />
           </PanelBody>
         </Panel>
         </StaggerItem>

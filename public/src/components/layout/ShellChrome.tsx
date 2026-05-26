@@ -1,5 +1,8 @@
 import { Box, HStack, type BoxProps, type StackProps } from '@chakra-ui/react'
 import { SHELL_HEADER_HEIGHT } from './constants'
+import { ShellLogoMark } from './ShellLogoMark'
+
+export { ShellLogoMark }
 
 /** Top chrome row — shared height/styles for sidebar brand + main navbar */
 export function ShellHeaderRow({ children, ...props }: StackProps) {
@@ -47,63 +50,26 @@ export function ShellFooter({ children, ...props }: BoxProps) {
   )
 }
 
-export function ShellLogoMark({ collapsed, label }: { collapsed: boolean; label: string }) {
-  return (
-    <HStack
-      gap={2}
-      minW={0}
-      justify={collapsed ? 'center' : 'flex-start'}
-      w={collapsed ? 'full' : 'auto'}
-    >
-      <Box
-        w={8}
-        h={8}
-        flexShrink={0}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        borderRadius="var(--radius-input)"
-        bg="var(--nav-active-bg)"
-        color="var(--app-accent)"
-        fontWeight="bold"
-        fontSize="sm"
-        lineHeight={1}
-      >
-        {label.charAt(0)}
-      </Box>
-    </HStack>
-  )
-}
 
-export function ShellBrandText({
-  collapsed,
-  title,
-  subtitle,
-}: {
-  collapsed: boolean
-  title: string
-  subtitle?: string
-}) {
+export function ShellBrandText({ collapsed, title }: { collapsed: boolean; title: string }) {
   if (collapsed) return null
 
   return (
-    <Box minW={0} flex={1}>
-      <Box
-        as="span"
-        display="block"
-        fontWeight="bold"
-        fontSize="sm"
-        lineHeight="1.2"
-        color="brand.emphasis"
-        truncate
-      >
-        {title}
-      </Box>
-      {subtitle ? (
-        <Box as="span" display="block" fontSize="xs" color="fg.muted" lineHeight="1.2" truncate>
-          {subtitle}
-        </Box>
-      ) : null}
+    <Box
+      as="span"
+      minW={0}
+      flex={1}
+      display="block"
+      fontFamily="heading"
+      fontWeight="semibold"
+      fontSize="md"
+      lineHeight="0.95"
+      letterSpacing="-5%"
+      textTransform="uppercase"
+      color="fg"
+      truncate
+    >
+      {title}
     </Box>
   )
 }

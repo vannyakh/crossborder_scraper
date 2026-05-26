@@ -18,6 +18,9 @@ export default defineConfig({
       '/batches': 'http://127.0.0.1:8000',
       '/products': 'http://127.0.0.1:8000',
       '/files': 'http://127.0.0.1:8000',
+      '/ai': 'http://127.0.0.1:8000',
+      '/runtime': 'http://127.0.0.1:8000',
+      '/export': 'http://127.0.0.1:8000',
     },
   },
   preview: {
@@ -32,6 +35,9 @@ export default defineConfig({
       '/batches': 'http://127.0.0.1:8000',
       '/products': 'http://127.0.0.1:8000',
       '/files': 'http://127.0.0.1:8000',
+      '/ai': 'http://127.0.0.1:8000',
+      '/runtime': 'http://127.0.0.1:8000',
+      '/export': 'http://127.0.0.1:8000',
     },
   },
 })

@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     ai_model: str = "gpt-4o-mini"
     ai_max_html_chars: int = 24_000
     ai_timeout_seconds: float = 90.0
+    ai_agent_enabled: bool = False  # validate + enrich listing copy after extraction
+
+    # UI preference (overridden by config/ui_config.json when set)
+    scrape_default_workers: int | None = None
 
     # Pricing (resell margin)
     price_markup_percent: float = 35.0
@@ -84,6 +88,10 @@ class Settings(BaseSettings):
 
 
 def get_settings() -> Settings:
+    from config.ui_store import apply_ui_config, ensure_ui_config_file
+
+    ensure_ui_config_file()
     settings = Settings()
+    settings = apply_ui_config(settings)
     settings.ensure_dirs()
     return settings

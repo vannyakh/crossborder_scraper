@@ -7,6 +7,7 @@ import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
 import { ProductsPage } from '../pages/ProductsPage'
+import { SettingsPage } from '../pages/SettingsPage'
 import { AuthGuard } from './guards/AuthGuard'
 import { GuestGuard } from './guards/GuestGuard'
 
@@ -28,6 +29,7 @@ const router = createBrowserRouter(
             { path: 'products', element: <ProductsPage /> },
             { path: 'products/:id', element: <ProductDetailPage /> },
             { path: 'files', element: <FilesPage /> },
+            { path: 'settings', element: <SettingsPage /> },
           ],
         },
       ],

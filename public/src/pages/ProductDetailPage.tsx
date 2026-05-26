@@ -1,5 +1,6 @@
 import { Box, Code, Link, Text } from '@chakra-ui/react'
 import { Link as RouterLink, useParams } from 'react-router-dom'
+import { ExportProductPanel } from '../components/products/ExportProductPanel'
 import { Toolbar } from '../components/layout/Toolbar'
 import { Panel, PanelBody } from '../components/ui/Panel'
 import { useProductQuery } from '../hooks'
@@ -49,6 +50,13 @@ export function ProductDetailPage() {
           )}
         </PanelBody>
       </Panel>
+
+      {product && productId ? (
+        <ExportProductPanel
+          productId={productId}
+          productTitle={typeof product.title === 'string' ? product.title : undefined}
+        />
+      ) : null}
     </>
   )
 }

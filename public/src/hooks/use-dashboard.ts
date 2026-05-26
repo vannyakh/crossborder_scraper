@@ -26,11 +26,13 @@ export function useDashboard() {
   const urls = parseUrls(urlsText)
 
   useEffect(() => {
-    if (configQuery.data?.max_concurrent_jobs && !workersInitialized.current) {
-      setWorkers(configQuery.data.max_concurrent_jobs)
+    const workersDefault =
+      configQuery.data?.scrape_default_workers ?? configQuery.data?.max_concurrent_jobs
+    if (workersDefault && !workersInitialized.current) {
+      setWorkers(workersDefault)
       workersInitialized.current = true
     }
-  }, [configQuery.data?.max_concurrent_jobs, setWorkers])
+  }, [configQuery.data?.scrape_default_workers, configQuery.data?.max_concurrent_jobs, setWorkers])
 
   const submit = () =>
     submitMutation.mutateAsync({
@@ -68,6 +70,8 @@ export function useDashboard() {
     status: activeBatch.status,
     result: activeBatch.result,
     isRunning: activeBatch.isRunning,
+    isConnected: activeBatch.isConnected,
+    liveResults: activeBatch.liveResults,
     submit,
     clear,
     isSubmitting: submitMutation.isPending,

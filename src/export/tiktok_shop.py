@@ -30,7 +30,7 @@ class TikTokShopExporter(BaseExporter):
 
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
-            raise ValueError("TikTok Shop API credentials missing. Set TIKTOK_* in .env")
+            raise ValueError("TikTok Shop API credentials missing. Configure TikTok Shop in Settings → Marketplaces.")
 
         payload = {
             "title": listing.title,

@@ -1,0 +1,61 @@
+{
+  "_doc": "Panel config — edit in web UI. Only PANEL_* stays in .env.",
+  "ai_agent_enabled": false,
+  "ai_api_key": "",
+  "ai_base_url": "https://api.openai.com/v1",
+  "ai_enabled": false,
+  "ai_fallback": true,
+  "ai_max_html_chars": 24000,
+  "ai_model": "gpt-4o-mini",
+  "ai_timeout_seconds": 90,
+  "browser_timeout_ms": 60000,
+  "default_currency": "USD",
+  "headless": true,
+  "marketplaces": {
+    "lazada": {
+      "credentials": {
+        "access_token": "",
+        "app_key": "",
+        "app_secret": ""
+      },
+      "enabled": false,
+      "label": "Lazada"
+    },
+    "shopee": {
+      "credentials": {
+        "access_token": "",
+        "partner_id": "",
+        "partner_key": "",
+        "shop_id": ""
+      },
+      "enabled": false,
+      "label": "Shopee"
+    },
+    "shopify": {
+      "credentials": {
+        "access_token": "",
+        "api_version": "2025-01",
+        "shop_domain": ""
+      },
+      "enabled": false,
+      "label": "Shopify"
+    },
+    "tiktok_shop": {
+      "credentials": {
+        "access_token": "",
+        "app_key": "",
+        "app_secret": "",
+        "shop_cipher": ""
+      },
+      "enabled": false,
+      "label": "TikTok Shop"
+    }
+  },
+  "max_concurrent_jobs": 3,
+  "price_markup_percent": 35,
+  "proxy_list_path": "config/proxies.txt",
+  "proxy_rotation_strategy": "round_robin",
+  "proxy_server": "",
+  "request_delay_seconds": 2,
+  "scrape_default_workers": 3
+}

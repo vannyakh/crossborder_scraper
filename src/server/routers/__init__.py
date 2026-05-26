@@ -1,3 +1,3 @@
-from server.routers import batches, files, jobs, products, system
+from server.routers import ai, batches, files, jobs, products, runtime, system
 
-__all__ = ["batches", "files", "jobs", "products", "system"]
+__all__ = ["ai", "batches", "files", "jobs", "products", "runtime", "system"]

@@ -34,8 +34,9 @@ uv run playwright install chromium
 
 ```bash
 cp .env.example .env
+cp config/ui_config.example.json config/ui_config.json
 scraper setup          # auto-generates PANEL_USERNAME + PANEL_PASSWORD in .env
-# Edit markup %, API keys for marketplaces you use
+# Configure AI, engine, and marketplace keys in the web UI (Settings) or ui_config.json
 ```
 
 Panel login credentials are printed once and saved to `.env` as `PANEL_USERNAME` / `PANEL_PASSWORD`.
@@ -64,7 +65,7 @@ Output: SQLite (`data/products.db`) + JSON (`data/output/`).
 # Preview listing (no API)
 python main.py export "https://..." shopify --scrape --dry-run
 
-# Publish (needs credentials in .env)
+# Publish (configure marketplaces in Settings → ui_config.json)
 python main.py export "https://..." shopify --scrape
 python main.py export "https://..." shopee --scrape
 ```

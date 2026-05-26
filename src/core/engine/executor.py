@@ -6,7 +6,7 @@ from typing import Any
 from loguru import logger
 
 from config import Settings
-from core.ai import AIExtractor
+from core.ai import AIExtractor, ScrapeAgent
 from core.cookies import CookieManager
 from core.engine.jobs import BatchReport, JobResult, JobStatus, ScrapeJob
 from core.engine.pool import BrowserPool
@@ -45,6 +45,7 @@ class ScrapeEngine:
             pool_size=self.max_workers,
         )
         self.ai = AIExtractor(self.settings)
+        self.agent = ScrapeAgent(self.settings)
         self._semaphore = asyncio.Semaphore(self.max_workers)
         self._queue: asyncio.Queue[ScrapeJob | None] = asyncio.Queue()
         self._on_job_complete = on_job_complete
@@ -98,6 +99,11 @@ class ScrapeEngine:
                             scraper.platform,
                             scraper.extract_product_id(job.url) or "unknown",
                         )
+                        ai_used = True
+
+                    if self.agent.enabled and (ai_used or use_ai):
+                        logger.info("[{}] AI agent validate/enrich for {}", job.id, job.url)
+                        product = await self.agent.validate_and_enrich(product)
                         ai_used = True
 
                     if self.settings.output_dir:

@@ -221,6 +221,22 @@ def build_app() -> typer.Typer:
         else:
             console.print("[green]Credentials written to .env[/green]")
 
+    @app.command("env-clean")
+    def env_clean() -> None:
+        """Move UI prefs to config/ui_config.json and remove them from .env."""
+        from config.credentials import clean_env_file
+        from config.ui_store import UI_CONFIG_PATH, load_ui_config
+
+        load_ui_config()
+        removed = clean_env_file()
+        if removed:
+            console.print(
+                f"[green]Removed {len(removed)} UI key(s) from .env[/green]: {', '.join(removed)}"
+            )
+            console.print(f"[dim]Preferences stored in {UI_CONFIG_PATH}[/dim]")
+        else:
+            console.print("[yellow].env already clean — no UI preference keys found[/yellow]")
+
     @app.command("engine")
     def engine_info() -> None:
         """Show scrape engine configuration (workers, proxies, cookies, AI)."""

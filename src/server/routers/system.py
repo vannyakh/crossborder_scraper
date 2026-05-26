@@ -1,11 +1,11 @@
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from config import get_settings
 from server.deps import protected_router
 from server.manager import get_manager
-from server.schemas import StatsResponse
+from server.schemas import PanelConfigResponse, PanelConfigUpdate, StatsResponse
 
 public_router = APIRouter(tags=["system"])
 protected = protected_router(tags=["system"])
@@ -24,6 +24,19 @@ async def health() -> dict[str, Any]:
 @protected.get("/config")
 async def config() -> dict[str, Any]:
     return get_manager().get_config()
+
+
+@protected.get("/config/panel", response_model=PanelConfigResponse)
+async def get_panel_config() -> PanelConfigResponse:
+    return PanelConfigResponse(**get_manager().get_panel_config())
+
+
+@protected.patch("/config/panel", response_model=PanelConfigResponse)
+async def patch_panel_config(body: PanelConfigUpdate) -> PanelConfigResponse:
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="no fields to update")
+    return PanelConfigResponse(**get_manager().update_panel_config(updates))
 
 
 @protected.get("/stats", response_model=StatsResponse)
