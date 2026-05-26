@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 
 from core.engine.jobs import BatchReport
+from server.deps import protected_router
 from server.manager import get_manager
 from server.schemas import (
     MessageResponse,
@@ -11,7 +12,7 @@ from server.schemas import (
     SubmitResponse,
 )
 
-router = APIRouter(prefix="/jobs", tags=["jobs"])
+router = protected_router(prefix="/jobs", tags=["jobs"])
 
 
 @router.post("/submit", response_model=SubmitResponse)

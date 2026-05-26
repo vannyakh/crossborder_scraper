@@ -15,6 +15,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Panel UI access (HTTP Basic — auto-generated on `scraper setup`)
+    panel_auth_enabled: bool = True
+    panel_username: str | None = None
+    panel_password: str | None = None
+
     # Paths
     data_dir: Path = Field(default=Path("data"))
     cookies_dir: Path = Field(default=Path("data/cookies"))

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 
+from server.deps import protected_router
 from server.manager import get_manager
 from server.schemas import BatchDetailResponse, BatchListResponse, BatchSummary
 
-router = APIRouter(prefix="/batches", tags=["batches"])
+router = protected_router(prefix="/batches", tags=["batches"])
 
 
 @router.get("", response_model=BatchListResponse)

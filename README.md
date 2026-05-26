@@ -34,8 +34,11 @@ uv run playwright install chromium
 
 ```bash
 cp .env.example .env
+scraper setup          # auto-generates PANEL_USERNAME + PANEL_PASSWORD in .env
 # Edit markup %, API keys for marketplaces you use
 ```
+
+Panel login credentials are printed once and saved to `.env` as `PANEL_USERNAME` / `PANEL_PASSWORD`.
 
 ### 3. Login (1688 / Taobao need this)
 

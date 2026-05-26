@@ -203,6 +203,24 @@ def build_app() -> typer.Typer:
 
         _run(_async())
 
+    @app.command()
+    def setup(
+        regenerate: bool = typer.Option(
+            False,
+            "--regenerate",
+            help="Generate new panel username/password even if .env already has them",
+        ),
+    ) -> None:
+        """Initialize .env with auto-generated panel login credentials."""
+        from config.credentials import ensure_panel_credentials, print_panel_credentials
+
+        username, password, generated = ensure_panel_credentials(force_regenerate=regenerate)
+        print_panel_credentials(username, password)
+        if not generated and not regenerate:
+            console.print("[yellow]Panel credentials already in .env[/yellow]")
+        else:
+            console.print("[green]Credentials written to .env[/green]")
+
     @app.command("engine")
     def engine_info() -> None:
         """Show scrape engine configuration (workers, proxies, cookies, AI)."""

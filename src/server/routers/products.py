@@ -1,7 +1,8 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 
+from server.deps import protected_router
 from server.manager import get_manager
 from server.schemas import (
     ExportRequest,
@@ -10,7 +11,7 @@ from server.schemas import (
     ProductSummary,
 )
 
-router = APIRouter(prefix="/products", tags=["products"])
+router = protected_router(prefix="/products", tags=["products"])
 
 
 @router.get("", response_model=ProductListResponse)

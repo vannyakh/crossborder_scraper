@@ -13,3 +13,12 @@ export function useHealthQuery() {
     retry: 1,
   })
 }
+
+export function usePublicHealthQuery() {
+  return useQuery({
+    queryKey: [...queryKeys.health, 'public'],
+    queryFn: checkHealth,
+    refetchInterval: 15_000,
+    retry: 1,
+  })
+}

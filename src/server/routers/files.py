@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
+from server.deps import protected_router
 from server.manager import get_manager
 from server.schemas import FileEntry, FileListResponse
 
-router = APIRouter(prefix="/files", tags=["files"])
+router = protected_router(prefix="/files", tags=["files"])
 
 
 @router.get("", response_model=FileListResponse)

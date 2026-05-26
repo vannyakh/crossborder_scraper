@@ -48,7 +48,7 @@ function NavItem({ to, label, end }: { to: string; label: string; end?: boolean 
 
 export function AppShell() {
   const { data: stats } = useStatsQuery()
-  const { operatorName, logout } = useAuth()
+  const { username, logout } = useAuth()
 
   return (
     <Flex minH="100dvh" className="app-mesh" direction={{ base: 'column', lg: 'row' }}>
@@ -73,7 +73,7 @@ export function AppShell() {
           </HStack>
 
           <Text fontSize="xs" color="fg.muted">
-            Signed in as <strong>{operatorName}</strong>
+            Signed in as <strong>{username ?? 'operator'}</strong>
           </Text>
 
           {stats ? (

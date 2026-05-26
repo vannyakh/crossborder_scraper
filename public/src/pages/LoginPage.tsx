@@ -6,21 +6,22 @@ import { FadeIn } from '../components/motion/FadeIn'
 import { fieldStyles } from '../components/ui/field-styles'
 import { Panel, PanelBody } from '../components/ui/Panel'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
-import { useAuth } from '../hooks/use-auth'
+import { useAuth, useAuthStatusQuery } from '../hooks'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { connect, isConnecting, connectError } = useAuth()
-  const [name, setName] = useState('Operator')
-  const [token, setToken] = useState('')
+  const { data: authStatus } = useAuthStatusQuery()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
   const apiOffline = Boolean((location.state as { apiOffline?: boolean } | null)?.apiOffline)
 
   async function handleConnect() {
     try {
-      await connect({ name, token: token || undefined })
+      await connect({ username, password })
       void navigate(from, { replace: true })
     } catch {
       // error surfaced via connectError
@@ -42,15 +43,42 @@ export function LoginPage() {
           <Panel>
             <PanelBody>
               <Text fontFamily="heading" fontSize="xl" fontWeight="extrabold" className="brand-gradient-text">
-                Connect to scraper API
+                Panel sign in
               </Text>
               <Text mt={2} fontSize="sm" color="fg.muted">
-                Access is gated until the API at port 8000 responds to{' '}
+                Use the username and password from your{' '}
                 <Box as="code" fontFamily="mono" fontSize="xs" color="fg">
-                  /health
+                  .env
+                </Box>{' '}
+                file (
+                <Box as="code" fontFamily="mono" fontSize="xs" color="fg">
+                  PANEL_USERNAME
                 </Box>
-                .
+                ,{' '}
+                <Box as="code" fontFamily="mono" fontSize="xs" color="fg">
+                  PANEL_PASSWORD
+                </Box>
+                ).
               </Text>
+
+              {authStatus && !authStatus.auth_configured ? (
+                <Text
+                  mt={3}
+                  fontSize="sm"
+                  color="orange.500"
+                  p={3}
+                  borderRadius="input"
+                  borderWidth="1px"
+                  borderColor="border.subtle"
+                  bg="bg.elevated"
+                >
+                  Credentials not configured yet. Run{' '}
+                  <Box as="code" fontFamily="mono" fontSize="xs">
+                    scraper setup
+                  </Box>{' '}
+                  or start the server once to auto-generate them in .env.
+                </Text>
+              ) : null}
 
               {apiOffline ? (
                 <Text
@@ -63,7 +91,7 @@ export function LoginPage() {
                   borderColor="border.subtle"
                   bg="bg.elevated"
                 >
-                  API went offline. Start the server with{' '}
+                  API offline. Start with{' '}
                   <Box as="code" fontFamily="mono" fontSize="xs">
                     uv run serve
                   </Box>
@@ -72,21 +100,28 @@ export function LoginPage() {
 
               <Field.Root mt={5}>
                 <Field.Label color="fg.muted" fontSize="xs">
-                  Display name
+                  Username
                 </Field.Label>
-                <Input {...fieldStyles} value={name} onChange={(e) => setName(e.target.value)} />
+                <Input
+                  {...fieldStyles}
+                  autoComplete="username"
+                  placeholder="PANEL_USERNAME from .env"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
               </Field.Root>
 
               <Field.Root mt={3}>
                 <Field.Label color="fg.muted" fontSize="xs">
-                  API token (optional)
+                  Password
                 </Field.Label>
                 <Input
                   {...fieldStyles}
                   type="password"
-                  placeholder="Bearer token if enabled later"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="PANEL_PASSWORD from .env"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </Field.Root>
 
@@ -112,9 +147,10 @@ export function LoginPage() {
                 colorPalette="purple"
                 borderRadius="input"
                 loading={isConnecting}
+                disabled={!username || !password}
                 onClick={() => void handleConnect()}
               >
-                Connect
+                Sign in
               </Button>
             </PanelBody>
           </Panel>

@@ -1,4 +1,4 @@
-export { useAuth } from './use-auth'
+export { useAuth, useAuthStatusQuery } from './use-auth'
 export { useTheme } from './use-theme'
 export { useDashboard } from './use-dashboard'
 export { useCancelBatchMutation } from './mutations/use-scrape-mutations'

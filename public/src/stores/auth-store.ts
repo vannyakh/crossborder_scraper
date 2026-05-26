@@ -3,9 +3,9 @@ import { persist } from 'zustand/middleware'
 
 type AuthState = {
   isAuthenticated: boolean
-  accessToken: string | null
-  operatorName: string
-  login: (payload: { token?: string; name?: string }) => void
+  username: string | null
+  password: string | null
+  login: (payload: { username: string; password: string }) => void
   logout: () => void
 }
 
@@ -13,20 +13,28 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       isAuthenticated: false,
-      accessToken: null,
-      operatorName: 'Operator',
-      login: ({ token, name }) =>
+      username: null,
+      password: null,
+      login: ({ username, password }) =>
         set({
           isAuthenticated: true,
-          accessToken: token?.trim() || null,
-          operatorName: name?.trim() || 'Operator',
+          username: username.trim(),
+          password,
         }),
       logout: () =>
         set({
           isAuthenticated: false,
-          accessToken: null,
+          username: null,
+          password: null,
         }),
     }),
     { name: 'crossborder-auth' },
   ),
 )
+
+export function getBasicAuthHeader(): Record<string, string> {
+  const { username, password, isAuthenticated } = useAuthStore.getState()
+  if (!isAuthenticated || !username || !password) return {}
+  const encoded = btoa(`${username}:${password}`)
+  return { Authorization: `Basic ${encoded}` }
+}
