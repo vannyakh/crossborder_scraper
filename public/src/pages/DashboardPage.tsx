@@ -1,8 +1,4 @@
 import { Box, Grid, Text, VStack } from '@chakra-ui/react'
-import {
-  formatStartedAt,
-  formatUptime,
-} from '../components/dashboard/dashboard-utils'
 import { HardwareGaugePanel } from '../components/dashboard/HardwareGaugePanel'
 import {
   HardwareTrendChart,
@@ -14,13 +10,10 @@ import { ServiceGaugePanel } from '../components/dashboard/ServiceGaugePanel'
 import { ToolsPanel, dashboardToolIcons } from '../components/dashboard/ToolsPanel'
 import { useActivitySamples } from '../components/dashboard/use-activity-samples'
 import { useHardwareSamples } from '../components/dashboard/use-hardware-samples'
-import { Toolbar } from '../components/layout/Toolbar'
 import { Stagger, StaggerItem } from '../components/motion/Stagger'
-import { StatusBadge } from '../components/ui/StatusBadge'
 import {
   useAgentSchedulesQuery,
   useGatewayStatusQuery,
-  useHealthQuery,
   useLLMHealthQuery,
   useMarketplacesQuery,
   useMonitorStatusQuery,
@@ -28,7 +21,6 @@ import {
 } from '../hooks'
 
 export function DashboardPage() {
-  const health = useHealthQuery()
   const monitor = useMonitorStatusQuery()
   const gateway = useGatewayStatusQuery()
   const stats = useStatsQuery()
@@ -40,7 +32,6 @@ export function DashboardPage() {
   const activitySamples = useActivitySamples(runtime)
   const hardwareSamples = useHardwareSamples(hardware)
 
-  const apiReady = health.data?.status === 'ok' && !health.isError
   const maxJobs = runtime?.engine.max_concurrent_jobs ?? 3
   const active = runtime?.active_tasks ?? 0
   const running = runtime?.running_batches.length ?? stats.data?.running_batches ?? 0
@@ -109,82 +100,65 @@ export function DashboardPage() {
 
   return (
     <VStack align="stretch" gap={0}>
-      <Toolbar
-        title="Overview"
-        description={
-          runtime
-            ? `${runtime.service} v${runtime.version} · up ${formatUptime(runtime.uptime_seconds)} · since ${formatStartedAt(runtime.started_at)}`
-            : 'Monitor server hardware, runtime, and workload.'
-        }
-        actions={
-          <StatusBadge
-            status={apiReady ? 'success' : 'danger'}
-            label={apiReady ? 'Online' : 'Offline'}
-          />
-        }
-      />
-
       <Stagger>
         <StaggerItem>
           <HardwareGaugePanel hardware={hardware} />
         </StaggerItem>
 
         <StaggerItem>
-          <Box mt={4}>
-            <ServiceGaugePanel
-              active={active}
-              maxJobs={maxJobs}
-              running={running}
-              products={products}
-              proxies={proxies}
-            />
+          <ServiceGaugePanel
+            active={active}
+            maxJobs={maxJobs}
+            running={running}
+            products={products}
+            proxies={proxies}
+          />
+        </StaggerItem>
+
+        <StaggerItem>
+          <OverviewPanel
+            runtime={runtime}
+            stats={stats.data}
+            llm={llm.data}
+            hardware={hardware}
+            gatewayTools={gateway.data?.tools_count ?? 0}
+            gatewayWorkflows={gateway.data?.workflows_count ?? 0}
+            scheduleCount={schedules.data?.items.length ?? 0}
+            marketplaceConfigured={marketplaceConfigured}
+          />
+        </StaggerItem>
+
+        <StaggerItem>
+          <Box mt={5}>
+            <Grid
+              templateColumns={{ base: '1fr', xl: '1fr 1fr' }}
+              gap={6}
+              alignItems="stretch"
+              w="full"
+            >
+              <Box minH={{ base: 'auto', xl: 'min(440px, 48vh)' }}>
+                <HardwareTrendChart samples={hardwareSamples} />
+              </Box>
+              <Box minH={{ base: 'auto', xl: 'min(440px, 48vh)' }}>
+                <WorkloadChart samples={activitySamples} />
+              </Box>
+            </Grid>
           </Box>
         </StaggerItem>
 
         <StaggerItem>
-          <Box mt={4}>
-            <OverviewPanel
-              runtime={runtime}
-              stats={stats.data}
-              llm={llm.data}
-              hardware={hardware}
-              gatewayTools={gateway.data?.tools_count ?? 0}
-              gatewayWorkflows={gateway.data?.workflows_count ?? 0}
-              scheduleCount={schedules.data?.items.length ?? 0}
-              marketplaceConfigured={marketplaceConfigured}
-            />
-          </Box>
-        </StaggerItem>
-
-        <StaggerItem>
-          <Grid
-            mt={4}
-            templateColumns={{ base: '1fr', xl: '1fr 1fr' }}
-            gap={4}
-            alignItems="stretch"
-          >
-            <HardwareTrendChart samples={hardwareSamples} />
-            <WorkloadChart samples={activitySamples} />
-          </Grid>
-        </StaggerItem>
-
-        <StaggerItem>
-          <Box mt={4}>
-            <ToolsPanel tools={toolCards} />
-          </Box>
+          <ToolsPanel tools={toolCards} />
         </StaggerItem>
 
         {runtime?.running_batches.length ? (
           <StaggerItem>
-            <Box mt={4}>
-              <RunningBatchesPanel batches={runtime.running_batches} />
-            </Box>
+            <RunningBatchesPanel batches={runtime.running_batches} />
           </StaggerItem>
         ) : null}
 
         {monitor.isError ? (
           <StaggerItem>
-            <Text mt={4} fontSize="sm" color="red.500">
+            <Text mt={5} fontSize="sm" color="red.500">
               {String((monitor.error as Error).message || monitor.error)}
             </Text>
           </StaggerItem>

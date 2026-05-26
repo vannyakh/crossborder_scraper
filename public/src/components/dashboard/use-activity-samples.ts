@@ -7,7 +7,8 @@ export type ActivitySample = {
   running: number
 }
 
-const MAX_SAMPLES = 36
+const MAX_SAMPLES = 72
+const MIN_SAMPLE_GAP_MS = 2500
 
 export function useActivitySamples(runtime: RuntimeStatus | undefined) {
   const [samples, setSamples] = useState<ActivitySample[]>([])
@@ -25,7 +26,7 @@ export function useActivitySamples(runtime: RuntimeStatus | undefined) {
         last &&
         last.active === point.active &&
         last.running === point.running &&
-        point.t - last.t < 4000
+        point.t - last.t < MIN_SAMPLE_GAP_MS
       ) {
         return prev
       }

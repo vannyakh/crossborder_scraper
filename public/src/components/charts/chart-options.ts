@@ -53,46 +53,60 @@ export function multiLineOption(
   {
     labels,
     series,
+    yMax,
+    showLegend = false,
   }: {
     labels: string[]
     series: { name: string; data: number[]; color: string }[]
+    yMax?: number
+    showLegend?: boolean
   },
 ): EChartsOption {
+  const labelStep = labels.length > 18 ? Math.ceil(labels.length / 8) : labels.length > 10 ? 2 : 1
   return {
     backgroundColor: 'transparent',
     animation: true,
-    grid: { left: 8, right: 12, top: 28, bottom: 8, containLabel: true },
+    grid: { left: 4, right: 16, top: showLegend ? 28 : 12, bottom: 4, containLabel: true },
     tooltip: {
       trigger: 'axis',
       backgroundColor: 'var(--flyout-bg)',
       borderColor: theme.grid,
       textStyle: { color: theme.text, fontSize: 12 },
     },
-    legend: {
-      top: 0,
-      textStyle: { color: theme.muted, fontSize: 11 },
-      itemWidth: 10,
-      itemHeight: 10,
-    },
+    legend: showLegend
+      ? {
+          top: 0,
+          textStyle: { color: theme.muted, fontSize: 11 },
+          itemWidth: 10,
+          itemHeight: 10,
+        }
+      : { show: false },
     xAxis: {
       type: 'category',
       boundaryGap: false,
       data: labels,
       axisLine: { lineStyle: { color: theme.grid } },
-      axisLabel: { color: theme.muted, fontSize: 10, show: labels.length <= 12 },
+      axisLabel: {
+        color: theme.muted,
+        fontSize: 10,
+        interval: labelStep - 1,
+        hideOverlap: true,
+      },
       axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
-      minInterval: 1,
+      max: yMax,
+      minInterval: yMax ? undefined : 1,
       splitLine: { lineStyle: { color: theme.grid, type: 'dashed' } },
       axisLabel: { color: theme.muted, fontSize: 10 },
     },
     series: series.map((s) => ({
       name: s.name,
       type: 'line',
-      smooth: true,
-      showSymbol: false,
+      smooth: 0.35,
+      showSymbol: s.data.length <= 24,
+      symbolSize: 6,
       lineStyle: { width: 2, color: s.color },
       itemStyle: { color: s.color },
       areaStyle: {
@@ -103,8 +117,8 @@ export function multiLineOption(
           x2: 0,
           y2: 1,
           colorStops: [
-            { offset: 0, color: `${s.color}55` },
-            { offset: 1, color: `${s.color}08` },
+            { offset: 0, color: `${s.color}66` },
+            { offset: 1, color: `${s.color}06` },
           ],
         },
       },

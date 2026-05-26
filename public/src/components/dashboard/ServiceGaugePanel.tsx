@@ -2,7 +2,7 @@ import { Box, Grid, Text } from '@chakra-ui/react'
 import { EChart } from '../charts/EChart'
 import { gaugeOption } from '../charts/chart-options'
 import { useChartTheme } from '../../hooks/use-chart-theme'
-import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
+import { Section } from '../ui/Section'
 import { gaugePercent } from './dashboard-utils'
 
 function ServiceGaugeTile({
@@ -53,39 +53,36 @@ export function ServiceGaugePanel({
   const theme = useChartTheme()
 
   return (
-    <Panel>
-      <PanelHeader title="Service workload" description="Scraper engine and catalog utilization" />
-      <PanelBody>
-        <Grid
-          templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
-          gap={3}
-        >
-          <ServiceGaugeTile
-            label="Engine load"
-            detail={`${active} / ${maxJobs} workers`}
-            percent={gaugePercent(active, maxJobs)}
-            color={active >= maxJobs ? theme.warning : theme.accent}
-          />
-          <ServiceGaugeTile
-            label="Running batches"
-            detail={`${running} active`}
-            percent={gaugePercent(running, Math.max(maxJobs, 1))}
-            color={running > 0 ? theme.success : theme.accent}
-          />
-          <ServiceGaugeTile
-            label="Catalog"
-            detail={`${products} products`}
-            percent={gaugePercent(products, 500)}
-            color={theme.accent}
-          />
-          <ServiceGaugeTile
-            label="Proxies"
-            detail={proxies > 0 ? `${proxies} in pool` : 'Direct / none'}
-            percent={proxies > 0 ? Math.min(100, proxies * 10) : 0}
-            color={proxies > 0 ? theme.success : theme.track}
-          />
-        </Grid>
-      </PanelBody>
-    </Panel>
+    <Section title="Service workload" description="Scraper engine and catalog utilization">
+      <Grid
+        templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
+        gap={3}
+      >
+        <ServiceGaugeTile
+          label="Engine load"
+          detail={`${active} / ${maxJobs} workers`}
+          percent={gaugePercent(active, maxJobs)}
+          color={active >= maxJobs ? theme.warning : theme.accent}
+        />
+        <ServiceGaugeTile
+          label="Running batches"
+          detail={`${running} active`}
+          percent={gaugePercent(running, Math.max(maxJobs, 1))}
+          color={running > 0 ? theme.success : theme.accent}
+        />
+        <ServiceGaugeTile
+          label="Catalog"
+          detail={`${products} products`}
+          percent={gaugePercent(products, 500)}
+          color={theme.accent}
+        />
+        <ServiceGaugeTile
+          label="Proxies"
+          detail={proxies > 0 ? `${proxies} in pool` : 'Direct / none'}
+          percent={proxies > 0 ? Math.min(100, proxies * 10) : 0}
+          color={proxies > 0 ? theme.success : theme.track}
+        />
+      </Grid>
+    </Section>
   )
 }

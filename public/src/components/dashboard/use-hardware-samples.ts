@@ -8,7 +8,8 @@ export type HardwareSample = {
   disk: number
 }
 
-const MAX_SAMPLES = 36
+const MAX_SAMPLES = 72
+const MIN_SAMPLE_GAP_MS = 2500
 
 export function useHardwareSamples(hardware: HardwareMonitor | undefined) {
   const [samples, setSamples] = useState<HardwareSample[]>([])
@@ -28,7 +29,7 @@ export function useHardwareSamples(hardware: HardwareMonitor | undefined) {
         last.cpu === point.cpu &&
         last.memory === point.memory &&
         last.disk === point.disk &&
-        point.t - last.t < 4000
+        point.t - last.t < MIN_SAMPLE_GAP_MS
       ) {
         return prev
       }

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import type { HardwareMonitor, LLMHealth, RuntimeStatus, Stats } from '../../lib/api'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
+import { Section, SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import { countCookieSessions, formatUptime } from './dashboard-utils'
 
@@ -25,7 +25,7 @@ function OverviewColumn({
   accentPalette: string
 }) {
   return (
-    <Box px={1}>
+    <Box px={{ base: 3, md: 4 }} py={4}>
       <HStack gap={2} mb={2}>
         <Box
           p={1.5}
@@ -99,10 +99,12 @@ export function OverviewPanel({
         : 'neutral'
 
   return (
-    <Panel>
-      <PanelHeader title="Overview" description="Runtime snapshot across scrape, AI, and data" />
-      <PanelBody>
-        <Grid templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }} gap={4}>
+    <Section title="Overview" description="Runtime snapshot across scrape, AI, and data">
+      <SectionCard p={0}>
+        <Grid
+          templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }}
+          gap={0}
+        >
           <OverviewColumn
             accentPalette={accentPalette}
             icon={Cpu}
@@ -163,7 +165,7 @@ export function OverviewPanel({
             ]}
           />
         </Grid>
-      </PanelBody>
-    </Panel>
+      </SectionCard>
+    </Section>
   )
 }
