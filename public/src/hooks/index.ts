@@ -1,5 +1,7 @@
 export { useAuth, useAuthStatusQuery } from './use-auth'
 export { useTheme } from './use-theme'
+export { useAccentPalette, useUiConfig, useThemeConfig } from './use-ui-config'
+export { useMotionEnabled, useMotionTransition } from './use-motion-props'
 export { useDashboard } from './use-dashboard'
 export { useCancelBatchMutation } from './mutations/use-scrape-mutations'
 export { useDeleteFileMutation } from './mutations/use-file-mutations'

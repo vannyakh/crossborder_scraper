@@ -1,6 +1,6 @@
 import { useTheme } from '../../hooks/use-theme'
 
-/** Mount once to sync Zustand color mode → document .light / .dark class */
+/** Syncs Zustand theme + UI config → document classes and CSS variables */
 export function ThemeSync() {
   useTheme()
   return null

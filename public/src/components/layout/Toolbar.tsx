@@ -14,7 +14,12 @@ export function Toolbar({
 }) {
   return (
     <FadeIn>
-      <Box mb={4} pb={3} borderBottomWidth="1px" borderColor="border.subtle">
+      <Box
+        mb="var(--content-gap)"
+        pb={3}
+        borderBottomWidth="1px"
+        borderColor="border.subtle"
+      >
         <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={3}>
           <Box minW={0}>
             <Heading size="md" fontWeight="semibold" letterSpacing="-0.01em">

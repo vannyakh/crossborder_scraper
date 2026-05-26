@@ -2,15 +2,13 @@ import { ChakraProvider } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { ThemeSettingsDrawer } from '../components/theme/ThemeSettingsDrawer'
 import { ThemeSync } from '../components/theme/ThemeSync'
 import { appSystem } from '../theme/system'
-import { applyColorModeToDocument, resolveColorMode, useThemeStore } from '../stores/theme-store'
+import { useThemeStore } from '../stores/theme-store'
 
 function initTheme() {
-  const mode = useThemeStore.getState().mode
-  const resolved = resolveColorMode(mode)
-  useThemeStore.getState().setResolved(resolved)
-  applyColorModeToDocument(resolved)
+  useThemeStore.getState().applyAll()
 }
 
 initTheme()
@@ -33,6 +31,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ChakraProvider value={appSystem}>
         <ThemeSync />
+        <ThemeSettingsDrawer />
         {children}
       </ChakraProvider>
     </QueryClientProvider>

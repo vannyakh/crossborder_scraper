@@ -1,38 +1,49 @@
 import { useEffect } from 'react'
-import {
-  applyColorModeToDocument,
-  resolveColorMode,
-  useThemeStore,
-  type ColorMode,
-} from '../stores/theme-store'
+import { useThemeStore } from '../stores/theme-store'
+import { applyTheme } from '../theme/apply-theme'
+import type { ColorMode } from '../theme/config'
 
+/** Keeps document in sync when mode/config change (e.g. system preference). */
 export function useTheme() {
   const mode = useThemeStore((s) => s.mode)
+  const config = useThemeStore((s) => s.config)
   const resolved = useThemeStore((s) => s.resolved)
   const setMode = useThemeStore((s) => s.setMode)
+  const setConfig = useThemeStore((s) => s.setConfig)
+  const resetConfig = useThemeStore((s) => s.resetConfig)
   const setResolved = useThemeStore((s) => s.setResolved)
 
   useEffect(() => {
-    const apply = () => {
-      const next = resolveColorMode(mode)
+    const sync = () => {
+      const { resolved: next } = applyTheme(mode, config)
       setResolved(next)
-      applyColorModeToDocument(next)
     }
 
-    apply()
+    sync()
 
     if (mode !== 'system') return
 
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = () => apply()
+    const onChange = () => sync()
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
-  }, [mode, setResolved])
+  }, [mode, config, setResolved])
 
   const toggle = () => {
     const next: ColorMode = resolved === 'dark' ? 'light' : 'dark'
     setMode(next)
   }
 
-  return { mode, resolved, setMode, toggle, isDark: resolved === 'dark' }
+  return {
+    mode,
+    config,
+    resolved,
+    setMode,
+    setConfig,
+    resetConfig,
+    toggle,
+    isDark: resolved === 'dark',
+  }
 }
+
+export type { ColorMode }

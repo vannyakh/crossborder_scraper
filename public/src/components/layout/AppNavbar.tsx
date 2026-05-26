@@ -1,21 +1,24 @@
-import { Box, HStack, IconButton } from '@chakra-ui/react'
+import { HStack, IconButton } from '@chakra-ui/react'
 import { Menu as MenuIcon, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useAccentPalette } from '../../hooks/use-ui-config'
 import { useUiStore } from '../../stores/ui-store'
-import { ThemeToggle } from '../ui/ThemeToggle'
+import { ThemeSettingsButton } from '../theme/ThemeSettingsDrawer'
+import { uiRadius } from '../ui/ui-styles'
 import { AccountMenu } from './AccountMenu'
-import { SHELL_HEADER_HEIGHT } from './constants'
+import { ShellHeaderRow } from './ShellChrome'
 
 function SidebarToggle({ compact }: { compact?: boolean }) {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
+  const accentPalette = useAccentPalette()
 
   return (
     <IconButton
       aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       size="sm"
       variant="ghost"
-      colorPalette="blue"
-      borderRadius="input"
+      colorPalette={accentPalette}
+      {...uiRadius}
       onClick={toggleSidebar}
     >
       {compact ? (
@@ -31,30 +34,20 @@ function SidebarToggle({ compact }: { compact?: boolean }) {
 
 export function AppNavbar() {
   return (
-    <Box
-      as="header"
-      h={SHELL_HEADER_HEIGHT}
-      flexShrink={0}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      bg="bg.navbar"
-      px={{ base: 3, md: 4 }}
-    >
-      <HStack h="full" justify="space-between" gap={2}>
-        <HStack gap={1} flexShrink={0}>
-          <Box display={{ base: 'block', lg: 'none' }}>
-            <SidebarToggle compact />
-          </Box>
-          <Box display={{ base: 'none', lg: 'block' }}>
-            <SidebarToggle />
-          </Box>
+    <ShellHeaderRow as="header" justify="space-between">
+      <HStack gap={1} flexShrink={0}>
+        <HStack gap={1} display={{ base: 'flex', lg: 'none' }}>
+          <SidebarToggle compact />
         </HStack>
-
-        <HStack gap={1} flexShrink={0}>
-          <ThemeToggle compact />
-          <AccountMenu />
+        <HStack gap={1} display={{ base: 'none', lg: 'flex' }}>
+          <SidebarToggle />
         </HStack>
       </HStack>
-    </Box>
+
+      <HStack gap={1} flexShrink={0}>
+        <ThemeSettingsButton />
+        <AccountMenu />
+      </HStack>
+    </ShellHeaderRow>
   )
 }

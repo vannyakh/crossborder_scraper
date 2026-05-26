@@ -5,16 +5,17 @@ type PanelProps = CardRootProps & {
   children: ReactNode
 }
 
-/** Flat bordered surface (Alist file-manager cards) */
+/** Flat bordered surface — radius from global UI config */
 export function Panel({ children, ...props }: PanelProps) {
   return (
     <Card.Root
       bg="bg.panel"
       borderWidth="1px"
       borderColor="border.subtle"
-      borderRadius="panel"
+      borderRadius="var(--radius-panel)"
       shadow="none"
       overflow="hidden"
+      transition="border-color var(--motion-duration), box-shadow var(--motion-duration)"
       {...props}
     >
       {children}
@@ -24,7 +25,7 @@ export function Panel({ children, ...props }: PanelProps) {
 
 export function PanelBody({ children, ...props }: CardBodyProps & { children: ReactNode }) {
   return (
-    <Card.Body p={{ base: 3, md: 4 }} {...props}>
+    <Card.Body p="calc(var(--shell-padding) * 0.85)" {...props}>
       {children}
     </Card.Body>
   )
@@ -41,7 +42,7 @@ export function PanelHeader({
 }) {
   return (
     <Card.Header
-      px={{ base: 3, md: 4 }}
+      px="calc(var(--shell-padding) * 0.85)"
       py={3}
       borderBottomWidth="1px"
       borderColor="border.subtle"
@@ -51,6 +52,7 @@ export function PanelHeader({
       justifyContent="space-between"
       gap={2}
       bg="bg.panelHover"
+      borderTopRadius="var(--radius-panel)"
     >
       <div>
         <Card.Title fontSize="sm" fontWeight="semibold" color="fg">

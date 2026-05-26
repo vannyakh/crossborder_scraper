@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { FadeIn } from '../components/motion/FadeIn'
 import { fieldStyles } from '../components/ui/field-styles'
 import { Panel, PanelBody } from '../components/ui/Panel'
-import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { ThemeSettingsButton } from '../components/theme/ThemeSettingsDrawer'
 import { useAuth, useAuthStatusQuery } from '../hooks'
 
 export function LoginPage() {
@@ -30,7 +30,7 @@ export function LoginPage() {
   return (
     <Flex minH="100dvh" className="app-shell" align="center" justify="center" p={4}>
       <Box position="absolute" top={4} right={4}>
-        <ThemeToggle />
+        <ThemeSettingsButton />
       </Box>
 
       <Box w="full" maxW="sm">

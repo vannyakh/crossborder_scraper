@@ -1,15 +1,18 @@
 import { Box, Table } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
 
-/** Table-style list like Alist file browser */
+/** Table-style list — scroll + radius from global UI config */
 export function DataList({ children }: { children: ReactNode }) {
   return (
     <Box
       borderWidth="1px"
       borderColor="border.subtle"
-      borderRadius="panel"
+      borderRadius="var(--radius-panel)"
       overflow="hidden"
       bg="bg.panel"
+      className="app-scroll"
+      maxH="min(70vh, 640px)"
+      overflowY="auto"
     >
       <Table.Root size="sm" variant="line">
         {children}
@@ -20,7 +23,16 @@ export function DataList({ children }: { children: ReactNode }) {
 
 export function DataListEmpty({ children }: { children: ReactNode }) {
   return (
-    <Box py={10} textAlign="center" fontSize="sm" color="fg.muted">
+    <Box
+      py={10}
+      textAlign="center"
+      fontSize="sm"
+      color="fg.muted"
+      borderRadius="var(--radius-panel)"
+      borderWidth="1px"
+      borderColor="border.subtle"
+      bg="bg.panel"
+    >
       {children}
     </Box>
   )

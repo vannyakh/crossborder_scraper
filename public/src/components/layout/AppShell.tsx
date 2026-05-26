@@ -1,6 +1,7 @@
-import { Box, Flex, HStack, Text, useBreakpointValue } from '@chakra-ui/react'
+import { Box, Flex, useBreakpointValue } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Outlet } from 'react-router-dom'
+import { useMotionTransition } from '../../hooks/use-motion-props'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
 import {
   SIDEBAR_WIDTH_COLLAPSED,
@@ -9,55 +10,25 @@ import {
 } from '../../stores/ui-store'
 import { PageTransition } from '../motion/PageTransition'
 import { AppNavbar } from './AppNavbar'
-import { SHELL_HEADER_HEIGHT } from './constants'
+import {
+  ShellBrandText,
+  ShellFooter,
+  ShellHeaderRow,
+  ShellLogoMark,
+  ShellMainContent,
+  ShellScrollArea,
+} from './ShellChrome'
 import { SidebarNav } from './SidebarNav'
 
 const MotionAside = motion.create(Box)
 const MotionOverlay = motion.create(Box)
-const MotionBrand = motion.create(Box)
 
-function SidebarBrand({ collapsed }: { collapsed: boolean }) {
+function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   return (
-    <HStack
-      h={SHELL_HEADER_HEIGHT}
-      flexShrink={0}
-      px={collapsed ? 2 : 4}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      justify={collapsed ? 'center' : 'flex-start'}
-      overflow="hidden"
-    >
-      <MotionBrand
-        initial={false}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.15 }}
-      >
-        <Text
-          fontWeight="bold"
-          fontSize={collapsed ? 'md' : 'sm'}
-          lineHeight="1.2"
-          color="brand.emphasis"
-          whiteSpace="nowrap"
-        >
-          {collapsed ? 'C' : 'Crossborder'}
-        </Text>
-        <AnimatePresence initial={false}>
-          {!collapsed ? (
-            <motion.div
-              key="tagline"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Text fontSize="xs" color="fg.muted" lineHeight="1.2">
-                Scraper
-              </Text>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </MotionBrand>
-    </HStack>
+    <ShellHeaderRow justify={collapsed ? 'center' : 'flex-start'} bg="bg.sidebar">
+      <ShellLogoMark collapsed={collapsed} label="Crossborder" />
+      <ShellBrandText collapsed={collapsed} title="Crossborder" subtitle="Scraper" />
+    </ShellHeaderRow>
   )
 }
 
@@ -66,13 +37,14 @@ export function AppShell() {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed)
   const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed)
   const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+  const shellTransition = useMotionTransition(0.22)
 
   const navCollapsed = sidebarCollapsed && isDesktop
   const sidebarWidth = navCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
   const mobileOpen = !sidebarCollapsed && !isDesktop
 
   return (
-    <Flex minH="100dvh" className="app-shell" position="relative">
+    <Flex minH="100dvh" className="app-shell" position="relative" overflow="hidden">
       <AnimatePresence>
         {mobileOpen ? (
           <MotionOverlay
@@ -85,7 +57,7 @@ export function AppShell() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={shellTransition}
             onClick={() => setSidebarCollapsed(true)}
           />
         ) : null}
@@ -93,6 +65,8 @@ export function AppShell() {
 
       <MotionAside
         as="aside"
+        className="app-sidebar"
+        data-collapsed={navCollapsed ? '' : undefined}
         position={{ base: 'fixed', lg: 'sticky' }}
         top={0}
         left={0}
@@ -110,58 +84,35 @@ export function AppShell() {
           width: isDesktop ? sidebarWidth : SIDEBAR_WIDTH_EXPANDED,
           x: isDesktop ? 0 : sidebarCollapsed ? -SIDEBAR_WIDTH_EXPANDED : 0,
         }}
-        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }}
+        transition={shellTransition}
       >
-        <SidebarBrand collapsed={navCollapsed} />
+        <SidebarHeader collapsed={navCollapsed} />
 
-        <Box
-          flex={1}
-          px={navCollapsed ? 1 : 2}
-          py={3}
-          overflowY="auto"
-          overflowX="hidden"
-        >
+        <ShellScrollArea flex={1} px={navCollapsed ? 1 : 2} py={3}>
           <SidebarNav
             collapsed={navCollapsed}
             onNavigate={!isDesktop ? () => setSidebarCollapsed(true) : undefined}
           />
-        </Box>
+        </ShellScrollArea>
 
-        <Box
-          px={navCollapsed ? 1 : 3}
-          py={3}
-          borderTopWidth="1px"
-          borderColor="border.subtle"
-          fontSize="xs"
-          color="fg.muted"
-        >
-          <AnimatePresence initial={false}>
-            {!navCollapsed && stats ? (
-              <motion.div
-                key="stats"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <Text mb={2} lineHeight="short">
-                  {stats.products} products · {stats.batches} batches
-                  {stats.running_batches > 0 ? ` · ${stats.running_batches} running` : ''}
-                </Text>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </Box>
+        <ShellFooter>
+          {!navCollapsed && stats ? (
+            <Box lineHeight="short" mb={1}>
+              {stats.products} products · {stats.batches} batches
+              {stats.running_batches > 0 ? ` · ${stats.running_batches} running` : ''}
+            </Box>
+          ) : null}
+        </ShellFooter>
       </MotionAside>
 
-      <Flex flex={1} minW={0} direction="column" w="full">
+      <Flex flex={1} minW={0} minH={0} direction="column" w="full">
         <AppNavbar />
 
-        <Box as="main" flex={1} w="full" minW={0} p={{ base: 3, md: 5, xl: 6 }} overflowX="hidden">
+        <ShellMainContent>
           <PageTransition>
             <Outlet />
           </PageTransition>
-        </Box>
+        </ShellMainContent>
       </Flex>
     </Flex>
   )

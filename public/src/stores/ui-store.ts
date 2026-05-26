@@ -16,6 +16,8 @@ type UiState = {
   sidebarCollapsed: boolean
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
+  settingsDrawerOpen: boolean
+  setSettingsDrawerOpen: (open: boolean) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -40,7 +42,10 @@ export const useUiStore = create<UiState>((set) => ({
     }
     set({ sidebarCollapsed })
   },
+  settingsDrawerOpen: false,
+  setSettingsDrawerOpen: (settingsDrawerOpen) => set({ settingsDrawerOpen }),
 }))
 
 export const SIDEBAR_WIDTH_EXPANDED = 216
-export const SIDEBAR_WIDTH_COLLAPSED = 64
+/** Icon rail width — fits 36px touch targets + padding */
+export const SIDEBAR_WIDTH_COLLAPSED = 56

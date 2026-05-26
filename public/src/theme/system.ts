@@ -25,9 +25,9 @@ const customConfig = defineConfig({
         },
       },
       radii: {
-        panel: { value: '0.5rem' },
-        card: { value: '0.5rem' },
-        input: { value: '0.5rem' },
+        panel: { value: 'var(--radius-panel, 0.5rem)' },
+        card: { value: 'var(--radius-card, 0.5rem)' },
+        input: { value: 'var(--radius-input, 0.5rem)' },
         pill: { value: '9999px' },
       },
       colors: {
@@ -76,7 +76,7 @@ const customConfig = defineConfig({
           value: { _light: '#ffffff', _dark: '#161b22' },
         },
         'bg.navActive': {
-          value: { _light: '#e8f2ff', _dark: 'rgba(56, 139, 253, 0.12)' },
+          value: 'var(--nav-active-bg, rgba(56, 139, 253, 0.12))',
         },
         'border.subtle': {
           value: { _light: '#d8dee4', _dark: '#30363d' },
@@ -85,19 +85,19 @@ const customConfig = defineConfig({
           value: { _light: '#c4cdd5', _dark: '#484f58' },
         },
         brand: {
-          value: { _light: '{colors.brand.600}', _dark: '{colors.brand.500}' },
+          value: 'var(--app-accent)',
         },
         'brand.emphasis': {
-          value: { _light: '{colors.brand.500}', _dark: '{colors.brand.400}' },
+          value: 'var(--brand-emphasis, var(--app-accent))',
         },
         accent: {
-          value: { _light: '{colors.brand.600}', _dark: '{colors.brand.400}' },
+          value: 'var(--app-accent)',
         },
         'nav.active': {
-          value: { _light: '{colors.brand.600}', _dark: '{colors.brand.500}' },
+          value: 'var(--app-accent)',
         },
         'nav.activeFg': {
-          value: { _light: '{colors.brand.700}', _dark: '{colors.brand.300}' },
+          value: 'var(--nav-active-fg, var(--app-accent))',
         },
       },
     },
