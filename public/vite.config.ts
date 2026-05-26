@@ -22,6 +22,9 @@ export default defineConfig({
       '/ai': 'http://127.0.0.1:8000',
       '/runtime': 'http://127.0.0.1:8000',
       '/export': 'http://127.0.0.1:8000',
+      '/monitor': 'http://127.0.0.1:8000',
+      '/panel': 'http://127.0.0.1:8000',
+      '/logs': 'http://127.0.0.1:8000',
     },
   },
   preview: {
@@ -40,6 +43,9 @@ export default defineConfig({
       '/ai': 'http://127.0.0.1:8000',
       '/runtime': 'http://127.0.0.1:8000',
       '/export': 'http://127.0.0.1:8000',
+      '/monitor': 'http://127.0.0.1:8000',
+      '/panel': 'http://127.0.0.1:8000',
+      '/logs': 'http://127.0.0.1:8000',
     },
   },
 })

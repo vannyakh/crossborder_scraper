@@ -1,10 +1,11 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from config import get_settings
 from server.auth import verify_panel_credentials
+from server.service_logs import append_service_log
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -32,9 +33,19 @@ async def auth_status() -> dict[str, Any]:
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(body: LoginRequest) -> LoginResponse:
+async def login(body: LoginRequest, request: Request) -> LoginResponse:
     settings = get_settings()
+    client_ip = "unknown"
+    if request.client:
+        client_ip = f"{request.client.host}:{request.client.port}"
+
     if not settings.panel_auth_enabled:
+        append_service_log(
+            "operation",
+            user=body.username,
+            operation_type="Login",
+            details=f"Login IP: {client_ip} — auth disabled",
+        )
         return LoginResponse(username=body.username, message="Auth disabled")
 
     if not settings.panel_username or not settings.panel_password:
@@ -44,9 +55,21 @@ async def login(body: LoginRequest) -> LoginResponse:
         )
 
     if not verify_panel_credentials(body.username, body.password):
+        append_service_log(
+            "operation",
+            user=body.username,
+            operation_type="Login",
+            details=f"Login IP: {client_ip} — failed",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
 
+    append_service_log(
+        "operation",
+        user=body.username,
+        operation_type="Login",
+        details=f"Login IP: {client_ip} — successfully logged in",
+    )
     return LoginResponse(username=body.username)

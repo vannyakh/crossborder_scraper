@@ -15,6 +15,8 @@ export { usePanelConfigQuery } from './queries/use-panel-config-query'
 export { useConfigQuery } from './queries/use-config-query'
 export { useFilesQuery } from './queries/use-files-query'
 export { useHealthQuery } from './queries/use-health-query'
+export { useClearLogsMutation, useLogsQuery } from './queries/use-logs-query'
+export { usePanelAccessQuery } from './queries/use-panel-access-query'
 export { useProductQuery, useProductsQuery } from './queries/use-products-query'
 export {
   useAgentRunsQuery,
@@ -28,4 +30,10 @@ export {
 } from './queries/use-agent-query'
 export { useExportProductMutation } from './mutations/use-export-mutations'
 export { useRuntimeStatusQuery, useMarketplacesQuery } from './queries/use-runtime-query'
+export { useGatewayStatusQuery } from './queries/use-gateway-query'
+export {
+  useHardwareMonitorQuery,
+  useMonitorStatusQuery,
+} from './queries/use-monitor-query'
+export { useChartTheme } from './use-chart-theme'
 export { useStatsQuery } from './queries/use-stats-query'

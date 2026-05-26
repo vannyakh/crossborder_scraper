@@ -4,6 +4,7 @@ import { AgentPage } from '../pages/AgentPage'
 import { BatchesPage } from '../pages/BatchesPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { FilesPage } from '../pages/FilesPage'
+import { LogsPage } from '../pages/LogsPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
@@ -30,6 +31,7 @@ const router = createBrowserRouter(
             { path: 'products', element: <ProductsPage /> },
             { path: 'products/:id', element: <ProductDetailPage /> },
             { path: 'files', element: <FilesPage /> },
+            { path: 'logs', element: <LogsPage /> },
             { path: 'agent', element: <AgentPage /> },
             { path: 'settings', element: <SettingsPage /> },
           ],

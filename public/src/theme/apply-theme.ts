@@ -77,6 +77,20 @@ export function applyThemeConfigToDocument(
   root.style.setProperty('--shell-padding-inline', compact ? '0.75rem' : '1rem')
   root.style.setProperty('--content-gap', compact ? '0.75rem' : '1rem')
 
+  const isDark = resolved === 'dark'
+  const chartFg = isDark ? '#c9d1d9' : '#374151'
+  const chartMuted = isDark ? '#8b949e' : '#6b7280'
+  const chartGrid = isDark ? '#30363d' : '#e5e7eb'
+  const chartTrack = isDark ? '#21262d' : '#eef2f6'
+  const chartSecondary = isDark ? '#f0883e' : '#ea580c'
+
+  root.style.setProperty('--chart-fg', chartFg)
+  root.style.setProperty('--chart-muted', chartMuted)
+  root.style.setProperty('--chart-grid', chartGrid)
+  root.style.setProperty('--chart-track', chartTrack)
+  root.style.setProperty('--chart-series-secondary', chartSecondary)
+  root.style.setProperty('--chart-accent', accent)
+
   applyScrollbarVars(resolved, accent)
 
   if (merged.reducedMotion) {

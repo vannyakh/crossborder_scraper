@@ -235,6 +235,124 @@ export type MarketplaceInfo = {
   supports_export?: boolean
 }
 
+export type HardwareCpuInfo = {
+  percent: number
+  count_logical: number
+  count_physical?: number | null
+  model_name?: string
+  architecture_summary?: string
+  per_core_percent?: number[]
+}
+
+export type HardwareMemoryInfo = {
+  used_bytes: number
+  total_bytes: number
+  available_bytes: number
+  percent: number
+  used_human: string
+  total_human: string
+  available_human?: string
+  swap_percent?: number | null
+  swap_used_human?: string | null
+  swap_total_human?: string | null
+}
+
+export type HardwareDiskInfo = {
+  path: string
+  used_bytes: number
+  total_bytes: number
+  free_bytes: number
+  percent: number
+  used_human: string
+  total_human: string
+  free_human?: string
+}
+
+export type HardwareProcessEntry = {
+  pid: number
+  name: string
+  cpu_percent?: number | null
+  memory_percent?: number | null
+  rss_human?: string | null
+}
+
+export type HardwareLoadInfo = {
+  load_1: number
+  load_5: number
+  load_15: number
+  percent: number
+}
+
+export type HardwareProcessInfo = {
+  rss_bytes: number
+  rss_human: string
+  threads: number
+}
+
+export type HardwareMonitor = {
+  collected_at: string
+  hostname: string
+  platform: string
+  python_version: string
+  system_label?: string
+  system_detail?: string
+  host_uptime_seconds?: number
+  host_uptime_label?: string
+  cpu: HardwareCpuInfo
+  memory: HardwareMemoryInfo
+  disk: HardwareDiskInfo
+  load: HardwareLoadInfo
+  process: HardwareProcessInfo
+  top_cpu_processes?: HardwareProcessEntry[]
+  top_memory_processes?: HardwareProcessEntry[]
+}
+
+export type PanelAccess = {
+  bind_host: string
+  bind_port: number
+  access_ip: string
+  access_port: number
+  panel_path: string
+  panel_url: string
+  copy_text: string
+}
+
+export type LogCategory = 'operation' | 'run' | 'cron'
+
+export type ServiceLogEntry = {
+  id: string
+  category: LogCategory
+  user: string
+  operation_type: string
+  details: string
+  created_at: string
+  meta?: Record<string, unknown>
+}
+
+export type ServiceLogListResponse = {
+  category: LogCategory
+  items: ServiceLogEntry[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export type MonitorStatus = {
+  collected_at: string
+  hardware: HardwareMonitor
+  service: RuntimeStatus
+}
+
+export type GatewayStatus = {
+  service: string
+  version: string
+  control_plane: string
+  clients: string[]
+  tools_count: number
+  workflows_count: number
+  runtime: RuntimeStatus
+}
+
 export type GatewayAgentResponse = {
   ok: boolean
   message: string

@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from config.credentials import ensure_panel_credentials, print_panel_credentials
-from server.routers import ai, auth, batches, files, gateway, jobs, products, runtime, system
+from server.routers import ai, auth, batches, files, gateway, jobs, logs, monitor, products, runtime, system
 from server.spa_static import SPAStaticFiles
 
 
@@ -12,6 +12,19 @@ from server.spa_static import SPAStaticFiles
 async def lifespan(app: FastAPI):
     from gateway.scheduler import get_scheduler
     from gateway.schedules_store import ensure_schedules_file
+    from server.panel_bind import configure_panel_bind
+
+    configure_panel_bind()
+
+    from server.service_logs import append_service_log, ensure_logs_file
+
+    ensure_logs_file()
+    append_service_log(
+        "operation",
+        user="system",
+        operation_type="Service",
+        details="Panel service started",
+    )
 
     username, password, generated = ensure_panel_credentials()
     if generated:
@@ -36,6 +49,8 @@ app.include_router(auth.router)
 app.include_router(system.router)
 app.include_router(ai.router)
 app.include_router(runtime.router)
+app.include_router(monitor.router)
+app.include_router(logs.router)
 app.include_router(gateway.router)
 app.include_router(jobs.router)
 app.include_router(batches.router)

@@ -5,6 +5,7 @@ import { useUiStore } from '../../stores/ui-store'
 import { ThemeSettingsButton } from '../theme/ThemeSettingsDrawer'
 import { uiRadius } from '../ui/ui-styles'
 import { AccountMenu } from './AccountMenu'
+import { NavDivider, NavHostInfo } from './NavHostInfo'
 import { ShellHeaderRow } from './ShellChrome'
 
 function SidebarToggle({ compact }: { compact?: boolean }) {
@@ -44,9 +45,11 @@ export function AppNavbar() {
         </HStack>
       </HStack>
 
-      <HStack gap={1} flexShrink={0}>
-        <ThemeSettingsButton />
+      <HStack gap={0} flexShrink={0} align="center">
         <AccountMenu />
+        <NavHostInfo />
+        <NavDivider />
+        <ThemeSettingsButton />
       </HStack>
     </ShellHeaderRow>
   )

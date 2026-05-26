@@ -24,3 +24,5 @@ config/agent_schedules.json
 # Playwright
 playwright-report/
 test-results/
+
+.pnpm-store

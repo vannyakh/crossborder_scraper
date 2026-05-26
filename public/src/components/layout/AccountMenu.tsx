@@ -1,9 +1,11 @@
 import { Avatar, Button, Menu, Portal, Text } from '@chakra-ui/react'
 import { ChevronDown, LogOut, User } from 'lucide-react'
 import { useAuth } from '../../hooks/use-auth'
+import { useAccentPalette } from '../../hooks/use-ui-config'
 
 export function AccountMenu() {
   const { username, logout } = useAuth()
+  const accentPalette = useAccentPalette()
   const display = username ?? 'Account'
   const initial = (display[0] ?? '?').toUpperCase()
 
@@ -13,14 +15,14 @@ export function AccountMenu() {
         <Button
           variant="ghost"
           size="sm"
-          colorPalette="blue"
-          borderRadius="input"
+          colorPalette={accentPalette}
+          borderRadius="var(--radius-input)"
           px={2}
           gap={1.5}
           maxW="11rem"
           _open={{ bg: 'bg.navActive' }}
         >
-          <Avatar.Root size="xs" colorPalette="blue">
+          <Avatar.Root size="xs" colorPalette={accentPalette}>
             <Avatar.Fallback name={display}>{initial}</Avatar.Fallback>
           </Avatar.Root>
           <Text fontSize="sm" truncate display={{ base: 'none', sm: 'block' }}>

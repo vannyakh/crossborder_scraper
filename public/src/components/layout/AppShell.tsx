@@ -2,7 +2,9 @@ import { Box, Flex, useBreakpointValue } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Outlet } from 'react-router-dom'
 import { useMotionTransition } from '../../hooks/use-motion-props'
+import { usePanelAccessQuery } from '../../hooks/queries/use-panel-access-query'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
+import { fallbackPanelAccess } from '../../lib/panel-access'
 import {
   SIDEBAR_WIDTH_COLLAPSED,
   SIDEBAR_WIDTH_EXPANDED,
@@ -18,15 +20,27 @@ import {
   ShellMainContent,
   ShellScrollArea,
 } from './ShellChrome'
+import { copyPanelAccess } from '../../lib/panel-access'
+import { PanelAccessClip } from './PanelAccessClip'
 import { SidebarNav } from './SidebarNav'
 
 const MotionAside = motion.create(Box)
 const MotionOverlay = motion.create(Box)
 
-function SidebarHeader({ collapsed }: { collapsed: boolean }) {
+function SidebarHeader({
+  collapsed,
+  onCopyCollapsed,
+}: {
+  collapsed: boolean
+  onCopyCollapsed?: () => void
+}) {
   return (
     <ShellHeaderRow justify={collapsed ? 'center' : 'flex-start'} bg="bg.sidebar">
-      <ShellLogoMark collapsed={collapsed} label="Crossborder" />
+      <ShellLogoMark
+        collapsed={collapsed}
+        label="Crossborder"
+        onClick={onCopyCollapsed}
+      />
       <ShellBrandText collapsed={collapsed} title="Crossborder" />
     </ShellHeaderRow>
   )
@@ -34,6 +48,8 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
 
 export function AppShell() {
   const { data: stats } = useStatsQuery()
+  const panelAccess = usePanelAccessQuery()
+  const access = panelAccess.data ?? fallbackPanelAccess()
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed)
   const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed)
   const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
@@ -44,7 +60,7 @@ export function AppShell() {
   const mobileOpen = !sidebarCollapsed && !isDesktop
 
   return (
-    <Flex minH="100dvh" className="app-shell" position="relative" overflow="hidden">
+    <Flex h="100dvh" maxH="100dvh" className="app-shell" position="relative" overflow="hidden">
       <AnimatePresence>
         {mobileOpen ? (
           <MotionOverlay
@@ -86,18 +102,24 @@ export function AppShell() {
         }}
         transition={shellTransition}
       >
-        <SidebarHeader collapsed={navCollapsed} />
+        <SidebarHeader
+          collapsed={navCollapsed}
+          onCopyCollapsed={
+            navCollapsed ? () => void copyPanelAccess(access) : undefined
+          }
+        />
 
-        <ShellScrollArea flex={1} px={navCollapsed ? 1 : 2} py={3}>
+        <ShellScrollArea flex={1} px={navCollapsed ? 1 : 2} py={2}>
           <SidebarNav
             collapsed={navCollapsed}
             onNavigate={!isDesktop ? () => setSidebarCollapsed(true) : undefined}
           />
         </ShellScrollArea>
 
-        <ShellFooter>
+        <ShellFooter py={2}>
+          <PanelAccessClip access={access} collapsed={navCollapsed} />
           {!navCollapsed && stats ? (
-            <Box lineHeight="short" mb={1}>
+            <Box lineHeight="short" mt={1.5} fontSize="2xs" opacity={0.85}>
               {stats.products} products · {stats.batches} batches
               {stats.running_batches > 0 ? ` · ${stats.running_batches} running` : ''}
             </Box>
@@ -105,7 +127,7 @@ export function AppShell() {
         </ShellFooter>
       </MotionAside>
 
-      <Flex flex={1} minW={0} minH={0} direction="column" w="full">
+      <Flex className="app-main-column" direction="column" w="full">
         <AppNavbar />
 
         <ShellMainContent>

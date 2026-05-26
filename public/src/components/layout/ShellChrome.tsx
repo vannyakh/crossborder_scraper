@@ -62,9 +62,9 @@ export function ShellBrandText({ collapsed, title }: { collapsed: boolean; title
       display="block"
       fontFamily="heading"
       fontWeight="semibold"
-      fontSize="md"
-      lineHeight="0.95"
-      letterSpacing="-5%"
+      fontSize="sm"
+      lineHeight="1"
+      letterSpacing="-0.05em"
       textTransform="uppercase"
       color="fg"
       truncate
@@ -79,13 +79,17 @@ export function ShellMainContent({ children, ...props }: BoxProps) {
     <Box
       as="main"
       className="app-scroll app-content"
-      flex={1}
+      flex="1 1 auto"
       w="full"
       minW={0}
       minH={0}
+      h={0}
       p="var(--shell-padding)"
       overflowX="hidden"
       overflowY="auto"
+      css={{
+        WebkitOverflowScrolling: 'touch',
+      }}
       {...props}
     >
       {children}

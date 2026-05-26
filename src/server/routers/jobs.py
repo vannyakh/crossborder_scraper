@@ -1,10 +1,12 @@
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from core.engine.jobs import BatchReport
+from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.events import batch_events, sse_frame
 from server.manager import get_manager
+from server.service_logs import append_service_log
 from server.schemas import (
     MessageResponse,
     ScrapeSingleRequest,
@@ -18,7 +20,10 @@ router = protected_router(prefix="/jobs", tags=["jobs"])
 
 
 @router.post("/submit", response_model=SubmitResponse)
-async def submit(req: SubmitRequest) -> SubmitResponse:
+async def submit(
+    req: SubmitRequest,
+    username: str = Depends(require_panel_auth),
+) -> SubmitResponse:
     mgr = get_manager()
     batch_id = await mgr.submit_batch(
         req.urls,
@@ -26,6 +31,14 @@ async def submit(req: SubmitRequest) -> SubmitResponse:
         use_ai=req.use_ai,
         save=req.save,
         session_id=req.session_id,
+        submitted_by=username,
+    )
+    append_service_log(
+        "operation",
+        user=username,
+        operation_type="Batch submit",
+        details=f"Submitted batch {batch_id} with {len(req.urls)} URL(s)",
+        meta={"batch_id": batch_id},
     )
     return SubmitResponse(batch_id=batch_id, total=len(req.urls))
 

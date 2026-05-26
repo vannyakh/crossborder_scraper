@@ -13,7 +13,7 @@ export function SidebarNav({ collapsed, onNavigate }: SidebarNavProps) {
   const location = useLocation()
 
   return (
-    <VStack align="stretch" gap={collapsed ? 1.5 : 0.5} flex={1} w="full">
+    <VStack align="stretch" gap={0.5} flex={1} w="full">
       {navEntries.map((entry) => {
         if (entry.kind === 'group') {
           return (

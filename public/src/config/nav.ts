@@ -1,4 +1,4 @@
-import { Bot, FolderOpen, Home, Package, Settings, type LucideIcon } from 'lucide-react'
+import { Bot, FolderOpen, Home, Package, ScrollText, Settings, type LucideIcon } from 'lucide-react'
 
 export type NavLinkItem = {
   kind: 'link'
@@ -25,7 +25,7 @@ export type NavGroupItem = {
 export type NavEntry = NavLinkItem | NavGroupItem
 
 export const navEntries: NavEntry[] = [
-  { kind: 'link', to: '/', label: 'Home', icon: Home, end: true },
+  { kind: 'link', to: '/', label: 'Overview', icon: Home, end: true },
   {
     kind: 'group',
     id: 'data',
@@ -37,6 +37,7 @@ export const navEntries: NavEntry[] = [
     ],
   },
   { kind: 'link', to: '/files', label: 'Files', icon: FolderOpen },
+  { kind: 'link', to: '/logs', label: 'Logs', icon: ScrollText },
   { kind: 'link', to: '/agent', label: 'Agent', icon: Bot },
   { kind: 'link', to: '/settings', label: 'Settings', icon: Settings },
 ]

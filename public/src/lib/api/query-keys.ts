@@ -1,5 +1,8 @@
 export const queryKeys = {
   health: ['health'] as const,
+  panelAccess: ['panel', 'access'] as const,
+  logs: (category: string, q: string, limit: number, offset: number) =>
+    ['logs', category, q, limit, offset] as const,
   config: ['config'] as const,
   stats: ['stats'] as const,
   batches: (limit = 50) => ['batches', { limit }] as const,
@@ -10,7 +13,10 @@ export const queryKeys = {
   panelConfig: ['config', 'panel'] as const,
   llmHealth: ['ai', 'health'] as const,
   runtimeStatus: ['runtime', 'status'] as const,
+  hardwareMonitor: ['monitor', 'hardware'] as const,
+  monitorStatus: ['monitor', 'status'] as const,
   marketplaces: ['export', 'marketplaces'] as const,
+  gatewayStatus: ['gateway', 'status'] as const,
   gatewayPrompts: ['gateway', 'prompts'] as const,
   agentSchedules: ['gateway', 'schedules'] as const,
   agentRuns: ['gateway', 'runs'] as const,

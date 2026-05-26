@@ -1,5 +1,6 @@
 import { Box, Button, Grid, HStack, Table, Text } from '@chakra-ui/react'
 import { BatchJobList } from '../components/batches/BatchJobList'
+import { ScrapeSubmitPanel } from '../components/batches/ScrapeSubmitPanel'
 import { Toolbar } from '../components/layout/Toolbar'
 import { DataList, DataListEmpty } from '../components/ui/DataList'
 import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel'
@@ -53,6 +54,8 @@ export function BatchesPage() {
           {String((error as Error).message || error)}
         </Text>
       ) : null}
+
+      <ScrapeSubmitPanel />
 
       <Grid templateColumns={{ base: '1fr', lg: selectedBatchId ? '1fr 1fr' : '1fr' }} gap={4}>
         {items.length === 0 && !isLoading ? (

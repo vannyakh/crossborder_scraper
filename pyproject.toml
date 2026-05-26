@@ -24,6 +24,7 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",
     "croniter>=2.0.0",
+    "psutil>=6.0.0",
 ]
 
 [project.scripts]

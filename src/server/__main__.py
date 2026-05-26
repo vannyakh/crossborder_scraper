@@ -4,13 +4,16 @@ import os
 
 import uvicorn
 
+from config import get_settings
+
 
 def main() -> None:
     reload = os.getenv("UVICORN_RELOAD", "1").lower() in ("1", "true", "yes")
+    settings = get_settings()
     uvicorn.run(
         "server.app:app",
-        host="0.0.0.0",
-        port=8000,
+        host=settings.panel_host,
+        port=settings.panel_port,
         reload=reload,
     )
 

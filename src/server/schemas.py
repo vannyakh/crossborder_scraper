@@ -368,6 +368,112 @@ class MarketplaceListResponse(BaseModel):
     items: list[MarketplaceInfo]
 
 
+class HardwareCpuInfo(BaseModel):
+    percent: float
+    count_logical: int
+    count_physical: int | None = None
+    model_name: str = ""
+    architecture_summary: str = ""
+    per_core_percent: list[float] = Field(default_factory=list)
+
+
+class HardwareMemoryInfo(BaseModel):
+    used_bytes: int
+    total_bytes: int
+    available_bytes: int
+    percent: float
+    used_human: str
+    total_human: str
+    available_human: str = ""
+    swap_percent: float | None = None
+    swap_used_human: str | None = None
+    swap_total_human: str | None = None
+
+
+class HardwareDiskInfo(BaseModel):
+    path: str
+    used_bytes: int
+    total_bytes: int
+    free_bytes: int
+    percent: float
+    used_human: str
+    total_human: str
+    free_human: str = ""
+
+
+class HardwareProcessEntry(BaseModel):
+    pid: int
+    name: str
+    cpu_percent: float | None = None
+    memory_percent: float | None = None
+    rss_human: str | None = None
+
+
+class HardwareLoadInfo(BaseModel):
+    load_1: float
+    load_5: float
+    load_15: float
+    percent: float
+
+
+class HardwareProcessInfo(BaseModel):
+    rss_bytes: int
+    rss_human: str
+    threads: int
+
+
+class HardwareMonitorResponse(BaseModel):
+    collected_at: datetime
+    hostname: str
+    platform: str
+    python_version: str
+    system_label: str = "System"
+    system_detail: str = ""
+    host_uptime_seconds: float = 0.0
+    host_uptime_label: str = ""
+    cpu: HardwareCpuInfo
+    memory: HardwareMemoryInfo
+    disk: HardwareDiskInfo
+    load: HardwareLoadInfo
+    process: HardwareProcessInfo
+    top_cpu_processes: list[HardwareProcessEntry] = Field(default_factory=list)
+    top_memory_processes: list[HardwareProcessEntry] = Field(default_factory=list)
+
+
+class MonitorStatusResponse(BaseModel):
+    collected_at: datetime
+    hardware: HardwareMonitorResponse
+    service: dict[str, Any]
+
+
+class PanelAccessResponse(BaseModel):
+    bind_host: str
+    bind_port: int
+    access_ip: str
+    access_port: int
+    panel_path: str
+    panel_url: str
+    copy_text: str
+
+
+class ServiceLogEntry(BaseModel):
+    id: str
+    category: str
+    user: str
+    operation_type: str
+    details: str
+    created_at: str
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class ServiceLogListResponse(BaseModel):
+    category: str
+    items: list[ServiceLogEntry]
+    total: int
+    limit: int
+    offset: int
+
+
 # Re-export for routers
 __all__ = [
     "AgentRunListResponse",
@@ -397,6 +503,11 @@ __all__ = [
     "LLMHealthResponse",
     "MarketplaceInfo",
     "MarketplaceListResponse",
+    "HardwareMonitorResponse",
+    "MonitorStatusResponse",
+    "PanelAccessResponse",
+    "ServiceLogEntry",
+    "ServiceLogListResponse",
     "MessageResponse",
     "ProductListResponse",
     "RuntimeStatusResponse",

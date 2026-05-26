@@ -197,7 +197,10 @@ class ScrapeManager:
         use_ai: bool | None = None,
         save: bool = True,
         session_id: str | None = None,
+        submitted_by: str | None = None,
     ) -> str:
+        from server.service_logs import append_service_log
+
         engine = ScrapeEngine(self.settings, max_workers=workers)
         jobs = [
             ScrapeJob(url=u, use_ai=use_ai, session_id=session_id)
@@ -205,6 +208,7 @@ class ScrapeManager:
         ]
         report = BatchReport(total=len(jobs))
         batch_id = report.batch_id
+        batch_user = submitted_by or "system"
 
         async with self._lock:
             self.store.create_batch(
@@ -229,6 +233,13 @@ class ScrapeManager:
                 batch_id,
                 "batch_started",
                 {"batch_id": batch_id, "total": len(jobs)},
+            )
+            append_service_log(
+                "run",
+                user=batch_user,
+                operation_type="Scrape batch",
+                details=f"Batch {batch_id} started ({len(jobs)} jobs, workers={workers or self.settings.max_concurrent_jobs})",
+                meta={"batch_id": batch_id},
             )
 
         async def _run() -> None:
@@ -280,6 +291,16 @@ class ScrapeManager:
                     st["status"] = "completed"
                     self._live_status[batch_id] = st
                 self.store.finish_batch(batch_id, final, status="completed")
+                append_service_log(
+                    "run",
+                    user=batch_user,
+                    operation_type="Scrape batch",
+                    details=(
+                        f"Batch {batch_id} completed: {final.success}/{final.total} success, "
+                        f"{final.failed} failed"
+                    ),
+                    meta={"batch_id": batch_id, "status": "completed"},
+                )
                 self._schedule_event(batch_id, "batch_complete", {**st, "batch_id": batch_id})
                 await batch_events.close_batch(batch_id)
             except asyncio.CancelledError:
@@ -291,6 +312,13 @@ class ScrapeManager:
                 report = self._live_reports.get(batch_id, report)
                 report.finished_at = datetime.utcnow()
                 self.store.finish_batch(batch_id, report, status="cancelled")
+                append_service_log(
+                    "run",
+                    user=batch_user,
+                    operation_type="Scrape batch",
+                    details=f"Batch {batch_id} cancelled",
+                    meta={"batch_id": batch_id, "status": "cancelled"},
+                )
                 self._schedule_event(batch_id, "batch_cancelled", {**st, "batch_id": batch_id})
                 await batch_events.close_batch(batch_id)
                 logger.info("Batch {} cancelled", batch_id)

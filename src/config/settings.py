@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     panel_auth_enabled: bool = True
     panel_username: str | None = None
     panel_password: str | None = None
+    panel_host: str = "0.0.0.0"
+    panel_port: int = 8000
 
     # Paths
     data_dir: Path = Field(default=Path("data"))

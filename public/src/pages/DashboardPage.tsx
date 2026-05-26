@@ -1,55 +1,121 @@
+import { Box, Grid, Text, VStack } from '@chakra-ui/react'
 import {
-  Button,
-  Checkbox,
-  Field,
-  Grid,
-  HStack,
-  NativeSelect,
-  SimpleGrid,
-  Text,
-  Textarea,
-  VStack,
-} from '@chakra-ui/react'
+  formatStartedAt,
+  formatUptime,
+} from '../components/dashboard/dashboard-utils'
+import { HardwareGaugePanel } from '../components/dashboard/HardwareGaugePanel'
+import {
+  HardwareTrendChart,
+  WorkloadChart,
+} from '../components/dashboard/MonitorChartsPanel'
+import { OverviewPanel } from '../components/dashboard/OverviewPanel'
+import { RunningBatchesPanel } from '../components/dashboard/RunningBatchesPanel'
+import { ServiceGaugePanel } from '../components/dashboard/ServiceGaugePanel'
+import { ToolsPanel, dashboardToolIcons } from '../components/dashboard/ToolsPanel'
+import { useActivitySamples } from '../components/dashboard/use-activity-samples'
+import { useHardwareSamples } from '../components/dashboard/use-hardware-samples'
 import { Toolbar } from '../components/layout/Toolbar'
-import { BatchJobList } from '../components/batches/BatchJobList'
 import { Stagger, StaggerItem } from '../components/motion/Stagger'
-import { fieldStyles } from '../components/ui/field-styles'
-import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel'
-import { StatCard } from '../components/ui/StatCard'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { useDashboard } from '../hooks/use-dashboard'
+import {
+  useAgentSchedulesQuery,
+  useGatewayStatusQuery,
+  useHealthQuery,
+  useLLMHealthQuery,
+  useMarketplacesQuery,
+  useMonitorStatusQuery,
+  useStatsQuery,
+} from '../hooks'
 
 export function DashboardPage() {
-  const {
-    urlsText,
-    workers,
-    useAi,
-    save,
-    urls,
-    setUrlsText,
-    setWorkers,
-    setUseAi,
-    setSave,
-    config,
-    stats,
-    apiReady,
-    batchId,
-    status,
-    result,
-    isRunning,
-    isConnected,
-    liveResults,
-    submit,
-    clear,
-    isSubmitting,
-    error,
-  } = useDashboard()
+  const health = useHealthQuery()
+  const monitor = useMonitorStatusQuery()
+  const gateway = useGatewayStatusQuery()
+  const stats = useStatsQuery()
+  const runtime = monitor.data?.service ?? gateway.data?.runtime
+  const hardware = monitor.data?.hardware
+  const llm = useLLMHealthQuery(Boolean(runtime?.ai?.ai_enabled))
+  const schedules = useAgentSchedulesQuery()
+  const marketplaces = useMarketplacesQuery()
+  const activitySamples = useActivitySamples(runtime)
+  const hardwareSamples = useHardwareSamples(hardware)
+
+  const apiReady = health.data?.status === 'ok' && !health.isError
+  const maxJobs = runtime?.engine.max_concurrent_jobs ?? 3
+  const active = runtime?.active_tasks ?? 0
+  const running = runtime?.running_batches.length ?? stats.data?.running_batches ?? 0
+  const products = runtime?.storage.products ?? stats.data?.products ?? 0
+  const files = runtime?.storage.output_files ?? stats.data?.output_files ?? 0
+  const proxies = runtime?.engine.proxy_count ?? 0
+
+  const marketplaceConfigured =
+    marketplaces.data?.items.filter((m) => m.configured).length ?? 0
+
+  const enabledSchedules = schedules.data?.items.filter((s) => s.enabled).length ?? 0
+
+  const toolCards = [
+    {
+      id: 'batches',
+      title: 'Scrape batches',
+      description: 'Submit URLs, track live progress, and cancel runs.',
+      to: '/batches',
+      status: running > 0 ? `${running} running` : 'Idle',
+      statusTone: running > 0 ? ('running' as const) : ('neutral' as const),
+      icon: dashboardToolIcons.batches,
+      primaryAction: { label: 'New batch', to: '/batches' },
+    },
+    {
+      id: 'agent',
+      title: 'Gateway agent',
+      description: 'LLM tool loop, prompts, and cron schedules.',
+      to: '/agent',
+      status:
+        runtime?.ai?.ai_agent_enabled && enabledSchedules > 0
+          ? `${enabledSchedules} schedules`
+          : runtime?.ai?.ai_agent_enabled
+            ? 'Ready'
+            : 'Off',
+      statusTone: runtime?.ai?.ai_agent_enabled ? ('success' as const) : ('neutral' as const),
+      icon: dashboardToolIcons.agent,
+    },
+    {
+      id: 'products',
+      title: 'Product catalog',
+      description: 'Browse scraped items and export to marketplaces.',
+      to: '/products',
+      status: `${products} items`,
+      statusTone: 'neutral' as const,
+      icon: dashboardToolIcons.products,
+    },
+    {
+      id: 'files',
+      title: 'Output files',
+      description: 'Download exports and generated listing files.',
+      to: '/files',
+      status: `${files} files`,
+      statusTone: 'neutral' as const,
+      icon: dashboardToolIcons.files,
+    },
+    {
+      id: 'settings',
+      title: 'Configuration',
+      description: 'AI keys, proxy pool, workers, and integrations.',
+      to: '/settings',
+      status: llm.data?.ok ? 'LLM OK' : runtime?.ai?.ai_enabled ? 'Check LLM' : 'Panel',
+      statusTone: llm.data?.ok ? ('success' as const) : ('neutral' as const),
+      icon: dashboardToolIcons.settings,
+    },
+  ]
 
   return (
     <VStack align="stretch" gap={0}>
       <Toolbar
-        title="Home"
-        description="Submit scrape jobs and monitor the engine."
+        title="Overview"
+        description={
+          runtime
+            ? `${runtime.service} v${runtime.version} · up ${formatUptime(runtime.uptime_seconds)} · since ${formatStartedAt(runtime.started_at)}`
+            : 'Monitor server hardware, runtime, and workload.'
+        }
         actions={
           <StatusBadge
             status={apiReady ? 'success' : 'danger'}
@@ -59,130 +125,70 @@ export function DashboardPage() {
       />
 
       <Stagger>
-      <Grid templateColumns={{ base: '1fr', xl: '1fr 1fr' }} gap={4}>
         <StaggerItem>
-        <Panel>
-          <PanelHeader title="New task" description="One URL per line" />
-          <PanelBody>
-            <Field.Root>
-              <Field.Label fontSize="xs" color="fg.muted">
-                URLs
-              </Field.Label>
-              <Textarea {...fieldStyles} minH="120px" value={urlsText} onChange={(e) => setUrlsText(e.target.value)} />
-            </Field.Root>
-
-            <SimpleGrid columns={2} gap={3} mt={3}>
-              <Field.Root>
-                <Field.Label fontSize="xs" color="fg.muted">
-                  Workers
-                </Field.Label>
-                <NativeSelect.Root>
-                  <NativeSelect.Field
-                    {...fieldStyles}
-                    value={String(workers)}
-                    onChange={(e) => setWorkers(Number(e.target.value))}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                </NativeSelect.Root>
-              </Field.Root>
-              <Field.Root>
-                <Field.Label fontSize="xs" color="fg.muted">
-                  AI
-                </Field.Label>
-                <NativeSelect.Root>
-                  <NativeSelect.Field
-                    {...fieldStyles}
-                    value={useAi ? 'true' : 'false'}
-                    onChange={(e) => setUseAi(e.target.value === 'true')}
-                  >
-                    <option value="false">Off</option>
-                    <option value="true">On</option>
-                  </NativeSelect.Field>
-                </NativeSelect.Root>
-              </Field.Root>
-            </SimpleGrid>
-
-            <Checkbox.Root
-              mt={3}
-              checked={save}
-              onCheckedChange={(e) => setSave(!!e.checked)}
-              colorPalette="blue"
-            >
-              <Checkbox.HiddenInput />
-              <Checkbox.Control />
-              <Checkbox.Label fontSize="sm" color="fg.muted">
-                Save to database
-              </Checkbox.Label>
-            </Checkbox.Root>
-
-            <HStack mt={4} gap={2}>
-              <Button
-                colorPalette="blue"
-                size="sm"
-                borderRadius="input"
-                loading={isSubmitting}
-                disabled={urls.length === 0}
-                onClick={() => void submit()}
-              >
-                Submit ({urls.length})
-              </Button>
-              <Button size="sm" variant="outline" borderColor="border.subtle" borderRadius="input" onClick={clear}>
-                Clear
-              </Button>
-            </HStack>
-
-            {error ? (
-              <Text mt={3} fontSize="sm" color="red.500">
-                {error}
-              </Text>
-            ) : null}
-          </PanelBody>
-        </Panel>
+          <HardwareGaugePanel hardware={hardware} />
         </StaggerItem>
 
         <StaggerItem>
-        <Panel>
-          <PanelHeader title="Status" />
-          <PanelBody>
-            <SimpleGrid columns={2} gap={2}>
-              <StatCard label="Workers" value={config?.max_concurrent_jobs ?? '—'} />
-              <StatCard label="Products" value={stats?.products ?? '—'} />
-              <StatCard label="Files" value={stats?.output_files ?? '—'} />
-              <StatCard label="Batch" value={batchId ? batchId.slice(0, 8) : '—'} mono small />
-              <StatCard
-                label="Progress"
-                value={status ? `${status.completed}/${status.total}` : '—'}
-              />
-              <StatCard label="OK / Fail" value={status ? `${status.success} / ${status.failed}` : '—'} />
-            </SimpleGrid>
-            {isRunning ? (
-              <Text mt={2} fontSize="xs" color="brand.emphasis">
-                {isConnected ? 'Live stream connected…' : 'Connecting to live stream…'}
-              </Text>
-            ) : null}
-          </PanelBody>
-        </Panel>
+          <Box mt={4}>
+            <ServiceGaugePanel
+              active={active}
+              maxJobs={maxJobs}
+              running={running}
+              products={products}
+              proxies={proxies}
+            />
+          </Box>
         </StaggerItem>
-      </Grid>
 
-      {(result || liveResults.length > 0) ? (
         <StaggerItem>
-        <Panel mt={4}>
-          <PanelHeader
-            title="Results"
-            description={`${(result?.results ?? liveResults).length} jobs`}
-          />
-          <PanelBody p={0}>
-            <BatchJobList results={result?.results ?? liveResults} />
-          </PanelBody>
-        </Panel>
+          <Box mt={4}>
+            <OverviewPanel
+              runtime={runtime}
+              stats={stats.data}
+              llm={llm.data}
+              hardware={hardware}
+              gatewayTools={gateway.data?.tools_count ?? 0}
+              gatewayWorkflows={gateway.data?.workflows_count ?? 0}
+              scheduleCount={schedules.data?.items.length ?? 0}
+              marketplaceConfigured={marketplaceConfigured}
+            />
+          </Box>
         </StaggerItem>
-      ) : null}
+
+        <StaggerItem>
+          <Grid
+            mt={4}
+            templateColumns={{ base: '1fr', xl: '1fr 1fr' }}
+            gap={4}
+            alignItems="stretch"
+          >
+            <HardwareTrendChart samples={hardwareSamples} />
+            <WorkloadChart samples={activitySamples} />
+          </Grid>
+        </StaggerItem>
+
+        <StaggerItem>
+          <Box mt={4}>
+            <ToolsPanel tools={toolCards} />
+          </Box>
+        </StaggerItem>
+
+        {runtime?.running_batches.length ? (
+          <StaggerItem>
+            <Box mt={4}>
+              <RunningBatchesPanel batches={runtime.running_batches} />
+            </Box>
+          </StaggerItem>
+        ) : null}
+
+        {monitor.isError ? (
+          <StaggerItem>
+            <Text mt={4} fontSize="sm" color="red.500">
+              {String((monitor.error as Error).message || monitor.error)}
+            </Text>
+          </StaggerItem>
+        ) : null}
       </Stagger>
     </VStack>
   )

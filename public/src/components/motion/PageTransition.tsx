@@ -50,7 +50,11 @@ export function PageTransition({ children }: { children: ReactNode }) {
     config.pageTransition === 'none'
 
   if (disabled) {
-    return <Box key={location.pathname}>{children}</Box>
+    return (
+      <Box key={location.pathname} w="full" minW={0}>
+        {children}
+      </Box>
+    )
   }
 
   const duration = getMotionDurationSeconds(config.motionSpeed)
@@ -60,6 +64,8 @@ export function PageTransition({ children }: { children: ReactNode }) {
     <AnimatePresence mode="wait">
       <MotionBox
         key={location.pathname}
+        w="full"
+        minW={0}
         initial={variants.initial}
         animate={variants.animate}
         exit={variants.exit}
