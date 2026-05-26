@@ -20,4 +20,18 @@ export default defineConfig({
       '/files': 'http://127.0.0.1:8000',
     },
   },
+  preview: {
+    port: 4173,
+    strictPort: true,
+    proxy: {
+      '/auth': 'http://127.0.0.1:8000',
+      '/health': 'http://127.0.0.1:8000',
+      '/config': 'http://127.0.0.1:8000',
+      '/stats': 'http://127.0.0.1:8000',
+      '/jobs': 'http://127.0.0.1:8000',
+      '/batches': 'http://127.0.0.1:8000',
+      '/products': 'http://127.0.0.1:8000',
+      '/files': 'http://127.0.0.1:8000',
+    },
+  },
 })

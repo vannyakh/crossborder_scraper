@@ -3,10 +3,9 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
-
 from config.credentials import ensure_panel_credentials, print_panel_credentials
 from server.routers import auth, batches, files, jobs, products, system
+from server.spa_static import SPAStaticFiles
 
 
 @asynccontextmanager
@@ -27,7 +26,11 @@ app = FastAPI(
 _repo_root = Path(__file__).resolve().parents[2]
 _ui_dist = _repo_root / "public" / "dist"
 if _ui_dist.exists():
-    app.mount("/ui", StaticFiles(directory=str(_ui_dist), html=True), name="ui")
+    app.mount(
+        "/ui",
+        SPAStaticFiles(directory=str(_ui_dist), html=True),
+        name="ui",
+    )
 
 app.include_router(auth.router)
 app.include_router(system.router)
