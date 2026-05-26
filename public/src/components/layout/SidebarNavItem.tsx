@@ -7,7 +7,7 @@ import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-pr
 const MotionBox = motion.create(Box)
 const MotionHStack = motion.create(HStack)
 
-const COLLAPSED_ICON_SIZE = '2.25rem'
+const COLLAPSED_ICON_SIZE = '2.5rem'
 
 type SidebarNavItemProps = {
   active: boolean
@@ -47,6 +47,11 @@ export function SidebarNavItem({
         borderRadius="var(--radius-input)"
         color={active ? 'var(--app-accent)' : 'fg.muted'}
         bg={active ? 'var(--nav-active-bg)' : 'transparent'}
+        boxShadow={
+          active
+            ? 'inset 0 0 0 1px color-mix(in srgb, var(--app-accent) 40%, transparent)'
+            : 'none'
+        }
         flexShrink={0}
         initial={false}
         whileHover={motionEnabled ? { scale: 1.04 } : undefined}

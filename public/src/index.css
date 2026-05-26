@@ -24,6 +24,8 @@
     --scrollbar-thumb: #c4cdd5;
     --scrollbar-thumb-hover: var(--app-accent);
     --scrollbar-border: #ffffff;
+    --flyout-bg: #ffffff;
+    --flyout-shadow: 0 10px 38px rgba(15, 23, 42, 0.14);
   }
 
   html {
@@ -44,21 +46,23 @@
     --app-canvas: #f7f8fa;
     --app-fg: #1f2328;
     --app-border: #d8dee4;
+    --flyout-bg: #ffffff;
+    --flyout-shadow: 0 10px 38px rgba(15, 23, 42, 0.12);
   }
 
   .dark {
     --app-canvas: #0d1117;
     --app-fg: #e6edf3;
     --app-border: #30363d;
+    --flyout-bg: #1c2128;
+    --flyout-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
   }
 
-  /* Global custom scrollbar (Firefox) */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
-  /* WebKit scrollbars */
   *::-webkit-scrollbar {
     width: var(--scrollbar-size);
     height: var(--scrollbar-size);
@@ -115,19 +119,96 @@ button:focus-visible {
   outline-color: var(--app-accent);
 }
 
-/* Collapsed sidebar — icon rail */
+/* —— Collapsed sidebar icon rail —— */
+.app-sidebar[data-collapsed] {
+  align-items: center;
+}
+
+.sidebar-flyout-trigger {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
 .app-sidebar[data-collapsed] .sidebar-nav-icon {
   margin-inline: auto;
 }
 
-/* Flyout submenu when sidebar is collapsed */
+.app-sidebar[data-collapsed] .sidebar-nav-icon[data-active] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-accent) 35%, transparent);
+}
+
+/* —— Collapsed flyout submenu —— */
+.sidebar-flyout__panel {
+  min-width: 10.75rem;
+  padding: 0.375rem;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--app-border);
+  background: var(--flyout-bg);
+  box-shadow: var(--flyout-shadow);
+  animation: sidebar-flyout-in 0.16s ease-out;
+}
+
+@keyframes sidebar-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.reduce-motion .sidebar-flyout__panel {
+  animation: none;
+}
+
+.sidebar-flyout__title {
+  margin: 0;
+  padding: 0.35rem 0.65rem 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-fg);
+  opacity: 0.55;
+  line-height: 1.2;
+  user-select: none;
+}
+
+.sidebar-flyout__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.sidebar-flyout__divider {
+  height: 1px;
+  margin: 0.2rem 0.5rem;
+  background: var(--app-border);
+  opacity: 0.85;
+}
+
 .sidebar-flyout__link {
   display: block;
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-input);
+  padding: 0.5rem 0.65rem;
+  border-radius: calc(var(--radius-input) - 1px);
   color: var(--app-fg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
   text-decoration: none;
+  white-space: nowrap;
   transition:
     background-color var(--motion-duration),
     color var(--motion-duration);
@@ -140,9 +221,11 @@ button:focus-visible {
 
 .sidebar-flyout__link--active {
   color: var(--app-accent);
-  background-color: var(--nav-active-bg);
+  font-weight: 600;
+  background-color: transparent;
 }
 
 .sidebar-flyout__link--active:hover {
   color: var(--app-accent);
+  background-color: var(--nav-active-bg);
 }

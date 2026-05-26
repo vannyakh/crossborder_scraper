@@ -1,5 +1,6 @@
 import { Box, Menu, Portal, Text } from '@chakra-ui/react'
 import type { LucideIcon } from 'lucide-react'
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import type { NavChildLink } from '../../config/nav'
 import { isPathActive } from '../../config/nav'
@@ -21,53 +22,78 @@ export function SidebarFlyoutMenu({
   onNavigate,
 }: SidebarFlyoutMenuProps) {
   const location = useLocation()
+  const [open, setOpen] = useState(false)
+  const triggerActive = active || open
 
   return (
-    <Menu.Root positioning={{ placement: 'right-start', gutter: 10 }}>
+    <Menu.Root
+      open={open}
+      onOpenChange={(e) => setOpen(e.open)}
+      positioning={{
+        placement: 'right-start',
+        gutter: 14,
+        strategy: 'fixed',
+        overlap: false,
+      }}
+    >
       <Menu.Trigger asChild>
-        <Box as="span" display="flex" justifyContent="center" w="full" cursor="pointer">
-          <SidebarNavItem active={active} collapsed label={label} icon={icon} />
-        </Box>
+        <button
+          type="button"
+          className="sidebar-flyout-trigger"
+          aria-label={label}
+          aria-haspopup="menu"
+          aria-expanded={open}
+        >
+          <SidebarNavItem active={triggerActive} collapsed label={label} icon={icon} />
+        </button>
       </Menu.Trigger>
 
       <Portal>
-        <Menu.Positioner>
+        <Menu.Positioner zIndex={50}>
           <Menu.Content
             className="sidebar-flyout"
-            minW="9.5rem"
-            py={1.5}
-            px={1}
-            borderRadius="var(--radius-panel)"
-            borderWidth="1px"
-            borderColor="border.subtle"
-            bg="bg.elevated"
-            shadow="lg"
-            zIndex={40}
+            p={0}
+            border="none"
+            bg="transparent"
+            boxShadow="none"
+            minW={0}
+            overflow="visible"
           >
-            {children.map((child) => {
-              const childActive = isPathActive(location.pathname, child.to, child.end)
-              return (
-                <Menu.Item
-                  key={child.to}
-                  value={child.to}
-                  asChild
-                  p={0}
-                  bg="transparent"
-                  _hover={{ bg: 'transparent' }}
-                >
-                  <NavLink
-                    to={child.to}
-                    end={child.end}
-                    onClick={onNavigate}
-                    className={`sidebar-flyout__link${childActive ? ' sidebar-flyout__link--active' : ''}`}
-                  >
-                    <Text fontSize="sm" fontWeight={childActive ? 'semibold' : 'normal'}>
-                      {child.label}
-                    </Text>
-                  </NavLink>
-                </Menu.Item>
-              )
-            })}
+            <Box className="sidebar-flyout__panel" role="menu" aria-label={label}>
+              <Text className="sidebar-flyout__title" as="p">
+                {label}
+              </Text>
+
+              <Box className="sidebar-flyout__list">
+                {children.map((child, index) => {
+                  const childActive = isPathActive(location.pathname, child.to, child.end)
+                  return (
+                    <Box key={child.to}>
+                      {index > 0 ? <Box className="sidebar-flyout__divider" aria-hidden /> : null}
+                      <NavLink
+                        to={child.to}
+                        end={child.end}
+                        role="menuitem"
+                        onClick={() => {
+                          onNavigate?.()
+                          setOpen(false)
+                        }}
+                        className={({ isActive }) =>
+                          [
+                            'sidebar-flyout__link',
+                            isActive || childActive ? 'sidebar-flyout__link--active' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    </Box>
+                  )
+                })}
+              </Box>
+            </Box>
           </Menu.Content>
         </Menu.Positioner>
       </Portal>

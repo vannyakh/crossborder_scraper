@@ -34,6 +34,11 @@ function applyScrollbarVars(resolved: 'light' | 'dark', accent: string) {
   root.style.setProperty('--scrollbar-thumb', isDark ? '#30363d' : '#c4cdd5')
   root.style.setProperty('--scrollbar-thumb-hover', accent)
   root.style.setProperty('--scrollbar-border', isDark ? '#161b22' : '#ffffff')
+  root.style.setProperty('--flyout-bg', isDark ? '#1c2128' : '#ffffff')
+  root.style.setProperty(
+    '--flyout-shadow',
+    isDark ? '0 12px 40px rgba(0, 0, 0, 0.55)' : '0 10px 38px rgba(15, 23, 42, 0.12)',
+  )
 }
 
 export function applyThemeConfigToDocument(
