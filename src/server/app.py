@@ -25,12 +25,6 @@ app = FastAPI(
 
 _repo_root = Path(__file__).resolve().parents[2]
 _ui_dist = _repo_root / "public" / "dist"
-if _ui_dist.exists():
-    app.mount(
-        "/ui",
-        SPAStaticFiles(directory=str(_ui_dist), html=True),
-        name="ui",
-    )
 
 app.include_router(auth.router)
 app.include_router(system.router)
@@ -43,3 +37,12 @@ app.include_router(files.router)
 @app.get("/")
 async def root() -> RedirectResponse:
     return RedirectResponse(url="/ui")
+
+
+# Mount UI last so API routes (/files, /batches, …) are not shadowed.
+if _ui_dist.is_dir() and (_ui_dist / "index.html").is_file():
+    app.mount(
+        "/ui",
+        SPAStaticFiles(directory=str(_ui_dist), html=True),
+        name="ui",
+    )
