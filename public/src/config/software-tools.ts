@@ -13,13 +13,6 @@ import {
 } from 'lucide-react'
 import type { LLMHealth, RuntimeStatus, ServiceGatewaySummary } from '../lib/api'
 
-/** Sidebar + dashboard: scrape pipeline outputs */
-export const DATA_TOOL_NAV = [
-  { to: '/batches', label: 'Batches' },
-  { to: '/products', label: 'Products' },
-  { to: '/files', label: 'Files' },
-] as const
-
 /** Sidebar + dashboard: panel diagnostics & help */
 export const OPERATIONS_TOOL_NAV = [
   { to: '/store', label: 'App Store' },
@@ -55,7 +48,7 @@ export type SoftwareToolCard = {
 }
 
 export type SoftwareToolSection = {
-  id: 'data' | 'operations' | 'automation'
+  id: 'inventory' | 'operations' | 'automation'
   title: string
   description: string
   tools: SoftwareToolCard[]
@@ -85,8 +78,8 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
 
   return [
     {
-      id: 'data',
-      title: 'Scrape & catalog',
+      id: 'inventory',
+      title: 'Inventory',
       description: 'Submit jobs, browse products, download export files',
       tools: [
         card({
@@ -94,17 +87,17 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           icon: 'batches',
           title: 'Scrape batches',
           description: 'Submit URLs, track live progress, and cancel runs.',
-          to: '/batches',
+          to: '/inventory/batches',
           status: runningBatches > 0 ? `${runningBatches} running` : 'Idle',
           statusTone: runningBatches > 0 ? 'running' : 'neutral',
-          primaryAction: { label: 'New batch', to: '/batches' },
+          primaryAction: { label: 'New batch', to: '/inventory/batches' },
         }),
         card({
           id: 'products',
           icon: 'products',
           title: 'Product catalog',
           description: 'Browse scraped items and export to marketplaces.',
-          to: '/products',
+          to: '/inventory/products',
           status: `${products} items`,
           statusTone: 'neutral',
         }),
@@ -113,7 +106,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           icon: 'files',
           title: 'Output files',
           description: 'CSV/JSON exports and generated listing files on disk.',
-          to: '/files',
+          to: '/inventory/files',
           status: `${files} files`,
           statusTone: 'neutral',
         }),

@@ -1,8 +1,9 @@
-import { Bot, Database, Home, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
+import { Bot, Home, Settings, Sparkles, Warehouse, Wrench, type LucideIcon } from 'lucide-react'
 import { AGENT_NAV, agentSectionPath } from '../components/agent/agent-sections'
 import { ROADMAP_FEATURES, roadmapPath } from '../components/roadmap/roadmap-sections'
 import { SETTINGS_NAV, settingsSectionPath } from '../components/settings/settings-sections'
-import { DATA_TOOL_NAV, OPERATIONS_TOOL_NAV } from './software-tools'
+import { INVENTORY_NAV } from '../components/inventory/inventory-sections'
+import { OPERATIONS_TOOL_NAV } from './software-tools'
 
 export type NavLinkItem = {
   kind: 'link'
@@ -49,10 +50,10 @@ export const navEntries: NavEntry[] = [
   { kind: 'link', to: '/', label: 'Overview', icon: Home, end: true },
   {
     kind: 'group',
-    id: 'data',
-    label: 'Data',
-    icon: Database,
-    children: [...DATA_TOOL_NAV],
+    id: 'inventory',
+    label: 'Inventory',
+    icon: Warehouse,
+    children: [...INVENTORY_NAV],
   },
   {
     kind: 'group',

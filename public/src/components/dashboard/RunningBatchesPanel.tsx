@@ -13,7 +13,7 @@ export function RunningBatchesPanel({ batches }: { batches: RuntimeBatchInfo[] }
       description="Live batch progress"
       action={
         <Text asChild fontSize="xs" color="brand.emphasis" whiteSpace="nowrap">
-          <Link to="/batches">View all →</Link>
+          <Link to="/inventory/batches">View all →</Link>
         </Text>
       }
     >

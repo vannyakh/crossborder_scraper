@@ -1,12 +1,15 @@
 import { Box, Button, Grid, HStack, Table, Text } from '@chakra-ui/react'
-import { BatchJobList } from '../components/batches/BatchJobList'
-import { ScrapeSubmitPanel } from '../components/batches/ScrapeSubmitPanel'
-import { Toolbar } from '../components/layout/Toolbar'
-import { DataList, DataListEmpty } from '../components/ui/DataList'
-import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel'
-import { StatusBadge } from '../components/ui/StatusBadge'
-import { useBatchesQuery, useCancelBatchMutation, useSelectedBatchQuery } from '../hooks'
-import { useUiStore } from '../stores/ui-store'
+import { useMemo } from 'react'
+import { BatchJobList } from '../batches/BatchJobList'
+import { ScrapeSubmitPanel } from '../batches/ScrapeSubmitPanel'
+import { DataList, DataListEmpty } from '../ui/DataList'
+import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
+import { StatusBadge } from '../ui/StatusBadge'
+import { useBatchesQuery, useCancelBatchMutation, useSelectedBatchQuery } from '../../hooks'
+import { useUiStore } from '../../stores/ui-store'
+import { InventorySearchBar } from './InventorySearchBar'
+import { useInventoryListState, useInventoryPagedList } from './inventory-list-utils'
+import { InventoryPagination } from './InventoryPagination'
 
 function statusTone(s: string): 'running' | 'success' | 'neutral' | 'danger' {
   if (s === 'running') return 'running'
@@ -15,14 +18,23 @@ function statusTone(s: string): 'running' | 'success' | 'neutral' | 'danger' {
   return 'danger'
 }
 
-export function BatchesPage() {
-  const { data, isLoading, error, refetch } = useBatchesQuery()
+export function InventoryBatchesSection() {
+  const { data, isLoading, error } = useBatchesQuery()
   const selectedBatchId = useUiStore((s) => s.selectedBatchId)
   const setSelectedBatchId = useUiStore((s) => s.setSelectedBatchId)
   const selected = useSelectedBatchQuery()
   const cancelMutation = useCancelBatchMutation()
+  const list = useInventoryListState(15)
 
   const items = data?.items ?? []
+  const filtered = useMemo(() => {
+    const q = list.search.trim().toLowerCase()
+    if (!q) return items
+    return items.filter((b) => b.batch_id.toLowerCase().includes(q) || b.status.toLowerCase().includes(q))
+  }, [items, list.search])
+
+  const paged = useInventoryPagedList(filtered, list)
+
   const liveProgress = selected.status
     ? `${selected.status.success}/${selected.status.total}`
     : selected.summary
@@ -30,24 +42,16 @@ export function BatchesPage() {
       : '—'
 
   return (
-    <>
-      <Toolbar
-        title="Batches"
-        description="Scrape run history with live progress for running jobs"
-        actions={
-          <Button
-            size="sm"
-            variant="outline"
-            borderColor="border.subtle"
-            borderRadius="input"
-            colorPalette="blue"
-            loading={isLoading}
-            onClick={() => void refetch()}
-          >
-            Refresh
-          </Button>
-        }
-      />
+    <Box>
+      <ScrapeSubmitPanel />
+
+      <HStack justify="flex-end" mb={3} flexWrap="wrap" gap={2}>
+        <InventorySearchBar
+          value={list.search}
+          onChange={list.setSearch}
+          placeholder="Search batch ID or status…"
+        />
+      </HStack>
 
       {error ? (
         <Text fontSize="sm" color="red.500" mb={3}>
@@ -55,23 +59,23 @@ export function BatchesPage() {
         </Text>
       ) : null}
 
-      <ScrapeSubmitPanel />
-
       <Grid templateColumns={{ base: '1fr', lg: selectedBatchId ? '1fr 1fr' : '1fr' }} gap={4}>
-        {items.length === 0 && !isLoading ? (
-          <DataListEmpty>No batches yet.</DataListEmpty>
+        {isLoading ? (
+          <DataListEmpty>Loading batches…</DataListEmpty>
+        ) : paged.total === 0 ? (
+          <DataListEmpty>No batches match your search.</DataListEmpty>
         ) : (
           <DataList>
             <Table.Header bg="bg.panelHover">
               <Table.Row>
-                <Table.ColumnHeader>ID</Table.ColumnHeader>
+                <Table.ColumnHeader>Batch</Table.ColumnHeader>
                 <Table.ColumnHeader>Status</Table.ColumnHeader>
                 <Table.ColumnHeader>Progress</Table.ColumnHeader>
                 <Table.ColumnHeader />
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {items.map((b) => {
+              {paged.items.map((b) => {
                 const rowProgress =
                   selectedBatchId === b.batch_id && selected.status
                     ? `${selected.status.success}/${selected.status.total}`
@@ -84,8 +88,10 @@ export function BatchesPage() {
                     _hover={{ bg: 'bg.panelHover' }}
                     onClick={() => setSelectedBatchId(b.batch_id)}
                   >
-                    <Table.Cell fontFamily="mono" fontSize="sm">
-                      {b.batch_id}
+                    <Table.Cell fontFamily="mono" fontSize="sm" maxW="200px">
+                      <Text lineClamp={1} truncate title={b.batch_id}>
+                        {b.batch_id}
+                      </Text>
                     </Table.Cell>
                     <Table.Cell>
                       <StatusBadge status={statusTone(b.status)} label={b.status} />
@@ -97,8 +103,9 @@ export function BatchesPage() {
                       {b.status === 'running' ? (
                         <Button
                           size="xs"
-                          variant="ghost"
+                          variant="outline"
                           colorPalette="red"
+                          borderRadius="input"
                           onClick={() => void cancelMutation.mutateAsync(b.batch_id)}
                         >
                           Cancel
@@ -120,7 +127,7 @@ export function BatchesPage() {
                 selected.isRunning
                   ? selected.isConnected
                     ? 'Live stream connected'
-                    : 'Connecting to live stream…'
+                    : 'Connecting…'
                   : 'Completed batch'
               }
             />
@@ -145,6 +152,15 @@ export function BatchesPage() {
           </Panel>
         ) : null}
       </Grid>
-    </>
+
+      <InventoryPagination
+        page={paged.page}
+        totalPages={paged.totalPages}
+        total={paged.total}
+        pageSize={list.pageSize}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+      />
+    </Box>
   )
 }
