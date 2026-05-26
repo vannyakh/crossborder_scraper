@@ -4,6 +4,7 @@ import {
   type BatchReport,
   type BatchStatus,
   type Config,
+  type Stats,
   useInterval,
 } from '../lib/api'
 
@@ -12,6 +13,7 @@ const inputClass =
 
 export function DashboardPage() {
   const [config, setConfig] = useState<Config | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null)
   const [urlsText, setUrlsText] = useState(
     'https://detail.1688.com/offer/XXXXXXXX.html\nhttps://www.aliexpress.com/item/YYYYYYYY.html',
   )
@@ -36,8 +38,9 @@ export function DashboardPage() {
 
   async function loadConfig() {
     try {
-      const c = await api<Config>('/config')
+      const [c, s] = await Promise.all([api<Config>('/config'), api<Stats>('/stats')])
       setConfig(c)
+      setStats(s)
       if (typeof c.max_concurrent_jobs === 'number') setWorkers(c.max_concurrent_jobs)
     } catch (e) {
       setErr(String((e as Error).message || e))
@@ -193,6 +196,8 @@ export function DashboardPage() {
               small
             />
             <Stat label="AI enabled" value={String(config?.ai_enabled ?? false)} />
+            <Stat label="Stored products" value={stats?.products ?? '—'} />
+            <Stat label="Output files" value={stats?.output_files ?? '—'} />
           </dl>
 
           <hr className="my-3.5 border-white/10" />
