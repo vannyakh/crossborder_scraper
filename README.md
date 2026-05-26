@@ -41,6 +41,8 @@ scraper setup          # auto-generates PANEL_USERNAME + PANEL_PASSWORD in .env
 
 Panel login credentials are printed once and saved to `.env` as `PANEL_USERNAME` / `PANEL_PASSWORD`.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the gateway + agent + workflow design (inspired by n8n workflows and OpenClaw's control plane).
+
 ### 3. Login (1688 / Taobao need this)
 
 ```bash
@@ -76,6 +78,27 @@ python main.py export "https://..." shopee --scrape
 python main.py batch urls.txt --workers 5
 python main.py batch urls.txt --ai          # force AI extraction
 python main.py engine                       # show workers, proxies, cookies, AI config
+```
+
+### Gateway + AI agent (control plane)
+
+```bash
+uv run serve                                # start API + web UI gateway
+scraper gateway                             # gateway status
+scraper agent "list marketplaces and last 5 products"
+scraper workflow scrape_to_export --url "https://..." --marketplace shopify
+```
+
+CLI uses the same HTTP API as the web panel (`/gateway/*`). Use `--local` on `scraper agent` to run in-process without the server.
+
+### Agent page + cron schedules
+
+Open **Agent** in the sidebar (`/ui/agent`) for chat, tool trace, and background cron tasks.
+
+Prompt templates live in `libs/prompts/*.md`. Schedules in `config/agent_schedules.json`:
+
+```bash
+cp config/agent_schedules.example.json config/agent_schedules.json
 ```
 
 ## Scrape Engine (multi-job concurrency)

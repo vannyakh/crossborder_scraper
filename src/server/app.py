@@ -4,22 +4,28 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from config.credentials import ensure_panel_credentials, print_panel_credentials
-from server.routers import ai, auth, batches, files, jobs, products, runtime, system
+from server.routers import ai, auth, batches, files, gateway, jobs, products, runtime, system
 from server.spa_static import SPAStaticFiles
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from gateway.scheduler import get_scheduler
+    from gateway.schedules_store import ensure_schedules_file
+
     username, password, generated = ensure_panel_credentials()
     if generated:
         print_panel_credentials(username, password)
+    ensure_schedules_file()
+    get_scheduler().start()
     yield
+    await get_scheduler().stop()
 
 
 app = FastAPI(
     title="Crossborder Scraper API",
-    version="0.3.0",
-    description="Full scraper control: jobs, products, files, and export processing.",
+    version="0.4.0",
+    description="Gateway control plane: scrape, AI agent, workflows, export.",
     lifespan=lifespan,
 )
 
@@ -30,6 +36,7 @@ app.include_router(auth.router)
 app.include_router(system.router)
 app.include_router(ai.router)
 app.include_router(runtime.router)
+app.include_router(gateway.router)
 app.include_router(jobs.router)
 app.include_router(batches.router)
 app.include_router(products.router)

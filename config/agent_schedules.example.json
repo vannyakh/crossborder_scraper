@@ -1,0 +1,15 @@
+{
+  "schedules": [
+    {
+      "id": "daily-catalog-monitor",
+      "name": "Daily catalog monitor",
+      "enabled": true,
+      "cron": "0 9 * * *",
+      "prompt_id": "catalog_monitor",
+      "message": "Run catalog and marketplace health snapshot. Report actions needed.",
+      "next_run_at": null,
+      "last_run_at": null,
+      "last_status": null
+    }
+  ]
+}

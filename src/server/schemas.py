@@ -192,6 +192,114 @@ class PanelConfigUpdate(BaseModel):
     marketplaces: dict[str, MarketplaceCredentialsUpdate] | None = None
 
 
+class GatewayAgentRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=8000)
+    prompt_id: str | None = None
+
+
+class GatewayAgentResponse(BaseModel):
+    ok: bool
+    message: str
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    model: str | None = None
+    prompt_id: str | None = None
+
+
+class GatewayPromptInfo(BaseModel):
+    id: str
+    label: str
+    path: str
+    recommended: bool = False
+
+
+class GatewayPromptListResponse(BaseModel):
+    items: list[GatewayPromptInfo]
+
+
+class AgentSchedule(BaseModel):
+    id: str
+    name: str
+    enabled: bool = True
+    cron: str
+    prompt_id: str = "gateway_agent"
+    message: str
+    next_run_at: str | None = None
+    last_run_at: str | None = None
+    last_status: str | None = None
+    last_error: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class AgentScheduleCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    enabled: bool = True
+    cron: str = Field(..., min_length=9, max_length=64)
+    prompt_id: str = "gateway_agent"
+    message: str = Field(..., min_length=1, max_length=8000)
+
+
+class AgentScheduleUpdate(BaseModel):
+    name: str | None = None
+    enabled: bool | None = None
+    cron: str | None = None
+    prompt_id: str | None = None
+    message: str | None = None
+
+
+class AgentScheduleListResponse(BaseModel):
+    items: list[AgentSchedule]
+
+
+class AgentRunRecord(BaseModel):
+    id: str
+    schedule_id: str | None = None
+    schedule_name: str | None = None
+    trigger: str | None = None
+    prompt_id: str | None = None
+    message: str | None = None
+    status: str | None = None
+    ok: bool | None = None
+    response: str | None = None
+    error: str | None = None
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    started_at: str | None = None
+    finished_at: str | None = None
+
+
+class AgentRunListResponse(BaseModel):
+    items: list[AgentRunRecord]
+
+
+class GatewayStatusResponse(BaseModel):
+    service: str
+    version: str
+    control_plane: str
+    clients: list[str]
+    tools_count: int
+    workflows_count: int
+    runtime: dict[str, Any]
+
+
+class GatewayToolListResponse(BaseModel):
+    items: list[dict[str, Any]]
+
+
+class GatewayWorkflowListResponse(BaseModel):
+    items: list[dict[str, Any]]
+
+
+class GatewayWorkflowRunRequest(BaseModel):
+    inputs: dict[str, Any] = Field(default_factory=dict)
+
+
+class GatewayWorkflowRunResponse(BaseModel):
+    workflow: str
+    status: str
+    steps: list[dict[str, Any]]
+    context: dict[str, Any]
+
+
 class AIConfigResponse(BaseModel):
     ai_enabled: bool
     ai_fallback: bool
@@ -262,7 +370,21 @@ class MarketplaceListResponse(BaseModel):
 
 # Re-export for routers
 __all__ = [
-    "AIConfigResponse",
+    "AgentRunListResponse",
+    "AgentRunRecord",
+    "AgentSchedule",
+    "AgentScheduleCreate",
+    "AgentScheduleListResponse",
+    "AgentScheduleUpdate",
+    "GatewayAgentRequest",
+    "GatewayAgentResponse",
+    "GatewayPromptInfo",
+    "GatewayPromptListResponse",
+    "GatewayStatusResponse",
+    "GatewayToolListResponse",
+    "GatewayWorkflowListResponse",
+    "GatewayWorkflowRunRequest",
+    "GatewayWorkflowRunResponse",
     "AIConfigUpdate",
     "PanelConfigResponse",
     "PanelConfigUpdate",

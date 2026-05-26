@@ -292,6 +292,85 @@ def build_app() -> typer.Typer:
             table.add_row(*row)
         console.print(table)
 
+    @app.command("gateway")
+    def gateway_status(
+        url: str = typer.Option("http://127.0.0.1:8000", "--url", help="Gateway base URL"),
+    ) -> None:
+        """Show gateway control plane status (requires running `serve`)."""
+        from gateway.client import GatewayClient
+
+        client = GatewayClient.from_env(url)
+        try:
+            status = client.status()
+        except RuntimeError as exc:
+            console.print(f"[red]Gateway offline:[/red] {exc}")
+            console.print("[dim]Start with: uv run serve[/dim]")
+            raise typer.Exit(1) from exc
+
+        console.print(f"[green]{status.get('service')}[/green] v{status.get('version')}")
+        console.print(f"Tools: {status.get('tools_count')}  Workflows: {status.get('workflows_count')}")
+        runtime = status.get("runtime") or {}
+        engine = runtime.get("engine") or {}
+        console.print(
+            f"Engine: max_jobs={engine.get('max_concurrent_jobs')} "
+            f"running_batches={len(runtime.get('running_batches') or [])}"
+        )
+
+    @app.command("agent")
+    def agent_run(
+        message: str = typer.Argument(..., help="Instruction for the gateway agent"),
+        url: str = typer.Option("http://127.0.0.1:8000", "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Run agent in-process (no HTTP gateway)"),
+    ) -> None:
+        """Run the AI gateway agent (OpenClaw-style tool loop via HTTP or local)."""
+        if local:
+            from gateway.agent_runtime import GatewayAgent
+            from server.manager import ScrapeManager
+
+            async def _run_local() -> None:
+                agent = GatewayAgent(get_settings())
+                result = await agent.run(message, manager=ScrapeManager())
+                console.print(result.get("message") or result)
+                if result.get("tool_calls"):
+                    console.print("[dim]Tools used:[/dim]", len(result["tool_calls"]))
+
+            _run(_run_local())
+            return
+
+        from gateway.client import GatewayClient
+
+        client = GatewayClient.from_env(url)
+        try:
+            result = client.agent_run(message)
+        except RuntimeError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(1) from exc
+        console.print(result.get("message") or json.dumps(result, indent=2))
+
+    @app.command("workflow")
+    def workflow_run(
+        workflow_id: str = typer.Argument(..., help="Workflow id, e.g. scrape_to_export"),
+        url: str = typer.Option("", "--url", help="Product URL (scrape_to_export)"),
+        marketplace: str = typer.Option("shopify", "--marketplace", help="Target marketplace"),
+        gateway_url: str = typer.Option("http://127.0.0.1:8000", "--gateway", help="Gateway base URL"),
+    ) -> None:
+        """Run a declarative workflow pipeline (n8n-style)."""
+        from gateway.client import GatewayClient
+
+        inputs: dict[str, Any] = {}
+        if url:
+            inputs["url"] = url
+        if marketplace:
+            inputs["marketplace"] = marketplace
+
+        client = GatewayClient.from_env(gateway_url)
+        try:
+            result = client.run_workflow(workflow_id, inputs)
+        except RuntimeError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(1) from exc
+        console.print(json.dumps(result, indent=2, ensure_ascii=False))
+
     return app
 
 

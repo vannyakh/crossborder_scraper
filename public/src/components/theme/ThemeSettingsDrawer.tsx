@@ -10,7 +10,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { Settings, X } from 'lucide-react'
+import { SlidersHorizontal, X } from 'lucide-react'
 import {
   accentOptions,
   motionSpeedOptions,
@@ -331,7 +331,7 @@ export function ThemeSettingsButton() {
       borderRadius="var(--radius-input)"
       onClick={() => setOpen(true)}
     >
-      <Settings size={18} strokeWidth={2} />
+      <SlidersHorizontal size={18} strokeWidth={2} />
     </IconButton>
   )
 }

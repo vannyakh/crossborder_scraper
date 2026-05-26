@@ -1,5 +1,5 @@
 import { HStack, IconButton } from '@chakra-ui/react'
-import { Menu as MenuIcon, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ListIndentDecrease, ListIndentIncrease } from 'lucide-react'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { useUiStore } from '../../stores/ui-store'
 import { ThemeSettingsButton } from '../theme/ThemeSettingsDrawer'
@@ -22,11 +22,11 @@ function SidebarToggle({ compact }: { compact?: boolean }) {
       onClick={toggleSidebar}
     >
       {compact ? (
-        <MenuIcon size={18} strokeWidth={2} />
+        <ListIndentDecrease size={18} strokeWidth={2} />
       ) : sidebarCollapsed ? (
-        <PanelLeftOpen size={18} strokeWidth={2} />
+        <ListIndentIncrease size={18} strokeWidth={2} />
       ) : (
-        <PanelLeftClose size={18} strokeWidth={2} />
+        <ListIndentDecrease size={18} strokeWidth={2} />
       )}
     </IconButton>
   )

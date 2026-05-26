@@ -19,6 +19,7 @@ data/
 # Secrets
 .env
 config/ui_config.json
+config/agent_schedules.json
 
 # Playwright
 playwright-report/

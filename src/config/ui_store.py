@@ -321,6 +321,16 @@ def apply_ui_config(settings: Any) -> Any:
     flat_mp = flatten_marketplace_credentials(mp)
     fields = getattr(settings.__class__, "model_fields", {})
     valid = {k: v for k, v in {**scalars, **flat_mp}.items() if k in fields}
+    for key, val in list(valid.items()):
+        if key not in fields:
+            continue
+        field = fields[key]
+        if val == "":
+            valid[key] = None
+            continue
+        annotation = str(getattr(field, "annotation", ""))
+        if val is not None and ("Path" in annotation or key.endswith("_path") or key.endswith("_dir")):
+            valid[key] = Path(val) if not isinstance(val, Path) else val
     if not valid:
         merged = settings
     else:

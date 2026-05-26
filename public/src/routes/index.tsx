@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { AgentPage } from '../pages/AgentPage'
 import { BatchesPage } from '../pages/BatchesPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { FilesPage } from '../pages/FilesPage'
@@ -29,6 +30,7 @@ const router = createBrowserRouter(
             { path: 'products', element: <ProductsPage /> },
             { path: 'products/:id', element: <ProductDetailPage /> },
             { path: 'files', element: <FilesPage /> },
+            { path: 'agent', element: <AgentPage /> },
             { path: 'settings', element: <SettingsPage /> },
           ],
         },

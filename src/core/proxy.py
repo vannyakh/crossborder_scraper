@@ -62,7 +62,13 @@ class ProxyPool:
         return cls(proxies)
 
     @classmethod
-    def from_settings(cls, single: str | None, list_path: Path | None) -> "ProxyPool":
+    def from_settings(
+        cls,
+        single: str | None,
+        list_path: Path | str | None,
+    ) -> "ProxyPool":
+        if isinstance(list_path, str):
+            list_path = Path(list_path) if list_path.strip() else None
         proxies: list[ProxyConfig] = []
         if list_path and list_path.exists():
             return cls.from_file(list_path)

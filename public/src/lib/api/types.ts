@@ -235,6 +235,64 @@ export type MarketplaceInfo = {
   supports_export?: boolean
 }
 
+export type GatewayAgentResponse = {
+  ok: boolean
+  message: string
+  tool_calls: GatewayToolCall[]
+  model?: string | null
+  prompt_id?: string | null
+}
+
+export type GatewayToolCall = {
+  name: string
+  arguments: Record<string, unknown>
+  outcome: { ok?: boolean; tool?: string; result?: unknown; error?: string }
+}
+
+export type GatewayPrompt = {
+  id: string
+  label: string
+  path: string
+  recommended: boolean
+}
+
+export type AgentSchedule = {
+  id: string
+  name: string
+  enabled: boolean
+  cron: string
+  prompt_id: string
+  message: string
+  next_run_at?: string | null
+  last_run_at?: string | null
+  last_status?: string | null
+  last_error?: string | null
+}
+
+export type AgentScheduleCreate = {
+  name: string
+  enabled?: boolean
+  cron: string
+  prompt_id?: string
+  message: string
+}
+
+export type AgentRunRecord = {
+  id: string
+  schedule_id?: string | null
+  schedule_name?: string | null
+  trigger?: string | null
+  prompt_id?: string | null
+  message?: string | null
+  status?: string | null
+  ok?: boolean | null
+  response?: string | null
+  error?: string | null
+  tool_calls?: GatewayToolCall[]
+  started_at?: string | null
+  finished_at?: string | null
+}
+
 export type ExportPayload = {
   product_id?: number
   url?: string

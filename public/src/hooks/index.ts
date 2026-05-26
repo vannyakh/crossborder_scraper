@@ -16,6 +16,16 @@ export { useConfigQuery } from './queries/use-config-query'
 export { useFilesQuery } from './queries/use-files-query'
 export { useHealthQuery } from './queries/use-health-query'
 export { useProductQuery, useProductsQuery } from './queries/use-products-query'
+export {
+  useAgentRunsQuery,
+  useAgentSchedulesQuery,
+  useCreateScheduleMutation,
+  useDeleteScheduleMutation,
+  useGatewayPromptsQuery,
+  useRunAgentMutation,
+  useRunScheduleNowMutation,
+  useUpdateScheduleMutation,
+} from './queries/use-agent-query'
 export { useExportProductMutation } from './mutations/use-export-mutations'
 export { useRuntimeStatusQuery, useMarketplacesQuery } from './queries/use-runtime-query'
 export { useStatsQuery } from './queries/use-stats-query'
