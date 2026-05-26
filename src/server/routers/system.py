@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from config import get_settings
 from server.auth import require_panel_auth
 from server.deps import protected_router
-from server.manager import get_manager
+from server.services.config import get_config_service
+from server.services.runtime import get_stats
 from server.core.panel_bind import get_panel_bind_info
 from server.schemas import PanelAccessResponse, PanelConfigResponse, PanelConfigUpdate, StatsResponse
 from server.services.audit import log_operation
@@ -32,12 +33,12 @@ async def panel_access() -> PanelAccessResponse:
 
 @protected.get("/config")
 async def config() -> dict[str, Any]:
-    return get_manager().get_config()
+    return get_config_service().get_config()
 
 
 @protected.get("/config/panel", response_model=PanelConfigResponse)
 async def get_panel_config() -> PanelConfigResponse:
-    return PanelConfigResponse(**get_manager().get_panel_config())
+    return PanelConfigResponse(**get_config_service().get_panel_config())
 
 
 @protected.patch("/config/panel", response_model=PanelConfigResponse)
@@ -48,7 +49,7 @@ async def patch_panel_config(
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=400, detail="no fields to update")
-    result = get_manager().update_panel_config(updates)
+    result = get_config_service().update_panel_config(updates)
     log_operation(
         user=username,
         operation_type="Panel configuration",
@@ -59,7 +60,7 @@ async def patch_panel_config(
 
 @protected.get("/stats", response_model=StatsResponse)
 async def stats() -> StatsResponse:
-    return StatsResponse(**get_manager().get_stats())
+    return StatsResponse(**get_stats())
 
 # Combined for app.include_router
 router = APIRouter()

@@ -160,10 +160,10 @@ async def _submit_batch(
     return {"batch_id": batch_id, "total": len(urls)}
 
 
-async def _runtime_status(manager: Any) -> dict[str, Any]:
+async def _runtime_status(_manager: Any) -> dict[str, Any]:
     from server.services.runtime import get_service_runtime
 
-    return get_service_runtime(manager)
+    return get_service_runtime()
 
 
 def tools_for_llm() -> list[dict[str, Any]]:

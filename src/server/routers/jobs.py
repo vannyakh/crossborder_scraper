@@ -7,8 +7,6 @@ from core.engine.jobs import BatchReport
 from server.auth import require_panel_auth
 from server.core.events import batch_events, sse_frame
 from server.deps import protected_router
-from server.manager import get_manager
-from server.services.audit import log_operation
 from server.schemas import (
     MessageResponse,
     ScrapeSingleRequest,
@@ -17,6 +15,9 @@ from server.schemas import (
     SubmitRequest,
     SubmitResponse,
 )
+from server.services.audit import log_operation
+from server.services.batch import get_batch_service
+from server.services.product import get_product_service
 
 router = protected_router(prefix="/jobs", tags=["jobs"])
 
@@ -26,8 +27,7 @@ async def submit(
     req: SubmitRequest,
     username: str = Depends(require_panel_auth),
 ) -> SubmitResponse:
-    mgr = get_manager()
-    batch_id = await mgr.submit_batch(
+    batch_id = await get_batch_service().submit_batch(
         req.urls,
         workers=req.workers,
         use_ai=req.use_ai,
@@ -46,9 +46,8 @@ async def submit(
 
 @router.post("/scrape", response_model=ScrapeSingleResponse)
 async def scrape_one(req: ScrapeSingleRequest) -> ScrapeSingleResponse:
-    mgr = get_manager()
     try:
-        result, product_id = await mgr.scrape_single(
+        result, product_id = await get_product_service().scrape_single(
             req.url,
             use_ai=req.use_ai,
             save=req.save,
@@ -72,7 +71,7 @@ async def scrape_one(req: ScrapeSingleRequest) -> ScrapeSingleResponse:
 
 @router.get("/{batch_id}/status", response_model=StatusResponse)
 async def batch_status(batch_id: str) -> StatusResponse:
-    st = get_manager().get_batch_status(batch_id)
+    st = get_batch_service().get_batch_status(batch_id)
     if not st:
         raise HTTPException(status_code=404, detail="batch not found")
     return StatusResponse(**st)
@@ -80,8 +79,8 @@ async def batch_status(batch_id: str) -> StatusResponse:
 
 @router.get("/{batch_id}/stream")
 async def batch_stream(batch_id: str) -> StreamingResponse:
-    mgr = get_manager()
-    st = mgr.get_batch_status(batch_id)
+    batch = get_batch_service()
+    st = batch.get_batch_status(batch_id)
     if not st:
         raise HTTPException(status_code=404, detail="batch not found")
 
@@ -116,7 +115,7 @@ async def batch_stream(batch_id: str) -> StreamingResponse:
 
 @router.get("/{batch_id}/result")
 async def batch_result(batch_id: str) -> BatchReport | dict:
-    result = get_manager().get_batch_result(batch_id)
+    result = get_batch_service().get_batch_result(batch_id)
     if not result:
         raise HTTPException(status_code=404, detail="batch not found")
     return result
@@ -124,9 +123,10 @@ async def batch_result(batch_id: str) -> BatchReport | dict:
 
 @router.post("/{batch_id}/cancel", response_model=MessageResponse)
 async def cancel_batch(batch_id: str) -> MessageResponse:
-    cancelled = await get_manager().cancel_batch(batch_id)
+    batch = get_batch_service()
+    cancelled = await batch.cancel_batch(batch_id)
     if not cancelled:
-        st = get_manager().get_batch_status(batch_id)
+        st = batch.get_batch_status(batch_id)
         if not st:
             raise HTTPException(status_code=404, detail="batch not found")
         return MessageResponse(message="batch is not running", batch_id=batch_id)

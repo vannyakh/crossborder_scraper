@@ -41,7 +41,7 @@ router = protected_router(prefix="/gateway", tags=["gateway"])
 
 @router.get("/status", response_model=GatewayStatusResponse)
 async def gateway_status() -> GatewayStatusResponse:
-    runtime = get_service_runtime(get_manager())
+    runtime = get_service_runtime()
     return GatewayStatusResponse(
         service="crossborder-scraper-gateway",
         version=APP_VERSION,

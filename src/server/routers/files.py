@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 from server.deps import protected_router
-from server.manager import get_manager
+from server.services.context import get_context
 from server.schemas import FileEntry, FileListResponse
 
 router = protected_router(prefix="/files", tags=["files"])
@@ -10,16 +10,16 @@ router = protected_router(prefix="/files", tags=["files"])
 
 @router.get("", response_model=FileListResponse)
 async def list_files(pattern: str = "*") -> FileListResponse:
-    mgr = get_manager()
-    items = [FileEntry(**f) for f in mgr.store.list_output_files(pattern=pattern)]
-    return FileListResponse(items=items, output_dir=str(mgr.settings.output_dir))
+    ctx = get_context()
+    items = [FileEntry(**f) for f in ctx.store.list_output_files(pattern=pattern)]
+    return FileListResponse(items=items, output_dir=str(ctx.settings.output_dir))
 
 
 @router.get("/{file_path:path}")
 async def get_file(file_path: str, download: bool = False) -> FileResponse:
-    mgr = get_manager()
+    ctx = get_context()
     try:
-        path = mgr.store.resolve_output_file(file_path)
+        path = ctx.store.resolve_output_file(file_path)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -35,9 +35,9 @@ async def get_file(file_path: str, download: bool = False) -> FileResponse:
 
 @router.delete("/{file_path:path}")
 async def delete_file(file_path: str) -> dict[str, str]:
-    mgr = get_manager()
+    ctx = get_context()
     try:
-        mgr.store.delete_output_file(file_path)
+        ctx.store.delete_output_file(file_path)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
