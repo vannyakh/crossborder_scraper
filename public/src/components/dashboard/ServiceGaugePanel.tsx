@@ -29,7 +29,7 @@ function ServiceGaugeTile({
       <Text fontSize="sm" fontWeight="semibold" color="fg">
         {label}
       </Text>
-      <Text mt={0.5} fontSize="xs" color="fg.muted">
+      <Text mt={0.5} fontSize="xs" color="fg.muted" lineClamp={1} truncate title={detail}>
         {detail}
       </Text>
       <EChart option={gaugeOption(theme, { value: percent, color })} height={88} />

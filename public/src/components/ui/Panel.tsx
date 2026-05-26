@@ -59,7 +59,7 @@ export function PanelHeader({
           {title}
         </Card.Title>
         {description ? (
-          <Card.Description mt={0.5} fontSize="xs" color="fg.muted">
+          <Card.Description mt={0.5} fontSize="xs" color="fg.muted" lineClamp={1} truncate title={description}>
             {description}
           </Card.Description>
         ) : null}

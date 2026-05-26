@@ -49,7 +49,7 @@ function ChartStatsBar({ items }: { items: StatItem[] }) {
             {item.color ? (
               <Box w="8px" h="8px" borderRadius="full" bg={item.color} flexShrink={0} />
             ) : null}
-            <Text fontSize="xs" color="fg.muted">
+            <Text fontSize="xs" color="fg.muted" lineClamp={1} truncate>
               {item.label}
             </Text>
           </HStack>
@@ -57,7 +57,7 @@ function ChartStatsBar({ items }: { items: StatItem[] }) {
             {item.value}
           </Text>
           {item.hint ? (
-            <Text mt={0.5} fontSize="xs" color="fg.muted">
+            <Text mt={0.5} fontSize="xs" color="fg.muted" lineClamp={1} truncate title={item.hint}>
               {item.hint}
             </Text>
           ) : null}
@@ -97,7 +97,7 @@ function TrendChartCard({
     >
       <SectionCard p={{ base: 3, md: 4 }} h="full" display="flex" flexDirection="column">
         <ChartStatsBar items={stats} />
-        <Text mb={2} fontSize="xs" color="fg.muted">
+        <Text mb={2} fontSize="xs" color="fg.muted" lineClamp={1} truncate title={`${range} · ${ready ? 'Live' : 'Collecting…'}`}>
           {range} · {ready ? 'Live' : 'Collecting…'}
         </Text>
         {!option ? (

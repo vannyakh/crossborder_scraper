@@ -26,7 +26,7 @@ export function Toolbar({
               {title}
             </Heading>
             {description ? (
-              <Text mt={0.5} fontSize="sm" color="fg.muted">
+              <Text mt={0.5} fontSize="sm" color="fg.muted" lineClamp={1} truncate title={description}>
                 {description}
               </Text>
             ) : null}

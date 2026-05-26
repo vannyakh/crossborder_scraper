@@ -1,5 +1,14 @@
-import { Box, HStack, Text, type BoxProps } from '@chakra-ui/react'
+import { Box, HStack, Text, type TextProps, type BoxProps } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
+
+/** Single-line subtitle under section titles, toolbars, and stat cells */
+export function SubtitleText({ children, ...props }: TextProps) {
+  return (
+    <Text fontSize="sm" color="fg.muted" lineClamp={1} truncate {...props}>
+      {children}
+    </Text>
+  )
+}
 
 export function SectionDivider({
   title,
@@ -37,9 +46,9 @@ export function Section({
     <Box mt={mt}>
       <SectionDivider title={title} action={action} />
       {description ? (
-        <Text mt={1.5} fontSize="sm" color="fg.muted">
+        <SubtitleText mt={1.5} title={description}>
           {description}
-        </Text>
+        </SubtitleText>
       ) : null}
       <Box pt={description ? 3 : 2.5}>{children}</Box>
     </Box>

@@ -60,7 +60,7 @@ export function HardwareGaugePanel({ hardware }: { hardware?: HardwareMonitor })
           detailContent={<LoadHoverDetail hardware={hardware} />}
         />
       </Grid>
-      <Text mt={3} fontSize="xs" color="fg.muted">
+      <Text mt={3} fontSize="xs" color="fg.muted" lineClamp={1} truncate>
         Process RSS {hardware.process.rss_human} · {hardware.process.threads} threads · Python{' '}
         {hardware.python_version}
       </Text>
