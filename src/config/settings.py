@@ -1,0 +1,84 @@
+from pathlib import Path
+from typing import Literal
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+SourceSite = Literal["1688", "taobao", "aliexpress"]
+TargetMarketplace = Literal["shopee", "lazada", "tiktok_shop", "shopify"]
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # Paths
+    data_dir: Path = Field(default=Path("data"))
+    cookies_dir: Path = Field(default=Path("data/cookies"))
+    output_dir: Path = Field(default=Path("data/output"))
+    db_path: Path = Field(default=Path("data/products.db"))
+
+    # Browser
+    headless: bool = True
+    browser_timeout_ms: int = 60_000
+    slow_mo_ms: int = 0
+    user_agent: str | None = None
+    proxy_server: str | None = None
+    proxy_list_path: Path | None = Field(default=Path("config/proxies.txt"))
+    proxy_rotation_strategy: Literal["round_robin", "random"] = "round_robin"
+
+    # Scrape engine concurrency
+    max_concurrent_jobs: int = 3
+    engine_queue_size: int = 100
+
+    # Scrape limits
+    max_images_per_product: int = 10
+    request_delay_seconds: float = 2.0
+
+    # AI-powered extraction (OpenAI-compatible API)
+    ai_enabled: bool = False
+    ai_fallback: bool = True  # use AI when CSS parse looks incomplete
+    ai_api_key: str | None = None
+    ai_base_url: str = "https://api.openai.com/v1"
+    ai_model: str = "gpt-4o-mini"
+    ai_max_html_chars: int = 24_000
+    ai_timeout_seconds: float = 90.0
+
+    # Pricing (resell margin)
+    price_markup_percent: float = 35.0
+    default_currency: str = "USD"
+
+    # Shopee Open API
+    shopee_partner_id: str | None = None
+    shopee_partner_key: str | None = None
+    shopee_shop_id: str | None = None
+    shopee_access_token: str | None = None
+
+    # Lazada Open Platform
+    lazada_app_key: str | None = None
+    lazada_app_secret: str | None = None
+    lazada_access_token: str | None = None
+
+    # TikTok Shop API
+    tiktok_app_key: str | None = None
+    tiktok_app_secret: str | None = None
+    tiktok_access_token: str | None = None
+    tiktok_shop_cipher: str | None = None
+
+    # Shopify Admin API
+    shopify_shop_domain: str | None = None
+    shopify_access_token: str | None = None
+    shopify_api_version: str = "2025-01"
+
+    def ensure_dirs(self) -> None:
+        for path in (self.data_dir, self.cookies_dir, self.output_dir, self.db_path.parent):
+            path.mkdir(parents=True, exist_ok=True)
+
+
+def get_settings() -> Settings:
+    settings = Settings()
+    settings.ensure_dirs()
+    return settings

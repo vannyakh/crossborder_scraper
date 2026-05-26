@@ -1,0 +1,8 @@
+# One proxy per line — supports:
+#   http://host:port
+#   http://user:pass@host:port
+#   user:pass@host:port
+#   socks5://host:port
+
+# http://127.0.0.1:7890
+# user:password@proxy.example.com:8080

@@ -1,0 +1,236 @@
+# Cross-Border Product Scraper
+
+Scrape wholesale/retail listings from **1688**, **Taobao**, and **AliExpress**, then publish to **Shopee**, **Lazada**, **TikTok Shop**, or **Shopify**.
+
+Built with **Python 3.12+**, **Playwright** (browser automation), **Pydantic** (data models), and official marketplace APIs for export.
+
+## Why Playwright?
+
+| Tool | Best for |
+|------|----------|
+| **Playwright** (default) | 1688, Taobao — heavy JavaScript, login, anti-bot |
+| **httpx** | AliExpress public pages, API backends |
+| **Official APIs** | Shopee, Lazada, TikTok Shop, Shopify — required for listing |
+
+Chinese B2B sites ([1688.com](https://www.1688.com/)) rarely expose stable public APIs. A real browser with saved cookies is the most reliable approach for sellers.
+
+## Quick start
+
+### 1. Environment (recommended: [uv](https://docs.astral.sh/uv/))
+
+```bash
+# Install uv (once)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+cd www.1688.com
+uv venv
+source .venv/Scripts/activate   # Windows Git Bash
+# .venv\Scripts\activate       # Windows CMD/PowerShell
+
+uv pip install -e .
+playwright install chromium
+```
+
+### 2. Configure
+
+```bash
+cp .env.example .env
+# Edit markup %, API keys for marketplaces you use
+```
+
+### 3. Login (1688 / Taobao need this)
+
+```bash
+python main.py login 1688
+# Browser opens → log in → press Enter in terminal
+```
+
+Cookies are stored in `data/cookies/`.
+
+### 4. Scrape a product
+
+```bash
+python main.py scrape "https://detail.1688.com/offer/XXXXXXXX.html"
+python main.py scrape "https://www.aliexpress.com/item/XXXXXXXX.html" --headed
+```
+
+Output: SQLite (`data/products.db`) + JSON (`data/output/`).
+
+### 5. Export to marketplace
+
+```bash
+# Preview listing (no API)
+python main.py export "https://..." shopify --scrape --dry-run
+
+# Publish (needs credentials in .env)
+python main.py export "https://..." shopify --scrape
+python main.py export "https://..." shopee --scrape
+```
+
+### Batch scrape (concurrent engine)
+
+```bash
+python main.py batch urls.txt --workers 5
+python main.py batch urls.txt --ai          # force AI extraction
+python main.py engine                       # show workers, proxies, cookies, AI config
+```
+
+## Scrape Engine (multi-job concurrency)
+
+The core engine runs **multiple scrape jobs in parallel** using asyncio workers + Playwright browser pool.
+
+| Module | Role |
+|--------|------|
+| `core/engine/executor.py` | `ScrapeEngine` — job queue, batch runner |
+| `core/engine/pool.py` | `BrowserPool` — shared browser, isolated contexts |
+| `core/proxy.py` | `ProxyPool` — rotate proxies from `config/proxies.txt` |
+| `core/cookies.py` | `CookieManager` — per-site + named sessions |
+| `core/ai/extractor.py` | `AIExtractor` — LLM fallback when CSS parse fails |
+
+```python
+import asyncio
+from core.engine import ScrapeEngine, ScrapeJob
+from config import get_settings
+
+async def main():
+    engine = ScrapeEngine(get_settings(), max_workers=5)
+    jobs = [ScrapeJob(url="https://...", session_id="account1")]
+    report = await engine.run_batch(jobs)
+    print(report.success_rate)
+
+asyncio.run(main())
+```
+
+### Proxies
+
+Add proxies to `config/proxies.txt` (one per line). Each worker gets a rotated proxy + cookie session.
+
+### Cookies (multi-account)
+
+```bash
+python main.py login 1688 --session seller_a
+python main.py login 1688 --session seller_b
+# Jobs use session_id="seller_a" in ScrapeJob
+```
+
+### AI-powered scraping
+
+When CSS selectors break (common on 1688/Taobao), enable AI fallback:
+
+```env
+AI_ENABLED=true
+AI_API_KEY=sk-...
+AI_FALLBACK=true          # auto when parse looks incomplete
+AI_BASE_URL=https://api.openai.com/v1
+# Local Ollama: AI_BASE_URL=http://localhost:11434/v1  AI_MODEL=llama3.2
+```
+
+```bash
+python main.py scrape URL --ai
+python main.py batch urls.txt --ai
+```
+
+## Project layout
+
+```
+src/crossborder_scraper/
+├── cli.py              # Typer CLI
+├── config/             # Settings from .env
+├── core/
+│   ├── engine/         # ScrapeEngine, BrowserPool, jobs
+│   ├── ai/             # LLM product extractor
+│   ├── proxy.py        # Proxy pool
+│   ├── cookies.py      # Cookie sessions
+│   └── ...
+├── sites/              # 1688, Taobao, AliExpress
+├── pipeline/           # Normalize + SQLite storage
+└── export/             # Shopee, Lazada, TikTok Shop, Shopify
+config/
+├── proxies.txt         # Proxy list for rotation
+└── sites.yaml
+data/
+├── cookies/            # Per-site session cookies
+├── output/             # JSON + raw HTML
+└── products.db
+```
+
+## Adding a new source site
+
+1. Create `src/sites/my_site.py` extending `BaseScraper`.
+2. Implement `extract_product_id`, `parse_html`, and CSS selectors.
+3. Register in `sites/registry.py`.
+
+## Marketplace API setup
+
+| Platform | Portal |
+|----------|--------|
+| Shopee | [open.shopee.com](https://open.shopee.com/) |
+| Lazada | [open.lazada.com](https://open.lazada.com/) |
+| TikTok Shop | [partner.tiktokshop.com](https://partner.tiktokshop.com/) |
+| Shopify | Admin → Settings → Apps → Develop apps |
+
+Image upload: most APIs require uploading images to their CDN first, then referencing IDs in `add_product`. Extend exporters in `export/` as needed.
+
+## Production tips
+
+- **Proxies**: set `PROXY_SERVER` in `.env` (residential recommended for Taobao).
+- **Rate limits**: increase `REQUEST_DELAY_SECONDS`.
+- **Legal**: respect each site's Terms of Service and robots rules; use official APIs where required.
+- **Selectors**: 1688/Taobao change layouts often — update `sites/*.py` selectors when parsing fails.
+
+## Commands
+
+```bash
+python main.py sites          # List platforms
+python main.py engine         # Engine config (workers, proxy, AI)
+python main.py scrape URL [--ai] [--headed]
+python main.py login SITE [--session NAME]
+python main.py export URL MARKETPLACE [--scrape] [--dry-run]
+python main.py batch urls.txt [--workers N] [--ai]
+```
+
+## Web service (monitor & control)
+
+Run the API locally:
+
+```bash
+uvicorn server.app:app --host 0.0.0.0 --port 8000
+```
+
+Endpoints:
+
+- `GET /health`
+- `GET /config`
+- `POST /jobs/submit` → returns `batch_id`
+- `GET /jobs/{batch_id}/status`
+- `GET /jobs/{batch_id}/result`
+
+Example submit:
+
+```bash
+curl -X POST "http://localhost:8000/jobs/submit" \
+  -H "content-type: application/json" \
+  -d "{\"urls\":[\"https://detail.1688.com/offer/XXX.html\"],\"workers\":3,\"use_ai\":false,\"save\":true}"
+```
+
+## Docker
+
+Build + run API:
+
+```bash
+docker compose up --build
+```
+
+API will be on `http://localhost:8000`.
+
+## React UI (Vite + TypeScript)
+
+Dev UI (with API proxy):
+
+```bash
+cd public
+pnpm install
+pnpm dev
+```
+
+Production UI is built into `public/dist` and served by the API at `http://localhost:8000/ui/`.

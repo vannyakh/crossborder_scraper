@@ -1,0 +1,27 @@
+# Per-site overrides — tune selectors when layouts change
+sources:
+  1688:
+    base_url: https://www.1688.com
+    login_url: https://login.1688.com/member/signin.htm
+    requires_login: true
+    currency: CNY
+  taobao:
+    base_url: https://www.taobao.com
+    login_url: https://login.taobao.com/
+    requires_login: true
+    currency: CNY
+  aliexpress:
+    base_url: https://www.aliexpress.com
+    login_url: https://login.aliexpress.com/
+    requires_login: false
+    currency: USD
+
+targets:
+  shopee:
+    docs: https://open.shopee.com/documents
+  lazada:
+    docs: https://open.lazada.com/doc/api
+  tiktok_shop:
+    docs: https://partner.tiktokshop.com/doc
+  shopify:
+    docs: https://shopify.dev/docs/api/admin-rest
