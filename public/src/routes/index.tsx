@@ -1,9 +1,9 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { AgentPage } from '../pages/AgentPage'
+import { ArtifactPage } from '../pages/ArtifactPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { HealthPage } from '../pages/HealthPage'
-import { InventoryPage } from '../pages/InventoryPage'
 import { LogsPage } from '../pages/LogsPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
@@ -12,13 +12,14 @@ import { RoadmapPage } from '../pages/RoadmapPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { StorePage } from '../pages/StorePage'
 import { SupportPage } from '../pages/SupportPage'
+import { WorkflowPage } from '../pages/WorkflowPage'
 import { AuthGuard } from './guards/AuthGuard'
 import { GuestGuard } from './guards/GuestGuard'
 import {
-  InventoryDataPathRedirect,
-  InventoryLegacyRedirect,
-  InventoryProductLegacyRedirect,
-} from './InventoryLegacyRedirect'
+  PipelineLegacyRedirect,
+  PipelinePathLegacyRedirect,
+  PipelineProductLegacyRedirect,
+} from './PipelineLegacyRedirect'
 import { ServiceLegacyRedirect } from './ServiceLegacyRedirect'
 
 const router = createBrowserRouter(
@@ -35,14 +36,17 @@ const router = createBrowserRouter(
           element: <AppShell />,
           children: [
             { index: true, element: <DashboardPage /> },
-            { path: 'inventory/products/:id', element: <ProductDetailPage /> },
-            { path: 'inventory', element: <Navigate to="/inventory/batches" replace /> },
-            { path: 'inventory/:section', element: <InventoryPage /> },
-            { path: 'data/*', element: <InventoryDataPathRedirect /> },
-            { path: 'batches', element: <InventoryLegacyRedirect section="batches" /> },
-            { path: 'products/:id', element: <InventoryProductLegacyRedirect /> },
-            { path: 'products', element: <InventoryLegacyRedirect section="products" /> },
-            { path: 'files', element: <InventoryLegacyRedirect section="files" /> },
+            { path: 'workflow', element: <Navigate to="/workflow/batches" replace /> },
+            { path: 'workflow/batches', element: <WorkflowPage /> },
+            { path: 'artifact/products/:id', element: <ProductDetailPage /> },
+            { path: 'artifact', element: <Navigate to="/artifact/products" replace /> },
+            { path: 'artifact/:section', element: <ArtifactPage /> },
+            { path: 'inventory/*', element: <PipelinePathLegacyRedirect /> },
+            { path: 'data/*', element: <PipelinePathLegacyRedirect /> },
+            { path: 'batches', element: <PipelineLegacyRedirect section="batches" /> },
+            { path: 'products/:id', element: <PipelineProductLegacyRedirect /> },
+            { path: 'products', element: <PipelineLegacyRedirect section="products" /> },
+            { path: 'files', element: <PipelineLegacyRedirect section="files" /> },
             { path: 'store', element: <StorePage /> },
             { path: 'logs', element: <LogsPage /> },
             { path: 'health', element: <HealthPage /> },

@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { api, queryKeys, type ProductSummary } from '../../lib/api'
 import { useAuthStore } from '../../stores/auth-store'
 
-export function useProductsQuery(limit = 100) {
+export function useProductsQuery(limit = 100, offset = 0) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   return useQuery({
-    queryKey: queryKeys.products(limit),
-    queryFn: () => api<{ items: ProductSummary[]; total: number }>(`/products?limit=${limit}`),
+    queryKey: queryKeys.products(limit, offset),
+    queryFn: () =>
+      api<{ items: ProductSummary[]; total: number }>(
+        `/products?limit=${limit}&offset=${offset}`,
+      ),
     enabled: isAuthenticated,
   })
 }

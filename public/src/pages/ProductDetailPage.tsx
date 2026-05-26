@@ -16,7 +16,7 @@ export function ProductDetailPage() {
         title={`Product #${id}`}
         actions={
           <Link asChild fontSize="sm" color="brand.emphasis">
-            <RouterLink to="/inventory/products">← Back to catalog</RouterLink>
+            <RouterLink to="/artifact/products">← Back to product catalog</RouterLink>
           </Link>
         }
       />

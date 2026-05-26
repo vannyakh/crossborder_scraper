@@ -1,4 +1,4 @@
-import { Box, HStack, Text } from '@chakra-ui/react'
+import { Badge, Box, HStack, Text } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -16,6 +16,7 @@ type SidebarNavItemProps = {
   icon?: LucideIcon
   indent?: boolean
   trailing?: ReactNode
+  badge?: string
 }
 
 export function SidebarNavItem({
@@ -25,11 +26,27 @@ export function SidebarNavItem({
   icon: Icon,
   indent = false,
   trailing,
+  badge,
 }: SidebarNavItemProps) {
+  const countBadge =
+    badge && !trailing ? (
+      <Badge
+        size="xs"
+        variant="subtle"
+        colorPalette={active ? 'blue' : 'gray'}
+        borderRadius="full"
+        fontSize="2xs"
+        minW="1.25rem"
+        justifyContent="center"
+      >
+        {badge}
+      </Badge>
+    ) : null
+  const trailingNode = trailing ?? countBadge
   const showIcon = Boolean(Icon) && !indent
   const motionEnabled = useMotionEnabled()
   const itemTransition = useMotionTransition(0.15)
-  const iconOnly = collapsed && showIcon && !trailing
+  const iconOnly = collapsed && showIcon && !trailingNode
 
   if (iconOnly && Icon) {
     return (
@@ -106,14 +123,14 @@ export function SidebarNavItem({
           <motion.span
             key="label"
             initial={motionEnabled ? { opacity: 0, width: 0 } : false}
-            animate={{ opacity: 1, width: trailing ? 'auto' : '100%' }}
+            animate={{ opacity: 1, width: trailingNode ? 'auto' : '100%' }}
             exit={motionEnabled ? { opacity: 0, width: 0 } : undefined}
             transition={itemTransition}
             style={{
               overflow: 'hidden',
               whiteSpace: 'nowrap',
-              flex: trailing ? 1 : undefined,
-              minWidth: trailing ? 0 : undefined,
+              flex: trailingNode ? 1 : undefined,
+              minWidth: trailingNode ? 0 : undefined,
               textAlign: 'left',
               display: 'block',
             }}
@@ -125,8 +142,8 @@ export function SidebarNavItem({
         ) : null}
       </AnimatePresence>
 
-      {!collapsed && trailing ? (
-        <motion.span style={{ display: 'flex', flexShrink: 0 }}>{trailing}</motion.span>
+      {!collapsed && trailingNode ? (
+        <motion.span style={{ display: 'flex', flexShrink: 0 }}>{trailingNode}</motion.span>
       ) : null}
     </MotionHStack>
   )

@@ -15,6 +15,7 @@ export function useSubmitJobsMutation() {
     onSuccess: (data) => {
       setActiveBatchId(data.batch_id)
       void queryClient.invalidateQueries({ queryKey: queryKeys.stats })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.runtimeStatus })
       void queryClient.invalidateQueries({ queryKey: ['batches'] })
     },
   })
@@ -29,6 +30,7 @@ export function useCancelBatchMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['batches'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.stats })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.runtimeStatus })
     },
   })
 }

@@ -25,6 +25,7 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
   const groupActive = isGroupActive(location.pathname, group.children)
   const [open, setOpen] = useState(groupActive)
   const groupTransition = useMotionTransition(0.2)
+  const showChildren = group.children.length > 1 || !group.homeTo
 
   useEffect(() => {
     if (groupActive) setOpen(true)
@@ -34,6 +35,7 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
     return (
       <SidebarFlyoutMenu
         label={group.label}
+        description={group.description}
         icon={group.icon}
         active={groupActive}
         children={group.children}
@@ -42,44 +44,86 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
     )
   }
 
-  const chevron = (
+  const chevron = showChildren ? (
     <MotionChevron
       animate={{ rotate: open ? 180 : 0 }}
       transition={groupTransition}
       color="fg.muted"
       display="flex"
+      as="span"
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setOpen((v) => !v)
+      }}
+      role="button"
+      aria-label={open ? 'Collapse submenu' : 'Expand submenu'}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setOpen((v) => !v)
+        }
+      }}
     >
       <ChevronDown size={16} strokeWidth={2} />
     </MotionChevron>
+  ) : null
+
+  const header = (
+    <SidebarNavItem
+      active={groupActive}
+      collapsed={false}
+      label={group.label}
+      icon={group.icon}
+      trailing={chevron}
+    />
   )
 
   return (
     <Box>
-      <Button
-        variant="ghost"
-        w="full"
-        h="auto"
-        minH="auto"
-        p={0}
-        borderRadius="var(--radius-input)"
-        fontWeight="inherit"
-        color="inherit"
-        justifyContent="flex-start"
-        _hover={{ bg: 'transparent' }}
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <SidebarNavItem
-          active={groupActive}
-          collapsed={false}
-          label={group.label}
-          icon={group.icon}
-          trailing={chevron}
-        />
-      </Button>
+      {group.homeTo ? (
+        <NavLink
+          to={group.homeTo}
+          style={{ textDecoration: 'none', display: 'block' }}
+          onClick={(e) => {
+            if (!showChildren) {
+              onNavigate?.()
+              return
+            }
+            if (groupActive && open) {
+              e.preventDefault()
+              setOpen(false)
+            } else if (!open) {
+              setOpen(true)
+            }
+            onNavigate?.()
+          }}
+          title={group.description}
+        >
+          {header}
+        </NavLink>
+      ) : (
+        <Button
+          variant="ghost"
+          w="full"
+          h="auto"
+          minH="auto"
+          p={0}
+          borderRadius="var(--radius-input)"
+          fontWeight="inherit"
+          color="inherit"
+          justifyContent="flex-start"
+          _hover={{ bg: 'transparent' }}
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          {header}
+        </Button>
+      )}
 
       <AnimatePresence initial={false}>
-        {open ? (
+        {open && showChildren ? (
           <MotionBox
             key={group.id}
             initial={{ height: 0, opacity: 0 }}
@@ -116,12 +160,14 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
                       end={child.end}
                       style={{ textDecoration: 'none', display: 'block' }}
                       onClick={onNavigate}
+                      title={child.description}
                     >
                       <SidebarNavItem
                         active={isPathActive(location.pathname, child.to, child.end)}
                         collapsed={false}
                         label={child.label}
                         indent
+                        badge={child.badge}
                         trailing={
                           child.soon ? (
                             <Badge

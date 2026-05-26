@@ -1,12 +1,12 @@
 import { Box, Button, HStack, Table, Text } from '@chakra-ui/react'
 import { useMemo } from 'react'
+import { ListPagination } from '../list-page/ListPagination'
+import { ListSearchBar } from '../list-page/ListSearchBar'
+import { useListPageState, usePagedList } from '../list-page/list-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
 import { useDeleteFileMutation, useFilesQuery } from '../../hooks'
 import { formatBytes } from '../../lib/utils'
 import type { FileEntry } from '../../lib/api'
-import { InventorySearchBar } from './InventorySearchBar'
-import { useInventoryListState, useInventoryPagedList } from './inventory-list-utils'
-import { InventoryPagination } from './InventoryPagination'
 
 function searchFiles(items: FileEntry[], query: string) {
   const q = query.trim().toLowerCase()
@@ -16,14 +16,14 @@ function searchFiles(items: FileEntry[], query: string) {
   )
 }
 
-export function InventoryFilesSection() {
+export function ArtifactFilesPanel() {
   const { data, isLoading, error } = useFilesQuery()
   const deleteMutation = useDeleteFileMutation()
-  const list = useInventoryListState(20)
+  const list = useListPageState(20)
 
   const items = data?.items ?? []
   const filtered = useMemo(() => searchFiles(items, list.search), [items, list.search])
-  const paged = useInventoryPagedList(filtered, list)
+  const paged = usePagedList(filtered, list)
 
   async function remove(path: string) {
     if (!confirm(`Delete ${path}?`)) return
@@ -36,7 +36,7 @@ export function InventoryFilesSection() {
         <Text fontSize="sm" color="fg.muted" fontFamily="mono" lineClamp={1} title={data?.output_dir}>
           {data?.output_dir ?? 'data/output'}
         </Text>
-        <InventorySearchBar
+        <ListSearchBar
           value={list.search}
           onChange={list.setSearch}
           placeholder="Search file name or path…"
@@ -114,7 +114,7 @@ export function InventoryFilesSection() {
         </DataList>
       )}
 
-      <InventoryPagination
+      <ListPagination
         page={paged.page}
         totalPages={paged.totalPages}
         total={paged.total}

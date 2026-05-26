@@ -9,6 +9,7 @@ export function useDeleteFileMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.files })
       void queryClient.invalidateQueries({ queryKey: queryKeys.stats })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.runtimeStatus })
     },
   })
 }

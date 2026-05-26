@@ -2,14 +2,20 @@ import { Box, Button, Grid, HStack, Table, Text } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { BatchJobList } from '../batches/BatchJobList'
 import { ScrapeSubmitPanel } from '../batches/ScrapeSubmitPanel'
+import { RunningBatchesPanel } from '../dashboard/RunningBatchesPanel'
+import { ListPagination } from '../list-page/ListPagination'
+import { ListSearchBar } from '../list-page/ListSearchBar'
+import { useListPageState, usePagedList } from '../list-page/list-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
 import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
 import { StatusBadge } from '../ui/StatusBadge'
-import { useBatchesQuery, useCancelBatchMutation, useSelectedBatchQuery } from '../../hooks'
+import {
+  useBatchesQuery,
+  useCancelBatchMutation,
+  useRuntimeStatusQuery,
+  useSelectedBatchQuery,
+} from '../../hooks'
 import { useUiStore } from '../../stores/ui-store'
-import { InventorySearchBar } from './InventorySearchBar'
-import { useInventoryListState, useInventoryPagedList } from './inventory-list-utils'
-import { InventoryPagination } from './InventoryPagination'
 
 function statusTone(s: string): 'running' | 'success' | 'neutral' | 'danger' {
   if (s === 'running') return 'running'
@@ -18,13 +24,14 @@ function statusTone(s: string): 'running' | 'success' | 'neutral' | 'danger' {
   return 'danger'
 }
 
-export function InventoryBatchesSection() {
+export function WorkflowBatchesPanel() {
   const { data, isLoading, error } = useBatchesQuery()
+  const runtime = useRuntimeStatusQuery()
   const selectedBatchId = useUiStore((s) => s.selectedBatchId)
   const setSelectedBatchId = useUiStore((s) => s.setSelectedBatchId)
   const selected = useSelectedBatchQuery()
   const cancelMutation = useCancelBatchMutation()
-  const list = useInventoryListState(15)
+  const list = useListPageState(15)
 
   const items = data?.items ?? []
   const filtered = useMemo(() => {
@@ -33,7 +40,8 @@ export function InventoryBatchesSection() {
     return items.filter((b) => b.batch_id.toLowerCase().includes(q) || b.status.toLowerCase().includes(q))
   }, [items, list.search])
 
-  const paged = useInventoryPagedList(filtered, list)
+  const paged = usePagedList(filtered, list)
+  const running = runtime.data?.running_batches ?? []
 
   const liveProgress = selected.status
     ? `${selected.status.success}/${selected.status.total}`
@@ -43,10 +51,12 @@ export function InventoryBatchesSection() {
 
   return (
     <Box>
+      {running.length ? <RunningBatchesPanel batches={running} /> : null}
+
       <ScrapeSubmitPanel />
 
       <HStack justify="flex-end" mb={3} flexWrap="wrap" gap={2}>
-        <InventorySearchBar
+        <ListSearchBar
           value={list.search}
           onChange={list.setSearch}
           placeholder="Search batch ID or status…"
@@ -153,7 +163,7 @@ export function InventoryBatchesSection() {
         ) : null}
       </Grid>
 
-      <InventoryPagination
+      <ListPagination
         page={paged.page}
         totalPages={paged.totalPages}
         total={paged.total}

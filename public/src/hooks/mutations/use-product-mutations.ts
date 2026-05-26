@@ -9,6 +9,7 @@ export function useDeleteProductMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['products'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.stats })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.runtimeStatus })
     },
   })
 }

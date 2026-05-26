@@ -1,9 +1,9 @@
 import { Button, HStack, NativeSelect } from '@chakra-ui/react'
 import { SubtitleText } from '../ui/Section'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import { buildPageNumbers, INVENTORY_PAGE_SIZE_OPTIONS } from './inventory-list-utils'
+import { buildPageNumbers, LIST_PAGE_SIZE_OPTIONS } from './list-utils'
 
-export function InventoryPagination({
+export function ListPagination({
   page,
   totalPages,
   total,
@@ -79,7 +79,7 @@ export function InventoryPagination({
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             borderRadius="var(--radius-input)"
           >
-            {INVENTORY_PAGE_SIZE_OPTIONS.map((n) => (
+            {LIST_PAGE_SIZE_OPTIONS.map((n) => (
               <option key={n} value={n}>
                 {n} / page
               </option>

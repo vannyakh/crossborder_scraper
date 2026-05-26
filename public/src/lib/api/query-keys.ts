@@ -23,7 +23,7 @@ export const queryKeys = {
   agentSchedules: ['gateway', 'schedules'] as const,
   agentRuns: ['gateway', 'runs'] as const,
   serviceOverview: ['service', 'overview'] as const,
-  products: (limit = 100) => ['products', { limit }] as const,
+  products: (limit = 100, offset = 0) => ['products', { limit, offset }] as const,
   product: (id: number) => ['products', id] as const,
   files: ['files'] as const,
   storeEnvironment: ['store', 'environment'] as const,

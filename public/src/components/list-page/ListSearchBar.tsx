@@ -1,7 +1,7 @@
 import { HStack, Input } from '@chakra-ui/react'
 import { Search } from 'lucide-react'
 
-export function InventorySearchBar({
+export function ListSearchBar({
   value,
   onChange,
   placeholder,

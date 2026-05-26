@@ -1,8 +1,8 @@
-import { Bot, Home, Settings, Sparkles, Warehouse, Wrench, type LucideIcon } from 'lucide-react'
+import { Bot, Home, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
 import { AGENT_NAV, agentSectionPath } from '../components/agent/agent-sections'
 import { ROADMAP_FEATURES, roadmapPath } from '../components/roadmap/roadmap-sections'
 import { SETTINGS_NAV, settingsSectionPath } from '../components/settings/settings-sections'
-import { INVENTORY_NAV } from '../components/inventory/inventory-sections'
+import { SCRAPE_PANEL_NAV, type ScrapeNavBadgeKey } from './scrape-panel'
 import { OPERATIONS_TOOL_NAV } from './software-tools'
 
 export type NavLinkItem = {
@@ -11,6 +11,8 @@ export type NavLinkItem = {
   label: string
   icon: LucideIcon
   end?: boolean
+  description?: string
+  badgeKey?: ScrapeNavBadgeKey
 }
 
 export type NavChildLink = {
@@ -18,6 +20,10 @@ export type NavChildLink = {
   label: string
   end?: boolean
   soon?: boolean
+  description?: string
+  badgeKey?: ScrapeNavBadgeKey
+  /** Filled at render time from stats */
+  badge?: string
 }
 
 export type NavGroupItem = {
@@ -25,10 +31,19 @@ export type NavGroupItem = {
   id: string
   label: string
   icon: LucideIcon
+  description?: string
+  /** Navigate here when the group header is clicked */
+  homeTo?: string
   children: NavChildLink[]
 }
 
-export type NavEntry = NavLinkItem | NavGroupItem
+export type NavSectionItem = {
+  kind: 'section'
+  id: string
+  label: string
+}
+
+export type NavEntry = NavLinkItem | NavGroupItem | NavSectionItem
 
 const agentNavChildren: NavChildLink[] = AGENT_NAV.map((item) => ({
   to: agentSectionPath(item.id),
@@ -46,15 +61,31 @@ const roadmapNavChildren: NavChildLink[] = ROADMAP_FEATURES.map((item) => ({
   soon: true,
 }))
 
+const workflowNav = SCRAPE_PANEL_NAV.workflow
+const artifactNav = SCRAPE_PANEL_NAV.artifact
+
 export const navEntries: NavEntry[] = [
   { kind: 'link', to: '/', label: 'Overview', icon: Home, end: true },
+  { kind: 'section', id: 'scrape-panel', label: SCRAPE_PANEL_NAV.sectionLabel },
   {
     kind: 'group',
-    id: 'inventory',
-    label: 'Inventory',
-    icon: Warehouse,
-    children: [...INVENTORY_NAV],
+    id: workflowNav.id,
+    label: workflowNav.label,
+    icon: workflowNav.icon,
+    description: workflowNav.description,
+    homeTo: workflowNav.items[0]?.to,
+    children: [...workflowNav.items],
   },
+  {
+    kind: 'group',
+    id: artifactNav.id,
+    label: artifactNav.label,
+    icon: artifactNav.icon,
+    description: artifactNav.description,
+    homeTo: artifactNav.items[0]?.to,
+    children: [...artifactNav.items],
+  },
+  { kind: 'section', id: 'panel-tools', label: 'Panel' },
   {
     kind: 'group',
     id: 'tools',

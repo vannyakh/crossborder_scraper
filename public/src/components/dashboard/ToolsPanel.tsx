@@ -47,7 +47,7 @@ export function ToolsPanel({ sections }: { sections: SoftwareToolSection[] }) {
   return (
     <Section
       title="Software tools"
-      description="Scrape data, panel operations, and automation — matches the sidebar menu"
+      description="Scrape panel, server tools, and gateway automation — aligned with the sidebar"
       mt={0}
     >
       <VStack align="stretch" gap={6}>

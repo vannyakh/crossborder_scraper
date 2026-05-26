@@ -1,4 +1,4 @@
-import { Box, Menu, Portal, Text } from '@chakra-ui/react'
+import { Box, HStack, Menu, Portal, Text } from '@chakra-ui/react'
 import type { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { SidebarNavItem } from './SidebarNavItem'
 
 type SidebarFlyoutMenuProps = {
   label: string
+  description?: string
   icon: LucideIcon
   active: boolean
   children: NavChildLink[]
@@ -16,6 +17,7 @@ type SidebarFlyoutMenuProps = {
 
 export function SidebarFlyoutMenu({
   label,
+  description,
   icon,
   active,
   children,
@@ -63,6 +65,11 @@ export function SidebarFlyoutMenu({
               <Text className="sidebar-flyout__title" as="p">
                 {label}
               </Text>
+              {description ? (
+                <Text fontSize="xs" color="fg.muted" px={3} pb={2} lineHeight="short">
+                  {description}
+                </Text>
+              ) : null}
 
               <Box className="sidebar-flyout__list">
                 {children.map((child, index) => {
@@ -74,6 +81,7 @@ export function SidebarFlyoutMenu({
                         to={child.to}
                         end={child.end}
                         role="menuitem"
+                        title={child.description}
                         onClick={() => {
                           onNavigate?.()
                           setOpen(false)
@@ -87,10 +95,24 @@ export function SidebarFlyoutMenu({
                             .join(' ')
                         }
                       >
-                        <span>{child.label}</span>
-                        {child.soon ? (
-                          <span className="sidebar-flyout__soon">Soon</span>
-                        ) : null}
+                        <HStack justify="space-between" w="full" gap={2}>
+                          <Box minW={0}>
+                            <Text fontSize="sm">{child.label}</Text>
+                            {child.description ? (
+                              <Text fontSize="xs" color="fg.subtle" lineClamp={1}>
+                                {child.description}
+                              </Text>
+                            ) : null}
+                          </Box>
+                          {child.badge ? (
+                            <Text fontSize="xs" fontWeight="semibold" color="fg.muted">
+                              {child.badge}
+                            </Text>
+                          ) : null}
+                          {child.soon ? (
+                            <span className="sidebar-flyout__soon">Soon</span>
+                          ) : null}
+                        </HStack>
                       </NavLink>
                     </Box>
                   )

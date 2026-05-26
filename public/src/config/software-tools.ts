@@ -12,6 +12,11 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { LLMHealth, RuntimeStatus, ServiceGatewaySummary } from '../lib/api'
+import {
+  SCRAPE_DASHBOARD_TOOLS,
+  formatScrapeBadge,
+  type ScrapeNavBadgeKey,
+} from './scrape-panel'
 
 /** Sidebar + dashboard: panel diagnostics & help */
 export const OPERATIONS_TOOL_NAV = [
@@ -48,7 +53,7 @@ export type SoftwareToolCard = {
 }
 
 export type SoftwareToolSection = {
-  id: 'inventory' | 'operations' | 'automation'
+  id: 'scrape' | 'operations' | 'automation'
   title: string
   description: string
   tools: SoftwareToolCard[]
@@ -71,46 +76,59 @@ function card(
   return { ...partial, icon: SOFTWARE_TOOL_ICONS[partial.icon] }
 }
 
+function scrapeStatus(
+  badgeKey: ScrapeNavBadgeKey,
+  stats: { running_batches: number; products: number; output_files: number },
+  runningBatches: number,
+): { status: string; tone: SoftwareToolCard['statusTone'] } {
+  const n = formatScrapeBadge(badgeKey, stats)
+  switch (badgeKey) {
+    case 'running_batches':
+      return {
+        status: runningBatches > 0 ? `${runningBatches} running` : 'Idle',
+        tone: runningBatches > 0 ? 'running' : 'neutral',
+      }
+    case 'products':
+      return { status: n ? `${n} items` : 'Empty', tone: 'neutral' }
+    case 'output_files':
+      return { status: n ? `${n} files` : 'Empty', tone: 'neutral' }
+    default:
+      return { status: '—', tone: 'neutral' }
+  }
+}
+
 /** Dashboard “Software tools” cards grouped by use case */
 export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareToolSection[] {
   const { runtime, llm, runningBatches, products, files, enabledSchedules, recentFailures } = stats
   const aiAgentOn = runtime?.ai?.ai_agent_enabled
+  const scrapeStats = {
+    running_batches: runningBatches,
+    products,
+    output_files: files,
+  }
+
+  const scrapeTools: SoftwareToolCard[] = SCRAPE_DASHBOARD_TOOLS.map((tool) => {
+    const { status, tone } = scrapeStatus(tool.badgeKey, scrapeStats, runningBatches)
+    const iconKey =
+      tool.id === 'batch-queue' ? 'batches' : tool.id === 'catalog' ? 'products' : 'files'
+    return card({
+      id: tool.id,
+      icon: iconKey,
+      title: tool.title,
+      description: tool.description,
+      to: tool.to,
+      status,
+      statusTone: tone,
+      primaryAction: 'primaryAction' in tool ? tool.primaryAction : undefined,
+    })
+  })
 
   return [
     {
-      id: 'inventory',
-      title: 'Inventory',
-      description: 'Submit jobs, browse products, download export files',
-      tools: [
-        card({
-          id: 'batches',
-          icon: 'batches',
-          title: 'Scrape batches',
-          description: 'Submit URLs, track live progress, and cancel runs.',
-          to: '/inventory/batches',
-          status: runningBatches > 0 ? `${runningBatches} running` : 'Idle',
-          statusTone: runningBatches > 0 ? 'running' : 'neutral',
-          primaryAction: { label: 'New batch', to: '/inventory/batches' },
-        }),
-        card({
-          id: 'products',
-          icon: 'products',
-          title: 'Product catalog',
-          description: 'Browse scraped items and export to marketplaces.',
-          to: '/inventory/products',
-          status: `${products} items`,
-          statusTone: 'neutral',
-        }),
-        card({
-          id: 'files',
-          icon: 'files',
-          title: 'Output files',
-          description: 'CSV/JSON exports and generated listing files on disk.',
-          to: '/inventory/files',
-          status: `${files} files`,
-          statusTone: 'neutral',
-        }),
-      ],
+      id: 'scrape',
+      title: 'Scrape panel',
+      description: 'Workflow jobs and scrape artifacts — same as the sidebar scrape section',
+      tools: scrapeTools,
     },
     {
       id: 'operations',
@@ -158,13 +176,13 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
     {
       id: 'automation',
       title: 'Automation & config',
-      description: 'AI gateway, workflows, and panel configuration',
+      description: 'AI gateway, agent pipelines, and panel configuration',
       tools: [
         card({
           id: 'agent',
           icon: 'agent',
           title: 'Gateway agent',
-          description: 'Chat, cron schedules, workflows, and tool catalog.',
+          description: 'Chat, cron schedules, pipelines, and tool catalog.',
           to: '/agent/chat',
           status:
             aiAgentOn && enabledSchedules > 0
@@ -178,8 +196,8 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
         card({
           id: 'workflows',
           icon: 'workflows',
-          title: 'Workflows',
-          description: 'Scrape→export pipelines and catalog snapshots.',
+          title: 'Agent pipelines',
+          description: 'Multi-step scrape→export templates (gateway, not batch queue).',
           to: '/agent/workflows',
           status: stats.gateway ? `${stats.gateway.workflows_count} templates` : 'Templates',
           statusTone: 'neutral',

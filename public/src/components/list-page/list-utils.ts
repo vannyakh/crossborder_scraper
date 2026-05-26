@@ -21,7 +21,7 @@ export function buildPageNumbers(current: number, totalPages: number, window = 5
   return pages
 }
 
-export function useInventoryListState(defaultPageSize = 20) {
+export function useListPageState(defaultPageSize = 20) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(defaultPageSize)
@@ -29,10 +29,7 @@ export function useInventoryListState(defaultPageSize = 20) {
   return { search, setSearch, page, setPage, pageSize, setPageSize }
 }
 
-export function useInventoryPagedList<T>(
-  items: T[],
-  state: ReturnType<typeof useInventoryListState>,
-) {
+export function usePagedList<T>(items: T[], state: ReturnType<typeof useListPageState>) {
   const pagination = useMemo(
     () => paginateItems(items, state.page, state.pageSize),
     [items, state.page, state.pageSize],
@@ -51,4 +48,4 @@ export function useInventoryPagedList<T>(
   return pagination
 }
 
-export const INVENTORY_PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
+export const LIST_PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
