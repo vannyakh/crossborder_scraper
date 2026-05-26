@@ -41,3 +41,14 @@ export {
 } from './queries/use-monitor-query'
 export { useChartTheme } from './use-chart-theme'
 export { useStatsQuery } from './queries/use-stats-query'
+export {
+  useStoreCatalogQuery,
+  useStoreConnectMutation,
+  useStoreEnvironmentQuery,
+  useStoreInstallMutation,
+  useStoreInstalledQuery,
+  useStoreLifecycleMutation,
+  useStoreRefreshMutation,
+  useStoreUninstallMutation,
+  useStorePluginDetailQuery,
+} from './queries/use-store-query'

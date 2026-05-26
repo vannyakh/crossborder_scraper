@@ -1,18 +1,14 @@
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
 import { Sparkles } from 'lucide-react'
 import { Section, SectionCard } from '../ui/Section'
-import { COMING_SOON_BLURB, SERVICE_SECTION_MAP, type ServiceSectionId } from './service-sections'
+import { COMING_SOON_BLURB, ROADMAP_FEATURE_MAP, type RoadmapFeatureId } from './roadmap-sections'
 
-export function ComingSoonPanel({ section }: { section: ServiceSectionId }) {
-  const item = SERVICE_SECTION_MAP[section]
+export function ComingSoonPanel({ feature }: { feature: RoadmapFeatureId }) {
+  const item = ROADMAP_FEATURE_MAP[feature]
   const Icon = item.icon
 
   return (
-    <Section
-      title={item.label}
-      description={item.description}
-      mt={0}
-    >
+    <Section title={item.label} description={item.description} mt={0}>
       <SectionCard>
         <VStack align="center" textAlign="center" py={{ base: 6, md: 10 }} gap={4}>
           <Box

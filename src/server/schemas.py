@@ -495,6 +495,103 @@ class ServiceLogListResponse(BaseModel):
     offset: int
 
 
+class StoreConnectionField(BaseModel):
+    key: str
+    label: str
+    type: Literal["text", "number", "password"] = "text"
+    required: bool = True
+    default: str | int | None = None
+
+
+class StoreCatalogItem(BaseModel):
+    id: str
+    name: str
+    category: str
+    description: str
+    version: str
+    default_port: int
+    supports_docker: bool
+    supports_external: bool
+    docker_image: str
+    tags: list[str] = Field(default_factory=list)
+    connection_fields: list[StoreConnectionField] = Field(default_factory=list)
+    installed: bool = False
+    status: str = "not_installed"
+    mode: str | None = None
+
+
+class StoreCatalogResponse(BaseModel):
+    items: list[StoreCatalogItem]
+    total: int
+
+
+class StoreBuiltinSqlite(BaseModel):
+    label: str
+    path: str
+    description: str
+
+
+class StoreEnvironmentResponse(BaseModel):
+    docker_available: bool
+    compose_available: bool
+    store_dir: str
+    builtin_sqlite: StoreBuiltinSqlite
+
+
+class StoreProbeResponse(BaseModel):
+    ok: bool
+    message: str = ""
+    host: str | None = None
+    port: int | None = None
+
+
+class StoreInstalledConfig(BaseModel):
+    host: str | None = None
+    port: int | None = None
+    username: str | None = None
+    database: str | None = None
+    password_set: bool = False
+    management_port: int | None = None
+    container_name: str | None = None
+
+
+class StoreInstalledResponse(BaseModel):
+    plugin_id: str
+    name: str
+    category: str
+    mode: str | None = None
+    status: str
+    installed_at: str | None = None
+    updated_at: str | None = None
+    config: StoreInstalledConfig | dict[str, Any] = Field(default_factory=dict)
+    probe: dict[str, Any] | None = None
+    error: str | None = None
+    container_name: str | None = None
+
+
+class StoreInstalledListResponse(BaseModel):
+    items: list[StoreInstalledResponse]
+    total: int
+
+
+class StorePluginDetailResponse(StoreCatalogItem):
+    installation: StoreInstalledResponse | None = None
+
+
+class StoreInstallRequest(BaseModel):
+    mode: Literal["docker"] = "docker"
+    port: int | None = Field(default=None, ge=1, le=65535)
+
+
+class StoreConnectRequest(BaseModel):
+    host: str = "127.0.0.1"
+    port: int | None = None
+    username: str | None = None
+    password: str | None = None
+    database: str | None = None
+    management_port: int | None = None
+
+
 # Re-export for routers
 __all__ = [
     "AgentRunListResponse",
@@ -538,6 +635,14 @@ __all__ = [
     "ScrapeSingleResponse",
     "StatsResponse",
     "StatusResponse",
+    "StoreCatalogResponse",
+    "StoreConnectRequest",
+    "StoreEnvironmentResponse",
+    "StoreInstallRequest",
+    "StoreInstalledListResponse",
+    "StoreInstalledResponse",
+    "StorePluginDetailResponse",
+    "StoreProbeResponse",
     "SubmitRequest",
     "SubmitResponse",
 ]

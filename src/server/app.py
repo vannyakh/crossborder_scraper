@@ -18,6 +18,7 @@ from server.routers import (
     products,
     runtime,
     service,
+    store,
     system,
 )
 
@@ -41,6 +42,7 @@ app.include_router(runtime.router)
 app.include_router(monitor.router)
 app.include_router(logs.router)
 app.include_router(service.router)
+app.include_router(store.router)
 app.include_router(gateway.router)
 
 # Scrape pipeline

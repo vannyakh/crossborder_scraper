@@ -1,6 +1,6 @@
-import { Box, Flex } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import {
   AiSettingsSection,
   MarketplacesSettingsSection,
@@ -10,7 +10,6 @@ import {
   ScrapeSettingsSection,
 } from '../components/settings/SettingsSectionPanels'
 import { SettingsSaveBar } from '../components/settings/SettingsSaveBar'
-import { SettingsSidebar } from '../components/settings/SettingsSidebar'
 import {
   DEFAULT_SETTINGS_SECTION,
   isSettingsSectionId,
@@ -52,7 +51,6 @@ function SettingsSectionContent({
 
 export function SettingsPage() {
   const { section: sectionParam } = useParams<{ section?: string }>()
-  const navigate = useNavigate()
   const section = isSettingsSectionId(sectionParam) ? sectionParam : DEFAULT_SETTINGS_SECTION
   const form = usePanelSettingsForm()
   const healthQuery = useLLMHealthQuery(Boolean(form.panel?.ai_enabled))
@@ -65,46 +63,30 @@ export function SettingsPage() {
     return <Navigate to={settingsSectionPath(DEFAULT_SETTINGS_SECTION)} replace />
   }
 
-  const setSection = (id: SettingsSectionId) => {
-    if (id !== section) {
-      navigate(settingsSectionPath(id), { replace: true })
-    }
-  }
-
   return (
-    <Flex
-      direction={{ base: 'column', lg: 'row' }}
-      align={{ lg: 'flex-start' }}
-      gap={{ base: 4, lg: 6 }}
-      w="full"
-      minH={0}
-    >
-      <SettingsSidebar active={section} onChange={setSection} />
+    <Box flex={1} minW={0} w="full">
+      <AnimatePresence mode="wait" initial={false}>
+        <MotionBox
+          key={section}
+          initial={motionEnabled ? { opacity: 0, y: 10 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          exit={motionEnabled ? { opacity: 0, y: -6 } : undefined}
+          transition={transition}
+        >
+          <SettingsSectionContent section={section} form={form} health={health} />
 
-      <Box flex={1} minW={0} position="relative">
-        <AnimatePresence mode="wait" initial={false}>
-          <MotionBox
-            key={section}
-            initial={motionEnabled ? { opacity: 0, y: 10 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            exit={motionEnabled ? { opacity: 0, y: -6 } : undefined}
-            transition={transition}
-          >
-            <SettingsSectionContent section={section} form={form} health={health} />
-
-            {section !== 'panel' ? (
-              <SettingsSaveBar
-                message={form.message}
-                saving={form.updateMutation.isPending}
-                testing={form.checkMutation.isPending}
-                onSave={() => void form.handleSave()}
-                onTestLlm={() => void form.handleHealthCheck()}
-                showTest={showTest}
-              />
-            ) : null}
-          </MotionBox>
-        </AnimatePresence>
-      </Box>
-    </Flex>
+          {section !== 'panel' ? (
+            <SettingsSaveBar
+              message={form.message}
+              saving={form.updateMutation.isPending}
+              testing={form.checkMutation.isPending}
+              onSave={() => void form.handleSave()}
+              onTestLlm={() => void form.handleHealthCheck()}
+              showTest={showTest}
+            />
+          ) : null}
+        </MotionBox>
+      </AnimatePresence>
+    </Box>
   )
 }

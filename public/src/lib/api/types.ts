@@ -467,3 +467,66 @@ export type ExportResult = {
   published: boolean
   api_response?: Record<string, unknown> | null
 }
+
+export type StoreConnectionField = {
+  key: string
+  label: string
+  type: 'text' | 'number' | 'password'
+  required: boolean
+  default?: string | number | null
+}
+
+export type StoreCatalogItem = {
+  id: string
+  name: string
+  category: string
+  description: string
+  version: string
+  default_port: number
+  supports_docker: boolean
+  supports_external: boolean
+  docker_image: string
+  tags: string[]
+  connection_fields: StoreConnectionField[]
+  installed: boolean
+  status: string
+  mode: string | null
+}
+
+export type StoreEnvironment = {
+  docker_available: boolean
+  compose_available: boolean
+  store_dir: string
+  builtin_sqlite: {
+    label: string
+    path: string
+    description: string
+  }
+}
+
+export type StoreInstalled = {
+  plugin_id: string
+  name: string
+  category: string
+  mode: string | null
+  status: string
+  installed_at?: string | null
+  updated_at?: string | null
+  config: Record<string, unknown>
+  probe?: { ok?: boolean; message?: string } | null
+  error?: string | null
+  container_name?: string | null
+}
+
+export type StoreConnectRequest = {
+  host?: string
+  port?: number
+  username?: string
+  password?: string
+  database?: string
+  management_port?: number
+}
+
+export type StorePluginDetail = StoreCatalogItem & {
+  installation?: StoreInstalled | null
+}

@@ -1,14 +1,8 @@
-import {
-  Activity,
-  Bot,
-  FolderOpen,
-  Home,
-  Package,
-  Settings,
-  type LucideIcon,
-} from 'lucide-react'
+import { Bot, Database, Home, Settings, Sparkles, Wrench, type LucideIcon } from 'lucide-react'
 import { AGENT_NAV, agentSectionPath } from '../components/agent/agent-sections'
-import { SERVICE_NAV, serviceSectionPath } from '../components/service/service-sections'
+import { ROADMAP_FEATURES, roadmapPath } from '../components/roadmap/roadmap-sections'
+import { SETTINGS_NAV, settingsSectionPath } from '../components/settings/settings-sections'
+import { DATA_TOOL_NAV, OPERATIONS_TOOL_NAV } from './software-tools'
 
 export type NavLinkItem = {
   kind: 'link'
@@ -22,7 +16,6 @@ export type NavChildLink = {
   to: string
   label: string
   end?: boolean
-  /** Roadmap / not yet available */
   soon?: boolean
 }
 
@@ -36,18 +29,20 @@ export type NavGroupItem = {
 
 export type NavEntry = NavLinkItem | NavGroupItem
 
-const serviceNavChildren: NavChildLink[] = [
-  ...SERVICE_NAV.map((item) => ({
-    to: serviceSectionPath(item.id),
-    label: item.label,
-    soon: item.comingSoon,
-  })),
-  { to: '/logs', label: 'Logs' },
-]
-
 const agentNavChildren: NavChildLink[] = AGENT_NAV.map((item) => ({
   to: agentSectionPath(item.id),
   label: item.label,
+}))
+
+const settingsNavChildren: NavChildLink[] = SETTINGS_NAV.map((item) => ({
+  to: settingsSectionPath(item.id),
+  label: item.label,
+}))
+
+const roadmapNavChildren: NavChildLink[] = ROADMAP_FEATURES.map((item) => ({
+  to: roadmapPath(item.id),
+  label: item.label,
+  soon: true,
 }))
 
 export const navEntries: NavEntry[] = [
@@ -56,19 +51,15 @@ export const navEntries: NavEntry[] = [
     kind: 'group',
     id: 'data',
     label: 'Data',
-    icon: Package,
-    children: [
-      { to: '/batches', label: 'Batches' },
-      { to: '/products', label: 'Products' },
-    ],
+    icon: Database,
+    children: [...DATA_TOOL_NAV],
   },
-  { kind: 'link', to: '/files', label: 'Files', icon: FolderOpen },
   {
     kind: 'group',
-    id: 'service',
-    label: 'Service',
-    icon: Activity,
-    children: serviceNavChildren,
+    id: 'tools',
+    label: 'Tools',
+    icon: Wrench,
+    children: [...OPERATIONS_TOOL_NAV],
   },
   {
     kind: 'group',
@@ -77,7 +68,20 @@ export const navEntries: NavEntry[] = [
     icon: Bot,
     children: agentNavChildren,
   },
-  { kind: 'link', to: '/settings', label: 'Settings', icon: Settings },
+  {
+    kind: 'group',
+    id: 'roadmap',
+    label: 'Roadmap',
+    icon: Sparkles,
+    children: roadmapNavChildren,
+  },
+  {
+    kind: 'group',
+    id: 'settings',
+    label: 'Settings',
+    icon: Settings,
+    children: settingsNavChildren,
+  },
 ]
 
 /** @deprecated use navEntries */

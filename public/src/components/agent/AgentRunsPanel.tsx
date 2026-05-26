@@ -107,11 +107,11 @@ export function AgentRunsPanel() {
           </VStack>
         )}
         <Text mt={4} fontSize="xs" color="fg.muted">
-          Cron logs are also available under{' '}
-          <RouterLink to="/logs" style={{ color: 'var(--app-accent)' }}>
-            Service → Logs
-          </RouterLink>
-          .
+          Check logs for scrape failures, verify health on the{' '}
+          <RouterLink to="/health" style={{ color: 'var(--app-accent)' }}>
+            Health
+          </RouterLink>{' '}
+          page, and review proxy settings if sites block requests.
         </Text>
       </SectionCard>
     </Section>

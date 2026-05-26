@@ -7,7 +7,8 @@ import {
 import { OverviewPanel } from '../components/dashboard/OverviewPanel'
 import { RunningBatchesPanel } from '../components/dashboard/RunningBatchesPanel'
 import { ServiceGaugePanel } from '../components/dashboard/ServiceGaugePanel'
-import { ToolsPanel, dashboardToolIcons } from '../components/dashboard/ToolsPanel'
+import { ToolsPanel } from '../components/dashboard/ToolsPanel'
+import { buildSoftwareToolSections } from '../config/software-tools'
 import { useActivitySamples } from '../components/dashboard/use-activity-samples'
 import { useHardwareSamples } from '../components/dashboard/use-hardware-samples'
 import { Stagger, StaggerItem } from '../components/motion/Stagger'
@@ -17,12 +18,14 @@ import {
   useLLMHealthQuery,
   useMarketplacesQuery,
   useMonitorStatusQuery,
+  useServiceOverviewQuery,
   useStatsQuery,
 } from '../hooks'
 
 export function DashboardPage() {
   const monitor = useMonitorStatusQuery()
   const gateway = useGatewayStatusQuery()
+  const serviceOverview = useServiceOverviewQuery()
   const stats = useStatsQuery()
   const runtime = monitor.data?.service ?? gateway.data?.runtime
   const hardware = monitor.data?.hardware
@@ -43,60 +46,19 @@ export function DashboardPage() {
     marketplaces.data?.items.filter((m) => m.configured).length ?? 0
 
   const enabledSchedules = schedules.data?.items.filter((s) => s.enabled).length ?? 0
+  const gatewaySummary = serviceOverview.data?.gateway
+  const recentFailures = gatewaySummary?.recent_failed_runs ?? 0
 
-  const toolCards = [
-    {
-      id: 'batches',
-      title: 'Scrape batches',
-      description: 'Submit URLs, track live progress, and cancel runs.',
-      to: '/batches',
-      status: running > 0 ? `${running} running` : 'Idle',
-      statusTone: running > 0 ? ('running' as const) : ('neutral' as const),
-      icon: dashboardToolIcons.batches,
-      primaryAction: { label: 'New batch', to: '/batches' },
-    },
-    {
-      id: 'agent',
-      title: 'Gateway agent',
-      description: 'LLM tool loop, prompts, and cron schedules.',
-      to: '/agent/chat',
-      status:
-        runtime?.ai?.ai_agent_enabled && enabledSchedules > 0
-          ? `${enabledSchedules} schedules`
-          : runtime?.ai?.ai_agent_enabled
-            ? 'Ready'
-            : 'Off',
-      statusTone: runtime?.ai?.ai_agent_enabled ? ('success' as const) : ('neutral' as const),
-      icon: dashboardToolIcons.agent,
-    },
-    {
-      id: 'products',
-      title: 'Product catalog',
-      description: 'Browse scraped items and export to marketplaces.',
-      to: '/products',
-      status: `${products} items`,
-      statusTone: 'neutral' as const,
-      icon: dashboardToolIcons.products,
-    },
-    {
-      id: 'files',
-      title: 'Output files',
-      description: 'Download exports and generated listing files.',
-      to: '/files',
-      status: `${files} files`,
-      statusTone: 'neutral' as const,
-      icon: dashboardToolIcons.files,
-    },
-    {
-      id: 'settings',
-      title: 'Configuration',
-      description: 'AI keys, proxy pool, workers, and integrations.',
-      to: '/settings',
-      status: llm.data?.ok ? 'LLM OK' : runtime?.ai?.ai_enabled ? 'Check LLM' : 'Panel',
-      statusTone: llm.data?.ok ? ('success' as const) : ('neutral' as const),
-      icon: dashboardToolIcons.settings,
-    },
-  ]
+  const toolSections = buildSoftwareToolSections({
+    runtime,
+    llm: llm.data,
+    gateway: gatewaySummary,
+    runningBatches: running,
+    products,
+    files,
+    enabledSchedules,
+    recentFailures,
+  })
 
   return (
     <VStack align="stretch" gap={0}>
@@ -147,7 +109,7 @@ export function DashboardPage() {
         </StaggerItem>
 
         <StaggerItem>
-          <ToolsPanel tools={toolCards} />
+          <ToolsPanel sections={toolSections} />
         </StaggerItem>
 
         {runtime?.running_batches.length ? (

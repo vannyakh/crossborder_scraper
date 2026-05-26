@@ -26,4 +26,8 @@ export const queryKeys = {
   products: (limit = 100) => ['products', { limit }] as const,
   product: (id: number) => ['products', id] as const,
   files: ['files'] as const,
+  storeEnvironment: ['store', 'environment'] as const,
+  storeCatalog: ['store', 'catalog'] as const,
+  storeInstalled: ['store', 'installed'] as const,
+  storePlugin: (id: string) => ['store', 'plugin', id] as const,
 }
