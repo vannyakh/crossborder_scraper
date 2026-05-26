@@ -1,5 +1,4 @@
-import { Box, Button, Field, HStack, Input, Text, VStack } from '@chakra-ui/react'
-import { motion } from 'motion/react'
+import { Box, Button, Field, Flex, Input, Text, VStack } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FadeIn } from '../components/motion/FadeIn'
@@ -24,138 +23,90 @@ export function LoginPage() {
       await connect({ username, password })
       void navigate(from, { replace: true })
     } catch {
-      // error surfaced via connectError
+      /* connectError */
     }
   }
 
   return (
-    <VStack minH="100dvh" justify="center" px={4} className="app-mesh" gap={4}>
-      <HStack w="full" maxW="md" justify="flex-end">
+    <Flex minH="100dvh" className="app-shell" align="center" justify="center" p={4}>
+      <Box position="absolute" top={4} right={4}>
         <ThemeToggle />
-      </HStack>
+      </Box>
 
-      <FadeIn className="w-full max-w-md">
-        <motion.div
-          initial={{ scale: 0.98 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.35 }}
-        >
-          <Panel>
-            <PanelBody>
-              <Text fontFamily="heading" fontSize="xl" fontWeight="extrabold" className="brand-gradient-text">
-                Panel sign in
+      <Box w="full" maxW="sm">
+        <FadeIn>
+        <VStack gap={6} mb={8} textAlign="center">
+          <Text fontSize="2xl" fontWeight="bold" color="brand.emphasis">
+            Crossborder Scraper
+          </Text>
+          <Text fontSize="sm" color="fg.muted">
+            Sign in with panel credentials from <code className="text-xs">.env</code>
+          </Text>
+        </VStack>
+        </FadeIn>
+
+        <FadeIn delay={0.08}>
+        <Panel>
+          <PanelBody>
+            {authStatus && !authStatus.auth_configured ? (
+              <Box mb={4} p={3} fontSize="sm" color="fg.muted" borderRadius="input" bg="bg.input">
+                Run <code className="text-xs">scraper setup</code> to generate credentials.
+              </Box>
+            ) : null}
+
+            {apiOffline ? (
+              <Box mb={4} p={3} fontSize="sm" color="orange.500" borderRadius="input" bg="bg.input">
+                API offline — run <code className="text-xs">uv run serve</code>
+              </Box>
+            ) : null}
+
+            <Field.Root>
+              <Field.Label fontSize="xs" color="fg.muted">
+                Username
+              </Field.Label>
+              <Input
+                {...fieldStyles}
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </Field.Root>
+
+            <Field.Root mt={3}>
+              <Field.Label fontSize="xs" color="fg.muted">
+                Password
+              </Field.Label>
+              <Input
+                {...fieldStyles}
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Field.Root>
+
+            {connectError ? (
+              <Text mt={3} fontSize="sm" color="red.500">
+                {String((connectError as Error).message || connectError)}
               </Text>
-              <Text mt={2} fontSize="sm" color="fg.muted">
-                Use the username and password from your{' '}
-                <Box as="code" fontFamily="mono" fontSize="xs" color="fg">
-                  .env
-                </Box>{' '}
-                file (
-                <Box as="code" fontFamily="mono" fontSize="xs" color="fg">
-                  PANEL_USERNAME
-                </Box>
-                ,{' '}
-                <Box as="code" fontFamily="mono" fontSize="xs" color="fg">
-                  PANEL_PASSWORD
-                </Box>
-                ).
-              </Text>
+            ) : null}
 
-              {authStatus && !authStatus.auth_configured ? (
-                <Text
-                  mt={3}
-                  fontSize="sm"
-                  color="orange.500"
-                  p={3}
-                  borderRadius="input"
-                  borderWidth="1px"
-                  borderColor="border.subtle"
-                  bg="bg.elevated"
-                >
-                  Credentials not configured yet. Run{' '}
-                  <Box as="code" fontFamily="mono" fontSize="xs">
-                    scraper setup
-                  </Box>{' '}
-                  or start the server once to auto-generate them in .env.
-                </Text>
-              ) : null}
-
-              {apiOffline ? (
-                <Text
-                  mt={3}
-                  fontSize="sm"
-                  color="orange.500"
-                  p={3}
-                  borderRadius="input"
-                  borderWidth="1px"
-                  borderColor="border.subtle"
-                  bg="bg.elevated"
-                >
-                  API offline. Start with{' '}
-                  <Box as="code" fontFamily="mono" fontSize="xs">
-                    uv run serve
-                  </Box>
-                </Text>
-              ) : null}
-
-              <Field.Root mt={5}>
-                <Field.Label color="fg.muted" fontSize="xs">
-                  Username
-                </Field.Label>
-                <Input
-                  {...fieldStyles}
-                  autoComplete="username"
-                  placeholder="PANEL_USERNAME from .env"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </Field.Root>
-
-              <Field.Root mt={3}>
-                <Field.Label color="fg.muted" fontSize="xs">
-                  Password
-                </Field.Label>
-                <Input
-                  {...fieldStyles}
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="PANEL_PASSWORD from .env"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Field.Root>
-
-              {connectError ? (
-                <Text
-                  mt={3}
-                  fontSize="sm"
-                  color="red.500"
-                  p={3}
-                  borderRadius="input"
-                  borderWidth="1px"
-                  borderColor="red.200"
-                  bg="red.50"
-                  _dark={{ bg: 'rgba(127, 29, 29, 0.2)', borderColor: 'red.800' }}
-                >
-                  {String((connectError as Error).message || connectError)}
-                </Text>
-              ) : null}
-
-              <Button
-                mt={5}
-                w="full"
-                colorPalette="purple"
-                borderRadius="input"
-                loading={isConnecting}
-                disabled={!username || !password}
-                onClick={() => void handleConnect()}
-              >
-                Sign in
-              </Button>
-            </PanelBody>
-          </Panel>
-        </motion.div>
-      </FadeIn>
-    </VStack>
+            <Button
+              mt={5}
+              w="full"
+              colorPalette="blue"
+              variant="solid"
+              borderRadius="input"
+              loading={isConnecting}
+              disabled={!username || !password}
+              onClick={() => void handleConnect()}
+            >
+              Sign in
+            </Button>
+          </PanelBody>
+        </Panel>
+        </FadeIn>
+      </Box>
+    </Flex>
   )
 }

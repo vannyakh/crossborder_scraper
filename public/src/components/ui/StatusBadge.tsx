@@ -5,7 +5,7 @@ const paletteMap = {
   danger: 'red',
   warning: 'orange',
   neutral: 'gray',
-  brand: 'purple',
+  brand: 'blue',
   running: 'orange',
 } as const
 

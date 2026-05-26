@@ -14,8 +14,8 @@ export function AuthGuard() {
 
   if (healthQuery.isLoading) {
     return (
-      <VStack minH="100dvh" justify="center" className="app-mesh" color="fg">
-        <Spinner color="purple.400" size="lg" />
+      <VStack minH="100dvh" justify="center" className="app-shell" color="fg">
+        <Spinner color="blue.500" size="lg" />
         <Text fontSize="sm" color="fg.muted">
           Verifying API connection…
         </Text>

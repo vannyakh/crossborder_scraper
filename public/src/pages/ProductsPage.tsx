@@ -1,12 +1,8 @@
-import { Box, Button, HStack, Link, Text, VStack } from '@chakra-ui/react'
-import { motion } from 'motion/react'
+import { Button, HStack, Link, Table, Text } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
-import { FadeIn } from '../components/motion/FadeIn'
-import { PageHeader } from '../components/ui/PageHeader'
-import { Panel, PanelBody } from '../components/ui/Panel'
+import { Toolbar } from '../components/layout/Toolbar'
+import { DataList, DataListEmpty } from '../components/ui/DataList'
 import { useDeleteProductMutation, useProductsQuery } from '../hooks'
-
-const MotionBox = motion.create(Box)
 
 export function ProductsPage() {
   const { data, isLoading, error, refetch } = useProductsQuery()
@@ -14,98 +10,89 @@ export function ProductsPage() {
 
   const items = data?.items ?? []
   const total = data?.total ?? 0
-  const err = error ? String((error as Error).message || error) : ''
 
   async function remove(id: number) {
-    if (!confirm('Delete this product from the database?')) return
+    if (!confirm('Delete this product?')) return
     await deleteMutation.mutateAsync(id)
   }
 
   return (
-    <VStack align="stretch" gap={5}>
-      <PageHeader
+    <>
+      <Toolbar
         title="Products"
-        description={`${total} scraped products in SQLite.`}
-        action={
+        description={`${total} items in database`}
+        actions={
           <Button
             size="sm"
             variant="outline"
             borderColor="border.subtle"
-            onClick={() => void refetch()}
+            borderRadius="input"
+            colorPalette="blue"
             loading={isLoading}
+            onClick={() => void refetch()}
           >
             Refresh
           </Button>
         }
       />
 
-      <FadeIn>
-        <Panel>
-          <PanelBody>
-            {err ? (
-              <Text fontSize="sm" color="red.400" mb={3}>
-                {err}
-              </Text>
-            ) : null}
-            {isLoading ? (
-              <Text fontSize="sm" color="fg.muted">
-                Loading…
-              </Text>
-            ) : items.length === 0 ? (
-              <Text fontSize="sm" color="fg.muted">
-                No products yet. Run a scrape from the dashboard.
-              </Text>
-            ) : (
-              <VStack align="stretch" gap={2}>
-                {items.map((p, i) => (
-                  <MotionBox
-                    key={p.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.025 }}
-                    p={4}
-                    borderRadius="card"
-                    borderWidth="1px"
-                    borderColor="border.subtle"
-                    bg="bg.elevated"
-                  >
-                    <HStack justify="space-between" align="flex-start" gap={3}>
-                      <Box flex={1} minW={0}>
-                        <Text fontWeight="semibold">{p.title}</Text>
-                        <Text mt={1} fontSize="xs" color="fg.muted" wordBreak="break-all">
-                          {p.source_url}
-                        </Text>
-                        <Text mt={1} fontSize="xs" color="fg.subtle">
-                          {p.source} · {p.source_product_id} ·{' '}
-                          {new Date(p.updated_at).toLocaleString()}
-                        </Text>
-                      </Box>
-                      <HStack gap={2} flexShrink={0}>
-                        <Link asChild>
-                          <RouterLink to={`/products/${p.id}`}>
-                            <Button size="xs" variant="outline" colorPalette="purple">
-                              View
-                            </Button>
-                          </RouterLink>
-                        </Link>
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          colorPalette="red"
-                          loading={deleteMutation.isPending}
-                          onClick={() => void remove(p.id)}
-                        >
-                          Delete
+      {error ? (
+        <Text fontSize="sm" color="red.500" mb={3}>
+          {String((error as Error).message || error)}
+        </Text>
+      ) : null}
+
+      {isLoading ? (
+        <DataListEmpty>Loading…</DataListEmpty>
+      ) : items.length === 0 ? (
+        <DataListEmpty>No products yet.</DataListEmpty>
+      ) : (
+        <DataList>
+          <Table.Header bg="bg.panelHover">
+            <Table.Row>
+              <Table.ColumnHeader>Title</Table.ColumnHeader>
+              <Table.ColumnHeader>Source</Table.ColumnHeader>
+              <Table.ColumnHeader textAlign="right">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {items.map((p) => (
+              <Table.Row key={p.id} _hover={{ bg: 'bg.panelHover' }}>
+                <Table.Cell maxW="280px">
+                  <Text fontWeight="medium" truncate title={p.title}>
+                    {p.title}
+                  </Text>
+                  <Text fontSize="xs" color="fg.muted" truncate title={p.source_url}>
+                    {p.source_url}
+                  </Text>
+                </Table.Cell>
+                <Table.Cell fontSize="sm" color="fg.muted">
+                  {p.source}
+                </Table.Cell>
+                <Table.Cell textAlign="right">
+                  <HStack gap={1} justify="flex-end">
+                    <Link asChild>
+                      <RouterLink to={`/products/${p.id}`}>
+                        <Button size="xs" variant="ghost" colorPalette="blue">
+                          Open
                         </Button>
-                      </HStack>
-                    </HStack>
-                  </MotionBox>
-                ))}
-              </VStack>
-            )}
-          </PanelBody>
-        </Panel>
-      </FadeIn>
-    </VStack>
+                      </RouterLink>
+                    </Link>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorPalette="red"
+                      onClick={() => void remove(p.id)}
+                    >
+                      Delete
+                    </Button>
+                  </HStack>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </DataList>
+      )}
+    </>
   )
 }

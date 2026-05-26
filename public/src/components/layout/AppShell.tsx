@@ -1,135 +1,168 @@
-import { Box, Button, Flex, HStack, Text, VStack } from '@chakra-ui/react'
-import { motion } from 'motion/react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { useAuth } from '../../hooks/use-auth'
+import { Box, Flex, HStack, Text, useBreakpointValue } from '@chakra-ui/react'
+import { AnimatePresence, motion } from 'motion/react'
+import { Outlet } from 'react-router-dom'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
+import {
+  SIDEBAR_WIDTH_COLLAPSED,
+  SIDEBAR_WIDTH_EXPANDED,
+  useUiStore,
+} from '../../stores/ui-store'
 import { PageTransition } from '../motion/PageTransition'
-import { ThemeToggle } from '../ui/ThemeToggle'
-import { StatusBadge } from '../ui/StatusBadge'
+import { AppNavbar } from './AppNavbar'
+import { SHELL_HEADER_HEIGHT } from './constants'
+import { SidebarNav } from './SidebarNav'
 
-const MotionFlex = motion.create(Flex)
+const MotionAside = motion.create(Box)
+const MotionOverlay = motion.create(Box)
+const MotionBrand = motion.create(Box)
 
-const links = [
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/batches', label: 'Batches' },
-  { to: '/products', label: 'Products' },
-  { to: '/files', label: 'Files' },
-] as const
-
-function NavItem({ to, label, end }: { to: string; label: string; end?: boolean }) {
+function SidebarBrand({ collapsed }: { collapsed: boolean }) {
   return (
-    <NavLink to={to} end={end} style={{ textDecoration: 'none', width: '100%' }}>
-      {({ isActive }) => (
-        <MotionFlex
-          px={3}
-          py={2.5}
-          borderRadius="input"
-          align="center"
-          gap={2}
-          fontSize="sm"
-          fontWeight="medium"
-          color={isActive ? 'nav.activeFg' : 'fg.muted'}
-          bg={isActive ? 'nav.active' : 'transparent'}
-          borderWidth="1px"
-          borderColor={isActive ? 'brand.emphasis' : 'transparent'}
-          _hover={{
-            bg: isActive ? 'nav.active' : 'bg.panelHover',
-            borderColor: isActive ? 'brand.emphasis' : 'border.subtle',
-          }}
-          whileHover={{ x: isActive ? 0 : 4 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+    <HStack
+      h={SHELL_HEADER_HEIGHT}
+      flexShrink={0}
+      px={collapsed ? 2 : 4}
+      borderBottomWidth="1px"
+      borderColor="border.subtle"
+      justify={collapsed ? 'center' : 'flex-start'}
+      overflow="hidden"
+    >
+      <MotionBrand
+        initial={false}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15 }}
+      >
+        <Text
+          fontWeight="bold"
+          fontSize={collapsed ? 'md' : 'sm'}
+          lineHeight="1.2"
+          color="brand.emphasis"
+          whiteSpace="nowrap"
         >
-          {label}
-        </MotionFlex>
-      )}
-    </NavLink>
+          {collapsed ? 'C' : 'Crossborder'}
+        </Text>
+        <AnimatePresence initial={false}>
+          {!collapsed ? (
+            <motion.div
+              key="tagline"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Text fontSize="xs" color="fg.muted" lineHeight="1.2">
+                Scraper
+              </Text>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </MotionBrand>
+    </HStack>
   )
 }
 
 export function AppShell() {
   const { data: stats } = useStatsQuery()
-  const { username, logout } = useAuth()
+  const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed)
+  const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed)
+  const isDesktop = useBreakpointValue({ base: false, lg: true }) ?? false
+
+  const navCollapsed = sidebarCollapsed && isDesktop
+  const sidebarWidth = navCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+  const mobileOpen = !sidebarCollapsed && !isDesktop
 
   return (
-    <Flex minH="100dvh" className="app-mesh" direction={{ base: 'column', lg: 'row' }}>
-      <Box
+    <Flex minH="100dvh" className="app-shell" position="relative">
+      <AnimatePresence>
+        {mobileOpen ? (
+          <MotionOverlay
+            key="backdrop"
+            display={{ base: 'block', lg: 'none' }}
+            position="fixed"
+            inset={0}
+            zIndex={20}
+            bg="blackAlpha.600"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setSidebarCollapsed(true)}
+          />
+        ) : null}
+      </AnimatePresence>
+
+      <MotionAside
         as="aside"
-        w={{ base: 'full', lg: '15.5rem' }}
+        position={{ base: 'fixed', lg: 'sticky' }}
+        top={0}
+        left={0}
+        zIndex={{ base: 30, lg: 1 }}
+        h="100dvh"
         flexShrink={0}
-        borderRightWidth={{ lg: '1px' }}
+        borderRightWidth="1px"
         borderColor="border.subtle"
         bg="bg.sidebar"
-        backdropFilter="blur(16px)"
-        p={{ base: 4, lg: 5 }}
-        position={{ lg: 'sticky' }}
-        top={0}
-        h={{ lg: '100dvh' }}
-        borderBottomWidth={{ base: '1px', lg: 0 }}
+        display="flex"
+        flexDirection="column"
+        overflow="hidden"
+        initial={false}
+        animate={{
+          width: isDesktop ? sidebarWidth : SIDEBAR_WIDTH_EXPANDED,
+          x: isDesktop ? 0 : sidebarCollapsed ? -SIDEBAR_WIDTH_EXPANDED : 0,
+        }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }}
       >
-        <VStack align="stretch" gap={6} h="full">
-          <HStack justify="space-between" align="flex-start">
-            <FadeInBrand />
-            <ThemeToggle compact />
-          </HStack>
+        <SidebarBrand collapsed={navCollapsed} />
 
-          <Text fontSize="xs" color="fg.muted">
-            Signed in as <strong>{username ?? 'operator'}</strong>
-          </Text>
+        <Box
+          flex={1}
+          px={navCollapsed ? 1 : 2}
+          py={3}
+          overflowY="auto"
+          overflowX="hidden"
+        >
+          <SidebarNav
+            collapsed={navCollapsed}
+            onNavigate={!isDesktop ? () => setSidebarCollapsed(true) : undefined}
+          />
+        </Box>
 
-          {stats ? (
-            <HStack gap={2} flexWrap="wrap">
-              <StatusBadge status="brand" label={`${stats.products} products`} />
-              <StatusBadge status="neutral" label={`${stats.batches} batches`} />
-              {stats.running_batches > 0 ? (
-                <StatusBadge status="running" label={`${stats.running_batches} live`} />
-              ) : null}
-            </HStack>
-          ) : null}
+        <Box
+          px={navCollapsed ? 1 : 3}
+          py={3}
+          borderTopWidth="1px"
+          borderColor="border.subtle"
+          fontSize="xs"
+          color="fg.muted"
+        >
+          <AnimatePresence initial={false}>
+            {!navCollapsed && stats ? (
+              <motion.div
+                key="stats"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Text mb={2} lineHeight="short">
+                  {stats.products} products · {stats.batches} batches
+                  {stats.running_batches > 0 ? ` · ${stats.running_batches} running` : ''}
+                </Text>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </Box>
+      </MotionAside>
 
-          <VStack align="stretch" gap={1} flex={1}>
-            {links.map((l) => (
-              <NavItem key={l.to} {...l} />
-            ))}
-          </VStack>
+      <Flex flex={1} minW={0} direction="column" w="full">
+        <AppNavbar />
 
-          <Button
-            size="sm"
-            variant="outline"
-            borderColor="border.subtle"
-            borderRadius="input"
-            onClick={logout}
-          >
-            Sign out
-          </Button>
-
-          <Text fontSize="xs" color="fg.subtle" lineHeight="tall">
-            Playwright scrape engine · SQLite storage · marketplace export
-          </Text>
-        </VStack>
-      </Box>
-
-      <Box flex={1} p={{ base: 4, md: 6, xl: 8 }} maxW="6xl" w="full" mx="auto">
-        <PageTransition>
-          <Outlet />
-        </PageTransition>
-      </Box>
+        <Box as="main" flex={1} w="full" minW={0} p={{ base: 3, md: 5, xl: 6 }} overflowX="hidden">
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
+        </Box>
+      </Flex>
     </Flex>
-  )
-}
-
-function FadeInBrand() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Text fontFamily="heading" fontWeight="extrabold" fontSize="lg" letterSpacing="-0.03em" className="brand-gradient-text">
-        Crossborder
-      </Text>
-      <Text fontSize="xs" color="fg.muted" mt={0.5}>
-        Scraper Control Center
-      </Text>
-    </motion.div>
   )
 }

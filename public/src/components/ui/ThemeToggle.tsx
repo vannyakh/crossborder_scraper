@@ -1,4 +1,5 @@
 import { HStack, IconButton, Text } from '@chakra-ui/react'
+import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '../../hooks/use-theme'
 
 export function ThemeToggle({ compact }: { compact?: boolean }) {
@@ -14,12 +15,12 @@ export function ThemeToggle({ compact }: { compact?: boolean }) {
       <IconButton
         aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         size="sm"
-        variant="outline"
-        borderColor="border.subtle"
+        variant="ghost"
+        colorPalette="blue"
         borderRadius="input"
         onClick={toggle}
       >
-        {isDark ? '☀️' : '🌙'}
+        {isDark ? <Sun size={18} strokeWidth={2} /> : <Moon size={18} strokeWidth={2} />}
       </IconButton>
     </HStack>
   )

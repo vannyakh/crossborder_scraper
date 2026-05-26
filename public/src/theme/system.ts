@@ -1,99 +1,103 @@
 import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react'
 
+/** Alist-inspired: flat surfaces, blue accent, rounded-lg controls */
 const customConfig = defineConfig({
   globalCss: {
-    html: {
-      bg: 'canvas',
-    },
+    html: { bg: 'canvas' },
     body: {
       bg: 'canvas',
       color: 'fg',
       minH: '100dvh',
+      fontFamily: 'body',
     },
   },
   theme: {
     tokens: {
       fonts: {
-        heading: { value: "'Outfit', ui-sans-serif, system-ui, sans-serif" },
-        body: { value: "'DM Sans', ui-sans-serif, system-ui, sans-serif" },
+        heading: {
+          value: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif`,
+        },
+        body: {
+          value: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif`,
+        },
         mono: {
-          value: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+          value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
         },
       },
       radii: {
-        panel: { value: '1.25rem' },
-        card: { value: '1rem' },
-        input: { value: '0.75rem' },
+        panel: { value: '0.5rem' },
+        card: { value: '0.5rem' },
+        input: { value: '0.5rem' },
         pill: { value: '9999px' },
       },
       colors: {
         brand: {
-          50: { value: '#faf5ff' },
-          100: { value: '#f3e8ff' },
-          200: { value: '#e9d5ff' },
-          300: { value: '#d8b4fe' },
-          400: { value: '#c084fc' },
-          500: { value: '#a855f7' },
-          600: { value: '#9333ea' },
-          700: { value: '#7e22ce' },
+          50: { value: '#eff6ff' },
+          100: { value: '#dbeafe' },
+          200: { value: '#bfdbfe' },
+          300: { value: '#93c5fd' },
+          400: { value: '#60a5fa' },
+          500: { value: '#3b82f6' },
+          600: { value: '#2563eb' },
+          700: { value: '#1d4ed8' },
         },
       },
     },
     semanticTokens: {
       colors: {
         canvas: {
-          value: { _light: '#f4f6fb', _dark: '#050810' },
+          value: { _light: '#f7f8fa', _dark: '#0d1117' },
         },
         fg: {
-          value: { _light: '#0f172a', _dark: '#e8eef9' },
+          value: { _light: '#1f2328', _dark: '#e6edf3' },
         },
         'fg.muted': {
-          value: { _light: '#475569', _dark: '#94a3b8' },
+          value: { _light: '#656d76', _dark: '#8b949e' },
         },
         'fg.subtle': {
-          value: { _light: '#64748b', _dark: '#64748b' },
+          value: { _light: '#8c959f', _dark: '#6e7681' },
         },
         'bg.panel': {
-          value: { _light: '#ffffff', _dark: '#0e1528' },
+          value: { _light: '#ffffff', _dark: '#161b22' },
         },
         'bg.panelHover': {
-          value: { _light: '#f8fafc', _dark: '#151f38' },
+          value: { _light: '#f0f3f6', _dark: '#1c2128' },
         },
         'bg.input': {
-          value: { _light: '#f1f5f9', _dark: 'rgba(0, 0, 0, 0.28)' },
+          value: { _light: '#f0f3f6', _dark: '#0d1117' },
         },
         'bg.elevated': {
-          value: { _light: 'rgba(15, 23, 42, 0.04)', _dark: 'rgba(255, 255, 255, 0.04)' },
+          value: { _light: '#ffffff', _dark: '#161b22' },
         },
         'bg.sidebar': {
-          value: { _light: 'rgba(255, 255, 255, 0.9)', _dark: 'rgba(8, 12, 24, 0.88)' },
+          value: { _light: '#ffffff', _dark: '#010409' },
+        },
+        'bg.navbar': {
+          value: { _light: '#ffffff', _dark: '#161b22' },
+        },
+        'bg.navActive': {
+          value: { _light: '#e8f2ff', _dark: 'rgba(56, 139, 253, 0.12)' },
         },
         'border.subtle': {
-          value: { _light: 'rgba(15, 23, 42, 0.1)', _dark: 'rgba(148, 163, 184, 0.14)' },
+          value: { _light: '#d8dee4', _dark: '#30363d' },
         },
         'border.strong': {
-          value: { _light: 'rgba(15, 23, 42, 0.16)', _dark: 'rgba(148, 163, 184, 0.22)' },
+          value: { _light: '#c4cdd5', _dark: '#484f58' },
         },
         brand: {
-          value: { _light: '{colors.purple.600}', _dark: '{colors.brand.500}' },
+          value: { _light: '{colors.brand.600}', _dark: '{colors.brand.500}' },
         },
         'brand.emphasis': {
-          value: { _light: '{colors.purple.500}', _dark: '{colors.brand.400}' },
+          value: { _light: '{colors.brand.500}', _dark: '{colors.brand.400}' },
         },
         accent: {
-          value: { _light: '#0891b2', _dark: '#22d3ee' },
+          value: { _light: '{colors.brand.600}', _dark: '{colors.brand.400}' },
         },
         'nav.active': {
-          value: { _light: '{colors.purple.600}', _dark: '{colors.purple.600}' },
+          value: { _light: '{colors.brand.600}', _dark: '{colors.brand.500}' },
         },
         'nav.activeFg': {
-          value: { _light: '#ffffff', _dark: '#ffffff' },
-        },
-        'shadow.panel': {
-          value: {
-            _light: '0 16px 40px rgba(15, 23, 42, 0.08)',
-            _dark: '0 20px 50px rgba(0, 0, 0, 0.38)',
-          },
+          value: { _light: '{colors.brand.700}', _dark: '{colors.brand.300}' },
         },
       },
     },

@@ -1,20 +1,14 @@
-import { Box, Button, HStack, Link, Text, VStack } from '@chakra-ui/react'
-import { motion } from 'motion/react'
-import { FadeIn } from '../components/motion/FadeIn'
-import { PageHeader } from '../components/ui/PageHeader'
-import { Panel, PanelBody } from '../components/ui/Panel'
+import { Button, HStack, Link, Table, Text } from '@chakra-ui/react'
+import { Toolbar } from '../components/layout/Toolbar'
+import { DataList, DataListEmpty } from '../components/ui/DataList'
 import { useDeleteFileMutation, useFilesQuery } from '../hooks'
 import { formatBytes } from '../lib/utils'
-
-const MotionBox = motion.create(Box)
 
 export function FilesPage() {
   const { data, isLoading, error, refetch } = useFilesQuery()
   const deleteMutation = useDeleteFileMutation()
 
   const items = data?.items ?? []
-  const outputDir = data?.output_dir ?? 'data/output'
-  const err = error ? String((error as Error).message || error) : ''
 
   async function remove(path: string) {
     if (!confirm(`Delete ${path}?`)) return
@@ -22,84 +16,81 @@ export function FilesPage() {
   }
 
   return (
-    <VStack align="stretch" gap={5}>
-      <PageHeader
-        title="Output files"
-        description={`JSON and HTML artifacts under ${outputDir}.`}
-        action={
+    <>
+      <Toolbar
+        title="Files"
+        description={data?.output_dir ?? 'data/output'}
+        actions={
           <Button
             size="sm"
             variant="outline"
             borderColor="border.subtle"
-            onClick={() => void refetch()}
+            borderRadius="input"
+            colorPalette="blue"
             loading={isLoading}
+            onClick={() => void refetch()}
           >
             Refresh
           </Button>
         }
       />
 
-      <FadeIn>
-        <Panel>
-          <PanelBody>
-            {err ? (
-              <Text fontSize="sm" color="red.400" mb={3}>
-                {err}
-              </Text>
-            ) : null}
+      {error ? (
+        <Text fontSize="sm" color="red.500" mb={3}>
+          {String((error as Error).message || error)}
+        </Text>
+      ) : null}
 
-            <VStack align="stretch" gap={2}>
-              {items.map((f, i) => (
-                <MotionBox
-                  key={f.path}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  p={3}
-                  borderRadius="card"
-                  borderWidth="1px"
-                  borderColor="border.subtle"
-                  bg="bg.elevated"
-                >
-                  <HStack justify="space-between" align="flex-start" gap={3}>
-                    <Box flex={1} minW={0}>
-                      <Text fontFamily="mono" fontSize="sm">
-                        {f.path}
-                      </Text>
-                      <Text fontSize="xs" color="fg.subtle" mt={1}>
-                        {f.kind} · {formatBytes(f.size_bytes)} ·{' '}
-                        {new Date(f.modified_at).toLocaleString()}
-                      </Text>
-                    </Box>
-                    <HStack gap={2} flexShrink={0}>
-                      <Link href={`/files/${f.path}`} target="_blank" rel="noreferrer">
-                        <Button size="xs" variant="outline" colorPalette="purple">
-                          Open
-                        </Button>
-                      </Link>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        colorPalette="red"
-                        loading={deleteMutation.isPending}
-                        onClick={() => void remove(f.path)}
-                      >
-                        Delete
+      {isLoading ? (
+        <DataListEmpty>Loading…</DataListEmpty>
+      ) : items.length === 0 ? (
+        <DataListEmpty>No output files.</DataListEmpty>
+      ) : (
+        <DataList>
+          <Table.Header bg="bg.panelHover">
+            <Table.Row>
+              <Table.ColumnHeader>Name</Table.ColumnHeader>
+              <Table.ColumnHeader>Size</Table.ColumnHeader>
+              <Table.ColumnHeader>Modified</Table.ColumnHeader>
+              <Table.ColumnHeader textAlign="right">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {items.map((f) => (
+              <Table.Row key={f.path} _hover={{ bg: 'bg.panelHover' }}>
+                <Table.Cell fontFamily="mono" fontSize="sm" maxW="240px">
+                  <Text truncate title={f.path}>
+                    {f.path}
+                  </Text>
+                </Table.Cell>
+                <Table.Cell fontSize="sm" color="fg.muted">
+                  {formatBytes(f.size_bytes)}
+                </Table.Cell>
+                <Table.Cell fontSize="sm" color="fg.muted">
+                  {new Date(f.modified_at).toLocaleString()}
+                </Table.Cell>
+                <Table.Cell textAlign="right">
+                  <HStack gap={1} justify="flex-end">
+                    <Link href={`/files/${f.path}`} target="_blank" rel="noreferrer">
+                      <Button size="xs" variant="ghost" colorPalette="blue">
+                        Open
                       </Button>
-                    </HStack>
+                    </Link>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorPalette="red"
+                      onClick={() => void remove(f.path)}
+                    >
+                      Delete
+                    </Button>
                   </HStack>
-                </MotionBox>
-              ))}
-            </VStack>
-
-            {items.length === 0 && !isLoading ? (
-              <Text fontSize="sm" color="fg.muted" mt={2}>
-                No output files yet.
-              </Text>
-            ) : null}
-          </PanelBody>
-        </Panel>
-      </FadeIn>
-    </VStack>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </DataList>
+      )}
+    </>
   )
 }
