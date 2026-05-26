@@ -9,7 +9,8 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Toolbar } from '../components/layout/Toolbar'
 import { DataList, DataListEmpty } from '../components/ui/DataList'
 import { useAccentPalette } from '../hooks/use-ui-config'
@@ -34,9 +35,16 @@ function formatLogTime(iso: string): string {
 
 export function LogsPage() {
   const accentPalette = useAccentPalette()
-  const [category, setCategory] = useState<LogCategory>('operation')
-  const [q, setQ] = useState('')
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const initialCategory = searchParams.get('category')
+  const initialQ = searchParams.get('q') ?? ''
+  const [category, setCategory] = useState<LogCategory>(
+    initialCategory === 'cron' || initialCategory === 'run' || initialCategory === 'operation'
+      ? initialCategory
+      : 'operation',
+  )
+  const [q, setQ] = useState(initialQ)
+  const [search, setSearch] = useState(initialQ)
   const [limit, setLimit] = useState(20)
   const [page, setPage] = useState(1)
 
@@ -48,6 +56,19 @@ export function LogsPage() {
     offset,
   })
   const clearMutation = useClearLogsMutation()
+
+  useEffect(() => {
+    const paramCategory = searchParams.get('category')
+    const paramQ = searchParams.get('q') ?? ''
+    if (paramCategory === 'cron' || paramCategory === 'run' || paramCategory === 'operation') {
+      setCategory(paramCategory)
+    }
+    if (paramQ) {
+      setQ(paramQ)
+      setSearch(paramQ)
+      setPage(1)
+    }
+  }, [searchParams])
 
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / limit))

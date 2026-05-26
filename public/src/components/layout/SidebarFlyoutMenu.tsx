@@ -109,9 +109,6 @@ export function SidebarFlyoutMenu({
                               {child.badge}
                             </Text>
                           ) : null}
-                          {child.soon ? (
-                            <span className="sidebar-flyout__soon">Soon</span>
-                          ) : null}
                         </HStack>
                       </NavLink>
                     </Box>

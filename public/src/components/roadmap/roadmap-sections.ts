@@ -74,5 +74,4 @@ export function roadmapPath(id: RoadmapFeatureId): string {
   return `/roadmap/${id}`
 }
 
-export const COMING_SOON_BLURB =
-  'This capability is on the roadmap. Configure scrape, AI, and export features in Settings while we ship new panel features.'
+export { DEFAULT_COMING_SOON_BLURB as COMING_SOON_BLURB } from '../ui/PanelComingSoon'

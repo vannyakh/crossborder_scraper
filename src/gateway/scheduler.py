@@ -60,6 +60,40 @@ class AgentScheduler:
                 pass
             self._task = None
 
+    def is_active(self) -> bool:
+        return bool(self._running and self._task and not self._task.done())
+
+    def get_status(self) -> dict[str, Any]:
+        from gateway.schedules_store import SCHEDULES_PATH, ensure_schedules_file
+
+        ensure_schedules_file()
+        schedules = load_schedules()
+        tasks = [
+            {
+                "id": str(s.get("id", "")),
+                "name": str(s.get("name", "")),
+                "enabled": bool(s.get("enabled", True)),
+                "cron": str(s.get("cron", "")),
+                "prompt_id": str(s.get("prompt_id", "")),
+                "next_run_at": s.get("next_run_at"),
+                "last_run_at": s.get("last_run_at"),
+                "last_status": s.get("last_status"),
+                "last_error": s.get("last_error"),
+            }
+            for s in schedules
+        ]
+        enabled = sum(1 for t in tasks if t["enabled"])
+        failed = sum(1 for t in tasks if t.get("last_status") == "failed")
+        return {
+            "running": self.is_active(),
+            "tick_seconds": self._tick_seconds,
+            "schedules_path": str(SCHEDULES_PATH),
+            "total": len(tasks),
+            "enabled": enabled,
+            "failed_last_run": failed,
+            "tasks": tasks,
+        }
+
     async def _loop(self) -> None:
         while self._running:
             try:

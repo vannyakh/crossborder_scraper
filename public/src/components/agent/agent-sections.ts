@@ -37,7 +37,7 @@ export const AGENT_NAV: AgentNavItem[] = [
   {
     id: 'schedules',
     label: 'Schedules',
-    description: 'Cron jobs and background agent tasks',
+    description: 'Cron job table — add tasks, execute cycle, run on server',
     icon: CalendarClock,
     group: 'channel',
   },

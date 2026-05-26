@@ -302,6 +302,72 @@ class ServiceOverviewResponse(BaseModel):
     llm: dict[str, Any] | None = None
 
 
+class ServiceSupportLink(BaseModel):
+    id: str
+    label: str
+    description: str
+    path: str
+    external: bool = False
+
+
+class ServiceSupportCheck(BaseModel):
+    id: str
+    label: str
+    ok: bool
+    detail: str
+
+
+class ServiceSchedulerTask(BaseModel):
+    id: str
+    name: str
+    enabled: bool
+    cron: str
+    prompt_id: str = ""
+    next_run_at: str | None = None
+    last_run_at: str | None = None
+    last_status: str | None = None
+    last_error: str | None = None
+
+
+class ServiceSchedulerStatus(BaseModel):
+    running: bool
+    tick_seconds: int
+    schedules_path: str
+    total: int
+    enabled: int
+    failed_last_run: int
+    tasks: list[ServiceSchedulerTask]
+
+
+class ServiceSupportLogsSummary(BaseModel):
+    operation: int
+    run: int
+    cron: int
+    total: int
+    path: str
+
+
+class ServiceSupportPaths(BaseModel):
+    schedules: str
+    agent_runs: str
+    service_logs: str
+    db: str
+    output: str
+    cookies: str
+
+
+class ServiceSupportResponse(BaseModel):
+    runtime: dict[str, Any]
+    gateway: ServiceGatewaySummary
+    scheduler: ServiceSchedulerStatus
+    stats: StatsResponse
+    logs: ServiceSupportLogsSummary
+    paths: ServiceSupportPaths
+    panel: dict[str, Any]
+    checks: list[ServiceSupportCheck]
+    links: list[ServiceSupportLink]
+
+
 class GatewayToolListResponse(BaseModel):
     items: list[dict[str, Any]]
 
@@ -611,6 +677,8 @@ __all__ = [
     "GatewayWorkflowRunResponse",
     "ServiceGatewaySummary",
     "ServiceOverviewResponse",
+    "ServiceSupportResponse",
+    "ServiceSchedulerStatus",
     "AIConfigUpdate",
     "PanelConfigResponse",
     "PanelConfigUpdate",

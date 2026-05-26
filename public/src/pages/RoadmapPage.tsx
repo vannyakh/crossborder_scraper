@@ -1,7 +1,9 @@
 import { Navigate, useParams } from 'react-router-dom'
 import { ComingSoonPanel } from '../components/roadmap/ComingSoonPanel'
+import { Toolbar } from '../components/layout/Toolbar'
 import {
   ROADMAP_FEATURES,
+  ROADMAP_FEATURE_MAP,
   isRoadmapFeatureId,
   roadmapPath,
 } from '../components/roadmap/roadmap-sections'
@@ -13,5 +15,12 @@ export function RoadmapPage() {
     return <Navigate to={roadmapPath(ROADMAP_FEATURES[0].id)} replace />
   }
 
-  return <ComingSoonPanel feature={feature} />
+  const item = ROADMAP_FEATURE_MAP[feature]
+
+  return (
+    <>
+      <Toolbar title={item.label} description={item.description} />
+      <ComingSoonPanel feature={feature} />
+    </>
+  )
 }

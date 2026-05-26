@@ -67,6 +67,17 @@ def append_service_log(
     return entry
 
 
+def count_service_logs() -> dict[str, int]:
+    ensure_logs_file()
+    counts = {"operation": 0, "run": 0, "cron": 0}
+    for entry in _read_logs():
+        cat = entry.get("category")
+        if cat in counts:
+            counts[cat] += 1
+    counts["total"] = sum(counts.values())
+    return counts
+
+
 def list_service_logs(
     category: LogCategory,
     *,

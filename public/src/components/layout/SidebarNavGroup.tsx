@@ -1,4 +1,4 @@
-import { Badge, Box, Button, VStack } from '@chakra-ui/react'
+import { Box, Button, VStack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -25,7 +25,7 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
   const groupActive = isGroupActive(location.pathname, group.children)
   const [open, setOpen] = useState(groupActive)
   const groupTransition = useMotionTransition(0.2)
-  const showChildren = group.children.length > 1 || !group.homeTo
+  const showChildren = group.children.length > 0
 
   useEffect(() => {
     if (groupActive) setOpen(true)
@@ -82,45 +82,23 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
 
   return (
     <Box>
-      {group.homeTo ? (
-        <NavLink
-          to={group.homeTo}
-          style={{ textDecoration: 'none', display: 'block' }}
-          onClick={(e) => {
-            if (!showChildren) {
-              onNavigate?.()
-              return
-            }
-            if (groupActive && open) {
-              e.preventDefault()
-              setOpen(false)
-            } else if (!open) {
-              setOpen(true)
-            }
-            onNavigate?.()
-          }}
-          title={group.description}
-        >
-          {header}
-        </NavLink>
-      ) : (
-        <Button
-          variant="ghost"
-          w="full"
-          h="auto"
-          minH="auto"
-          p={0}
-          borderRadius="var(--radius-input)"
-          fontWeight="inherit"
-          color="inherit"
-          justifyContent="flex-start"
-          _hover={{ bg: 'transparent' }}
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-        >
-          {header}
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        w="full"
+        h="auto"
+        minH="auto"
+        p={0}
+        borderRadius="var(--radius-input)"
+        fontWeight="inherit"
+        color="inherit"
+        justifyContent="flex-start"
+        _hover={{ bg: 'transparent' }}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        title={group.description}
+      >
+        {header}
+      </Button>
 
       <AnimatePresence initial={false}>
         {open && showChildren ? (
@@ -168,20 +146,6 @@ export function SidebarNavGroup({ group, collapsed, onNavigate }: SidebarNavGrou
                         label={child.label}
                         indent
                         badge={child.badge}
-                        trailing={
-                          child.soon ? (
-                            <Badge
-                              size="xs"
-                              variant="subtle"
-                              colorPalette="gray"
-                              borderRadius="full"
-                              fontSize="2xs"
-                              px={1.5}
-                            >
-                              Soon
-                            </Badge>
-                          ) : undefined
-                        }
                       />
                     </NavLink>
                   </Box>

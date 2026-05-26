@@ -395,6 +395,70 @@ export type ServiceOverview = {
   llm: LLMHealth | null
 }
 
+export type ServiceSupportLink = {
+  id: string
+  label: string
+  description: string
+  path: string
+  external: boolean
+}
+
+export type ServiceSupportCheck = {
+  id: string
+  label: string
+  ok: boolean
+  detail: string
+}
+
+export type ServiceSchedulerTask = {
+  id: string
+  name: string
+  enabled: boolean
+  cron: string
+  prompt_id: string
+  next_run_at?: string | null
+  last_run_at?: string | null
+  last_status?: string | null
+  last_error?: string | null
+}
+
+export type ServiceSchedulerStatus = {
+  running: boolean
+  tick_seconds: number
+  schedules_path: string
+  total: number
+  enabled: number
+  failed_last_run: number
+  tasks: ServiceSchedulerTask[]
+}
+
+export type ServiceSupport = {
+  runtime: RuntimeStatus
+  gateway: ServiceGatewaySummary
+  scheduler: ServiceSchedulerStatus
+  stats: Stats
+  logs: { operation: number; run: number; cron: number; total: number; path: string }
+  paths: {
+    schedules: string
+    agent_runs: string
+    service_logs: string
+    db: string
+    output: string
+    cookies: string
+  }
+  panel: {
+    bind_host: string
+    bind_port: number
+    access_ip: string
+    access_port: number
+    panel_path: string
+    panel_url: string
+    copy_text: string
+  }
+  checks: ServiceSupportCheck[]
+  links: ServiceSupportLink[]
+}
+
 export type GatewayAgentResponse = {
   ok: boolean
   message: string

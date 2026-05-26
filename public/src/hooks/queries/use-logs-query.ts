@@ -6,8 +6,9 @@ export function useLogsQuery(params: {
   q: string
   limit: number
   offset: number
+  enabled?: boolean
 }) {
-  const { category, q, limit, offset } = params
+  const { category, q, limit, offset, enabled = true } = params
   const search = new URLSearchParams({
     category,
     limit: String(limit),
@@ -18,7 +19,8 @@ export function useLogsQuery(params: {
   return useQuery({
     queryKey: queryKeys.logs(category, q, limit, offset),
     queryFn: () => api<ServiceLogListResponse>(`/logs?${search.toString()}`),
-    refetchInterval: 15_000,
+    enabled,
+    refetchInterval: enabled ? 15_000 : false,
   })
 }
 

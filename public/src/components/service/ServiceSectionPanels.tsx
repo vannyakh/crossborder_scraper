@@ -9,6 +9,7 @@ import {
 } from '@chakra-ui/react'
 import {
   BookOpen,
+  CalendarClock,
   ExternalLink,
   MessageCircle,
   RefreshCw,
@@ -21,8 +22,10 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import {
   useCheckLLMHealthMutation,
   useServiceOverviewQuery,
+  useServiceSupportQuery,
 } from '../../hooks'
-import type { LLMHealth, ServiceGatewaySummary } from '../../lib/api'
+import type { LLMHealth, ServiceGatewaySummary, ServiceSupportLink } from '../../lib/api'
+import { describeCronExpression, formatScheduleTime } from '../agent/schedule-cron-utils'
 
 function GatewaySummaryCard({ gateway }: { gateway: ServiceGatewaySummary }) {
   return (
@@ -309,82 +312,211 @@ function SupportLink({
   )
 }
 
+function supportLinkHref(link: ServiceSupportLink): string {
+  if (link.external) return link.path
+  return link.path
+}
+
 export function ServiceSupportSection() {
-  const { data: overview } = useServiceOverviewQuery()
-  const runtime = overview?.runtime
+  const { data, isLoading, error, refetch, isFetching } = useServiceSupportQuery()
+  const runtime = data?.runtime
+  const scheduler = data?.scheduler
+  const gateway = data?.gateway
 
   return (
-    <Section title="Support" description="Documentation, logs, and configuration shortcuts" mt={0}>
-      <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mb={5}>
-        <SupportLink
-          href="/logs"
-          label="Operation logs"
-          description="Search scrape runs, cron jobs, and panel events"
-        />
-        <SupportLink
-          href="/health"
-          label="Health"
-          description="Engine status, gateway summary, and LLM probe"
-        />
-        <SupportLink
-          href="/agent/chat"
-          label="Gateway agent"
-          description="Chat, workflows, schedules, and tool catalog"
-        />
-        <SupportLink
-          href="/settings/panel"
-          label="Panel configuration"
-          description="Config paths, AI, scrape engine, and marketplaces"
-        />
-        <SupportLink
-          href="/"
-          label="Monitoring dashboard"
-          description="Hardware gauges, charts, and runtime overview"
-        />
-        <SupportLink
-          href="https://github.com"
-          label="Documentation"
-          description="Setup guides and exporter reference"
-          external
-        />
-      </SimpleGrid>
+    <Box mt={0}>
+      <HStack justify="flex-end" mb={4}>
+        <Button
+          size="sm"
+          variant="outline"
+          borderColor="border.subtle"
+          borderRadius="input"
+          loading={isFetching}
+          onClick={() => void refetch()}
+        >
+          <RefreshCw size={14} />
+          Refresh
+        </Button>
+      </HStack>
 
-      <SectionCard>
-        <HStack gap={2} mb={3}>
-          <MessageCircle size={16} />
-          <Text fontSize="sm" fontWeight="semibold">
-            Need help?
-          </Text>
-        </HStack>
-        <Text fontSize="sm" color="fg.muted" mb={4}>
-          Check logs for scrape failures, verify health on the Health page, and review proxy settings
-          if sites block requests.
+      {error ? (
+        <Text fontSize="sm" color="red.500" mb={4}>
+          {String((error as Error).message || error)}
         </Text>
-        {runtime ? (
-          <Box pt={3} borderTopWidth="1px" borderColor="border.subtle">
-            <HStack gap={2} mb={2} color="fg.muted">
-              <BookOpen size={14} />
-              <Text fontSize="xs" fontWeight="semibold">
-                Installed build
+      ) : null}
+
+      {isLoading || !data ? (
+        <Text fontSize="sm" color="fg.muted">
+          Loading server support snapshot…
+        </Text>
+      ) : (
+        <>
+          <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={2} mb={5}>
+            {data.checks.map((check) => (
+              <Box
+                key={check.id}
+                p={3}
+                borderWidth="1px"
+                borderColor="border.subtle"
+                borderRadius="var(--radius-card)"
+                bg="bg.panel"
+              >
+                <HStack justify="space-between" mb={1}>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {check.label}
+                  </Text>
+                  <StatusBadge
+                    status={check.ok ? 'success' : 'danger'}
+                    label={check.ok ? 'OK' : 'Check'}
+                  />
+                </HStack>
+                <Text fontSize="xs" color="fg.muted" lineClamp={2} title={check.detail}>
+                  {check.detail}
+                </Text>
+              </Box>
+            ))}
+          </SimpleGrid>
+
+          {gateway ? (
+            <Box mb={5}>
+              <GatewaySummaryCard gateway={gateway} />
+            </Box>
+          ) : null}
+
+          <SectionCard mb={4}>
+            <HStack justify="space-between" flexWrap="wrap" gap={2} mb={3}>
+              <HStack gap={2}>
+                <CalendarClock size={16} />
+                <Text fontSize="sm" fontWeight="semibold">
+                  Server cron scheduler
+                </Text>
+              </HStack>
+              <HStack gap={2}>
+                <StatusBadge
+                  status={scheduler?.running ? 'running' : 'neutral'}
+                  label={scheduler?.running ? 'Active' : 'Stopped'}
+                />
+                <RouterLink to="/agent/schedules" style={{ fontSize: '0.75rem', color: 'var(--app-accent)' }}>
+                  Manage tasks →
+                </RouterLink>
+              </HStack>
+            </HStack>
+            <Text fontSize="xs" color="fg.muted" mb={3}>
+              Tick every {scheduler?.tick_seconds ?? 60}s · {scheduler?.enabled ?? 0}/
+              {scheduler?.total ?? 0} tasks enabled · config:{' '}
+              <Text as="span" fontFamily="mono">
+                {scheduler?.schedules_path}
+              </Text>
+            </Text>
+            {scheduler?.tasks.length ? (
+              <Box overflowX="auto" className="app-scroll">
+                <Table.Root size="sm" variant="line">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeader>Name</Table.ColumnHeader>
+                      <Table.ColumnHeader>Cycle</Table.ColumnHeader>
+                      <Table.ColumnHeader>Next run</Table.ColumnHeader>
+                      <Table.ColumnHeader>Status</Table.ColumnHeader>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {scheduler.tasks.map((t) => (
+                      <Table.Row key={t.id}>
+                        <Table.Cell fontSize="sm">{t.name}</Table.Cell>
+                        <Table.Cell fontSize="xs" color="fg.muted" maxW="200px">
+                          <Text lineClamp={1} title={t.cron}>
+                            {describeCronExpression(t.cron)}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell fontSize="xs" color="fg.muted" whiteSpace="nowrap">
+                          {formatScheduleTime(t.next_run_at)}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <StatusBadge
+                            status={
+                              !t.enabled ? 'neutral' : t.last_status === 'failed' ? 'danger' : 'success'
+                            }
+                            label={!t.enabled ? 'Paused' : (t.last_status ?? 'idle')}
+                          />
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+              </Box>
+            ) : (
+              <Text fontSize="sm" color="fg.muted">
+                No cron tasks — add one under Agent → Schedules.
+              </Text>
+            )}
+          </SectionCard>
+
+          <Text fontSize="sm" fontWeight="semibold" mb={2}>
+            Quick links
+          </Text>
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mb={5}>
+            {data.links.map((link) => (
+              <SupportLink
+                key={link.id}
+                href={supportLinkHref(link)}
+                label={link.label}
+                description={link.description}
+                external={link.external}
+              />
+            ))}
+          </SimpleGrid>
+
+          <SectionCard>
+            <HStack gap={2} mb={3}>
+              <MessageCircle size={16} />
+              <Text fontSize="sm" fontWeight="semibold">
+                Panel service
               </Text>
             </HStack>
-            <SimpleGrid columns={{ base: 1, sm: 2 }} gap={2} fontSize="sm">
-              <Text color="fg.muted">
-                Service:{' '}
-                <Text as="span" fontWeight="medium" color="fg">
-                  {runtime.service} v{runtime.version}
+            <Text fontSize="sm" color="fg.muted" mb={4}>
+              {data.stats.products} products · {data.stats.batches} batches ·{' '}
+              {data.stats.running_batches} running · logs: {data.logs.operation} op / {data.logs.run}{' '}
+              run / {data.logs.cron} cron
+            </Text>
+            {runtime ? (
+              <Box pt={3} borderTopWidth="1px" borderColor="border.subtle">
+                <HStack gap={2} mb={2} color="fg.muted">
+                  <BookOpen size={14} />
+                  <Text fontSize="xs" fontWeight="semibold">
+                    Installed build
+                  </Text>
+                </HStack>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} gap={2} fontSize="sm" mb={3}>
+                  <Text color="fg.muted">
+                    Service:{' '}
+                    <Text as="span" fontWeight="medium" color="fg">
+                      {runtime.service} v{runtime.version}
+                    </Text>
+                  </Text>
+                  <Text color="fg.muted">
+                    Uptime:{' '}
+                    <Text as="span" fontWeight="medium" color="fg">
+                      {formatUptime(runtime.uptime_seconds)}
+                    </Text>
+                  </Text>
+                  <Text color="fg.muted" gridColumn={{ sm: '1 / -1' }}>
+                    Access:{' '}
+                    <Text as="span" fontWeight="medium" color="fg" fontFamily="mono">
+                      {data.panel.panel_url}
+                    </Text>
+                  </Text>
+                </SimpleGrid>
+                <Text fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={2} title={data.paths.db}>
+                  DB: {data.paths.db}
                 </Text>
-              </Text>
-              <Text color="fg.muted">
-                Uptime:{' '}
-                <Text as="span" fontWeight="medium" color="fg">
-                  {formatUptime(runtime.uptime_seconds)}
+                <Text fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={1} title={data.paths.output}>
+                  Output: {data.paths.output}
                 </Text>
-              </Text>
-            </SimpleGrid>
-          </Box>
-        ) : null}
-      </SectionCard>
-    </Section>
+              </Box>
+            ) : null}
+          </SectionCard>
+        </>
+      )}
+    </Box>
   )
 }

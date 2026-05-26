@@ -9,12 +9,13 @@ export function useGatewayPromptsQuery() {
   })
 }
 
-export function useAgentRunsQuery(limit = 30) {
+export function useAgentRunsQuery(limit = 30, enabled = true) {
   return useQuery({
     queryKey: [...queryKeys.agentRuns, limit] as const,
     queryFn: () =>
       api<{ items: import('../../lib/api').AgentRunRecord[] }>(`/gateway/runs?limit=${limit}`),
-    refetchInterval: 15_000,
+    enabled,
+    refetchInterval: enabled ? 15_000 : false,
   })
 }
 

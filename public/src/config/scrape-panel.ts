@@ -1,4 +1,4 @@
-import { Archive, FolderOpen, GitBranch, Package, Play } from 'lucide-react'
+import { FolderOpen, Package, Play } from 'lucide-react'
 
 /** Routes — single source for scrape panel navigation */
 export const SCRAPE_ROUTES = {
@@ -11,43 +11,36 @@ export const SCRAPE_ROUTES = {
 
 export type ScrapeNavBadgeKey = 'running_batches' | 'products' | 'output_files'
 
-/** Sidebar scrape panel (Workflow + Artifacts) */
+export const SCRAPE_PANEL_ITEMS = [
+  {
+    to: SCRAPE_ROUTES.workflowBatches,
+    label: 'Batch queue',
+    description: 'Submit URLs, live jobs, batch history',
+    badgeKey: 'running_batches' as ScrapeNavBadgeKey,
+    end: true,
+  },
+  {
+    to: SCRAPE_ROUTES.artifactProducts,
+    label: 'Product catalog',
+    description: 'SQLite catalog · export to marketplaces',
+    badgeKey: 'products' as ScrapeNavBadgeKey,
+  },
+  {
+    to: SCRAPE_ROUTES.artifactFiles,
+    label: 'Export files',
+    description: 'JSON/HTML outputs on disk',
+    badgeKey: 'output_files' as ScrapeNavBadgeKey,
+  },
+] as const
+
 export const SCRAPE_PANEL_NAV = {
   sectionLabel: 'Scrape panel',
-  workflow: {
-    id: 'workflow',
-    label: 'Workflow',
-    description: 'Submit URLs and run batch scrape jobs',
-    icon: GitBranch,
-    items: [
-      {
-        to: SCRAPE_ROUTES.workflowBatches,
-        label: 'Batch queue',
-        description: 'Live jobs, history, cancel runs',
-        badgeKey: 'running_batches' as ScrapeNavBadgeKey,
-        end: true,
-      },
-    ],
-  },
-  artifact: {
-    id: 'artifact',
-    label: 'Artifacts',
-    description: 'Catalog and files produced by scrapes',
-    icon: Archive,
-    items: [
-      {
-        to: SCRAPE_ROUTES.artifactProducts,
-        label: 'Product catalog',
-        description: 'SQLite catalog · export to marketplaces',
-        badgeKey: 'products' as ScrapeNavBadgeKey,
-      },
-      {
-        to: SCRAPE_ROUTES.artifactFiles,
-        label: 'Export files',
-        description: 'JSON/HTML outputs on disk',
-        badgeKey: 'output_files' as ScrapeNavBadgeKey,
-      },
-    ],
+  group: {
+    id: 'scrape',
+    label: 'Scrape',
+    description: 'Batch jobs and scrape outputs',
+    icon: Play,
+    items: SCRAPE_PANEL_ITEMS,
   },
 } as const
 
@@ -56,11 +49,6 @@ export const SCRAPE_PAGES = {
     title: 'Batch queue',
     description: 'Submit scrape URLs, watch live progress, and manage batch history',
     icon: Play,
-  },
-  artifact: {
-    title: 'Artifacts',
-    description: 'Browse scraped products and download export files from the server',
-    icon: Archive,
   },
   artifactSections: {
     products: {
@@ -102,11 +90,14 @@ export const SCRAPE_DASHBOARD_TOOLS = [
   },
 ] as const
 
-export function formatScrapeBadge(key: ScrapeNavBadgeKey, stats: {
-  running_batches: number
-  products: number
-  output_files: number
-}): string | undefined {
+export function formatScrapeBadge(
+  key: ScrapeNavBadgeKey,
+  stats: {
+    running_batches: number
+    products: number
+    output_files: number
+  },
+): string | undefined {
   switch (key) {
     case 'running_batches':
       return stats.running_batches > 0 ? String(stats.running_batches) : undefined

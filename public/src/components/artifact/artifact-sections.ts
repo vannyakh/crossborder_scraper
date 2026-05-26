@@ -42,5 +42,3 @@ export function artifactSectionPath(id: ArtifactSectionId): string {
 export function artifactProductPath(id: number | string): string {
   return SCRAPE_ROUTES.artifactProduct(id)
 }
-
-export const ARTIFACT_PAGE = SCRAPE_PAGES.artifact
