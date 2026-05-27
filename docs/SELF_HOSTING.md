@@ -51,10 +51,11 @@ Use the **VPS installer** (creates `/www/wwwroot/crossborder_scraper`, binds `0.
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | sudo bash
 ```
 
-Or:
+If `install-vps.sh` is not yet on `main`, use the main installer directly:
 
 ```bash
-sudo CROSSBORDER_VPS=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh)"
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
+  sudo env CROSSBORDER_VPS=1 CROSSBORDER_WWWROOT=1 CROSSBORDER_OPEN_FIREWALL=1 bash
 ```
 
 After install, open **TCP 8787** in your cloud **security group** (inbound rule). Local `curl http://127.0.0.1:8787/health` can work while the public IP fails if the security group blocks the port.
