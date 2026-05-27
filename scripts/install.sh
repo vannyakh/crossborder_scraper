@@ -150,12 +150,11 @@ run_bootstrap() {
     fi
   fi
 
-  local setup_args=(setup --server --port "${PANEL_PORT}")
+  local setup_args=(setup --server --port "${PANEL_PORT}" --external auto)
   local public_ip
   public_ip="$(detect_public_ip)"
   if [[ -n "${public_ip}" ]]; then
     echo "==> detected public IP: ${public_ip}"
-    setup_args+=(--external "${public_ip}")
   fi
 
   echo "==> panel setup (host, port ${PANEL_PORT}, credentials)"

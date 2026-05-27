@@ -87,6 +87,11 @@ class ServerBootstrap:
             auto_port=auto_port,
             env_path=env_path,
         )
+        from deploy.panel_access import persist_external_host
+
+        ext_host = external_host
+        if external_host:
+            ext_host = persist_external_host(external_host, env_path=env_path)
         username, password, generated = ensure_panel_credentials(
             env_path,
             force_regenerate=regenerate,
@@ -101,7 +106,7 @@ class ServerBootstrap:
             credentials_generated=generated,
             env_path=str(env_path),
             port_auto_adjusted=port_adjusted,
-            external_host=external_host,
+            external_host=ext_host,
         )
         return access
 
@@ -184,6 +189,16 @@ def bootstrap_server(
     return boot, access
 
 
+def _resolve_setup_external(mode: str, external_host: str | None) -> str | None:
+    from deploy.network import resolve_external_host
+
+    if mode in ("server", "install", "docker"):
+        return resolve_external_host(external_host or "auto")
+    if external_host:
+        return resolve_external_host(external_host)
+    return None
+
+
 def run_setup(
     *,
     mode: str = "panel",
@@ -206,7 +221,7 @@ def run_setup(
         bind_host=bind_host,
         port=port,
         auto_port=auto_port,
-        external_host=external_host,
+        external_host=_resolve_setup_external(mode, external_host),
     )
     if mode == "panel":
         boot, access = bootstrap_server(

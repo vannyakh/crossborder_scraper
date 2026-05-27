@@ -87,7 +87,7 @@ def register_setup_commands(app: typer.Typer) -> None:
             None,
             "--external",
             "-e",
-            help="Public IP or domain for display (e.g. VPS public IP)",
+            help="Public IP/domain for URLs (server install defaults to auto-detect)",
         ),
         no_auto_port: bool = typer.Option(
             False,

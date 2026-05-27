@@ -71,10 +71,28 @@ uv run scraper setup --server
 Setup prints an **aaPanel-style access card**: panel URL, server IP(s), username, and password (also saved to `.env`).
 
 ```bash
-uv run scraper setup --server --external 203.0.113.10   # show public URL on VPS
-uv run scraper setup --port 8080                        # fixed port
-uv run crossborder setup --fixed-port                     # keep 8787 even if busy
+uv run crossborder setup --server --external auto        # auto-detect public IP in access card
+uv run crossborder setup --server --external 203.0.113.10
+uv run crossborder setup --port 8080
+uv run crossborder setup --fixed-port                    # keep 8787 even if busy
 ```
+
+### Run panel (TCP server + auto public IP)
+
+```bash
+cd ~/crossborder-scraper
+
+# First time (bootstrap + start on 0.0.0.0:8787):
+uv run crossborder deploy run --setup
+
+# Already installed — refresh public IP and start:
+uv run crossborder deploy run
+
+# Foreground dev reload:
+uv run crossborder deploy run --reload
+```
+
+Same as `uv run crossborder serve --no-reload` after setup; `deploy run` also writes `PANEL_EXTERNAL_HOST` and prints LAN/public login URLs.
 
 ## Setup modes (`scraper setup`)
 

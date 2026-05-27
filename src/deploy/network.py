@@ -5,6 +5,8 @@ from __future__ import annotations
 import socket
 from dataclasses import dataclass
 
+_AUTO_EXTERNAL = frozenset({"", "auto", "detect"})
+
 # Default panel port (8787 avoids common conflicts with 8000/8080/3000 on dev machines)
 DEFAULT_PANEL_PORT = 8787
 
@@ -96,6 +98,34 @@ def normalize_bind_host(host: str | None) -> str:
     if not host or host.strip() in ("", "auto"):
         return "0.0.0.0"
     return host.strip()
+
+
+def detect_public_ip(*, timeout: float = 4.0) -> str | None:
+    """Best-effort public IPv4 (for access card / PANEL_EXTERNAL_HOST)."""
+    try:
+        import httpx
+    except ImportError:
+        return None
+
+    for url in ("https://ifconfig.me/ip", "https://icanhazip.com"):
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                text = client.get(url).text.strip()
+        except Exception:
+            continue
+        if text and "." in text and not text.startswith("<"):
+            return text.split()[0]
+    return None
+
+
+def resolve_external_host(external: str | None) -> str | None:
+    """Return host for public URLs; ``auto`` / empty triggers detection."""
+    if external is None:
+        return detect_public_ip()
+    stripped = external.strip()
+    if stripped.lower() in _AUTO_EXTERNAL:
+        return detect_public_ip()
+    return stripped
 
 
 def build_panel_access_info(

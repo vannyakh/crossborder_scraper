@@ -20,7 +20,7 @@ from cli.theme import (
     user,
     warn,
 )
-from deploy.network import DEFAULT_PANEL_PORT, PanelAccessInfo
+from deploy.network import DEFAULT_PANEL_PORT, PanelAccessInfo, resolve_external_host
 
 
 def _print_compact_urls(info: PanelAccessInfo) -> None:
@@ -94,6 +94,53 @@ def configure_panel_bind(
         },
     )
     return bind, preferred, adjusted
+
+
+def persist_external_host(
+    external: str | None,
+    *,
+    env_path: Path | None = None,
+) -> str | None:
+    """Resolve and write PANEL_EXTERNAL_HOST to .env (``auto`` detects public IP)."""
+    from config.credentials import upsert_env_file
+    from core.paths import env_file_path
+
+    resolved = resolve_external_host(external)
+    if not resolved:
+        return None
+    path = env_path or env_file_path()
+    upsert_env_file(path, {"PANEL_EXTERNAL_HOST": resolved})
+    return resolved
+
+
+def build_access_from_env(
+    *,
+    external: str | None = None,
+    env_path: Path | None = None,
+) -> PanelAccessInfo:
+    """Build access card info from current .env (optional external refresh)."""
+    from config import get_settings
+    from config.credentials import ensure_panel_credentials
+    from core.paths import env_file_path
+    from deploy.network import build_panel_access_info
+
+    path = env_path or env_file_path()
+    settings = get_settings()
+    username, password, _generated = ensure_panel_credentials(path, force_regenerate=False)
+    if external is not None:
+        ext = persist_external_host(external, env_path=path)
+    else:
+        stored = settings.panel_external_host
+        ext = stored.strip() if stored else None
+    return build_panel_access_info(
+        username=username,
+        password=password,
+        bind_host=settings.panel_host,
+        port=settings.panel_port,
+        credentials_generated=False,
+        env_path=str(path),
+        external_host=ext,
+    )
 
 
 def _access_table(info: PanelAccessInfo) -> Table:

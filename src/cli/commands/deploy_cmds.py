@@ -36,7 +36,12 @@ def deploy_setup(
     skip_browser: bool = typer.Option(False, "--skip-browser", help="Skip Playwright install"),
     host: str = typer.Option("0.0.0.0", "--host", help="Bind address"),
     port: int | None = typer.Option(None, "--port", "-p", help="Panel port"),
-    external: str | None = typer.Option(None, "--external", "-e", help="Public IP/domain to show"),
+    external: str | None = typer.Option(
+        "auto",
+        "--external",
+        "-e",
+        help="Public IP/domain for URLs (default: auto-detect)",
+    ),
 ) -> None:
     """
     Bootstrap install (dirs, config, credentials, deps).
@@ -70,6 +75,91 @@ def deploy_setup(
         mode=card_mode,
         next_commands=default_next_commands(card_mode),
     )
+
+
+@deploy_app.command("run")
+def deploy_run(
+    setup: bool = typer.Option(
+        False,
+        "--setup",
+        help="Run full bootstrap (dirs, deps, Playwright) before starting",
+    ),
+    host: str = typer.Option(
+        "0.0.0.0",
+        "--host",
+        help="TCP bind address (0.0.0.0 = LAN + public)",
+    ),
+    port: int | None = typer.Option(None, "--port", "-p", help="Panel TCP port (default 8787)"),
+    external: str = typer.Option(
+        "auto",
+        "--external",
+        "-e",
+        help="Public IP/domain for login URLs (auto-detect if omitted)",
+    ),
+    regenerate: bool = typer.Option(False, "--regenerate", help="New panel password"),
+    reload: bool = typer.Option(
+        False,
+        "--reload/--no-reload",
+        help="Dev auto-reload (production: use --no-reload)",
+    ),
+) -> None:
+    """
+    Start the panel TCP server (bind 0.0.0.0) with auto public IP in the access card.
+
+    First time on a machine:  crossborder deploy run --setup
+    Already configured:     crossborder deploy run
+    """
+    from config.credentials import print_panel_credentials
+    from deploy.bootstrap import run_setup
+    from deploy.panel_access import build_access_from_env, default_next_commands
+
+    print_onboard_banner(mode="server")
+
+    if setup:
+        result = run_setup(
+            mode="server",
+            regenerate=regenerate,
+            bind_host=host,
+            port=port,
+            auto_port=True,
+            external_host=external,
+        )
+        print_setup_progress(list(result["steps"]), warnings=list(result["warnings"]))
+        access = result["access"]
+    else:
+        from deploy.panel_access import configure_panel_bind, persist_external_host
+
+        configure_panel_bind(host=host, port=port, auto_port=port is None)
+        persist_external_host(external)
+        access = build_access_from_env()
+
+    print_panel_credentials(
+        str(access.username),
+        str(access.password),
+        access=access,
+        mode="server",
+        next_commands=default_next_commands("server"),
+    )
+
+    import os
+
+    from cli.theme import brand, hint, link_markup
+
+    settings = get_settings()
+    login_host = "127.0.0.1" if settings.panel_host in ("0.0.0.0", "::") else settings.panel_host
+    login = f"http://{login_host}:{settings.panel_port}/ui/login"
+
+    console.print()
+    console.print(brand("Starting panel TCP server…"))
+    console.print(hint(f"  Bind: {settings.panel_host}:{settings.panel_port}"))
+    console.print(hint(f"  Login: {link_markup(login)}"))
+    console.print(hint("  Press Ctrl+C to stop"))
+    console.print()
+
+    os.environ["UVICORN_RELOAD"] = "1" if reload else "0"
+    from server.__main__ import main
+
+    main()
 
 
 @deploy_app.command("status")

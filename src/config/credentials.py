@@ -173,6 +173,7 @@ def print_panel_credentials(
 
     settings = get_settings()
     path = env_path or _repo_env_path()
+    ext = settings.panel_external_host
     info = build_panel_access_info(
         username=username,
         password=password,
@@ -180,5 +181,6 @@ def print_panel_credentials(
         port=settings.panel_port,
         credentials_generated=False,
         env_path=str(path),
+        external_host=ext.strip() if ext else None,
     )
     print_panel_access_card(info, mode=mode, next_commands=cmds)

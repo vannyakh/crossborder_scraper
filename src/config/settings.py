@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     panel_password: str | None = None
     panel_host: str = "0.0.0.0"
     panel_port: int = 8787
+    panel_external_host: str | None = None
 
     # Paths
     data_dir: Path = Field(default=Path("data"))

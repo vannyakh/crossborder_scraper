@@ -132,11 +132,10 @@ function Run-Bootstrap {
         }
     }
 
-    $setupArgs = @("setup", "--server", "--port", $PanelPort)
+    $setupArgs = @("setup", "--server", "--port", $PanelPort, "--external", "auto")
     $publicIp = Get-PublicIp
     if ($publicIp) {
         Write-Host "==> detected public IP: $publicIp"
-        $setupArgs += @("--external", $publicIp)
     }
 
     Write-Host "==> panel setup (host, port $PanelPort, credentials)"
