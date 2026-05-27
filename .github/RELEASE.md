@@ -16,8 +16,10 @@ git push origin v0.2.0
 The **Release** workflow (`.github/workflows/release.yml`) will:
 
 - Verify the tag matches `pyproject.toml`
+- Run Python lint (Ruff) and build the web client (same checks as CI)
 - Build multi-arch Docker image and push to **GHCR**: `ghcr.io/<owner>/crossborder_scraper:<version>`
-- Create a **GitHub Release** with install notes
+- Smoke-test the published image (`/health` on port 8787)
+- Create a **GitHub Release** with install notes (triggers **Deploy** workflow when it completes)
 
 ## CI
 
