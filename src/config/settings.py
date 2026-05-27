@@ -46,7 +46,8 @@ class Settings(BaseSettings):
     max_images_per_product: int = 10
     request_delay_seconds: float = 2.0
 
-    # AI-powered extraction (OpenAI-compatible API)
+    # AI — provider: openai | anthropic | google | ollama | qwen | custom
+    ai_provider: str = "openai"
     ai_enabled: bool = False
     ai_fallback: bool = True  # use AI when CSS parse looks incomplete
     ai_api_key: str | None = None

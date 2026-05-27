@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { MarketplaceEntry, PanelConfigUpdate } from '../../lib/api'
+import type { LlmProviderId, MarketplaceEntry, PanelConfigUpdate } from '../../lib/api'
+import { getLlmProvider } from '../../config/llm-providers'
 import {
   useCheckLLMHealthMutation,
   usePanelConfigQuery,
@@ -11,6 +12,7 @@ export function usePanelSettingsForm() {
   const updateMutation = useUpdatePanelConfigMutation()
   const checkMutation = useCheckLLMHealthMutation()
 
+  const [provider, setProvider] = useState<LlmProviderId>('openai')
   const [enabled, setEnabled] = useState(false)
   const [fallback, setFallback] = useState(true)
   const [agentEnabled, setAgentEnabled] = useState(false)
@@ -34,6 +36,7 @@ export function usePanelSettingsForm() {
 
   useEffect(() => {
     if (!panel) return
+    setProvider((panel.ai_provider as LlmProviderId) || 'openai')
     setEnabled(panel.ai_enabled)
     setFallback(panel.ai_fallback)
     setAgentEnabled(panel.ai_agent_enabled)
@@ -74,8 +77,16 @@ export function usePanelSettingsForm() {
     }))
   }
 
+  function handleProviderChange(next: LlmProviderId) {
+    setProvider(next)
+    const preset = getLlmProvider(next)
+    if (preset.base_url) setAiBaseUrl(preset.base_url)
+    if (preset.default_model) setModel(preset.default_model)
+  }
+
   function buildPayload(): PanelConfigUpdate {
     const payload: PanelConfigUpdate = {
+      ai_provider: provider,
       ai_enabled: enabled,
       ai_fallback: fallback,
       ai_agent_enabled: agentEnabled,
@@ -136,6 +147,8 @@ export function usePanelSettingsForm() {
     updateMutation,
     checkMutation,
     message,
+    provider,
+    setProvider: handleProviderChange,
     enabled,
     setEnabled,
     fallback,

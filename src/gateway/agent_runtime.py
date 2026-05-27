@@ -1,13 +1,12 @@
-"""Gateway agent runtime — LLM + tools loop (OpenClaw gateway pattern)."""
+"""Gateway agent runtime — LLM + tools loop (gateway pattern)."""
 
 from __future__ import annotations
 
 import json
 from typing import Any
 
-import httpx
-
 from config import Settings
+from core.ai.llm_client import LLMClient
 from gateway.prompts import DEFAULT_PROMPT_ID, load_prompt
 from gateway.skills import get_skill_manager
 from gateway.tools import execute_tool, parse_tool_call, tools_for_llm
@@ -26,18 +25,11 @@ Use available tools to scrape, list, export, and report status. Be concise."""
 
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings()
+        self.llm = LLMClient(self.settings)
 
     @property
     def enabled(self) -> bool:
-        return self.settings.ai_enabled and bool(
-            self.settings.ai_api_key or self.settings.ai_base_url
-        )
-
-    def _headers(self) -> dict[str, str]:
-        headers = {"Content-Type": "application/json"}
-        if self.settings.ai_api_key:
-            headers["Authorization"] = f"Bearer {self.settings.ai_api_key}"
-        return headers
+        return self.settings.ai_enabled and self.llm.enabled
 
     async def run(
         self,
@@ -52,11 +44,13 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             return {
                 "ok": False,
                 "message": (
-                    "AI agent disabled. Enable ai_enabled and set ai_api_key in panel config."
+                    "AI agent disabled. Enable AI in Settings, pick a provider, "
+                    "and set an API key (or use local Ollama)."
                 ),
                 "tool_calls": [],
                 "prompt_id": prompt_id or DEFAULT_PROMPT_ID,
                 "skill_ids": [],
+                "provider": self.llm.cfg.provider_id,
             }
 
         resolved_id, base_prompt = load_prompt(prompt_id)
@@ -73,21 +67,30 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         tool_calls_log: list[dict[str, Any]] = []
 
         for _ in range(max_tool_rounds):
-            response = await self._chat(messages, tools=tools_for_llm(allow_names=allow_tools))
-            choice = response["choices"][0]["message"]
-            tool_calls = choice.get("tool_calls") or []
+            result = await self.llm.chat(
+                messages,
+                tools=tools_for_llm(allow_names=allow_tools),
+            )
+            tool_calls = result.tool_calls
 
             if not tool_calls:
                 return {
                     "ok": True,
-                    "message": choice.get("content") or "",
+                    "message": result.content or "",
                     "tool_calls": tool_calls_log,
-                    "model": self.settings.ai_model,
+                    "model": self.llm.cfg.model,
+                    "provider": self.llm.cfg.provider_id,
                     "prompt_id": resolved_id,
                     "skill_ids": resolved_skills,
                 }
 
-            messages.append(choice)
+            assistant_msg: dict[str, Any] = {
+                "role": "assistant",
+                "content": result.content,
+                "tool_calls": tool_calls,
+            }
+            messages.append(assistant_msg)
+
             for call in tool_calls:
                 parsed = parse_tool_call(call.get("function") or call)
                 if not parsed:
@@ -103,38 +106,14 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                     }
                 )
 
-        summary = await self._chat(messages, tools=None)
-        final = summary["choices"][0]["message"].get("content") or "Done."
+        summary = await self.llm.chat(messages)
+        final = summary.content or "Done."
         return {
             "ok": True,
             "message": final,
             "tool_calls": tool_calls_log,
-            "model": self.settings.ai_model,
+            "model": self.llm.cfg.model,
+            "provider": self.llm.cfg.provider_id,
             "prompt_id": resolved_id,
             "skill_ids": resolved_skills,
         }
-
-    async def _chat(
-        self,
-        messages: list[dict[str, Any]],
-        *,
-        tools: list[dict[str, Any]] | None,
-    ) -> dict[str, Any]:
-        payload: dict[str, Any] = {
-            "model": self.settings.ai_model,
-            "messages": messages,
-            "temperature": 0.2,
-        }
-        if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
-
-        base = self.settings.ai_base_url.rstrip("/")
-        async with httpx.AsyncClient(timeout=self.settings.ai_timeout_seconds) as client:
-            resp = await client.post(
-                f"{base}/chat/completions",
-                headers=self._headers(),
-                json=payload,
-            )
-            resp.raise_for_status()
-            return resp.json()

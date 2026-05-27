@@ -9,7 +9,7 @@ from urllib.request import Request, urlopen
 
 
 class GatewayClient:
-    """Thin client for the scraper gateway (OpenClaw-style remote control)."""
+    """Thin client for the scraper gateway."""
 
     def __init__(
         self,

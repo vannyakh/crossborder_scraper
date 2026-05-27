@@ -18,6 +18,7 @@ LEGACY_RUNTIME_PATH = Path("data/runtime_config.json")
 
 AI_UI_KEYS = frozenset(
     {
+        "ai_provider",
         "ai_enabled",
         "ai_fallback",
         "ai_agent_enabled",
@@ -50,6 +51,7 @@ UI_EDITABLE_KEYS = PANEL_SCALAR_KEYS
 # Legacy .env names — migrate to config/ui_config.json
 ENV_UI_VAR_NAMES = frozenset(
     {
+        "AI_PROVIDER",
         "AI_ENABLED",
         "AI_FALLBACK",
         "AI_AGENT_ENABLED",
@@ -122,6 +124,7 @@ def ensure_ui_config_file() -> Path:
 
 def _default_panel_raw() -> dict[str, Any]:
     return {
+        "ai_provider": "openai",
         "ai_enabled": False,
         "ai_fallback": True,
         "ai_agent_enabled": False,

@@ -1,5 +1,6 @@
 {
   "_doc": "Panel config — edit in web UI. Only PANEL_* stays in .env.",
+  "ai_provider": "openai",
   "ai_agent_enabled": false,
   "ai_api_key": "",
   "ai_base_url": "https://api.openai.com/v1",

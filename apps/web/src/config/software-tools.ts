@@ -185,7 +185,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'telegram',
           icon: 'agent',
           title: 'Telegram bot',
-          description: 'Control chat channel wired to the gateway agent (Clawdbot-style).',
+          description: 'Control chat channel wired to the Crossborder gateway agent.',
           to: '/agent/telegram',
           status: stats.gateway?.telegram?.enabled
             ? 'Live'
@@ -199,7 +199,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'agent',
           icon: 'agent',
           title: 'Gateway agent',
-          description: 'Chat, cron schedules, OpenClaw-style skills, and tool catalog.',
+          description: 'Chat, cron schedules, skills, and tool catalog.',
           to: '/agent/chat',
           status:
             aiAgentOn && enabledSchedules > 0

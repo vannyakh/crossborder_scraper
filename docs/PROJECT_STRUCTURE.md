@@ -40,7 +40,7 @@ crossborder_scraper/
 ├── deploy/                    # Generated systemd/nginx examples
 ├── docs/SELF_HOSTING.md       # VPS, Docker, aaPanel deploy guide
 ├── libs/prompts/              # Gateway agent role prompts (*.md)
-├── skills/                    # Built-in agent skills (SKILL.md, OpenClaw-style)
+├── skills/                    # Built-in agent skills (SKILL.md)
 ├── installed_skills/          # ZIP-installed custom agent skills
 │
 ├── main.py                    # CLI entry (`python main.py` → cli)

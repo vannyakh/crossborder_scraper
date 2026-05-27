@@ -527,7 +527,7 @@ button:focus-visible {
   flex-direction: column;
 }
 
-/* —— Agent chat (OpenClaw-style) —— */
+/* —— Agent chat —— */
 .agent-chat {
   --chat-user-avatar: color-mix(in srgb, var(--app-accent) 55%, #3d1515);
   --chat-user-bubble: color-mix(in srgb, var(--app-accent) 22%, var(--chakra-colors-bg-panel, #161b22));

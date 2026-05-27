@@ -233,7 +233,7 @@ export function AgentTelegramPanel() {
   return (
     <Section
       title="Telegram"
-      description="Control chat channel — messages run the same gateway agent as web chat (OpenClaw-style)"
+      description="Control chat channel — messages run the same gateway agent as web chat"
       mt={0}
     >
       <SectionCard mb={4}>

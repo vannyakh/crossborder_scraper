@@ -1,4 +1,4 @@
-# Agent skills (OpenClaw-style)
+# Agent skills
 
 Each skill is a folder with `SKILL.md`:
 

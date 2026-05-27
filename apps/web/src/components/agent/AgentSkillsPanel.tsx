@@ -114,7 +114,7 @@ export function AgentSkillsPanel() {
             Agent skills
           </Text>
           <Text fontSize="sm" color="fg.muted">
-            OpenClaw-style SKILL.md packages — instructions + tool scope for the gateway agent.
+            SKILL.md packages — instructions + tool scope for the gateway agent.
           </Text>
         </Box>
         <HStack gap={2}>

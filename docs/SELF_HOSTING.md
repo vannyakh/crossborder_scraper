@@ -1,6 +1,6 @@
 # Self-hosting guide
 
-Deploy Crossborder Scraper on your own VPS, Docker host, or Windows server — similar workflow to **aaPanel**, **n8n**, or **OpenClaw** self-host installs.
+Deploy Crossborder Scraper on your own VPS, Docker host, or Windows server.
 
 ## Requirements
 
@@ -140,7 +140,7 @@ Shell wrapper: `bash scripts/tools.sh update`
 
 ## Deploy commands (`scraper deploy`)
 
-Like n8n / OpenClaw — one CLI for operations:
+CLI for operations:
 
 ```bash
 uv run scraper deploy setup          # same as setup --server

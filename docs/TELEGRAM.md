@@ -1,6 +1,6 @@
 # Telegram control chat (gateway agent)
 
-OpenClaw-style **channel adapter**: messages in Telegram run the same gateway agent as the web panel (`POST /gateway/agent/run`).
+**channel adapter**: messages in Telegram run the same gateway agent as the web panel (`POST /gateway/agent/run`).
 
 ## 1. Create a bot
 

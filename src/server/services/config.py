@@ -50,6 +50,7 @@ class ConfigService:
             cap = self._ctx.settings.max_concurrent_jobs or 3
             scalar["scrape_default_workers"] = min(int(scalar["scrape_default_workers"]), cap)
         if scalar or marketplace_updates:
+            scalar = self._normalize_ai_provider_updates(scalar)
             save_panel_config(
                 scalar_updates=scalar or None,
                 marketplace_updates=marketplace_updates,
@@ -57,10 +58,34 @@ class ConfigService:
             self._ctx.reload_settings()
         return self.get_panel_config()
 
+    def _normalize_ai_provider_updates(self, scalar: dict[str, Any]) -> dict[str, Any]:
+        if not scalar or "ai_provider" not in scalar:
+            return scalar
+        from config.llm_providers import apply_provider_defaults, get_provider
+
+        provider_id = str(scalar["ai_provider"])
+        preset = get_provider(provider_id)
+        scalar = dict(scalar)
+        scalar["ai_provider"] = preset.id
+        if not scalar.get("ai_base_url"):
+            scalar["ai_base_url"] = preset.base_url
+        if not scalar.get("ai_model"):
+            scalar["ai_model"] = preset.default_model
+        else:
+            base_url, model = apply_provider_defaults(
+                preset.id,
+                base_url=scalar.get("ai_base_url"),
+                model=scalar.get("ai_model"),
+            )
+            scalar["ai_base_url"] = base_url
+            scalar["ai_model"] = model
+        return scalar
+
     def get_ai_config(self) -> dict[str, Any]:
         s = self._ctx.settings
         panel = panel_config_for_api(mask_secrets=True)
         return {
+            "ai_provider": getattr(s, "ai_provider", "openai"),
             "ai_enabled": s.ai_enabled,
             "ai_fallback": s.ai_fallback,
             "ai_agent_enabled": s.ai_agent_enabled,

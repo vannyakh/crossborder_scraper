@@ -1,7 +1,5 @@
 # Crossborder Scraper — Architecture
 
-Inspired by [n8n](https://github.com/n8n-io/n8n) (workflow nodes + integrations) and [OpenClaw](https://github.com/openclaw/openclaw) (gateway control plane + agent tools + multi-client access).
-
 ## Vision
 
 **One gateway, three clients, one business pipeline:**
@@ -91,7 +89,7 @@ config/ui_config.json     # Panel config (AI, engine, marketplaces)
 | `GET /jobs/{id}/stream` | Web UI | Live batch SSE |
 | `PATCH /config/panel` | Web UI | Panel JSON config |
 
-## CLI (OpenClaw-style)
+## CLI
 
 ```bash
 uv run serve                              # start gateway daemon
@@ -146,7 +144,7 @@ Marketplace config supports **any platform** via `marketplaces.{id}.credentials`
 - Webhook triggers + scheduled cron workflows
 
 ### Phase 4 (in progress)
-- Multi-tenant workspaces (OpenClaw-style routing)
+- Multi-tenant workspaces
 - Sandbox export dry-runs
 - **Telegram** channel adapter (`gateway/telegram/`) — control chat → gateway agent
 - Slack / webhook channel adapters (planned)

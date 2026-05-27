@@ -3,11 +3,11 @@ import re
 from decimal import Decimal
 from typing import Any
 
-import httpx
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from config import Settings
+from core.ai.llm_client import LLMClient
 from core.models import ScrapedProduct, SourcePlatform
 
 
@@ -15,8 +15,8 @@ class AIExtractor:
     """
     LLM-powered product extraction from HTML.
 
-    Supports OpenAI-compatible APIs (OpenAI, Ollama, DeepSeek, etc.)
-    via AI_BASE_URL + AI_API_KEY + AI_MODEL in .env
+    Supports OpenAI, Anthropic Claude, Google Gemini (OpenAI mode), Ollama, and Qwen
+    via panel Settings → AI & LLM.
     """
 
     SYSTEM_PROMPT = """You extract e-commerce product data from HTML snippets.
@@ -36,12 +36,11 @@ Use absolute image URLs. Ignore ads and unrelated products."""
 
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or Settings()
+        self.llm = LLMClient(self.settings)
 
     @property
     def enabled(self) -> bool:
-        return self.settings.ai_enabled and bool(
-            self.settings.ai_api_key or self.settings.ai_base_url
-        )
+        return self.llm.enabled
 
     def _prepare_html(self, html: str, max_chars: int | None = None) -> str:
         max_chars = max_chars or self.settings.ai_max_html_chars
@@ -50,7 +49,6 @@ Use absolute image URLs. Ignore ads and unrelated products."""
             tag.decompose()
         text = str(soup)
         if len(text) > max_chars:
-            # Keep head + main body chunks
             mid = max_chars // 2
             text = text[:mid] + "\n<!-- truncated -->\n" + text[-mid:]
         return text
@@ -64,7 +62,9 @@ Use absolute image URLs. Ignore ads and unrelated products."""
         product_id: str,
     ) -> ScrapedProduct:
         if not self.enabled:
-            raise RuntimeError("AI extraction disabled. Set AI_ENABLED=true and AI_API_KEY in .env")
+            raise RuntimeError(
+                "AI extraction disabled. Enable AI in Settings and configure a provider."
+            )
 
         snippet = self._prepare_html(html)
         user_msg = (
@@ -72,29 +72,15 @@ Use absolute image URLs. Ignore ads and unrelated products."""
             f"Product ID: {product_id}\n\nHTML:\n{snippet}"
         )
 
-        payload = {
-            "model": self.settings.ai_model,
-            "messages": [
+        result = await self.llm.chat(
+            [
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {"role": "user", "content": user_msg},
             ],
-            "temperature": 0.1,
-            "response_format": {"type": "json_object"},
-        }
-
-        headers = {"Content-Type": "application/json"}
-        if self.settings.ai_api_key:
-            headers["Authorization"] = f"Bearer {self.settings.ai_api_key}"
-
-        base = self.settings.ai_base_url.rstrip("/")
-        endpoint = f"{base}/chat/completions"
-
-        async with httpx.AsyncClient(timeout=self.settings.ai_timeout_seconds) as client:
-            resp = await client.post(endpoint, headers=headers, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-
-        content = data["choices"][0]["message"]["content"]
+            temperature=0.1,
+            response_format={"type": "json_object"},
+        )
+        content = result.content or ""
         parsed = self._parse_json_response(content)
         return self._to_product(parsed, url, platform, product_id)
 
@@ -138,7 +124,6 @@ Use absolute image URLs. Ignore ads and unrelated products."""
         )
 
     def is_parse_incomplete(self, product: ScrapedProduct) -> bool:
-        """Heuristic: CSS parse likely failed."""
         generic_titles = ("1688 Product", "Taobao Product", "AliExpress")
         bad_title = not product.title or product.title.startswith(generic_titles)
         no_price = product.price is None

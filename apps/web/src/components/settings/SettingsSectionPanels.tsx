@@ -15,7 +15,8 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { MarketplaceIntegrationsPanel } from './MarketplaceIntegrationsPanel'
 import type { PanelSettingsForm } from './use-panel-settings-form'
-import type { LLMHealth } from '../../lib/api'
+import type { LLMHealth, LlmProviderId } from '../../lib/api'
+import { LLM_PROVIDER_PRESETS } from '../../config/llm-providers'
 
 function SettingsCheckbox({
   checked,
@@ -90,10 +91,42 @@ export function AiSettingsSection({
     )
   }
 
+  const selectedProvider = LLM_PROVIDER_PRESETS.find((p) => p.id === form.provider)
+
   return (
-    <Section title="AI & LLM" description="OpenAI-compatible extraction and gateway agent" mt={0}>
+    <Section
+      title="AI & LLM"
+      description="Multi-provider extraction and gateway agent (OpenAI, Claude, Gemini, Ollama, Qwen)"
+      mt={0}
+    >
       <SectionCard>
         <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6}>
+          <Box>
+            <Text fontSize="sm" fontWeight="semibold" mb={3}>
+              Provider
+            </Text>
+            <SettingsField label="LLM provider" hint="Auto-fills base URL and default model">
+              <NativeSelect.Root>
+                <NativeSelect.Field
+                  {...fieldStyles}
+                  value={form.provider}
+                  onChange={(e) => form.setProvider(e.target.value as LlmProviderId)}
+                >
+                  {LLM_PROVIDER_PRESETS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+              </NativeSelect.Root>
+            </SettingsField>
+            {selectedProvider?.docs_url ? (
+              <Text fontSize="xs" color="fg.subtle" mt={2}>
+                API keys: {selectedProvider.docs_url}
+              </Text>
+            ) : null}
+          </Box>
+
           <Box>
             <Text fontSize="sm" fontWeight="semibold" mb={3}>
               Features
@@ -110,35 +143,40 @@ export function AiSettingsSection({
               </SettingsCheckbox>
             </Box>
           </Box>
-
-          <Box>
-            <Text fontSize="sm" fontWeight="semibold" mb={3}>
-              Provider
-            </Text>
-            <SimpleGrid columns={1} gap={3}>
-              <SettingsField label="Model">
-                <Input {...fieldStyles} value={form.model} onChange={(e) => form.setModel(e.target.value)} />
-              </SettingsField>
-              <SettingsField label="Base URL">
-                <Input
-                  {...fieldStyles}
-                  value={form.aiBaseUrl}
-                  onChange={(e) => form.setAiBaseUrl(e.target.value)}
-                  placeholder="https://api.openai.com/v1"
-                />
-              </SettingsField>
-              <SettingsField label="API key" hint={panel?.ai_api_key_set ? `Current: ${panel.ai_api_key_masked ?? 'set'}` : undefined}>
-                <Input
-                  {...fieldStyles}
-                  type="password"
-                  value={form.aiApiKey}
-                  onChange={(e) => form.setAiApiKey(e.target.value)}
-                  placeholder={panel?.ai_api_key_set ? 'Leave blank to keep current' : 'sk-…'}
-                />
-              </SettingsField>
-            </SimpleGrid>
-          </Box>
         </Grid>
+
+        <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mt={6}>
+          <SettingsField label="Model" hint={selectedProvider ? `Default: ${selectedProvider.default_model}` : undefined}>
+            <Input {...fieldStyles} value={form.model} onChange={(e) => form.setModel(e.target.value)} />
+          </SettingsField>
+          <SettingsField
+            label="Base URL"
+            hint={selectedProvider?.requires_api_key === false ? 'Local Ollama — no API key needed' : undefined}
+          >
+            <Input
+              {...fieldStyles}
+              value={form.aiBaseUrl}
+              onChange={(e) => form.setAiBaseUrl(e.target.value)}
+              placeholder={selectedProvider?.base_url || 'https://api.openai.com/v1'}
+            />
+          </SettingsField>
+          <SettingsField
+            label="API key"
+            hint={
+              panel?.ai_api_key_set
+                ? `Current: ${panel.ai_api_key_masked ?? 'set'} · ${selectedProvider?.api_key_hint ?? ''}`
+                : selectedProvider?.api_key_hint
+            }
+          >
+            <Input
+              {...fieldStyles}
+              type="password"
+              value={form.aiApiKey}
+              onChange={(e) => form.setAiApiKey(e.target.value)}
+              placeholder={panel?.ai_api_key_set ? 'Leave blank to keep current' : selectedProvider?.api_key_hint}
+            />
+          </SettingsField>
+        </SimpleGrid>
 
         <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mt={6}>
           <SettingsField label="Max HTML chars" hint="Truncate page HTML before LLM prompt">
@@ -168,6 +206,7 @@ export function AiSettingsSection({
               <StatusBadge status={healthTone(health.ok)} label={health.status} />
             </HStack>
             <Text fontSize="sm" color="fg.muted">
+              {health.provider_label ? `${health.provider_label} · ` : ''}
               {health.message}
             </Text>
           </Box>

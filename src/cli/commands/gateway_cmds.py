@@ -10,7 +10,7 @@ from rich.table import Table
 
 from cli.helpers import console, exit_gateway_error, gateway_client, run_async
 
-skills_app = typer.Typer(help="Agent skills (OpenClaw-style SKILL.md packages)")
+skills_app = typer.Typer(help="Agent skills (SKILL.md packages)")
 prompts_app = typer.Typer(help="Gateway agent role prompts")
 channels_app = typer.Typer(help="Control-plane messaging channels (Telegram, …)")
 

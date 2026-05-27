@@ -96,7 +96,21 @@ export type SubmitJobsPayload = {
   save: boolean
 }
 
+export type LlmProviderId = 'openai' | 'anthropic' | 'google' | 'ollama' | 'qwen' | 'custom'
+
+export type LlmProviderInfo = {
+  id: LlmProviderId
+  label: string
+  base_url: string
+  default_model: string
+  api_style: string
+  requires_api_key: boolean
+  api_key_hint: string
+  docs_url?: string
+}
+
 export type AIConfig = {
+  ai_provider?: LlmProviderId
   ai_enabled: boolean
   ai_fallback: boolean
   ai_agent_enabled: boolean
@@ -111,10 +125,13 @@ export type AIConfig = {
 }
 
 export type AIConfigUpdate = {
+  ai_provider?: LlmProviderId
   ai_enabled?: boolean
   ai_fallback?: boolean
   ai_agent_enabled?: boolean
   ai_model?: string
+  ai_base_url?: string
+  ai_api_key?: string
   ai_max_html_chars?: number
   ai_timeout_seconds?: number
 }
@@ -127,6 +144,7 @@ export type MarketplaceEntry = {
 }
 
 export type PanelConfig = {
+  ai_provider: LlmProviderId
   ai_enabled: boolean
   ai_fallback: boolean
   ai_agent_enabled: boolean
@@ -155,6 +173,7 @@ export type PanelConfig = {
 }
 
 export type PanelConfigUpdate = {
+  ai_provider?: LlmProviderId
   ai_enabled?: boolean
   ai_fallback?: boolean
   ai_agent_enabled?: boolean
@@ -189,6 +208,8 @@ export type LLMHealth = {
   message: string
   model: string
   base_url: string
+  provider?: string | null
+  provider_label?: string | null
   models_count?: number | null
   model_available?: boolean | null
   probe?: string | null

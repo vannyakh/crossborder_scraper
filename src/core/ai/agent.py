@@ -2,11 +2,10 @@ import json
 import re
 from typing import Any
 
-import httpx
-from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from config import Settings
+from core.ai.llm_client import LLMClient
 from core.models import ScrapedProduct
 
 
@@ -32,20 +31,15 @@ Rules:
 
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or Settings()
+        self.llm = LLMClient(self.settings)
 
     @property
     def enabled(self) -> bool:
         return (
             self.settings.ai_enabled
             and self.settings.ai_agent_enabled
-            and bool(self.settings.ai_api_key or self.settings.ai_base_url)
+            and self.llm.enabled
         )
-
-    def _headers(self) -> dict[str, str]:
-        headers = {"Content-Type": "application/json"}
-        if self.settings.ai_api_key:
-            headers["Authorization"] = f"Bearer {self.settings.ai_api_key}"
-        return headers
 
     def _parse_json(self, content: str) -> dict[str, Any]:
         content = content.strip()
@@ -59,9 +53,8 @@ Rules:
         if not self.enabled:
             return product
 
-        payload = {
-            "model": self.settings.ai_model,
-            "messages": [
+        result = await self.llm.chat(
+            [
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {
                     "role": "user",
@@ -82,21 +75,11 @@ Rules:
                     ),
                 },
             ],
-            "temperature": 0.2,
-            "response_format": {"type": "json_object"},
-        }
+            temperature=0.2,
+            response_format={"type": "json_object"},
+        )
 
-        base = self.settings.ai_base_url.rstrip("/")
-        async with httpx.AsyncClient(timeout=self.settings.ai_timeout_seconds) as client:
-            resp = await client.post(
-                f"{base}/chat/completions",
-                headers=self._headers(),
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-
-        parsed = self._parse_json(data["choices"][0]["message"]["content"])
+        parsed = self._parse_json(result.content or "{}")
         enriched = product.model_copy(deep=True)
         attrs = dict(enriched.attributes)
 
@@ -111,12 +94,4 @@ Rules:
             "confidence": parsed.get("confidence"),
         }
         enriched.attributes = attrs
-
-        if not parsed.get("valid", True):
-            logger.warning(
-                "AI agent flagged low-quality product {}: {}",
-                product.source_url,
-                attrs["ai_agent"]["issues"],
-            )
-
         return enriched

@@ -1,4 +1,4 @@
-"""Gateway tool registry — agent-callable actions (OpenClaw-style tools, n8n-style nodes)."""
+"""Gateway tool registry — agent-callable actions."""
 
 from __future__ import annotations
 

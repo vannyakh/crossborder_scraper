@@ -1,3 +1,5 @@
+"""Parse SKILL.md packages for the Crossborder gateway agent (built-in + installed)."""
+
 from __future__ import annotations
 
 import re
@@ -9,9 +11,14 @@ import yaml
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
+# YAML frontmatter key under `metadata:` — tools, emoji, category for agent integration.
+AGENT_SKILL_META_KEY = "crossborder"
+
 
 @dataclass(frozen=True)
 class SkillManifest:
+    """Resolved skill package used by SkillManager → GatewayAgent.compose_instructions."""
+
     id: str
     name: str
     description: str
@@ -44,13 +51,14 @@ class SkillManifest:
         }
 
 
-def _crossborder_meta(meta: dict[str, Any]) -> dict[str, Any]:
+def _agent_skill_meta(meta: dict[str, Any]) -> dict[str, Any]:
+    """Read gateway-agent fields from SKILL.md frontmatter (`metadata.crossborder`)."""
     nested = meta.get("metadata")
     if isinstance(nested, dict):
-        raw = nested.get("crossborder") or nested.get("openclaw")
+        raw = nested.get(AGENT_SKILL_META_KEY)
         if isinstance(raw, dict):
             return raw
-    raw = meta.get("crossborder") or meta.get("openclaw") or {}
+    raw = meta.get(AGENT_SKILL_META_KEY)
     return raw if isinstance(raw, dict) else {}
 
 
@@ -72,10 +80,10 @@ def parse_skill_md(
     description = str(meta.get("description") or "").strip()
     version = str(meta.get("version") or "1.0.0")
     homepage = str(meta.get("homepage") or "")
-    cb = _crossborder_meta(meta)
-    emoji = str(cb.get("emoji") or "🤖")
-    category = str(cb.get("category") or "scrape")
-    tools_raw = cb.get("tools") or []
+    agent_meta = _agent_skill_meta(meta)
+    emoji = str(agent_meta.get("emoji") or "🤖")
+    category = str(agent_meta.get("category") or "scrape")
+    tools_raw = agent_meta.get("tools") or []
     tools = tuple(str(t) for t in tools_raw) if isinstance(tools_raw, list) else ()
 
     return SkillManifest(

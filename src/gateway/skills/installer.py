@@ -1,4 +1,4 @@
-"""Install agent skills from ZIP archives (OpenClaw-style SKILL.md packages)."""
+"""Install agent skills from ZIP archives (SKILL.md packages)."""
 
 from __future__ import annotations
 

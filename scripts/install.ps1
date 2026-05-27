@@ -1,4 +1,4 @@
-# Crossborder Scraper — Windows self-host one-liner (OpenClaw style)
+# Crossborder Scraper — Windows self-host one-liner
 #
 # From repo:
 #   .\scripts\install.ps1

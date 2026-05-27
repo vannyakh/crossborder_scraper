@@ -1,12 +1,24 @@
 from fastapi import HTTPException
 
 from config import get_settings
+from config.llm_providers import list_providers
 from core.ai.health import check_llm_health
 from server.deps import protected_router
-from server.schemas import AIConfigResponse, AIConfigUpdate, LLMHealthResponse
+from server.schemas import (
+    AIConfigResponse,
+    AIConfigUpdate,
+    LLMHealthResponse,
+    LLMProviderListResponse,
+)
 from server.services.config import get_config_service
 
 router = protected_router(prefix="/ai", tags=["ai"])
+
+
+@router.get("/providers", response_model=LLMProviderListResponse)
+async def list_llm_providers() -> LLMProviderListResponse:
+    """Built-in LLM provider presets for the settings UI."""
+    return LLMProviderListResponse(providers=list_providers())
 
 
 @router.get("/config", response_model=AIConfigResponse)

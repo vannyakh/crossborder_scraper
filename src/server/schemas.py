@@ -143,6 +143,7 @@ class MarketplaceEntry(BaseModel):
 
 
 class PanelConfigResponse(BaseModel):
+    ai_provider: str = "openai"
     ai_enabled: bool
     ai_fallback: bool
     ai_agent_enabled: bool
@@ -171,6 +172,7 @@ class PanelConfigResponse(BaseModel):
 
 
 class PanelConfigUpdate(BaseModel):
+    ai_provider: str | None = None
     ai_enabled: bool | None = None
     ai_fallback: bool | None = None
     ai_agent_enabled: bool | None = None
@@ -492,7 +494,23 @@ class GatewayWorkflowRunResponse(BaseModel):
     context: dict[str, Any]
 
 
+class LLMProviderInfo(BaseModel):
+    id: str
+    label: str
+    base_url: str
+    default_model: str
+    api_style: str
+    requires_api_key: bool
+    api_key_hint: str
+    docs_url: str = ""
+
+
+class LLMProviderListResponse(BaseModel):
+    providers: list[LLMProviderInfo]
+
+
 class AIConfigResponse(BaseModel):
+    ai_provider: str = "openai"
     ai_enabled: bool
     ai_fallback: bool
     ai_agent_enabled: bool
@@ -507,10 +525,13 @@ class AIConfigResponse(BaseModel):
 
 
 class AIConfigUpdate(BaseModel):
+    ai_provider: str | None = None
     ai_enabled: bool | None = None
     ai_fallback: bool | None = None
     ai_agent_enabled: bool | None = None
     ai_model: str | None = None
+    ai_base_url: str | None = None
+    ai_api_key: str | None = None
     ai_max_html_chars: int | None = Field(default=None, ge=1000, le=200_000)
     ai_timeout_seconds: float | None = Field(default=None, ge=5.0, le=300.0)
 
@@ -521,6 +542,8 @@ class LLMHealthResponse(BaseModel):
     message: str
     model: str
     base_url: str
+    provider: str | None = None
+    provider_label: str | None = None
     models_count: int | None = None
     model_available: bool | None = None
     probe: str | None = None

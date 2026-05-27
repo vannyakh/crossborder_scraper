@@ -52,7 +52,7 @@ Panel login credentials are printed once and saved to `.env` as `PANEL_USERNAME`
 
 Set `PANEL_HOST` (default `0.0.0.0`) and `PANEL_PORT` (default `8787`) in `.env` for the API bind address and sidebar access IP.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the gateway + agent + workflow design (inspired by n8n workflows and OpenClaw's control plane).
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the gateway + agent + workflow design.
 
 ### 3. Login (1688 / Taobao need this)
 
@@ -98,7 +98,7 @@ uv run serve                                # API + panel UI (or: crossborder se
 bash scripts/serve-api.sh                   # same, with reload
 crossborder --help                          # all commands & options
 crossborder gateway                         # gateway status
-crossborder skills list --local             # OpenClaw-style SKILL.md skills
+crossborder skills list --local             # SKILL.md skills
 crossborder agent "list marketplaces and last 5 products"
 crossborder plugins                         # source plugin catalog
 ```
