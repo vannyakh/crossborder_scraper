@@ -26,7 +26,8 @@ Return ONLY valid JSON (no markdown):
   "confidence": 0.95
 }
 Rules:
-- valid=false if title is generic/empty, price and images are both missing, or data looks like a captcha/error page.
+- valid=false if title is generic/empty, price and images are both missing,
+  or data looks like a captcha/error page.
 - Always return improved title and description even when valid=false.
 - Keep factual details; do not invent specs not present in the input."""
 

@@ -205,7 +205,11 @@ class BatchService:
                 self._schedule_event(
                     batch_id,
                     "batch_failed",
-                    {**self._live_status.get(batch_id, {}), "batch_id": batch_id, "error": str(exc)},
+                    {
+                        **self._live_status.get(batch_id, {}),
+                        "batch_id": batch_id,
+                        "error": str(exc),
+                    },
                 )
                 await batch_events.close_batch(batch_id)
             finally:
@@ -238,7 +242,8 @@ class BatchService:
     def get_batch_status(self, batch_id: str) -> dict[str, Any] | None:
         live = self._live_status.get(batch_id)
         if live:
-            return {**live, "status": live.get("status", "running" if live.get("running") else "completed")}
+            default_status = "running" if live.get("running") else "completed"
+            return {**live, "status": live.get("status", default_status)}
         batch = self._ctx.store.get_batch(batch_id)
         if not batch:
             return None

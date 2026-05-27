@@ -169,8 +169,16 @@ def register_scrape_commands(app: typer.Typer) -> None:
                 task_id = progress.add_task("Scraping...", total=len(urls))
 
                 def on_progress(done: int, _total: int, result: Any) -> None:
-                    status = "[green]OK[/green]" if result.status.value == "success" else "[red]FAIL[/red]"
-                    progress.update(task_id, completed=done, description=f"{status} {result.url[:50]}")
+                    status = (
+                        "[green]OK[/green]"
+                        if result.status.value == "success"
+                        else "[red]FAIL[/red]"
+                    )
+                    progress.update(
+                        task_id,
+                        completed=done,
+                        description=f"{status} {result.url[:50]}",
+                    )
 
                 report = await engine.run_batch(
                     [ScrapeJob(url=u, use_ai=ai if ai else None) for u in urls],
