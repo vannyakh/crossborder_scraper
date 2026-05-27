@@ -100,7 +100,7 @@ ensure_apt_basics() {
   sudo apt-get install -y -qq curl ca-certificates git build-essential || true
 }
 
-prepare_vps_layout() {
+prepare_vps_prereqs() {
   local dir="$1"
   [[ "$(uname -s)" == "Linux" ]] || return 0
   if [[ "${CROSSBORDER_VPS:-}" != "1" && "${CROSSBORDER_WWWROOT:-}" != "1" && "${CROSSBORDER_AAPANEL:-}" != "1" ]]; then
@@ -111,23 +111,30 @@ prepare_vps_layout() {
   [[ "$(id -u)" -eq 0 ]] && run_root=1
 
   if [[ "${run_root}" -eq 1 ]]; then
-    mkdir -p "${dir}" /www/wwwroot
+    mkdir -p /www/wwwroot
     if ! id crossborder >/dev/null 2>&1; then
       useradd -r -s /bin/bash -d "${dir}" crossborder 2>/dev/null || true
     fi
     if id crossborder >/dev/null 2>&1; then
-      chown -R crossborder:crossborder "${dir}" 2>/dev/null || true
       echo "==> service user: crossborder (home ${dir})"
-    elif [[ -n "${SUDO_USER:-}" ]]; then
-      chown -R "${SUDO_USER}:${SUDO_USER}" "${dir}" 2>/dev/null || true
     fi
   elif command -v sudo >/dev/null 2>&1; then
-    sudo mkdir -p "${dir}"
-    sudo chown -R "$(whoami):$(whoami)" "${dir}" 2>/dev/null || true
-  else
-    mkdir -p "${dir}"
+    sudo mkdir -p /www/wwwroot
   fi
-  mkdir -p "${dir}/data" "${dir}/config" "${dir}/logs"
+}
+
+finalize_vps_ownership() {
+  local dir="$1"
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  if [[ "${CROSSBORDER_VPS:-}" != "1" && "${CROSSBORDER_WWWROOT:-}" != "1" && "${CROSSBORDER_AAPANEL:-}" != "1" ]]; then
+    return 0
+  fi
+  [[ -d "${dir}" ]] || return 0
+  if [[ "$(id -u)" -eq 0 ]] && id crossborder >/dev/null 2>&1; then
+    chown -R crossborder:crossborder "${dir}" 2>/dev/null || true
+  elif [[ -n "${SUDO_USER:-}" ]] && command -v sudo >/dev/null 2>&1; then
+    sudo chown -R "${SUDO_USER}:${SUDO_USER}" "${dir}" 2>/dev/null || true
+  fi
 }
 
 ensure_panel_bind_all_interfaces() {
@@ -193,6 +200,10 @@ clone_or_update() {
     echo "==> updating ${INSTALL_DIR}"
     sync_to_origin "${INSTALL_DIR}"
   else
+    if [[ -d "${INSTALL_DIR}" ]]; then
+      echo "==> removing incomplete install at ${INSTALL_DIR}"
+      rm -rf "${INSTALL_DIR}"
+    fi
     echo "==> cloning into ${INSTALL_DIR}"
     mkdir -p "$(dirname "${INSTALL_DIR}")"
     git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${INSTALL_DIR}"
@@ -493,9 +504,10 @@ if ROOT="$(detect_local_root)"; then
   echo "==> using existing repo: ${ROOT}"
 else
   ensure_apt_basics
-  prepare_vps_layout "${INSTALL_DIR}"
+  prepare_vps_prereqs "${INSTALL_DIR}"
   clone_or_update
   ROOT="${INSTALL_DIR}"
+  finalize_vps_ownership "${ROOT}"
 fi
 
 ensure_uv
