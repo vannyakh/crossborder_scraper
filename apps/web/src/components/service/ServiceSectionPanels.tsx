@@ -347,9 +347,9 @@ export function ServiceSupportSection() {
         </Text>
       ) : null}
 
-      {isLoading || !data ? (
+      {isLoading && !data ? (
         <ChecklistGridSkeleton count={6} />
-      ) : (
+      ) : !data ? null : (
         <>
           <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={2} mb={5}>
             {data.checks.map((check) => (

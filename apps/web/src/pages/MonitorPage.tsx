@@ -10,6 +10,7 @@ import { LiveBatchesPanel } from '../components/monitor/LiveBatchesPanel'
 import { LiveConnectionBadge } from '../components/monitor/LiveConnectionBadge'
 import { LiveEventFeed } from '../components/monitor/LiveEventFeed'
 import { LiveStatsBar } from '../components/monitor/LiveStatsBar'
+import { MonitorPanelsSkeleton } from '../components/ui/PanelSkeleton'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Stagger, StaggerItem } from '../components/motion/Stagger'
 import { useRunningBatchesLive } from '../hooks/use-running-batches-live'
@@ -68,10 +69,14 @@ export function MonitorPage() {
 
         <StaggerItem>
           <Box mt={5}>
+            {monitorLoading ? (
+              <MonitorPanelsSkeleton />
+            ) : (
             <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6} alignItems="start">
               <LiveBatchesPanel batches={runningBatches} liveByBatch={live.byBatch} />
               <LiveEventFeed events={live.events} />
             </Grid>
+            )}
           </Box>
         </StaggerItem>
 

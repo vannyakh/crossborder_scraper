@@ -15,6 +15,7 @@ import { useGatewayPromptsQuery, useGatewayStatusQuery, useRunAgentMutation } fr
 import { formatModelRef } from '../../config/llm-providers'
 import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-props'
 import { AgentToolTrace } from './AgentToolTrace'
+import { ChatPanelSkeleton } from '../ui/PanelSkeleton'
 import type { GatewayAgentResponse, GatewayPrompt } from '../../lib/api'
 
 const MotionBox = motion.create(Box)
@@ -217,6 +218,8 @@ export function AgentChatPanel() {
   const canRun = Boolean(llmReady)
   const prompts: GatewayPrompt[] = promptsQuery.data?.items ?? []
   const activePrompt = prompts.find((p) => p.id === promptId)
+  const bootLoading =
+    (gatewayQuery.isLoading && !gatewayQuery.data) || (promptsQuery.isLoading && !promptsQuery.data)
 
   const modelLabel = useMemo(() => {
     const fromRuntime = runtime?.ai?.model_ref
@@ -486,6 +489,12 @@ export function AgentChatPanel() {
 
   return (
     <>
+      {bootLoading ? (
+        <Box className="agent-chat" flex="1 1 auto" minH={0} h="100%" p={{ base: 3, md: 4 }}>
+          <ChatPanelSkeleton />
+        </Box>
+      ) : (
+        <>
       <AnimatePresence>
         {fullscreen ? (
           <Portal>
@@ -525,6 +534,8 @@ export function AgentChatPanel() {
       >
         {chatShell}
       </MotionBox>
+        </>
+      )}
     </>
   )
 }

@@ -2,6 +2,7 @@ import { Box, Button, HStack, Text } from '@chakra-ui/react'
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { AgentModalPanel } from './AgentModalPanel'
+import { LogStreamSkeleton } from '../ui/PanelSkeleton'
 import { useAgentRunsQuery, useLogsQuery } from '../../hooks'
 import type { AgentSchedule, GatewayAgentResponse } from '../../lib/api'
 import { formatScheduleTime } from './schedule-cron-utils'
@@ -176,7 +177,7 @@ export function AgentScheduleLogDialog({
         whiteSpace="pre-wrap"
         color="fg.muted"
       >
-        {logsQuery.isLoading && !logText ? 'Loading log…' : logText}
+        {logsQuery.isLoading && !logText ? <LogStreamSkeleton minH="280px" /> : logText}
       </Box>
     </AgentModalPanel>
   )

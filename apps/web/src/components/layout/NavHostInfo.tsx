@@ -1,6 +1,7 @@
 import { Box, HStack, HoverCard, Portal, Text } from '@chakra-ui/react'
 import { Server } from 'lucide-react'
 import { useHardwareMonitorQuery } from '../../hooks/queries/use-monitor-query'
+import { InlineShimmer } from '../ui/PanelSkeleton'
 import { formatHostUptime } from '../dashboard/dashboard-utils'
 
 function NavDivider() {
@@ -39,10 +40,11 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 }
 
 export function NavHostInfo() {
-  const { data } = useHardwareMonitorQuery()
-  const label = data?.system_label ?? 'System'
+  const { data, isLoading } = useHardwareMonitorQuery()
+  const label = data?.system_label ?? (isLoading ? '' : 'System')
   const systemDetail =
-    data?.system_detail ?? (data ? `${data.platform} (Py${data.python_version})` : 'Loading…')
+    data?.system_detail ??
+    (data ? `${data.platform} (Py${data.python_version})` : isLoading ? '' : '—')
   const hostname = data?.hostname ?? '—'
   const uptime =
     data?.host_uptime_label ??
@@ -75,7 +77,7 @@ export function NavHostInfo() {
               <Server size={16} strokeWidth={2} />
             </Box>
             <Text as="span" truncate color="fg">
-              {label}
+              {isLoading && !data ? <InlineShimmer w="4.5rem" h="14px" /> : label}
             </Text>
           </button>
         </HoverCard.Trigger>
@@ -97,7 +99,10 @@ export function NavHostInfo() {
                 px={3}
                 py={1}
               >
-                <InfoLine label="System:" value={systemDetail} />
+                <InfoLine
+                  label="System:"
+                  value={isLoading && !data ? '…' : systemDetail}
+                />
                 <InfoLine label="Hostname:" value={hostname} />
                 <InfoLine label="Up Time:" value={uptime} />
               </Box>

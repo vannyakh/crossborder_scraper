@@ -25,7 +25,21 @@ function modeTone(mode: ProxyMode): 'success' | 'danger' | 'neutral' | 'running'
   return 'success'
 }
 
-function ProxyStatusStrip({ mode, poolSize, vpnEnabled }: { mode?: ProxyMode; poolSize?: number; vpnEnabled?: boolean }) {
+function ProxyStatusStrip({
+  mode,
+  poolSize,
+  vpnEnabled,
+  loading,
+}: {
+  mode?: ProxyMode
+  poolSize?: number
+  vpnEnabled?: boolean
+  loading?: boolean
+}) {
+  if (loading) {
+    return <StatusStripSkeleton items={3} />
+  }
+
   return (
     <HStack
       gap={2}
@@ -40,7 +54,7 @@ function ProxyStatusStrip({ mode, poolSize, vpnEnabled }: { mode?: ProxyMode; po
     >
       <StatusBadge
         status={mode ? modeTone(mode) : 'neutral'}
-        label={mode ? MODE_LABELS[mode] : 'Loading…'}
+        label={mode ? MODE_LABELS[mode] : '—'}
       />
       {typeof poolSize === 'number' ? (
         <StatusBadge status={poolSize > 0 ? 'success' : 'neutral'} label={`${poolSize} active`} />
@@ -85,7 +99,7 @@ export function ProxySettingsPanel({ form }: { form: PanelSettingsForm }) {
       description="Route scrape traffic through HTTP/SOCKS proxies, rotating pools, or a VPN tunnel"
       mt={0}
     >
-      <ProxyStatusStrip mode={status?.mode} poolSize={status?.pool_size} vpnEnabled={form.vpnEnabled} />
+      <ProxyStatusStrip mode={status?.mode} poolSize={status?.pool_size} vpnEnabled={form.vpnEnabled} loading={statusQuery.isLoading} />
 
       <Tabs.Root defaultValue={defaultTab} variant="line" size="sm" mb={4}>
         <Tabs.List borderColor="border.subtle" flexWrap="wrap" gap={1}>

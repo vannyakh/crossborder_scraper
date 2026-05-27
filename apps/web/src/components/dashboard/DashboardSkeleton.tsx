@@ -1,7 +1,8 @@
 import { Box, Grid, HStack, VStack } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
 import { Section, SectionCard } from '../ui/Section'
-import { ShimmerBar, ShimmerBlock, ShimmerSurface, ShimmerWrap } from '../ui/Shimmer'
+import { ShimmerBar, ShimmerBlock, ShimmerSurface } from '../ui/Shimmer'
+import { PanelShell } from '../ui/PanelSkeleton'
 
 const GAUGE_TILE = {
   p: 3,
@@ -198,5 +199,5 @@ export function CardShell({
   loading: boolean
   skeleton: ReactNode
 }) {
-  return <ShimmerWrap loading={loading} skeleton={skeleton}>{children}</ShimmerWrap>
+  return <PanelShell loading={loading} skeleton={skeleton}>{children}</PanelShell>
 }

@@ -7,7 +7,7 @@ import { ListPagination } from '../list-page/ListPagination'
 import { ListSearchBar } from '../list-page/ListSearchBar'
 import { useListPageState, usePagedList } from '../list-page/list-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
-import { DataTableSkeleton } from '../ui/PanelSkeleton'
+import { DataTableSkeleton, BatchJobsSkeleton, InlineShimmer } from '../ui/PanelSkeleton'
 import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
 import { StatusBadge } from '../ui/StatusBadge'
 import {
@@ -144,6 +144,12 @@ export function WorkflowBatchesPanel() {
             />
             <PanelBody p={0}>
               <Box px={4} py={3} borderBottomWidth="1px" borderColor="border.subtle">
+                {selected.isLoading ? (
+                  <HStack gap={2}>
+                    <InlineShimmer w="56px" h="20px" radius="full" />
+                    <InlineShimmer w="72px" h="12px" />
+                  </HStack>
+                ) : (
                 <HStack gap={2} fontSize="sm">
                   <StatusBadge
                     status={statusTone(selected.status?.status ?? selected.summary?.status ?? 'neutral')}
@@ -151,7 +157,11 @@ export function WorkflowBatchesPanel() {
                   />
                   <Text color="fg.muted">{liveProgress}</Text>
                 </HStack>
+                )}
               </Box>
+              {selected.isLoading ? (
+                <BatchJobsSkeleton rows={6} />
+              ) : (
               <BatchJobList
                 results={selected.results}
                 maxH="400px"
@@ -159,6 +169,7 @@ export function WorkflowBatchesPanel() {
                   selected.isRunning ? 'Waiting for job results…' : 'No job results recorded.'
                 }
               />
+              )}
             </PanelBody>
           </Panel>
         ) : null}

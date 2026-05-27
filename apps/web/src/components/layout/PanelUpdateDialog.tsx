@@ -5,7 +5,6 @@ import {
   HStack,
   Link,
   List,
-  Spinner,
   Text,
   VStack,
 } from '@chakra-ui/react'
@@ -15,6 +14,7 @@ import {
   type PanelUpdateStatus,
 } from '../../hooks/queries/use-panel-update-query'
 import { useAccentPalette } from '../../hooks/use-ui-config'
+import { DialogContentSkeleton } from '../ui/PanelSkeleton'
 import { AgentModalPanel } from '../agent/AgentModalPanel'
 
 type PanelUpdateDialogProps = {
@@ -57,12 +57,7 @@ export function PanelUpdateDialog({
       maxW="480px"
     >
       {statusLoading && !status ? (
-        <HStack justify="center" py={8}>
-          <Spinner size="sm" />
-          <Text fontSize="sm" color="fg.muted">
-            Checking for updates…
-          </Text>
-        </HStack>
+        <DialogContentSkeleton fields={2} />
       ) : restarting ? (
         <VStack align="stretch" gap={3} py={2}>
           <Text fontSize="sm" color="fg.muted">
