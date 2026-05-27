@@ -61,9 +61,15 @@ curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/s
 After install, open **TCP 8787** in your cloud **security group** (inbound rule). Local `curl http://127.0.0.1:8787/health` can work while the public IP fails if the security group blocks the port.
 
 ```bash
-crossborder deploy status      # listen addresses + public URL
-crossborder deploy firewall    # ufw / firewalld allow 8787
+crossborder deploy status           # listen addresses + public URL
+crossborder deploy access           # network checklist (bind, ufw, cloud SG)
+crossborder deploy setup-access     # full setup: 0.0.0.0 bind + ufw + public IP
+crossborder deploy firewall           # open panel port in ufw / firewalld
+crossborder deploy firewall --enable-ufw   # enable ufw (SSH + panel port)
 ```
+
+In the panel: **Settings → Network & firewall** (status, apply host firewall, cloud security group rule).
+Gateway agent tools: `network_access_status`, `apply_panel_firewall`, `setup_network_access`.
 
 **wwwroot layout**
 

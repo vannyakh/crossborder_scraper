@@ -58,6 +58,13 @@ def _support_links() -> list[dict[str, Any]]:
             "path": "/settings/ai",
             "external": False,
         },
+        {
+            "id": "network",
+            "label": "Network & firewall",
+            "description": "Panel port, ufw, and cloud security group",
+            "path": "/settings/network",
+            "external": False,
+        },
     ]
 
 
@@ -116,6 +123,28 @@ def _readiness_checks(runtime: dict[str, Any], stats: dict[str, Any]) -> list[di
     ]
 
 
+def _network_readiness_checks() -> list[dict[str, Any]]:
+    from deploy.network_access import build_network_access_status
+
+    try:
+        report = build_network_access_status(port=get_settings().panel_port)
+    except Exception:
+        return []
+    out: list[dict[str, Any]] = []
+    for check in report.get("checks", []):
+        if check.get("id") == "cloud_sg":
+            continue
+        out.append(
+            {
+                "id": f"network_{check['id']}",
+                "label": check["label"],
+                "ok": check.get("ok"),
+                "detail": check.get("detail", ""),
+            }
+        )
+    return out
+
+
 async def get_service_support() -> dict[str, Any]:
     from gateway.scheduler import get_scheduler
 
@@ -159,9 +188,19 @@ async def get_service_support() -> dict[str, Any]:
             "cookies": str(settings.cookies_dir),
         },
         "panel": get_panel_bind_info(),
-        "checks": _readiness_checks(runtime, stats),
+        "checks": _readiness_checks(runtime, stats) + _network_readiness_checks(),
         "links": _support_links(),
+        "network": _safe_network_status(settings.panel_port),
     }
+
+
+def _safe_network_status(port: int) -> dict[str, Any] | None:
+    try:
+        from deploy.network_access import build_network_access_status
+
+        return build_network_access_status(port=port)
+    except Exception:
+        return None
 
 
 def get_service_scheduler() -> dict[str, Any]:

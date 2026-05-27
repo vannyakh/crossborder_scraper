@@ -27,6 +27,7 @@ export const queryKeys = {
   agentRuns: ['gateway', 'runs'] as const,
   serviceOverview: ['service', 'overview'] as const,
   serviceSupport: ['service', 'support'] as const,
+  networkAccess: ['deploy', 'network'] as const,
   serviceScheduler: ['service', 'scheduler'] as const,
   products: (limit = 100, offset = 0) => ['products', { limit, offset }] as const,
   product: (id: number) => ['products', id] as const,

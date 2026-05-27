@@ -12,6 +12,7 @@ from server.routers import (
     ai,
     auth,
     batches,
+    deploy,
     files,
     gateway,
     jobs,
@@ -40,6 +41,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(monitor.router)
     app.include_router(logs.router)
     app.include_router(service.router)
+    app.include_router(deploy.router)
 
     # Plugins & App Store (infra + scrape sources)
     app.include_router(plugins.router)

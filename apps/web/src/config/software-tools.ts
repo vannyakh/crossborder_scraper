@@ -232,6 +232,15 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           statusTone: 'neutral',
         }),
         card({
+          id: 'network',
+          icon: 'health',
+          title: 'Network & firewall',
+          description: 'Panel port, ufw, cloud security group checklist.',
+          to: '/settings/network',
+          status: 'VPS access',
+          statusTone: 'neutral',
+        }),
+        card({
           id: 'settings',
           icon: 'settings',
           title: 'Configuration',

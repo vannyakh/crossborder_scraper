@@ -3,6 +3,7 @@ import {
   Globe,
   Network,
   Palette,
+  Shield,
   Store,
   Tags,
   type LucideIcon,
@@ -10,6 +11,7 @@ import {
 
 export type SettingsSectionId =
   | 'panel'
+  | 'network'
   | 'ai'
   | 'scrape'
   | 'proxy'
@@ -29,6 +31,12 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     label: 'Panel theme',
     description: 'Theme style, colors, logo, and backgrounds',
     icon: Palette,
+  },
+  {
+    id: 'network',
+    label: 'Network & firewall',
+    description: 'Panel port, ufw, cloud security group',
+    icon: Shield,
   },
   {
     id: 'ai',

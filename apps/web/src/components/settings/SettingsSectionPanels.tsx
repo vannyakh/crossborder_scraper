@@ -72,6 +72,7 @@ function healthTone(ok: boolean | undefined): 'success' | 'danger' | 'neutral' {
 }
 
 export { PanelAppearanceSection } from './PanelAppearanceSection'
+export { NetworkAccessSection } from './NetworkAccessSection'
 
 export function AiSettingsSection({
   form,

@@ -4,6 +4,7 @@ import { Navigate, useParams } from 'react-router-dom'
 import {
   AiSettingsSection,
   MarketplacesSettingsSection,
+  NetworkAccessSection,
   PanelAppearanceSection,
   PricingSettingsSection,
   ProxySettingsSection,
@@ -34,6 +35,8 @@ function SettingsSectionContent({
   switch (section) {
     case 'panel':
       return <PanelAppearanceSection form={form} />
+    case 'network':
+      return <NetworkAccessSection />
     case 'ai':
       return <AiSettingsSection form={form} health={health} />
     case 'scrape':
@@ -75,7 +78,7 @@ export function SettingsPage() {
         >
           <SettingsSectionContent section={section} form={form} health={health} />
 
-          {section !== 'panel' ? (
+          {section !== 'panel' && section !== 'network' ? (
             <SettingsSaveBar
               message={form.message}
               saving={form.updateMutation.isPending}

@@ -73,6 +73,45 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "description": "Get gateway service health, engine limits, and running batches.",
         "parameters": {"type": "object", "properties": {}},
     },
+    {
+        "name": "network_access_status",
+        "description": (
+            "Panel TCP bind, host firewall (ufw/firewalld), and cloud security group checklist."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "port": {"type": "integer", "description": "Panel port (default from settings)"},
+            },
+        },
+    },
+    {
+        "name": "apply_panel_firewall",
+        "description": "Open the panel TCP port in ufw/firewalld on this VPS (needs root or sudo).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "port": {"type": "integer"},
+                "enable_ufw": {
+                    "type": "boolean",
+                    "description": "Enable ufw with SSH + panel port if inactive",
+                },
+            },
+        },
+    },
+    {
+        "name": "setup_network_access",
+        "description": (
+            "Full VPS access setup: bind 0.0.0.0, host firewall, detect public IP in .env."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "port": {"type": "integer"},
+                "enable_ufw": {"type": "boolean"},
+            },
+        },
+    },
 ]
 
 
@@ -85,6 +124,9 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "list_marketplaces": _list_marketplaces,
         "submit_batch": _submit_batch,
         "runtime_status": _runtime_status,
+        "network_access_status": _network_access_status,
+        "apply_panel_firewall": _apply_panel_firewall,
+        "setup_network_access": _setup_network_access,
     }
     handler = handlers.get(name)
     if not handler:
@@ -177,6 +219,42 @@ async def _runtime_status(_manager: Any) -> dict[str, Any]:
     from server.services.runtime import get_service_runtime
 
     return get_service_runtime()
+
+
+async def _network_access_status(_manager: Any, *, port: int | None = None) -> dict[str, Any]:
+    from server.services.network_access import get_network_access_service
+
+    return get_network_access_service().get_status(port=port)
+
+
+async def _apply_panel_firewall(
+    _manager: Any,
+    *,
+    port: int | None = None,
+    enable_ufw: bool = False,
+) -> dict[str, Any]:
+    from server.services.network_access import get_network_access_service
+
+    return get_network_access_service().apply_host_firewall(
+        port=port,
+        enable_ufw=enable_ufw,
+        username="gateway-agent",
+    )
+
+
+async def _setup_network_access(
+    _manager: Any,
+    *,
+    port: int | None = None,
+    enable_ufw: bool = True,
+) -> dict[str, Any]:
+    from server.services.network_access import get_network_access_service
+
+    return get_network_access_service().run_full_setup(
+        port=port,
+        enable_ufw=enable_ufw,
+        username="gateway-agent",
+    )
 
 
 def tools_for_llm(*, allow_names: set[str] | None = None) -> list[dict[str, Any]]:

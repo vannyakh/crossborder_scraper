@@ -217,21 +217,70 @@ def deploy_status(
 @deploy_app.command("firewall")
 def deploy_firewall(
     port: int | None = typer.Option(None, "--port", "-p", help="Panel port (default from .env)"),
+    enable_ufw: bool = typer.Option(
+        False,
+        "--enable-ufw",
+        help="Enable ufw (deny incoming, allow SSH + panel port)",
+    ),
 ) -> None:
     """Open panel TCP port in ufw / firewalld (Linux VPS)."""
     settings = get_settings()
     chosen = port or settings.panel_port
-    from deploy.firewall import try_open_tcp_port
+    from deploy.network_access import run_host_firewall_setup
 
-    lines = try_open_tcp_port(chosen)
-    if lines:
-        for line in lines:
-            console.print(ok(line))
-    else:
-        console.print(
-            warn(f"No active ufw/firewalld — open TCP {chosen} in your cloud security group")
-        )
+    for line in run_host_firewall_setup(chosen, enable_ufw=enable_ufw):
+        tone = ok if "allowed" in line.lower() or "enabled" in line.lower() else warn
+        console.print(tone(line))
     console.print(hint(f"Cloud console: security group → inbound → TCP {chosen}"))
+
+
+@deploy_app.command("access")
+def deploy_access(
+    port: int | None = typer.Option(None, "--port", "-p", help="Panel port (default from .env)"),
+) -> None:
+    """Show network access status (bind, firewall, cloud checklist)."""
+    from deploy.network_access import build_network_access_status
+
+    settings = get_settings()
+    chosen = port or settings.panel_port
+    report = build_network_access_status(port=chosen)
+
+    console.print(f"\n[bold]Panel:[/bold] {report['bind_host']}:{chosen}")
+    for check in report.get("checks", []):
+        mark = ok if check.get("ok") is True else warn if check.get("ok") is False else hint
+        console.print(mark(f"  {check['label']}: {check.get('detail', '')}"))
+
+    ext = report.get("external_host")
+    if ext:
+        console.print(f"\n[bold]Public login:[/bold] http://{ext}:{chosen}/ui/login")
+    console.print()
+    for step in report.get("cloud_steps", []):
+        console.print(hint(f"  {step}"))
+
+
+@deploy_app.command("setup-access")
+def deploy_setup_access(
+    port: int | None = typer.Option(None, "--port", "-p"),
+    enable_ufw: bool = typer.Option(True, "--enable-ufw/--no-enable-ufw"),
+    skip_bind: bool = typer.Option(False, "--skip-bind", help="Do not write PANEL_HOST=0.0.0.0"),
+) -> None:
+    """Full VPS access setup: .env bind, host firewall, public IP."""
+    from deploy.network_access import run_full_access_setup
+
+    settings = get_settings()
+    chosen = port or settings.panel_port
+    result = run_full_access_setup(
+        chosen,
+        ensure_bind=not skip_bind,
+        enable_ufw=enable_ufw,
+        open_firewall=True,
+        persist_external=True,
+    )
+    for line in result.get("messages", []):
+        console.print(ok(line))
+    if result.get("restart_required"):
+        console.print(warn("Restart panel: crossborder serve --no-reload"))
+    deploy_access(port=chosen)
 
 
 @deploy_app.command("up")

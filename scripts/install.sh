@@ -157,16 +157,20 @@ configure_linux_firewall() {
   if [[ "${CROSSBORDER_VPS:-}" != "1" && "${CROSSBORDER_WWWROOT:-}" != "1" && "${CROSSBORDER_AAPANEL:-}" != "1" && "${CROSSBORDER_OPEN_FIREWALL:-}" != "1" ]]; then
     return 0
   fi
-  echo "==> opening host firewall for TCP ${port} (if ufw/firewalld active)"
-  if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then
-    (sudo ufw allow "${port}/tcp" && sudo ufw reload) 2>/dev/null \
-      && echo "    ufw: allowed ${port}/tcp" \
-      || echo "    ufw: skipped (run: sudo ufw allow ${port}/tcp)"
+  echo "==> network access (host firewall + panel bind)"
+  local py="${INSTALL_DIR}/.venv/bin/python"
+  if [[ -x "${py}" && -d "${INSTALL_DIR}/src" ]]; then
+    PYTHONPATH="${INSTALL_DIR}/src" "${py}" -c "
+from deploy.network_access import run_full_access_setup
+r = run_full_access_setup(${port}, ensure_bind=True, enable_ufw=True, open_firewall=True, persist_external=True)
+for line in r.get('messages', []):
+    print('   ', line)
+" 2>/dev/null && return 0
   fi
-  if command -v firewall-cmd >/dev/null 2>&1; then
-    (sudo firewall-cmd --permanent --add-port="${port}/tcp" && sudo firewall-cmd --reload) 2>/dev/null \
-      && echo "    firewalld: allowed ${port}/tcp" \
-      || true
+  if command -v ufw >/dev/null 2>&1; then
+    (sudo ufw allow 22/tcp 2>/dev/null; sudo ufw allow "${port}/tcp" && sudo ufw --force enable && sudo ufw reload) 2>/dev/null \
+      && echo "    ufw: allowed SSH + ${port}/tcp" \
+      || echo "    ufw: skipped (run: crossborder deploy setup-access)"
   fi
 }
 

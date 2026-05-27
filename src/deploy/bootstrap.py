@@ -206,6 +206,23 @@ def bootstrap_server(
     if server:
         boot.write_compose_override()
 
+    if server and os.environ.get("CROSSBORDER_OPEN_FIREWALL", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        try:
+            from deploy.network_access import run_host_firewall_setup
+
+            for line in run_host_firewall_setup(
+                access.port,
+                enable_ufw=os.environ.get("CROSSBORDER_ENABLE_UFW", "1").lower()
+                in ("1", "true", "yes"),
+            ):
+                boot.steps_done.append(f"firewall: {line}")
+        except Exception as exc:
+            boot.warnings.append(f"Host firewall: {exc}")
+
     return boot, access
 
 
