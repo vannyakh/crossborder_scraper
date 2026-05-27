@@ -16,6 +16,7 @@ import { useState } from 'react'
 import type { GatewayPrompt, TelegramChannelConfig, TelegramChannelUpdate } from '../../lib/api'
 import { fieldStyles } from '../ui/field-styles'
 import { Section, SectionCard } from '../ui/Section'
+import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 import {
   useGatewayPromptsQuery,
@@ -304,9 +305,7 @@ export function AgentTelegramPanel() {
       </SectionCard>
 
       {telegramQuery.isLoading ? (
-        <Text fontSize="sm" color="fg.muted">
-          Loading…
-        </Text>
+        <FormFieldsSkeleton fields={5} />
       ) : config ? (
         <TelegramChannelForm
           key={telegramConfigKey(config)}

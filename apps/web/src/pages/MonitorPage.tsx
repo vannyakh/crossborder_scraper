@@ -19,6 +19,7 @@ export function MonitorPage() {
   const monitor = useLiveMonitorStatusQuery()
   const runtime = monitor.data?.service
   const hardware = monitor.data?.hardware
+  const monitorLoading = monitor.isLoading && !monitor.data
   const runningBatches = runtime?.running_batches ?? []
   const batchIds = runningBatches.map((b) => b.batch_id)
 
@@ -43,7 +44,7 @@ export function MonitorPage() {
 
       <Stagger>
         <StaggerItem>
-          <LiveStatsBar runtime={runtime} hardware={hardware} />
+          <LiveStatsBar runtime={runtime} hardware={hardware} loading={monitorLoading} />
         </StaggerItem>
 
         <StaggerItem>
@@ -56,10 +57,10 @@ export function MonitorPage() {
           <Box mt={5}>
             <Grid templateColumns={{ base: '1fr', xl: '1fr 1fr' }} gap={6} alignItems="stretch">
               <Box minH={{ base: 'auto', xl: 'min(380px, 44vh)' }}>
-                <HardwareTrendChart samples={hardwareSamples} />
+                <HardwareTrendChart samples={hardwareSamples} loading={monitorLoading} />
               </Box>
               <Box minH={{ base: 'auto', xl: 'min(380px, 44vh)' }}>
-                <WorkloadChart samples={activitySamples} />
+                <WorkloadChart samples={activitySamples} loading={monitorLoading} />
               </Box>
             </Grid>
           </Box>

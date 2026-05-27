@@ -3,6 +3,7 @@ import { useStoreEnvironmentQuery } from '../../hooks/queries/use-store-query'
 import { useLocale } from '../../hooks/use-locale'
 import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
 import { DataListEmpty } from '../ui/DataList'
+import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 
 export function DatabaseSqlitePanel() {
@@ -11,7 +12,14 @@ export function DatabaseSqlitePanel() {
   const sqlite = env.data?.builtin_sqlite
 
   if (env.isLoading) {
-    return <DataListEmpty>{t('db.sqlite.loading')}</DataListEmpty>
+    return (
+      <Panel>
+        <PanelHeader title={t('db.sqlite.label')} description={t('db.sqlite.description')} />
+        <PanelBody>
+          <FormFieldsSkeleton fields={2} />
+        </PanelBody>
+      </Panel>
+    )
   }
 
   if (!sqlite) {

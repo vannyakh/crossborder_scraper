@@ -14,6 +14,7 @@ import { ListPagination } from '../components/list-page/ListPagination'
 import { ListSearchBar } from '../components/list-page/ListSearchBar'
 import { Toolbar } from '../components/layout/Toolbar'
 import { DataList, DataListEmpty } from '../components/ui/DataList'
+import { DataTableSkeleton } from '../components/ui/PanelSkeleton'
 import { SectionCard, SubtitleText } from '../components/ui/Section'
 import { useAccentPalette } from '../hooks/use-ui-config'
 import { useClearLogsMutation, useLogsQuery } from '../hooks/queries/use-logs-query'
@@ -204,7 +205,9 @@ export function LogsPage() {
         ) : null}
 
         {isLoading ? (
-          <DataListEmpty>Loading…</DataListEmpty>
+          <Box px={{ base: 3, md: 4 }} py={3}>
+            <DataTableSkeleton columns={4} rows={10} maxH="min(62vh, 600px)" />
+          </Box>
         ) : items.length === 0 ? (
           <DataListEmpty>No log entries in this category.</DataListEmpty>
         ) : (

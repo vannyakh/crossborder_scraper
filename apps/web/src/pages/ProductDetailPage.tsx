@@ -3,6 +3,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom'
 import { ExportProductPanel } from '../components/products/ExportProductPanel'
 import { Toolbar } from '../components/layout/Toolbar'
 import { Panel, PanelBody } from '../components/ui/Panel'
+import { ContentBlockSkeleton } from '../components/ui/PanelSkeleton'
 import { useProductQuery } from '../hooks'
 
 export function ProductDetailPage() {
@@ -43,9 +44,11 @@ export function ProductDetailPage() {
                 {JSON.stringify(product, null, 2)}
               </Code>
             </Box>
+          ) : isLoading ? (
+            <ContentBlockSkeleton minH="70vh" />
           ) : (
             <Text fontSize="sm" color="fg.muted">
-              {isLoading ? 'Loading…' : 'Not found'}
+              Not found
             </Text>
           )}
         </PanelBody>

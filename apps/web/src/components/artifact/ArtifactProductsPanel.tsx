@@ -5,6 +5,7 @@ import { ListPagination } from '../list-page/ListPagination'
 import { ListSearchBar } from '../list-page/ListSearchBar'
 import { useListPageState, usePagedList } from '../list-page/list-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
+import { DataTableSkeleton } from '../ui/PanelSkeleton'
 import { useDeleteProductMutation, useProductsQuery } from '../../hooks'
 import type { ProductSummary } from '../../lib/api'
 import { artifactProductPath } from './artifact-sections'
@@ -72,7 +73,7 @@ export function ArtifactProductsPanel() {
       ) : null}
 
       {isLoading ? (
-        <DataListEmpty>Loading products…</DataListEmpty>
+        <DataTableSkeleton columns={3} rows={8} />
       ) : displayTotal === 0 ? (
         <DataListEmpty>No products match your search.</DataListEmpty>
       ) : (

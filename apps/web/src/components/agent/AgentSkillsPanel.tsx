@@ -10,6 +10,7 @@ import {
 import { RefreshCw, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { DataListEmpty } from '../ui/DataList'
+import { ListCardRowsSkeleton } from '../ui/PanelSkeleton'
 import { SectionCard } from '../ui/Section'
 import {
   useGatewaySkillsQuery,
@@ -156,7 +157,7 @@ export function AgentSkillsPanel() {
           <code>installed_skills/</code>
         </Text>
         {skillsQuery.isLoading ? (
-          <DataListEmpty>Loading skills…</DataListEmpty>
+          <ListCardRowsSkeleton rows={5} />
         ) : items.length === 0 ? (
           <DataListEmpty>No skills found. Add folders under skills/ with SKILL.md.</DataListEmpty>
         ) : (

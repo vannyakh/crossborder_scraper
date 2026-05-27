@@ -18,6 +18,7 @@ import { useAccentPalette, useLlmProvidersQuery } from '../../hooks'
 import type { LLMHealth, LlmProviderId, LlmProviderInfo } from '../../lib/api'
 import { fieldStyles } from '../ui/field-styles'
 import { Section, SectionCard } from '../ui/Section'
+import { SectionPanelSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 import { SettingsCheckbox, SettingsField } from './SettingsFields'
 import type { PanelSettingsForm } from './use-panel-settings-form'
@@ -217,13 +218,7 @@ export function AiLlmSettingsPanel({
   const modelRef = formatModelRef(form.provider, form.model)
 
   if (isLoading) {
-    return (
-      <Section title="AI & LLM" mt={0}>
-        <Text fontSize="sm" color="fg.muted">
-          Loading…
-        </Text>
-      </Section>
-    )
+    return <SectionPanelSkeleton title="AI & LLM" description="Model, API key, extraction & agent" mt={0} fields={6} />
   }
 
   return (

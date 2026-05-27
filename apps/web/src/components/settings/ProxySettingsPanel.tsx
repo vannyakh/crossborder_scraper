@@ -4,10 +4,11 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { useProxyStatusQuery, useTestProxyMutation } from '../../hooks/queries/use-proxy-query'
 import { fieldStyles } from '../ui/field-styles'
-import { Section } from '../ui/Section'
+import { Section, SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { PanelSettingsForm } from './use-panel-settings-form'
 import { SettingNotice, SettingRow, SettingsCard } from './panel-security-ui'
+import { FormFieldsSkeleton, StatusStripSkeleton } from '../ui/PanelSkeleton'
 import type { ProxyMode } from '../../lib/api/proxy-settings'
 
 type ProxyTab = 'single' | 'pool' | 'vpn'
@@ -62,10 +63,11 @@ export function ProxySettingsPanel({ form }: { form: PanelSettingsForm }) {
 
   if (form.isLoading) {
     return (
-      <Section title="Proxy & egress" mt={0}>
-        <Text fontSize="sm" color="fg.muted">
-          Loading…
-        </Text>
+      <Section title="Proxy & egress" description="Route scrape traffic through HTTP/SOCKS proxies, rotating pools, or a VPN tunnel" mt={0}>
+        <StatusStripSkeleton items={3} />
+        <SectionCard>
+          <FormFieldsSkeleton fields={4} />
+        </SectionCard>
       </Section>
     )
   }

@@ -14,6 +14,7 @@ import {
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { DataListEmpty } from '../ui/DataList'
+import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import {
@@ -144,7 +145,7 @@ export function StorePluginSettingsDrawer({
 
   function renderSection() {
     if (detail.isLoading && !merged && !installation) {
-      return <DataListEmpty>Loading…</DataListEmpty>
+      return <FormFieldsSkeleton fields={4} />
     }
 
     switch (section) {

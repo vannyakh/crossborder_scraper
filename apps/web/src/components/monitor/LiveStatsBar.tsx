@@ -1,5 +1,6 @@
 import { Grid, Text } from '@chakra-ui/react'
 import type { HardwareMonitor, RuntimeStatus } from '../../lib/api'
+import { StatsGridSkeleton } from '../ui/PanelSkeleton'
 import { SectionCard } from '../ui/Section'
 
 function StatCell({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -23,10 +24,16 @@ function StatCell({ label, value, hint }: { label: string; value: string; hint?:
 export function LiveStatsBar({
   runtime,
   hardware,
+  loading,
 }: {
   runtime?: RuntimeStatus
   hardware?: HardwareMonitor
+  loading?: boolean
 }) {
+  if (loading) {
+    return <StatsGridSkeleton count={4} />
+  }
+
   const uptime = runtime?.uptime_seconds
     ? `${Math.floor(runtime.uptime_seconds / 3600)}h ${Math.floor((runtime.uptime_seconds % 3600) / 60)}m`
     : '—'

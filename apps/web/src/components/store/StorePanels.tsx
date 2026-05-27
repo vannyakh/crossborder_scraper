@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Toolbar } from '../layout/Toolbar'
 import { DataListEmpty } from '../ui/DataList'
+import { CardGridSkeleton, ListCardRowsSkeleton } from '../ui/PanelSkeleton'
 import { SectionCard } from '../ui/Section'
 import {
   useStoreCatalogQuery,
@@ -168,7 +169,7 @@ function CatalogTabContent({
   const paged = useStorePagedList(searched, list)
 
   if (loading) {
-    return <DataListEmpty>Loading catalog…</DataListEmpty>
+    return <CardGridSkeleton count={6} />
   }
 
   return (
@@ -242,7 +243,7 @@ function InstalledTabContent({
   const paged = useStorePagedList(searched, list)
 
   if (loading) {
-    return <DataListEmpty>Loading installed plugins…</DataListEmpty>
+    return <ListCardRowsSkeleton rows={5} />
   }
 
   return (

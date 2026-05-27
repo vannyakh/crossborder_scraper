@@ -4,6 +4,7 @@ import { ListPagination } from '../list-page/ListPagination'
 import { ListSearchBar } from '../list-page/ListSearchBar'
 import { useListPageState, usePagedList } from '../list-page/list-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
+import { DataTableSkeleton } from '../ui/PanelSkeleton'
 import { useDeleteFileMutation, useFilesQuery } from '../../hooks'
 import { formatBytes } from '../../lib/utils'
 import type { FileEntry } from '../../lib/api'
@@ -50,7 +51,7 @@ export function ArtifactFilesPanel() {
       ) : null}
 
       {isLoading ? (
-        <DataListEmpty>Loading files…</DataListEmpty>
+        <DataTableSkeleton columns={4} rows={8} />
       ) : paged.total === 0 ? (
         <DataListEmpty>No files match your search.</DataListEmpty>
       ) : (

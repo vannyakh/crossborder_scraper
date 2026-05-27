@@ -20,6 +20,7 @@ import {
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { fieldStyles } from '../ui/field-styles'
 import { Section, SectionCard } from '../ui/Section'
+import { ListCardRowsSkeleton, FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 
 export function AgentToolsPanel() {
@@ -37,9 +38,7 @@ export function AgentToolsPanel() {
             {String((error as Error).message || error)}
           </Text>
         ) : isLoading ? (
-          <Text fontSize="sm" color="fg.muted">
-            Loading tools…
-          </Text>
+          <ListCardRowsSkeleton rows={4} />
         ) : (
           <VStack align="stretch" gap={3}>
             {(data?.items ?? []).map((tool) => (
@@ -129,6 +128,15 @@ export function AgentWorkflowsPanel() {
       mt={0}
     >
       <Grid templateColumns={{ base: '1fr', lg: 'minmax(240px, 280px) 1fr' }} gap={4}>
+        {workflowsQuery.isLoading ? (
+          <>
+            <ListCardRowsSkeleton rows={4} />
+            <SectionCard>
+              <FormFieldsSkeleton fields={3} />
+            </SectionCard>
+          </>
+        ) : (
+          <>
         <VStack align="stretch" gap={2}>
           {workflows.map((wf) => (
             <button
@@ -171,7 +179,7 @@ export function AgentWorkflowsPanel() {
         <SectionCard>
           {!selected ? (
             <Text fontSize="sm" color="fg.muted">
-              {workflowsQuery.isLoading ? 'Loading workflows…' : 'No workflows available.'}
+              No workflows available.
             </Text>
           ) : (
             <VStack align="stretch" gap={3}>
@@ -233,6 +241,8 @@ export function AgentWorkflowsPanel() {
             </VStack>
           )}
         </SectionCard>
+          </>
+        )}
       </Grid>
     </Section>
   )

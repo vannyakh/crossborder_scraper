@@ -17,6 +17,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom'
 import { formatUptime } from '../dashboard/dashboard-utils'
 import { Section, SectionCard } from '../ui/Section'
+import { ChecklistGridSkeleton, FormFieldsSkeleton, StatsGridSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import {
@@ -133,9 +134,10 @@ export function ServiceHealthSection() {
         </SectionCard>
       ) : isLoading ? (
         <SectionCard>
-          <Text fontSize="sm" color="fg.muted">
-            Loading…
-          </Text>
+          <StatsGridSkeleton count={2} templateColumns={{ base: '1fr', lg: '1fr 1fr' }} />
+          <Box mt={4}>
+            <FormFieldsSkeleton fields={3} />
+          </Box>
         </SectionCard>
       ) : (
         <>
@@ -346,9 +348,7 @@ export function ServiceSupportSection() {
       ) : null}
 
       {isLoading || !data ? (
-        <Text fontSize="sm" color="fg.muted">
-          Loading server support snapshot…
-        </Text>
+        <ChecklistGridSkeleton count={6} />
       ) : (
         <>
           <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={2} mb={5}>

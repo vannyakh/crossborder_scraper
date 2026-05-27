@@ -37,6 +37,7 @@ import {
   SettingRow,
   SettingsCard,
 } from './panel-security-ui'
+import { FormFieldsSkeleton, StatusStripSkeleton } from '../ui/PanelSkeleton'
 
 function checkTone(ok: boolean | null | undefined): 'success' | 'danger' | 'neutral' | 'running' {
   if (ok === true) return 'success'
@@ -194,9 +195,17 @@ export function PanelSecuritySection() {
   return (
     <Section title="Network & security" description="Access URLs, login, and firewall" mt={0}>
       {securityQuery.isLoading ? (
-        <Text fontSize="sm" color="fg.muted">
-          Loading…
-        </Text>
+        <>
+          <StatusStripSkeleton items={3} />
+          <SimpleGrid columns={{ base: 1, xl: 2 }} gap={4}>
+            <SettingsCard icon={Globe} title="Access">
+              <FormFieldsSkeleton fields={4} />
+            </SettingsCard>
+            <SettingsCard icon={Lock} title="Login">
+              <FormFieldsSkeleton fields={2} />
+            </SettingsCard>
+          </SimpleGrid>
+        </>
       ) : securityQuery.isError ? (
         <SettingNotice>
           Could not load settings. {String(securityQuery.error)} Restart the panel after updating

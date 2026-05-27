@@ -1,5 +1,5 @@
-import { Spinner, VStack, Text } from '@chakra-ui/react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { PageBootSkeleton } from '../../components/ui/PanelSkeleton'
 import { useHealthQuery } from '../../hooks/queries/use-health-query'
 import { useAuthStore } from '../../stores/auth-store'
 
@@ -13,14 +13,7 @@ export function AuthGuard() {
   }
 
   if (healthQuery.isLoading) {
-    return (
-      <VStack minH="100dvh" justify="center" className="app-shell" color="fg">
-        <Spinner color="blue.500" size="lg" />
-        <Text fontSize="sm" color="fg.muted">
-          Verifying API connection…
-        </Text>
-      </VStack>
-    )
+    return <PageBootSkeleton />
   }
 
   if (healthQuery.isError) {

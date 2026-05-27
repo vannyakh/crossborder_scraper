@@ -24,6 +24,7 @@ import type { StoreCatalogItem, StoreConnectRequest, StoreInstalled } from '../.
 import { StoreConnectForm } from '../store/StoreConnectForm'
 import { pluginIcon, statusTone } from '../store/store-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
+import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { Panel, PanelBody } from '../ui/Panel'
 import { StatusBadge } from '../ui/StatusBadge'
 import { fieldStyles } from '../ui/field-styles'
@@ -156,7 +157,7 @@ export function DatabaseEnginePanel({
   }
 
   if (catalog.isLoading || installedQuery.isLoading) {
-    return <DataListEmpty>{t('db.engine.loading')}</DataListEmpty>
+    return <FormFieldsSkeleton fields={4} />
   }
 
   if (!catalogItem) {

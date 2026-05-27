@@ -10,6 +10,7 @@ import {
 import { Play, Plus, RefreshCw, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { DataList, DataListEmpty } from '../ui/DataList'
+import { DataTableSkeleton } from '../ui/PanelSkeleton'
 import { Section } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import {
@@ -227,7 +228,7 @@ export function AgentSchedulesPanel() {
       ) : null}
 
       {schedulesQuery.isLoading ? (
-        <DataListEmpty>Loading cron tasks…</DataListEmpty>
+        <DataTableSkeleton columns={5} rows={8} />
       ) : filtered.length === 0 ? (
         <DataListEmpty>
           {schedules.length === 0

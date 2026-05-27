@@ -8,6 +8,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Settings } from 'lucide-react'
+import { ListCardRowsSkeleton } from '../ui/PanelSkeleton'
 import { DataList, DataListEmpty } from '../ui/DataList'
 import { Panel, PanelBody } from '../ui/Panel'
 import { StatusBadge } from '../ui/StatusBadge'
@@ -89,7 +90,7 @@ export function StoreInstalledList({
   onSettings: (id: string) => void
 }) {
   if (loading) {
-    return <DataListEmpty>Loading installed plugins…</DataListEmpty>
+    return <ListCardRowsSkeleton rows={4} />
   }
   if (!items.length) {
     return (

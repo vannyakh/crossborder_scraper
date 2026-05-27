@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAgentRunsQuery } from '../../hooks'
 import { Section, SectionCard } from '../ui/Section'
+import { ListCardRowsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 import { AgentToolTrace } from './AgentToolTrace'
 
@@ -32,9 +33,7 @@ export function AgentRunsPanel() {
             {String((error as Error).message || error)}
           </Text>
         ) : isLoading ? (
-          <Text fontSize="sm" color="fg.muted">
-            Loading runs…
-          </Text>
+          <ListCardRowsSkeleton rows={6} />
         ) : runs.length === 0 ? (
           <Text fontSize="sm" color="fg.muted">
             No agent runs yet. Send a chat message or create a cron schedule.

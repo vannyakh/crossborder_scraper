@@ -7,6 +7,7 @@ import { ListPagination } from '../list-page/ListPagination'
 import { ListSearchBar } from '../list-page/ListSearchBar'
 import { useListPageState, usePagedList } from '../list-page/list-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
+import { DataTableSkeleton } from '../ui/PanelSkeleton'
 import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
 import { StatusBadge } from '../ui/StatusBadge'
 import {
@@ -71,7 +72,7 @@ export function WorkflowBatchesPanel() {
 
       <Grid templateColumns={{ base: '1fr', lg: selectedBatchId ? '1fr 1fr' : '1fr' }} gap={4}>
         {isLoading ? (
-          <DataListEmpty>Loading batches…</DataListEmpty>
+          <DataTableSkeleton columns={4} rows={10} />
         ) : paged.total === 0 ? (
           <DataListEmpty>No batches match your search.</DataListEmpty>
         ) : (
