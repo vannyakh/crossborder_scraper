@@ -34,8 +34,23 @@ Environment (optional):
 |----------|--------|
 | `CROSSBORDER_INSTALL_DIR` | Install path (default `~/crossborder-scraper`) |
 | `CROSSBORDER_REPO` | Git URL (forks / private mirrors) |
-| `CROSSBORDER_START=1` | Start `scraper serve` in background after install |
+| `CROSSBORDER_PORT` | Panel port (default **8787** — avoids conflicts with port 8000) |
+| `CROSSBORDER_START=1` | Start panel after install (default **on**) |
+| `CROSSBORDER_START=0` | Do not auto-start the panel |
 | `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright (Docker-only hosts) |
+
+### After install — links not opening?
+
+1. **Start the server** (install only configures credentials; the panel must be running):
+   ```bash
+   cd ~/crossborder-scraper   # or your install path
+   uv run crossborder serve --no-reload
+   ```
+2. **Open the login URL** printed in the access card, e.g. `http://127.0.0.1:8787/ui/login` (use the port from your card or `.env` `PANEL_PORT`).
+3. **`crossborder: command not found`** — the CLI lives in the project venv, not globally. Always run:
+   ```bash
+   cd ~/crossborder-scraper && uv run crossborder --help
+   ```
 
 ### From git clone
 
@@ -57,7 +72,7 @@ Setup prints an **aaPanel-style access card**: panel URL, server IP(s), username
 ```bash
 uv run scraper setup --server --external 203.0.113.10   # show public URL on VPS
 uv run scraper setup --port 8080                        # fixed port
-uv run scraper setup --fixed-port                       # keep 8000 even if busy
+uv run crossborder setup --fixed-port                     # keep 8787 even if busy
 ```
 
 ## Setup modes (`scraper setup`)
@@ -68,7 +83,7 @@ uv run scraper setup --fixed-port                       # keep 8000 even if busy
 | `--server` | Full bare-metal: deps, Playwright, data dirs |
 | `--docker` | Prepare configs for container deploy (no local browser) |
 | `--host` | Bind address (default `0.0.0.0`) |
-| `--port` / `-p` | Panel TCP port (auto-picks next free if 8000 is taken) |
+| `--port` / `-p` | Panel TCP port (default **8787**; auto-picks next free if taken) |
 | `--external` / `-e` | Public IP or domain shown in the summary |
 
 ## Software tools (`scraper tools`)
@@ -125,7 +140,7 @@ uv run scraper deploy up
 
 Uses `docker-compose.yml` + `docker-compose.prod.yml` (healthcheck, volumes for `data/`, `config/`, plugins, skills).
 
-Open: `http://YOUR_SERVER_IP:8000/ui/`
+Open: `http://YOUR_SERVER_IP:8787/ui/` (or the port shown in setup)
 
 ### systemd (always-on service)
 
@@ -138,7 +153,7 @@ sudo systemctl enable --now crossborder-scraper
 
 ### aaPanel / nginx reverse proxy
 
-1. Run the panel on `127.0.0.1:8000` (Docker or systemd).
+1. Run the panel on `127.0.0.1:8787` (Docker or systemd).
 2. Generate nginx config:
 
 ```bash
@@ -179,5 +194,5 @@ uv run scraper deploy up --build    # Docker
 ## Security checklist
 
 - Change default panel password after first login (`scraper setup --regenerate`).
-- Put nginx/aaPanel TLS in front; do not expose port 8000 publicly without auth.
+- Put nginx/aaPanel TLS in front; do not expose the panel port publicly without auth.
 - Keep `.env` out of git.

@@ -13,7 +13,7 @@ class GatewayClient:
 
     def __init__(
         self,
-        base_url: str = "http://127.0.0.1:8000",
+        base_url: str = "http://127.0.0.1:8787",
         *,
         username: str | None = None,
         password: str | None = None,
@@ -109,7 +109,9 @@ class GatewayClient:
     @classmethod
     def probe(cls, base_url: str | None = None) -> bool:
         try:
-            client = cls(base_url or "http://127.0.0.1:8000")
+            from deploy.network import DEFAULT_PANEL_PORT
+
+            client = cls(base_url or f"http://127.0.0.1:{DEFAULT_PANEL_PORT}")
             return client.health().get("status") == "ok"
         except RuntimeError:
             return False

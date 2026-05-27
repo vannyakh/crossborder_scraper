@@ -1,9 +1,12 @@
-"""Host/port detection for panel access URLs (aaPanel-style setup output)."""
+"""Host/port detection for panel access URLs."""
 
 from __future__ import annotations
 
 import socket
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
+# Default panel port (8787 avoids common conflicts with 8000/8080/3000 on dev machines)
+DEFAULT_PANEL_PORT = 8787
 
 
 @dataclass(frozen=True)
@@ -77,7 +80,7 @@ def is_port_free(host: str, port: int) -> bool:
         return False
 
 
-def pick_panel_port(preferred: int = 8000, *, max_tries: int = 20) -> tuple[int, bool]:
+def pick_panel_port(preferred: int = DEFAULT_PANEL_PORT, *, max_tries: int = 20) -> tuple[int, bool]:
     if is_port_free("0.0.0.0", preferred):
         return preferred, False
     for offset in range(1, max_tries):

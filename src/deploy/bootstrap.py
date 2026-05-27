@@ -131,7 +131,7 @@ class ServerBootstrap:
             env_deploy.write_text(
                 "# Copy to repo root as .env for Docker Compose\n"
                 "PANEL_HOST=0.0.0.0\n"
-                "PANEL_PORT=8000\n"
+                "PANEL_PORT=8787\n"
                 "HEADLESS=true\n"
                 "MAX_CONCURRENT_JOBS=3\n",
                 encoding="utf-8",

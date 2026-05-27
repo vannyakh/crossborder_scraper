@@ -42,7 +42,7 @@ crossborder setup        # auto-generates PANEL_USERNAME + PANEL_PASSWORD in .en
 
 Panel login credentials are printed once and saved to `.env` as `PANEL_USERNAME` / `PANEL_PASSWORD`.
 
-Set `PANEL_HOST` (default `0.0.0.0`) and `PANEL_PORT` (default `8000`) in `.env` for the API bind address and sidebar access IP.
+Set `PANEL_HOST` (default `0.0.0.0`) and `PANEL_PORT` (default `8787`) in `.env` for the API bind address and sidebar access IP.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the gateway + agent + workflow design (inspired by n8n workflows and OpenClaw's control plane).
 

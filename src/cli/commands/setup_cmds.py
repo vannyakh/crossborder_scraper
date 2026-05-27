@@ -36,7 +36,7 @@ def register_setup_commands(app: typer.Typer) -> None:
             None,
             "--port",
             "-p",
-            help="Panel TCP port (default 8000; auto-picks next free if busy)",
+            help="Panel TCP port (default 8787; auto-picks next free if busy)",
         ),
         external: str | None = typer.Option(
             None,
@@ -47,7 +47,7 @@ def register_setup_commands(app: typer.Typer) -> None:
         no_auto_port: bool = typer.Option(
             False,
             "--fixed-port",
-            help="Do not auto-change port if 8000 is busy",
+            help="Do not auto-change port if default (8787) is busy",
         ),
     ) -> None:
         """

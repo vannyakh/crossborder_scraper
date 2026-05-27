@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     panel_username: str | None = None
     panel_password: str | None = None
     panel_host: str = "0.0.0.0"
-    panel_port: int = 8000
+    panel_port: int = 8787
 
     # Paths
     data_dir: Path = Field(default=Path("data"))

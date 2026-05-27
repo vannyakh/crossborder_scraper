@@ -10,10 +10,15 @@
 #   $env:CROSSBORDER_INSTALL_DIR  — default: $HOME\crossborder-scraper
 #   $env:CROSSBORDER_REPO          — git clone URL
 #   $env:CROSSBORDER_BRANCH        — default: main
-#   $env:CROSSBORDER_START = "1"    — start panel after install
+#   $env:CROSSBORDER_PORT = "8787"  — panel port (default 8787, not 8000)
+#   $env:CROSSBORDER_START = "1"    — start panel after install (default: 1)
+#   $env:CROSSBORDER_START = "0"    — skip auto-start
 #   $env:CROSSBORDER_SKIP_BROWSER = "1"
 
 $ErrorActionPreference = "Stop"
+
+if (-not $env:CROSSBORDER_START) { $env:CROSSBORDER_START = "1" }
+$PanelPort = if ($env:CROSSBORDER_PORT) { $env:CROSSBORDER_PORT } else { "8787" }
 
 $InstallDir = if ($env:CROSSBORDER_INSTALL_DIR) { $env:CROSSBORDER_INSTALL_DIR } else { Join-Path $HOME "crossborder-scraper" }
 $RepoUrl = if ($env:CROSSBORDER_REPO) { $env:CROSSBORDER_REPO } else { "https://github.com/vannyakh/crossborder_scraper.git" }
@@ -117,19 +122,29 @@ function Run-Bootstrap {
         }
     }
 
-    $setupArgs = @("setup", "--server")
+    $setupArgs = @("setup", "--server", "--port", $PanelPort)
     $publicIp = Get-PublicIp
     if ($publicIp) {
         Write-Host "==> detected public IP: $publicIp"
         $setupArgs += @("--external", $publicIp)
     }
 
-    Write-Host "==> panel setup (host, port, credentials)"
+    Write-Host "==> panel setup (host, port $PanelPort, credentials)"
     if (Get-Command uv -ErrorAction SilentlyContinue) {
         uv run crossborder @setupArgs
     } else {
         python main.py @setupArgs
     }
+}
+
+function Get-EnvPanelPort {
+    param([string]$Root)
+    $envFile = Join-Path $Root ".env"
+    if (Test-Path $envFile) {
+        $line = Get-Content $envFile | Where-Object { $_ -match '^PANEL_PORT=' } | Select-Object -Last 1
+        if ($line) { return ($line -replace '^PANEL_PORT=', '').Trim().Trim('"') }
+    }
+    return $PanelPort
 }
 
 function Start-PanelBackground {
@@ -139,23 +154,40 @@ function Start-PanelBackground {
     $log = Join-Path $Root "data\panel.log"
     $dataDir = Split-Path $log -Parent
     if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
-    Write-Host "==> starting panel in background (log: $log)"
+    $port = Get-EnvPanelPort -Root $Root
+    Write-Host "==> starting panel on port $port (log: $log)"
     if (Get-Command uv -ErrorAction SilentlyContinue) {
         Start-Process -FilePath "uv" -ArgumentList "run", "crossborder", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
     } else {
         Start-Process -FilePath "python" -ArgumentList "main.py", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
     }
-    Write-Host "    Open the Login URL from the card above"
+    Start-Sleep -Seconds 3
+    try {
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$port/health" -UseBasicParsing -TimeoutSec 5
+        if ($r.StatusCode -eq 200) {
+            Write-Host "==> panel is up — open: http://127.0.0.1:$port/ui/login"
+        }
+    } catch {
+        Write-Host "==> panel not responding yet — check $log"
+        Write-Host "    Start manually: cd $Root; uv run crossborder serve --no-reload"
+    }
 }
 
 function Write-Footer {
     param([string]$Root)
+    $port = Get-EnvPanelPort -Root $Root
+    $login = "http://127.0.0.1:$port/ui/login"
     Write-Host ""
-    Write-Host "==> You're set. Common next steps:"
-    Write-Host "    cd $Root"
-    Write-Host "    crossborder --help"
-    Write-Host "    uv run crossborder serve --no-reload"
-    Write-Host "    uv run crossborder deploy up         # Docker (requires Docker Desktop)"
+    Write-Host "================================================================"
+    Write-Host "  HOW TO USE (read this)"
+    Write-Host "================================================================"
+    Write-Host ""
+    Write-Host "  1) cd $Root"
+    Write-Host "  2) Start panel (required):  uv run crossborder serve --no-reload"
+    Write-Host "  3) Open browser:            $login"
+    Write-Host ""
+    Write-Host "  CLI: use  uv run crossborder --help  (not global crossborder)"
+    Write-Host "  Port: set CROSSBORDER_PORT or  uv run crossborder setup --port 9000 --server"
     Write-Host ""
 }
 

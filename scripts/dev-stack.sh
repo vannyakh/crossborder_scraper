@@ -4,7 +4,7 @@ set -euo pipefail
 # shellcheck source=_lib.sh
 source "$(dirname "$0")/_lib.sh"
 
-PORT="${PANEL_PORT:-8000}"
+PORT="${PANEL_PORT:-8787}"
 cat <<EOF
 Crossborder scraper — local dev stack
 

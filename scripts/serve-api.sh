@@ -5,7 +5,7 @@ set -euo pipefail
 source "$(dirname "$0")/_lib.sh"
 
 export UVICORN_RELOAD="${UVICORN_RELOAD:-1}"
-export PANEL_PORT="${PANEL_PORT:-8000}"
+export PANEL_PORT="${PANEL_PORT:-8787}"
 
 if command -v uv >/dev/null 2>&1; then
   exec uv run serve

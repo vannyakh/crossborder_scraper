@@ -28,11 +28,11 @@ def configure_panel_bind(
     """
     from config.credentials import upsert_env_file
     from core.paths import env_file_path
-    from deploy.network import normalize_bind_host, pick_panel_port
+    from deploy.network import DEFAULT_PANEL_PORT, normalize_bind_host, pick_panel_port
 
     path = env_path or env_file_path()
     bind = normalize_bind_host(host)
-    preferred = port if port is not None else 8000
+    preferred = port if port is not None else DEFAULT_PANEL_PORT
     adjusted = False
     if auto_port and port is None:
         preferred, adjusted = pick_panel_port(preferred)
@@ -81,7 +81,12 @@ def print_panel_access_card(
     table.add_row("Saved in", info.env_path)
 
     if info.port_auto_adjusted:
-        table.add_row("", "[yellow]Port 8000 was busy — using {0}[/yellow]".format(info.port))
+        from deploy.network import DEFAULT_PANEL_PORT
+
+        table.add_row(
+            "",
+            f"[yellow]Port {DEFAULT_PANEL_PORT} was busy — using {info.port}[/yellow]",
+        )
 
     if info.credentials_generated:
         table.add_row("", "[dim]Save these credentials — they are not shown again.[/dim]")
@@ -95,6 +100,11 @@ def print_panel_access_card(
         title = "Docker setup complete — Panel access"
 
     _console.print()
+    if mode in ("server", "install"):
+        _console.print(
+            "[bold yellow]▸ Panel URLs work only while the server is running.[/bold yellow]\n"
+            "[dim]After install, run `uv run crossborder serve --no-reload` (or use CROSSBORDER_START=1).[/dim]\n"
+        )
     _console.print(
         Panel(
             table,
@@ -113,8 +123,13 @@ def print_panel_access_card(
 
 
 def default_next_commands(mode: str) -> list[str]:
+    serve = "uv run crossborder serve --no-reload  # keep this terminal open"
     if mode == "docker":
-        return ["crossborder deploy up", "crossborder deploy status"]
+        return ["uv run crossborder deploy up", "uv run crossborder deploy status"]
     if mode in ("server", "install"):
-        return ["crossborder serve --no-reload", "crossborder gateway"]
-    return ["crossborder serve", "crossborder --help", "Open panel Login URL in your browser"]
+        return [
+            "[bold]1.[/bold] " + serve,
+            "[bold]2.[/bold] Open [bold]Login URL[/bold] above in your browser (Cmd/Ctrl+click in most terminals)",
+            "[dim]Tip: `crossborder` is only on PATH inside the project venv — use `uv run crossborder` from the install folder[/dim]",
+        ]
+    return [serve, "uv run crossborder --help", "Open Login URL in your browser"]

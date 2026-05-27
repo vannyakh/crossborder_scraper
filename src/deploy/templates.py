@@ -5,13 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 from core.paths import repo_root
+from deploy.network import DEFAULT_PANEL_PORT
 
 
 def systemd_unit(
     *,
     user: str = "www-data",
     working_directory: str | None = None,
-    port: int = 8000,
+    port: int = DEFAULT_PANEL_PORT,
 ) -> str:
     wd = working_directory or str(repo_root())
     venv_py = f"{wd}/.venv/bin/python"
@@ -42,7 +43,7 @@ WantedBy=multi-user.target
 def nginx_site(
     *,
     server_name: str = "_",
-    upstream_port: int = 8000,
+    upstream_port: int = DEFAULT_PANEL_PORT,
     ssl: bool = False,
 ) -> str:
     listen = "listen 443 ssl http2;\n    ssl_certificate     /path/to/fullchain.pem;\n    ssl_certificate_key /path/to/privkey.pem;" if ssl else "listen 80;"
