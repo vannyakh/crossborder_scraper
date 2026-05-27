@@ -125,6 +125,8 @@ uv run scraper deploy up          # Docker
 
 Auto-start panel after install: `CROSSBORDER_START=1 curl ... | bash`
 
+**Maintain after install:** `uv run scraper tools update` (sync + restart) · `scraper tools reset credentials`
+
 See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) for aaPanel, nginx, Windows, and systemd.
 
 ### Agent page + cron schedules

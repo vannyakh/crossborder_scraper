@@ -47,6 +47,36 @@ def compose_status() -> int:
     return run_compose("ps")
 
 
+def compose_restart() -> int:
+    return run_compose("restart")
+
+
+def compose_status_running() -> bool:
+    """True if compose reports at least one running service."""
+    import subprocess
+
+    from deploy.platform import compose_command
+
+    cmd = compose_command()
+    if not cmd:
+        return False
+    file_flags: list[str] = []
+    for f in compose_file_paths():
+        file_flags.extend(["-f", str(f)])
+    full = [*cmd, *file_flags, "ps", "--status", "running", "-q"]
+    try:
+        proc = subprocess.run(
+            full,
+            cwd=repo_root(),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return bool(proc.stdout.strip())
+    except OSError:
+        return False
+
+
 def docker_ready() -> bool:
     plat = detect_platform()
     return plat.has_docker and plat.has_compose

@@ -149,7 +149,8 @@ print_footer() {
   echo "    cd ${root}"
   echo "    uv run scraper serve --no-reload     # run panel now"
   echo "    uv run scraper deploy up             # Docker production"
-  echo "    uv run scraper deploy systemd        # Linux service"
+  echo "    uv run scraper tools update          # pull + sync + restart"
+  echo "    uv run scraper tools --help          # sync | restart | reset"
   echo ""
 }
 

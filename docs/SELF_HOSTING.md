@@ -71,6 +71,29 @@ uv run scraper setup --fixed-port                       # keep 8000 even if busy
 | `--port` / `-p` | Panel TCP port (auto-picks next free if 8000 is taken) |
 | `--external` / `-e` | Public IP or domain shown in the summary |
 
+## Software tools (`scraper tools`)
+
+Maintain the installed panel after setup (like aaPanel app update / restart):
+
+```bash
+uv run scraper tools sync              # git pull + uv sync
+uv run scraper tools update            # sync + Playwright + restart panel
+uv run scraper tools restart           # Docker / systemd / process on panel port
+uv run scraper tools reset credentials # new panel username/password
+uv run scraper tools reset config -y   # restore example configs (*.bak backup)
+uv run scraper tools reset data -y     # clear output, cookies, products.db
+uv run scraper tools reset all -y      # credentials + config + data + cache
+```
+
+Shell wrapper: `bash scripts/tools.sh update`
+
+| Command | What it does |
+|---------|----------------|
+| `sync` | Pull git (if repo), `uv sync`, optional `--browser`, `--docker-rebuild` |
+| `update` | `sync` + update Playwright + **restart** panel |
+| `restart` | `docker compose restart`, `systemctl restart crossborder-scraper`, or stop process on `PANEL_PORT` |
+| `reset` | Scoped reset; destructive scopes need `--yes` |
+
 ## Deploy commands (`scraper deploy`)
 
 Like n8n / OpenClaw — one CLI for operations:

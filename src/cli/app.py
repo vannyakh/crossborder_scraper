@@ -9,6 +9,7 @@ from cli.commands import (
     register_gateway_commands,
     register_scrape_commands,
     register_setup_commands,
+    register_tools_commands,
 )
 
 
@@ -24,6 +25,7 @@ def build_app() -> typer.Typer:
     register_scrape_commands(app)
     register_setup_commands(app)
     register_deploy_commands(app)
+    register_tools_commands(app)
     register_gateway_commands(app)
     return app
 
