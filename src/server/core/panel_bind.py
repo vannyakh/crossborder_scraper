@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from deploy.network import DEFAULT_PANEL_PORT
+from deploy.panel_security import build_entrance_url, panel_ui_path
 
 _DEFAULT_HOST = "0.0.0.0"
 _DEFAULT_PORT = DEFAULT_PANEL_PORT
@@ -24,6 +25,8 @@ class PanelBindInfo:
     panel_path: str
     panel_url: str
     copy_text: str
+    entry_path: str | None = None
+    entrance_url: str | None = None
 
 
 def _detect_lan_ipv4() -> str:
@@ -67,9 +70,23 @@ def configure_panel_bind(
     bind_host = str(host)
     bind_port = int(port)
     access_ip = _resolve_access_ip(bind_host)
-    path = panel_path if panel_path.endswith("/") else f"{panel_path}/"
-    panel_url = f"http://{access_ip}:{bind_port}{path}"
-    copy_text = f"{access_ip}:{bind_port}"
+    entry: str | None = None
+    try:
+        from config import get_settings
+        from deploy.panel_security import normalize_entry_path
+
+        entry = normalize_entry_path(get_settings().panel_entry_path)
+    except Exception:
+        entry = None
+
+    if entry:
+        path = panel_ui_path(entry)
+        panel_url = build_entrance_url(access_ip, bind_port, entry)
+        copy_text = f"{access_ip}:{bind_port}/{entry}"
+    else:
+        path = panel_path if panel_path.endswith("/") else f"{panel_path}/"
+        panel_url = f"http://{access_ip}:{bind_port}{path}"
+        copy_text = f"{access_ip}:{bind_port}"
     _info = PanelBindInfo(
         bind_host=bind_host,
         bind_port=bind_port,
@@ -78,6 +95,8 @@ def configure_panel_bind(
         panel_path=path,
         panel_url=panel_url,
         copy_text=copy_text,
+        entry_path=entry,
+        entrance_url=panel_url if entry else None,
     )
     return _info
 
@@ -94,4 +113,6 @@ def get_panel_bind_info() -> dict[str, Any]:
         "panel_path": _info.panel_path,
         "panel_url": _info.panel_url,
         "copy_text": _info.copy_text,
+        "entry_path": _info.entry_path,
+        "entrance_url": _info.entrance_url,
     }

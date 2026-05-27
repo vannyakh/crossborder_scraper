@@ -5,6 +5,8 @@ from __future__ import annotations
 import socket
 from dataclasses import dataclass
 
+from deploy.panel_security import build_entrance_url, build_login_url, panel_ui_path
+
 _AUTO_EXTERNAL = frozenset({"", "auto", "detect"})
 
 # Default panel port (8787 avoids common conflicts with 8000/8080/3000 on dev machines)
@@ -25,17 +27,28 @@ class PanelAccessInfo:
     external_url: str | None = None
     login_external_url: str | None = None
     port_auto_adjusted: bool = False
+    entry_path: str | None = None
+    access_key: str | None = None
+
+    @property
+    def security_entrance_enabled(self) -> bool:
+        return bool(self.entry_path)
 
     @property
     def primary_access_url(self) -> str:
         if self.lan_ips:
-            return f"http://{self.lan_ips[0]}:{self.port}/ui/"
+            return build_entrance_url(self.lan_ips[0], self.port, self.entry_path)
         return self.local_url
 
     @property
     def primary_login_url(self) -> str:
         if self.lan_ips:
-            return f"http://{self.lan_ips[0]}:{self.port}/ui/login"
+            return build_login_url(
+                self.lan_ips[0],
+                self.port,
+                self.entry_path,
+                access_key=self.access_key if self.credentials_generated else None,
+            )
         return self.login_local_url
 
 
@@ -138,15 +151,20 @@ def build_panel_access_info(
     env_path: str,
     port_auto_adjusted: bool = False,
     external_host: str | None = None,
+    entry_path: str | None = None,
+    access_key: str | None = None,
 ) -> PanelAccessInfo:
     bind = normalize_bind_host(bind_host)
     lan_ips = tuple(detect_lan_ips())
     local_host = "127.0.0.1"
+    ui_path = panel_ui_path(entry_path)
+    login_key = access_key if credentials_generated else None
 
     ext_url = login_ext = None
     if external_host and external_host not in ("127.0.0.1", "localhost"):
-        ext_url = _url(external_host.strip(), port, "/ui/")
-        login_ext = _url(external_host.strip(), port, "/ui/login")
+        host = external_host.strip()
+        ext_url = build_entrance_url(host, port, entry_path)
+        login_ext = build_login_url(host, port, entry_path, access_key=login_key)
 
     return PanelAccessInfo(
         bind_host=bind,
@@ -155,10 +173,14 @@ def build_panel_access_info(
         password=password,
         credentials_generated=credentials_generated,
         env_path=env_path,
-        local_url=_url(local_host, port, "/ui/"),
-        login_local_url=_url(local_host, port, "/ui/login"),
+        local_url=_url(local_host, port, ui_path),
+        login_local_url=build_login_url(
+            local_host, port, entry_path, access_key=login_key
+        ),
         lan_ips=lan_ips,
         external_url=ext_url,
         login_external_url=login_ext,
         port_auto_adjusted=port_auto_adjusted,
+        entry_path=entry_path,
+        access_key=access_key if credentials_generated else None,
     )

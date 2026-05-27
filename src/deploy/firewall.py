@@ -110,7 +110,16 @@ def is_publicly_bound(port: int) -> bool:
     return any(a in public_ok for a in addrs)
 
 
-def probe_local_health(port: int, path: str = "/health") -> bool:
+def probe_local_health(port: int, path: str | None = None) -> bool:
+    if path is None:
+        try:
+            from config import get_settings
+            from deploy.panel_security import health_path, normalize_entry_path
+
+            settings = get_settings()
+            path = health_path(normalize_entry_path(settings.panel_entry_path))
+        except Exception:
+            path = "/health"
     try:
         with socket.create_connection(("127.0.0.1", port), timeout=2):
             pass

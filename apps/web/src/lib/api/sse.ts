@@ -1,4 +1,5 @@
 import { getBasicAuthHeader, useAuthStore } from '../../stores/auth-store'
+import { withPanelPrefix } from './panel-prefix'
 
 export type SSEHandler = (event: string, data: unknown) => void
 
@@ -6,7 +7,7 @@ export async function connectBatchStream(
   batchId: string,
   handlers: { onEvent: SSEHandler; signal?: AbortSignal },
 ): Promise<void> {
-  const res = await fetch(`/jobs/${batchId}/stream`, {
+  const res = await fetch(withPanelPrefix(`/jobs/${batchId}/stream`), {
     headers: {
       Accept: 'text/event-stream',
       ...getBasicAuthHeader(),

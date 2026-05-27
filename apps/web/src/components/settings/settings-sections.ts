@@ -34,8 +34,8 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
   },
   {
     id: 'network',
-    label: 'Network & firewall',
-    description: 'Panel port, ufw, cloud security group',
+    label: 'Network & security',
+    description: 'Domain, entrance path, credentials, firewall',
     icon: Shield,
   },
   {

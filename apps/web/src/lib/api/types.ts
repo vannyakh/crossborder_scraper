@@ -336,6 +336,8 @@ export type PanelAccess = {
   panel_path: string
   panel_url: string
   copy_text: string
+  entry_path?: string | null
+  entrance_url?: string | null
 }
 
 export type LogCategory = 'operation' | 'run' | 'cron'
