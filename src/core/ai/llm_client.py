@@ -9,7 +9,13 @@ from typing import Any
 import httpx
 
 from config import Settings
-from config.llm_providers import ApiStyle, apply_provider_defaults, get_provider, infer_provider_id
+from config.llm_providers import (
+    ApiStyle,
+    apply_provider_defaults,
+    format_model_ref,
+    get_provider,
+    infer_provider_id,
+)
 
 
 @dataclass(frozen=True)
@@ -27,6 +33,10 @@ class ResolvedLLMConfig:
     def is_local(self) -> bool:
         host = self.base_url.lower()
         return "127.0.0.1" in host or "localhost" in host
+
+    @property
+    def model_ref(self) -> str:
+        return format_model_ref(self.provider_id, self.model)
 
 
 @dataclass

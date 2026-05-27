@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useGatewayPromptsQuery, useGatewayStatusQuery, useRunAgentMutation } from '../../hooks'
+import { formatModelRef } from '../../config/llm-providers'
 import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-props'
 import { AgentToolTrace } from './AgentToolTrace'
 import type { GatewayAgentResponse, GatewayPrompt } from '../../lib/api'
@@ -212,16 +213,20 @@ export function AgentChatPanel() {
 
   const runtime = gatewayQuery.data?.runtime
   const aiEnabled = runtime?.ai?.ai_enabled
-  const canRun = Boolean(aiEnabled && runtime?.ai?.ai_api_key_set)
+  const llmReady = runtime?.ai?.llm_ready ?? false
+  const canRun = Boolean(llmReady)
   const prompts: GatewayPrompt[] = promptsQuery.data?.items ?? []
   const activePrompt = prompts.find((p) => p.id === promptId)
 
   const modelLabel = useMemo(() => {
-    const fromRuntime = runtime?.ai?.ai_model
+    const fromRuntime = runtime?.ai?.model_ref
     if (fromRuntime) return fromRuntime
+    if (runtime?.ai?.ai_provider && runtime?.ai?.ai_model) {
+      return formatModelRef(runtime.ai.ai_provider, runtime.ai.ai_model)
+    }
     const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant' && m.model)
     return lastAssistant?.model ?? 'gateway'
-  }, [runtime?.ai?.ai_model, messages])
+  }, [runtime?.ai?.model_ref, runtime?.ai?.ai_provider, runtime?.ai?.ai_model, messages])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -278,7 +283,7 @@ export function AgentChatPanel() {
           createdAt: new Date(),
           toolCalls: result.tool_calls,
           promptId: result.prompt_id ?? promptId,
-          model: result.model,
+          model: result.model_ref ?? result.model,
           ok: result.ok,
         },
       ])
@@ -366,7 +371,7 @@ export function AgentChatPanel() {
         </div>
       </header>
 
-      {!aiEnabled ? (
+      {!canRun ? (
         <Box
           px={5}
           py={3}
@@ -382,11 +387,13 @@ export function AgentChatPanel() {
             <AlertCircle size={16} />
           </Box>
           <Text fontSize="sm" color="fg.muted">
-            AI is disabled. Enable it under{' '}
+            {!aiEnabled
+              ? 'AI is disabled. Enable it under '
+              : 'LLM is not ready — pick a provider, set a model ref, and add an API key (or use local Ollama) under '}
             <RouterLink to="/settings/ai" style={{ color: 'var(--app-accent)' }}>
               Settings → AI & LLM
-            </RouterLink>{' '}
-            before using the gateway agent.
+            </RouterLink>
+            {!aiEnabled ? ' before using the gateway agent.' : '.'}
           </Text>
         </Box>
       ) : null}

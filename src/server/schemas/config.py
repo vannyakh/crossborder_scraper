@@ -85,6 +85,8 @@ class LLMProviderListResponse(BaseModel):
 
 class AIConfigResponse(BaseModel):
     ai_provider: str = "openai"
+    provider_label: str = "OpenAI"
+    model_ref: str = "openai/gpt-4o-mini"
     ai_enabled: bool
     ai_fallback: bool
     ai_agent_enabled: bool
@@ -94,6 +96,7 @@ class AIConfigResponse(BaseModel):
     ai_timeout_seconds: float
     ai_api_key_set: bool
     ai_api_key_masked: str | None = None
+    llm_ready: bool = False
     ui_config_path: str
     secrets_from_env: bool = True
 
@@ -115,6 +118,7 @@ class LLMHealthResponse(BaseModel):
     status: str
     message: str
     model: str
+    model_ref: str | None = None
     base_url: str
     provider: str | None = None
     provider_label: str | None = None

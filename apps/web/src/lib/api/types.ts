@@ -111,6 +111,8 @@ export type LlmProviderInfo = {
 
 export type AIConfig = {
   ai_provider?: LlmProviderId
+  provider_label?: string
+  model_ref?: string
   ai_enabled: boolean
   ai_fallback: boolean
   ai_agent_enabled: boolean
@@ -120,6 +122,7 @@ export type AIConfig = {
   ai_timeout_seconds: number
   ai_api_key_set: boolean
   ai_api_key_masked: string | null
+  llm_ready?: boolean
   ui_config_path: string
   secrets_from_env: boolean
 }
@@ -207,6 +210,7 @@ export type LLMHealth = {
   status: string
   message: string
   model: string
+  model_ref?: string | null
   base_url: string
   provider?: string | null
   provider_label?: string | null
@@ -545,6 +549,8 @@ export type GatewayAgentResponse = {
   message: string
   tool_calls: GatewayToolCall[]
   model?: string | null
+  provider?: string | null
+  model_ref?: string | null
   prompt_id?: string | null
   skill_ids?: string[]
 }

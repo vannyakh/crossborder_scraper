@@ -11,6 +11,7 @@ async def check_llm_health(settings: Settings) -> dict[str, Any]:
     cfg = resolve_llm_config(settings)
     base: dict[str, Any] = {
         "model": cfg.model,
+        "model_ref": cfg.model_ref,
         "base_url": cfg.base_url,
         "provider": cfg.provider_id,
         "provider_label": cfg.provider_label,

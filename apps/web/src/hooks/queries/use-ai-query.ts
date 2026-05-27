@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { api, queryKeys, type AIConfig, type LLMHealth } from '../../lib/api'
+import { api, queryKeys, type LLMHealth, type LlmProviderInfo } from '../../lib/api'
 import { useAuthStore } from '../../stores/auth-store'
 
-export function useAIConfigQuery() {
+export function useLlmProvidersQuery() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   return useQuery({
-    queryKey: queryKeys.aiConfig,
-    queryFn: () => api<AIConfig>('/ai/config'),
+    queryKey: queryKeys.llmProviders,
+    queryFn: () => api<{ providers: LlmProviderInfo[] }>('/ai/providers'),
     enabled: isAuthenticated,
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 }
 

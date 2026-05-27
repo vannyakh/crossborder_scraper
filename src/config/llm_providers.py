@@ -99,6 +99,24 @@ PROVIDER_PRESETS: dict[str, LLMProviderPreset] = {
 DEFAULT_PROVIDER_ID = "openai"
 
 
+def format_model_ref(provider_id: str, model: str) -> str:
+    """Canonical model ref: ``provider/model`` (e.g. ``openai/gpt-4o-mini``)."""
+    pid = (provider_id or DEFAULT_PROVIDER_ID).strip().lower()
+    mid = (model or "").strip()
+    if not mid:
+        return pid
+    return f"{pid}/{mid}"
+
+
+def parse_model_ref(ref: str) -> tuple[str, str]:
+    """Split ``provider/model`` into provider id and model id."""
+    text = (ref or "").strip()
+    if "/" in text:
+        provider_id, model = text.split("/", 1)
+        return provider_id.strip().lower() or DEFAULT_PROVIDER_ID, model.strip()
+    return DEFAULT_PROVIDER_ID, text
+
+
 def list_providers() -> list[dict[str, Any]]:
     order = ("openai", "anthropic", "google", "ollama", "qwen", "custom")
     return [PROVIDER_PRESETS[pid].to_dict() for pid in order if pid in PROVIDER_PRESETS]

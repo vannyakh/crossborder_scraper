@@ -65,7 +65,7 @@ export function SettingsSaveBar({
           </Text>
         ) : (
           <Text fontSize="xs" color="fg.subtle">
-            Changes apply after save · config/ui_config.json
+            Changes apply after save.
           </Text>
         )}
       </HStack>

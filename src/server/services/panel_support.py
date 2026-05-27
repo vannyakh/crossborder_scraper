@@ -115,10 +115,10 @@ def _readiness_checks(runtime: dict[str, Any], stats: dict[str, Any]) -> list[di
         {
             "id": "ai",
             "label": "AI extraction",
-            "ok": not ai.get("ai_enabled") or bool(ai.get("ai_api_key_set")),
+            "ok": not ai.get("ai_enabled") or bool(ai.get("llm_ready")),
             "detail": "Disabled"
             if not ai.get("ai_enabled")
-            else ("Configured" if ai.get("ai_api_key_set") else "Enabled but missing API key"),
+            else ("Configured" if ai.get("llm_ready") else "Enabled but LLM not ready"),
         },
     ]
 

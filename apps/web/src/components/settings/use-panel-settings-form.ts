@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { LlmProviderId, MarketplaceEntry, PanelConfigUpdate } from '../../lib/api'
-import { getLlmProvider } from '../../config/llm-providers'
 import {
   useCheckLLMHealthMutation,
+  useLlmProvidersQuery,
   usePanelConfigQuery,
   useUpdatePanelConfigMutation,
 } from '../../hooks'
 
 export function usePanelSettingsForm() {
   const { data: panel, isLoading } = usePanelConfigQuery()
+  const { data: providersData } = useLlmProvidersQuery()
   const updateMutation = useUpdatePanelConfigMutation()
   const checkMutation = useCheckLLMHealthMutation()
 
@@ -79,9 +80,9 @@ export function usePanelSettingsForm() {
 
   function handleProviderChange(next: LlmProviderId) {
     setProvider(next)
-    const preset = getLlmProvider(next)
-    if (preset.base_url) setAiBaseUrl(preset.base_url)
-    if (preset.default_model) setModel(preset.default_model)
+    const preset = providersData?.providers?.find((p) => p.id === next)
+    if (preset?.base_url) setAiBaseUrl(preset.base_url)
+    if (preset?.default_model) setModel(preset.default_model)
   }
 
   function buildPayload(): PanelConfigUpdate {

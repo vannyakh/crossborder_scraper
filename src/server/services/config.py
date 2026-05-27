@@ -60,9 +60,18 @@ class ConfigService:
         return self.get_panel_config()
 
     def _normalize_ai_provider_updates(self, scalar: dict[str, Any]) -> dict[str, Any]:
-        if not scalar or "ai_provider" not in scalar:
+        if not scalar:
             return scalar
-        from config.llm_providers import apply_provider_defaults, get_provider
+        from config.llm_providers import apply_provider_defaults, get_provider, parse_model_ref
+
+        if "ai_model" in scalar and isinstance(scalar["ai_model"], str) and "/" in scalar["ai_model"]:
+            parsed_provider, parsed_model = parse_model_ref(scalar["ai_model"])
+            scalar = dict(scalar)
+            scalar.setdefault("ai_provider", parsed_provider)
+            scalar["ai_model"] = parsed_model
+
+        if "ai_provider" not in scalar:
+            return scalar
 
         provider_id = str(scalar["ai_provider"])
         preset = get_provider(provider_id)
@@ -83,19 +92,26 @@ class ConfigService:
         return scalar
 
     def get_ai_config(self) -> dict[str, Any]:
+        from core.ai.llm_client import LLMClient, resolve_llm_config
+
         s = self._ctx.settings
         panel = panel_config_for_api(mask_secrets=True)
+        cfg = resolve_llm_config(s)
+        llm = LLMClient(s)
         return {
-            "ai_provider": getattr(s, "ai_provider", "openai"),
+            "ai_provider": cfg.provider_id,
+            "provider_label": cfg.provider_label,
+            "model_ref": cfg.model_ref,
             "ai_enabled": s.ai_enabled,
             "ai_fallback": s.ai_fallback,
             "ai_agent_enabled": s.ai_agent_enabled,
-            "ai_model": s.ai_model,
-            "ai_base_url": s.ai_base_url,
+            "ai_model": cfg.model,
+            "ai_base_url": cfg.base_url,
             "ai_max_html_chars": s.ai_max_html_chars,
             "ai_timeout_seconds": s.ai_timeout_seconds,
             "ai_api_key_set": bool(s.ai_api_key),
             "ai_api_key_masked": panel.get("ai_api_key_masked") or mask_api_key(s.ai_api_key),
+            "llm_ready": llm.enabled,
             "ui_config_path": str(UI_CONFIG_PATH),
             "secrets_from_env": False,
         }

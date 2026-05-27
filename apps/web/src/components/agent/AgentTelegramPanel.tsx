@@ -195,7 +195,7 @@ function TelegramChannelForm({
 
       <HStack mt={6} justify="space-between" flexWrap="wrap" gap={3}>
         <Text fontSize="sm" color={message?.includes('failed') ? 'red.500' : 'fg.muted'}>
-          {message ?? 'Saved to config/ui_config.json'}
+          {message ?? 'Saved.'}
         </Text>
         <Button
           colorPalette={accentPalette}

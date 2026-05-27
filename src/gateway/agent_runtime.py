@@ -51,6 +51,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                 "prompt_id": prompt_id or DEFAULT_PROMPT_ID,
                 "skill_ids": [],
                 "provider": self.llm.cfg.provider_id,
+                "model_ref": self.llm.cfg.model_ref,
             }
 
         resolved_id, base_prompt = load_prompt(prompt_id)
@@ -80,6 +81,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                     "tool_calls": tool_calls_log,
                     "model": self.llm.cfg.model,
                     "provider": self.llm.cfg.provider_id,
+                    "model_ref": self.llm.cfg.model_ref,
                     "prompt_id": resolved_id,
                     "skill_ids": resolved_skills,
                 }
@@ -114,6 +116,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             "tool_calls": tool_calls_log,
             "model": self.llm.cfg.model,
             "provider": self.llm.cfg.provider_id,
+            "model_ref": self.llm.cfg.model_ref,
             "prompt_id": resolved_id,
             "skill_ids": resolved_skills,
         }

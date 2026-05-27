@@ -19,6 +19,8 @@ class GatewayAgentResponse(BaseModel):
     message: str
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
     model: str | None = None
+    provider: str | None = None
+    model_ref: str | None = None
     prompt_id: str | None = None
     skill_ids: list[str] = Field(default_factory=list)
 
