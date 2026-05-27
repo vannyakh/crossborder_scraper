@@ -16,7 +16,7 @@ function mergeBatch(
   }
   return {
     batch_id: batch.batch_id,
-    status: status.status,
+    status: status.status ?? batch.status,
     completed: status.completed,
     total: status.total,
     success: status.success,

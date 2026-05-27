@@ -2,12 +2,12 @@ import {
   CircleDot,
   Database,
   HardDrive,
-  Instagram,
-  Linkedin,
+  Link2,
   Music2,
   Puzzle,
   Rabbit,
   Server,
+  Share2,
   type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -48,9 +48,9 @@ const PLUGIN_ICONS: Record<string, LucideIcon> = {
   '1688': Database,
   taobao: Database,
   aliexpress: Database,
-  instagram: Instagram,
+  instagram: Share2,
   tiktok: Music2,
-  linkedin: Linkedin,
+  linkedin: Link2,
   custom_plugin: Puzzle,
 }
 

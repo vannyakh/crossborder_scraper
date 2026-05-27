@@ -46,7 +46,7 @@ export function LiveStatsBar({
       <StatCell
         label="CPU"
         value={hardware ? `${hardware.cpu.percent.toFixed(1)}%` : '—'}
-        hint={hardware?.cpu.model}
+        hint={hardware?.cpu.model_name ?? hardware?.cpu.architecture_summary}
       />
       <StatCell label="Service uptime" value={uptime} hint={runtime?.service} />
     </Grid>
