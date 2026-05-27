@@ -15,6 +15,7 @@
 #   CROSSBORDER_START=1         start panel after install (default: 1)
 #   CROSSBORDER_START=0         skip auto-start
 #   CROSSBORDER_SKIP_BROWSER=1  skip Playwright (Docker-only hosts)
+#   CROSSBORDER_KEEP_LOCAL=1    keep local git commits (fail instead of reset)
 #
 set -euo pipefail
 
@@ -82,13 +83,27 @@ ensure_apt_basics() {
   sudo apt-get install -y -qq curl ca-certificates git build-essential || true
 }
 
+sync_to_origin() {
+  local dir="$1"
+  git -C "${dir}" fetch --depth 1 origin "${BRANCH}" 2>/dev/null || git -C "${dir}" fetch origin "${BRANCH}"
+  git -C "${dir}" checkout "${BRANCH}" 2>/dev/null \
+    || git -C "${dir}" checkout -B "${BRANCH}" "origin/${BRANCH}"
+  if [[ "${CROSSBORDER_KEEP_LOCAL:-}" == "1" ]]; then
+    git -C "${dir}" pull --ff-only origin "${BRANCH}" 2>/dev/null || {
+      echo "==> could not fast-forward; set CROSSBORDER_KEEP_LOCAL=0 to reset to origin/${BRANCH}" >&2
+      exit 1
+    }
+  elif ! git -C "${dir}" merge --ff-only "origin/${BRANCH}" 2>/dev/null; then
+    echo "==> resetting ${dir} to origin/${BRANCH} (discards local commits)"
+    git -C "${dir}" reset --hard "origin/${BRANCH}"
+  fi
+}
+
 clone_or_update() {
   ensure_git
   if [[ -d "${INSTALL_DIR}/.git" ]]; then
     echo "==> updating ${INSTALL_DIR}"
-    git -C "${INSTALL_DIR}" fetch --depth 1 origin "${BRANCH}" 2>/dev/null || git -C "${INSTALL_DIR}" fetch origin
-    git -C "${INSTALL_DIR}" checkout "${BRANCH}" 2>/dev/null || true
-    git -C "${INSTALL_DIR}" pull --ff-only origin "${BRANCH}" 2>/dev/null || true
+    sync_to_origin "${INSTALL_DIR}"
   else
     echo "==> cloning into ${INSTALL_DIR}"
     mkdir -p "$(dirname "${INSTALL_DIR}")"
@@ -135,7 +150,7 @@ run_bootstrap() {
     fi
   fi
 
-  local setup_args=(install --port "${PANEL_PORT}")
+  local setup_args=(setup --server --port "${PANEL_PORT}")
   local public_ip
   public_ip="$(detect_public_ip)"
   if [[ -n "${public_ip}" ]]; then

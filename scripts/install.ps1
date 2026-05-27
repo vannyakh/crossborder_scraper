@@ -81,9 +81,19 @@ function Clone-OrUpdate {
         Write-Host "==> updating $InstallDir"
         Push-Location $InstallDir
         git fetch --depth 1 origin $Branch 2>$null
-        if ($LASTEXITCODE -ne 0) { git fetch origin }
+        if ($LASTEXITCODE -ne 0) { git fetch origin $Branch }
         git checkout $Branch 2>$null
-        git pull --ff-only origin $Branch 2>$null
+        if (-not $?) { git checkout -B $Branch "origin/$Branch" }
+        git merge --ff-only "origin/$Branch" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            if ($env:CROSSBORDER_KEEP_LOCAL -eq "1") {
+                Write-Host "==> could not fast-forward; unset CROSSBORDER_KEEP_LOCAL to reset" -ForegroundColor Red
+                Pop-Location
+                exit 1
+            }
+            Write-Host "==> resetting to origin/$Branch (discards local commits)"
+            git reset --hard "origin/$Branch"
+        }
         Pop-Location
     } else {
         Write-Host "==> cloning into $InstallDir"
@@ -122,7 +132,7 @@ function Run-Bootstrap {
         }
     }
 
-    $setupArgs = @("install", "--port", $PanelPort)
+    $setupArgs = @("setup", "--server", "--port", $PanelPort)
     $publicIp = Get-PublicIp
     if ($publicIp) {
         Write-Host "==> detected public IP: $publicIp"
