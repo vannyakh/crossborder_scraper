@@ -9,6 +9,13 @@ apps/web/node_modules
 apps/web/dist
 data
 .env
-*.md
 agent-transcripts
 .cursor
+
+# Documentation markdown (not needed in the image)
+ARCHITECTURE.md
+docs/
+apps/web/README.md
+scripts/README.md
+installed_skills/README.md
+src/**/README.md
