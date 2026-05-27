@@ -22,8 +22,12 @@ COPY pyproject.toml README.md /app/
 COPY src /app/src
 COPY main.py /app/main.py
 COPY config /app/config
+COPY skills /app/skills
+COPY libs /app/libs
+COPY installed_plugins /app/installed_plugins
 COPY .env.example /app/.env.example
 COPY --from=ui-build /ui/dist /app/apps/web/dist
+RUN mkdir -p /app/data /app/installed_skills /app/config
 
 RUN pip install --no-cache-dir -e . \
     && python -m playwright install --with-deps chromium

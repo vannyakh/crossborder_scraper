@@ -14,10 +14,17 @@ fi
 echo "==> install Playwright Chromium"
 repo_python -m playwright install chromium
 
-echo "==> panel credentials (.env)"
-repo_scraper setup
+MODE="${SETUP_MODE:-server}"
+echo "==> bootstrap (mode=$MODE)"
+if [[ "$MODE" == "panel" ]]; then
+  repo_scraper setup
+else
+  repo_scraper setup "--${MODE}"
+fi
 
 echo ""
-echo "Done. Next:"
-echo "  bash scripts/serve-api.sh    # API + built UI at /ui/"
-echo "  bash scripts/dev-ui.sh       # frontend dev (separate terminal)"
+echo "Done. Self-host options:"
+echo "  bash scripts/serve-api.sh       # dev API + reload"
+echo "  uv run scraper deploy up          # Docker production"
+echo "  uv run scraper deploy systemd     # Linux service unit"
+echo "  bash scripts/dev-ui.sh            # frontend dev"

@@ -4,7 +4,10 @@ Run from repository root (or any path — scripts resolve `ROOT` automatically).
 
 | Script | Purpose |
 |--------|---------|
-| `setup.sh` | `uv sync`, Playwright Chromium, `scraper setup` |
+| `install.sh` | **One-liner (Linux/macOS)** — clone or use repo, uv, Playwright, panel access card |
+| `install.ps1` | **One-liner (Windows)** — same via PowerShell (`irm … \| iex`) |
+| `setup.sh` | From clone: `uv sync`, Playwright, `scraper setup` (`SETUP_MODE=panel\|server\|docker`) |
+| `setup.ps1` | Wrapper → `install.ps1` |
 | `serve-api.sh` | FastAPI panel (`uv run serve` / uvicorn reload) |
 | `dev-ui.sh` | Vite dev server (`apps/web`, proxies API) |
 | `dev-stack.sh` | Print two-terminal dev instructions |

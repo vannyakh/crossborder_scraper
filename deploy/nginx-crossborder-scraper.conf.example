@@ -1,0 +1,1 @@
+# Example nginx site — generate with: scraper deploy nginx -n scraper.example.com -o deploy/nginx.conf

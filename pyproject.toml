@@ -47,6 +47,7 @@ packages = [
   "src/sites",
   "src/plugins",
   "src/gateway",
+  "src/deploy",
 ]
 
 [tool.ruff]

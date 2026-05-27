@@ -1,0 +1,25 @@
+# Production overlay — use: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+services:
+  scraper-api:
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./installed_plugins:/app/installed_plugins
+      - ./installed_skills:/app/installed_skills
+      - ./skills:/app/skills:ro
+    environment:
+      UVICORN_RELOAD: "0"
+      HEADLESS: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

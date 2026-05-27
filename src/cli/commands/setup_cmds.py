@@ -17,16 +17,78 @@ def register_setup_commands(app: typer.Typer) -> None:
             "--regenerate",
             help="Generate new panel username/password even if .env already has them",
         ),
+        server: bool = typer.Option(
+            False,
+            "--server",
+            help="Full VPS/bootstrap: dirs, configs, Python deps, Playwright",
+        ),
+        docker: bool = typer.Option(
+            False,
+            "--docker",
+            help="Prepare for Docker deploy (dirs, configs, credentials; no local browser)",
+        ),
+        host: str = typer.Option(
+            "0.0.0.0",
+            "--host",
+            help="Panel bind address (0.0.0.0 = all interfaces, like aaPanel)",
+        ),
+        port: int | None = typer.Option(
+            None,
+            "--port",
+            "-p",
+            help="Panel TCP port (default 8000; auto-picks next free if busy)",
+        ),
+        external: str | None = typer.Option(
+            None,
+            "--external",
+            "-e",
+            help="Public IP or domain for display (e.g. VPS public IP)",
+        ),
+        no_auto_port: bool = typer.Option(
+            False,
+            "--fixed-port",
+            help="Do not auto-change port if 8000 is busy",
+        ),
     ) -> None:
-        """Initialize .env with auto-generated panel login credentials."""
-        from config.credentials import ensure_panel_credentials, print_panel_credentials
+        """
+        Initialize self-hosted panel — generates URL, IP, username, and password (aaPanel-style).
 
-        username, password, generated = ensure_panel_credentials(force_regenerate=regenerate)
-        print_panel_credentials(username, password)
-        if not generated and not regenerate:
-            console.print("[yellow]Panel credentials already in .env[/yellow]")
+        Production server: scraper setup --server
+
+        Docker host: scraper setup --docker  then  scraper deploy up
+        """
+        from config.credentials import print_panel_credentials
+        from deploy.bootstrap import run_setup
+
+        if docker:
+            mode = "docker"
+        elif server:
+            mode = "server"
         else:
-            console.print("[green]Credentials written to .env[/green]")
+            mode = "panel"
+
+        result = run_setup(
+            mode=mode,
+            regenerate=regenerate,
+            bind_host=host,
+            port=port,
+            auto_port=not no_auto_port,
+            external_host=external,
+        )
+        access = result["access"]
+        print_panel_credentials(
+            str(result["username"]),
+            str(result["password"]),
+            access=access,
+            mode=mode,
+        )
+
+        if result["warnings"]:
+            for w in result["warnings"]:
+                console.print(f"[yellow]{w}[/yellow]")
+
+        if mode == "panel" and not regenerate:
+            console.print("[dim]Full VPS install: scraper setup --server[/dim]")
 
     @app.command("env-clean")
     def env_clean() -> None:

@@ -147,18 +147,32 @@ def _migrate_ui_prefs(env_path: Path) -> None:
         logger.info("Moved UI prefs to config/ui_config.json; removed from .env: {}", ", ".join(removed))
 
 
-def print_panel_credentials(username: str, password: str, *, env_path: Path | None = None) -> None:
+def print_panel_credentials(
+    username: str,
+    password: str,
+    *,
+    env_path: Path | None = None,
+    access: object | None = None,
+    mode: str = "setup",
+) -> None:
+    """Print aaPanel-style access card (prefer passing `access` from deploy.bootstrap)."""
+    from deploy.panel_access import default_next_commands, print_panel_access_card
+
+    if access is not None:
+        print_panel_access_card(access, mode=mode, next_commands=default_next_commands(mode))
+        return
+
+    from deploy.network import build_panel_access_info
+    from config import get_settings
+
+    settings = get_settings()
     path = env_path or _repo_env_path()
-    banner = (
-        "\n"
-        "╔══════════════════════════════════════════════════╗\n"
-        "║       Crossborder Scraper — Panel Access         ║\n"
-        "╠══════════════════════════════════════════════════╣\n"
-        f"║  Username: {username:<36} ║\n"
-        f"║  Password: {password:<36} ║\n"
-        "╠══════════════════════════════════════════════════╣\n"
-        f"║  Saved in: {str(path):<36} ║\n"
-        "║  Use these at http://localhost:8000/ui/login     ║\n"
-        "╚══════════════════════════════════════════════════╝\n"
+    info = build_panel_access_info(
+        username=username,
+        password=password,
+        bind_host=settings.panel_host,
+        port=settings.panel_port,
+        credentials_generated=False,
+        env_path=str(path),
     )
-    print(banner)
+    print_panel_access_card(info, mode=mode, next_commands=default_next_commands(mode))

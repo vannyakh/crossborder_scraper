@@ -37,6 +37,8 @@ crossborder_scraper/
 │
 ├── data/                      # Cookies, scrape output, SQLite (gitignored)
 ├── installed_plugins/         # ZIP-installed sandboxed plugins
+├── deploy/                    # Generated systemd/nginx examples
+├── docs/SELF_HOSTING.md       # VPS, Docker, aaPanel deploy guide
 ├── libs/prompts/              # Gateway agent role prompts (*.md)
 ├── skills/                    # Built-in agent skills (SKILL.md, OpenClaw-style)
 ├── installed_skills/          # ZIP-installed custom agent skills
@@ -76,7 +78,9 @@ Run CLI and API from the **repository root** so relative `config/` and `data/` p
 |---------|--------|
 | `uv run scraper` | `cli:app` (see `src/cli/commands/`) |
 | `uv run serve` | `server.__main__:main` |
-| `bash scripts/setup.sh` | First-time deps + Playwright + panel setup |
+| `bash scripts/install.sh` | VPS one-shot install |
+| `bash scripts/setup.sh` | deps + `scraper setup --server` |
+| `uv run scraper deploy up` | Docker production stack |
 | `python main.py` | Same as `scraper` |
 | Docker | `uvicorn server.app:app` |
 

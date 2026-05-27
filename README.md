@@ -98,7 +98,34 @@ scraper plugins                             # source plugin catalog
 
 CLI uses the same HTTP API as the web panel (`/gateway/*`). Use `--local` on `scraper agent` / `scraper skills` to skip the HTTP server.
 
-Shell helpers: see [scripts/README.md](scripts/README.md) (`setup.sh`, `dev-ui.sh`, `dev-stack.sh`).
+Shell helpers: see [scripts/README.md](scripts/README.md).
+
+### Self-hosting (VPS / Docker / aaPanel)
+
+**One-liner** (clone, install deps, generate panel URL + login — like OpenClaw / aaPanel):
+
+```bash
+# macOS & Linux
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
+```
+
+```powershell
+# Windows
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.ps1 | iex"
+```
+
+From an existing clone:
+
+```bash
+bash scripts/install.sh
+# or: uv run scraper setup --server
+uv run scraper deploy up          # Docker
+# or: uv run scraper deploy systemd && uv run scraper deploy nginx
+```
+
+Auto-start panel after install: `CROSSBORDER_START=1 curl ... | bash`
+
+See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) for aaPanel, nginx, Windows, and systemd.
 
 ### Agent page + cron schedules
 
