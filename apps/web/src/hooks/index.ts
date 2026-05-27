@@ -40,6 +40,10 @@ export { useExportProductMutation } from './mutations/use-export-mutations'
 export { useRuntimeStatusQuery, useMarketplacesQuery } from './queries/use-runtime-query'
 export { useGatewayStatusQuery } from './queries/use-gateway-query'
 export {
+  useApplyPanelUpdateMutation,
+  usePanelUpdateStatusQuery,
+} from './queries/use-panel-update-query'
+export {
   useHardwareMonitorQuery,
   useLiveMonitorStatusQuery,
   useMonitorStatusQuery,

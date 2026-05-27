@@ -18,6 +18,9 @@ from server.schemas import (
     GatewaySkillListResponse,
     GatewayStatusResponse,
     GatewayToolListResponse,
+    PanelUpdateApplyRequest,
+    PanelUpdateApplyResponse,
+    PanelUpdateStatusResponse,
     GatewayWorkflowListResponse,
     GatewayWorkflowRunRequest,
     GatewayWorkflowRunResponse,
@@ -25,6 +28,7 @@ from server.schemas import (
     SkillUninstallResponse,
 )
 from server.services.gateway_service import get_gateway_service
+from server.services.update_service import get_update_service
 
 router = protected_router(prefix="/gateway", tags=["gateway"])
 
@@ -32,6 +36,31 @@ router = protected_router(prefix="/gateway", tags=["gateway"])
 @router.get("/status", response_model=GatewayStatusResponse)
 async def gateway_status() -> GatewayStatusResponse:
     return GatewayStatusResponse(**get_gateway_service().get_status())
+
+
+@router.get("/update/status", response_model=PanelUpdateStatusResponse)
+async def gateway_update_status() -> PanelUpdateStatusResponse:
+    """Check GitHub / git for a newer panel version."""
+    return PanelUpdateStatusResponse(**get_update_service().get_status())
+
+
+@router.post("/update/apply", response_model=PanelUpdateApplyResponse)
+async def gateway_update_apply(
+    body: PanelUpdateApplyRequest | None = None,
+) -> PanelUpdateApplyResponse:
+    """
+    Pull latest code, sync dependencies, and restart the panel.
+
+    The API may become briefly unavailable while the service restarts.
+    """
+    payload = body or PanelUpdateApplyRequest()
+    result = await get_update_service().apply_update(
+        pull=payload.pull,
+        browser=payload.browser,
+        restart=payload.restart,
+        branch=payload.branch,
+    )
+    return PanelUpdateApplyResponse(**result)
 
 
 @router.get("/tools", response_model=GatewayToolListResponse)

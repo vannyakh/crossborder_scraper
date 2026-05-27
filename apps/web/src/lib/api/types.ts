@@ -343,9 +343,34 @@ export type MonitorStatus = {
   service: RuntimeStatus
 }
 
+export type PanelUpdateStatus = {
+  current_version: string
+  latest_version: string | null
+  update_available: boolean
+  release_url: string | null
+  release_notes: string | null
+  source: string
+  git_commits_behind: number
+  git_branch: string | null
+  check_error: string | null
+}
+
+export type PanelUpdateApply = {
+  ok: boolean
+  steps: string[]
+  warnings: string[]
+  runtime: string
+  restarting: boolean
+  current_version: string
+  latest_version: string | null
+  update_available: boolean
+}
+
 export type GatewayStatus = {
   service: string
   version: string
+  update_available?: boolean
+  latest_version?: string | null
   control_plane: string
   clients: string[]
   tools_count: number
@@ -382,6 +407,8 @@ export type GatewayWorkflowRunResponse = {
 export type ServiceGatewaySummary = {
   service: string
   version: string
+  update_available?: boolean
+  latest_version?: string | null
   control_plane: string
   clients: string[]
   tools_count: number

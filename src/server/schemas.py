@@ -317,9 +317,41 @@ class AgentRunListResponse(BaseModel):
     items: list[AgentRunRecord]
 
 
+class PanelUpdateStatusResponse(BaseModel):
+    current_version: str
+    latest_version: str | None = None
+    update_available: bool = False
+    release_url: str | None = None
+    release_notes: str | None = None
+    source: str = "none"
+    git_commits_behind: int = 0
+    git_branch: str | None = None
+    check_error: str | None = None
+
+
+class PanelUpdateApplyRequest(BaseModel):
+    pull: bool = True
+    browser: bool = True
+    restart: bool = True
+    branch: str | None = None
+
+
+class PanelUpdateApplyResponse(BaseModel):
+    ok: bool
+    steps: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    runtime: str = "none"
+    restarting: bool = False
+    current_version: str
+    latest_version: str | None = None
+    update_available: bool = False
+
+
 class GatewayStatusResponse(BaseModel):
     service: str
     version: str
+    update_available: bool = False
+    latest_version: str | None = None
     control_plane: str
     clients: list[str]
     tools_count: int
@@ -335,6 +367,8 @@ class GatewayStatusResponse(BaseModel):
 class ServiceGatewaySummary(BaseModel):
     service: str
     version: str
+    update_available: bool = False
+    latest_version: str | None = None
     control_plane: str
     clients: list[str]
     tools_count: int

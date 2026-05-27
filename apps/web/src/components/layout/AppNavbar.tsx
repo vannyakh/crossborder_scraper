@@ -2,6 +2,7 @@ import { HStack, IconButton } from '@chakra-ui/react'
 import { ListIndentDecrease, ListIndentIncrease } from 'lucide-react'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { useUiStore } from '../../stores/ui-store'
+import { PanelUpdateButton } from './PanelUpdateButton'
 import { ThemeSettingsButton } from '../theme/ThemeSettingsDrawer'
 import { uiRadius } from '../ui/ui-styles'
 import { AccountMenu } from './AccountMenu'
@@ -49,6 +50,7 @@ export function AppNavbar() {
         <AccountMenu />
         <NavHostInfo />
         <NavDivider />
+        <PanelUpdateButton />
         <ThemeSettingsButton />
       </HStack>
     </ShellHeaderRow>

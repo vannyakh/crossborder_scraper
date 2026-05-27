@@ -130,6 +130,8 @@ async def get_service_support() -> dict[str, Any]:
         "gateway": {
             "service": gateway["service"],
             "version": gateway["version"],
+            "update_available": gateway.get("update_available", False),
+            "latest_version": gateway.get("latest_version"),
             "control_plane": gateway["control_plane"],
             "clients": gateway["clients"],
             "tools_count": gateway["tools_count"],

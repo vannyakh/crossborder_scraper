@@ -87,6 +87,13 @@ uv run scraper tools reset all -y      # credentials + config + data + cache
 
 Shell wrapper: `bash scripts/tools.sh update`
 
+**Web UI:** header **update** icon (arrow) shows a green dot when a newer version is available. Confirm in the modal to pull, sync, and restart.
+
+| API | Method | Description |
+|-----|--------|-------------|
+| `/gateway/update/status` | GET | Current vs latest version, git behind count |
+| `/gateway/update/apply` | POST | Run update (body: `pull`, `browser`, `restart`) |
+
 | Command | What it does |
 |---------|----------------|
 | `sync` | Pull git (if repo), `uv sync`, optional `--browser`, `--docker-rebuild` |

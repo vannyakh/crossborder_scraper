@@ -19,6 +19,7 @@ from gateway.tools import TOOL_DEFINITIONS
 from gateway.workflows import WORKFLOW_TEMPLATES, run_workflow
 from server.core.constants import APP_VERSION
 from server.services.runtime import get_service_runtime
+from server.services.update_service import get_update_service
 
 
 class GatewayService:
@@ -31,9 +32,12 @@ class GatewayService:
         from gateway.skills import get_skill_manager
 
         skill_mgr = get_skill_manager()
+        update = get_update_service().get_status()
         return {
             "service": "crossborder-scraper-gateway",
             "version": APP_VERSION,
+            "update_available": update["update_available"],
+            "latest_version": update.get("latest_version"),
             "control_plane": "fastapi",
             "clients": ["web-ui", "cli", "agent", "cron"],
             "tools_count": len(TOOL_DEFINITIONS),

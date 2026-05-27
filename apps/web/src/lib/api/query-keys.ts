@@ -17,6 +17,7 @@ export const queryKeys = {
   monitorStatus: ['monitor', 'status'] as const,
   marketplaces: ['export', 'marketplaces'] as const,
   gatewayStatus: ['gateway', 'status'] as const,
+  gatewayUpdateStatus: ['gateway', 'update', 'status'] as const,
   gatewayPrompts: ['gateway', 'prompts'] as const,
   gatewaySkills: ['gateway', 'skills'] as const,
   gatewayTools: ['gateway', 'tools'] as const,
