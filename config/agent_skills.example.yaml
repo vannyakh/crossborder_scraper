@@ -1,0 +1,6 @@
+# Copy to agent_skills.yaml to customize which skills are active for the gateway agent.
+enabled:
+  - scrape-assistant
+  - catalog-monitor
+  - export-review
+  - batch-ops

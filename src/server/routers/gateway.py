@@ -1,5 +1,7 @@
-from fastapi import HTTPException
+from fastapi import Depends, File, HTTPException, Query, UploadFile
 
+from gateway.skills import SkillInstallError, get_skill_installer
+from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
     AgentRunListResponse,
@@ -11,11 +13,16 @@ from server.schemas import (
     GatewayAgentRequest,
     GatewayAgentResponse,
     GatewayPromptListResponse,
+    GatewaySkillEnableRequest,
+    GatewaySkillInfo,
+    GatewaySkillListResponse,
     GatewayStatusResponse,
     GatewayToolListResponse,
     GatewayWorkflowListResponse,
     GatewayWorkflowRunRequest,
     GatewayWorkflowRunResponse,
+    SkillInstallResponse,
+    SkillUninstallResponse,
 )
 from server.services.gateway_service import get_gateway_service
 
@@ -42,10 +49,61 @@ async def list_workflows() -> GatewayWorkflowListResponse:
     return GatewayWorkflowListResponse(items=get_gateway_service().list_workflows())
 
 
+@router.get("/skills", response_model=GatewaySkillListResponse)
+async def list_agent_skills() -> GatewaySkillListResponse:
+    data = get_gateway_service().list_skills()
+    return GatewaySkillListResponse(
+        items=[GatewaySkillInfo(**i) for i in data["items"]],
+        total=data["total"],
+        enabled=data["enabled"],
+    )
+
+
+@router.put("/skills/enabled", response_model=GatewaySkillListResponse)
+async def set_enabled_skills(body: GatewaySkillEnableRequest) -> GatewaySkillListResponse:
+    svc = get_gateway_service()
+    svc.set_enabled_skills(body.enabled)
+    data = svc.list_skills()
+    return GatewaySkillListResponse(
+        items=[GatewaySkillInfo(**i) for i in data["items"]],
+        total=data["total"],
+        enabled=data["enabled"],
+    )
+
+
+@router.post("/skills/install", response_model=SkillInstallResponse)
+async def install_agent_skill(
+    file: UploadFile = File(...),
+    replace: bool = Query(False),
+    _username: str = Depends(require_panel_auth),
+) -> SkillInstallResponse:
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="only .zip archives are accepted")
+    data = await file.read()
+    try:
+        result = get_skill_installer().install_zip(data, replace=replace)
+    except SkillInstallError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return SkillInstallResponse(**result)
+
+
+@router.delete("/skills/installed/{skill_id}", response_model=SkillUninstallResponse)
+async def uninstall_agent_skill(skill_id: str) -> SkillUninstallResponse:
+    try:
+        result = get_skill_installer().uninstall(skill_id)
+    except SkillInstallError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return SkillUninstallResponse(**result)
+
+
 @router.post("/agent/run", response_model=GatewayAgentResponse)
 async def agent_run(body: GatewayAgentRequest) -> GatewayAgentResponse:
     svc = get_gateway_service()
-    result = await svc.run_agent(body.message, prompt_id=body.prompt_id)
+    result = await svc.run_agent(
+        body.message,
+        prompt_id=body.prompt_id,
+        skill_ids=body.skill_ids,
+    )
     return GatewayAgentResponse(**result)
 
 

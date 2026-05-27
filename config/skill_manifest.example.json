@@ -1,0 +1,15 @@
+{
+  "note": "Skills use SKILL.md with YAML frontmatter. Optional skill.json is not required.",
+  "example_frontmatter": {
+    "name": "my-scraper-skill",
+    "description": "Custom scrape workflow instructions for the gateway agent.",
+    "version": "1.0.0",
+    "metadata": {
+      "crossborder": {
+        "emoji": "🔧",
+        "category": "scrape",
+        "tools": ["scrape_product", "submit_batch", "runtime_status"]
+      }
+    }
+  }
+}

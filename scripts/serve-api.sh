@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
-# Run FastAPI from repository root.
+# Run FastAPI panel API from repo root (with reload).
 set -euo pipefail
-cd "$(dirname "$0")/.."
-exec python -m uvicorn server.app:app --host 0.0.0.0 --port "${PANEL_PORT:-8000}" --reload
+# shellcheck source=_lib.sh
+source "$(dirname "$0")/_lib.sh"
+
+export UVICORN_RELOAD="${UVICORN_RELOAD:-1}"
+export PANEL_PORT="${PANEL_PORT:-8000}"
+
+if command -v uv >/dev/null 2>&1; then
+  exec uv run serve
+fi
+
+exec repo_python -m server

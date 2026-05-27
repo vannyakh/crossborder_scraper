@@ -85,19 +85,28 @@ python main.py engine                       # show workers, proxies, cookies, AI
 ### Gateway + AI agent (control plane)
 
 ```bash
-uv run serve                                # start API + web UI gateway
+uv run serve                                # API + panel UI (or: scraper serve)
+bash scripts/serve-api.sh                   # same, with reload
 scraper gateway                             # gateway status
+scraper skills list --local                 # OpenClaw-style SKILL.md skills
+scraper prompts list                        # agent role prompts
 scraper agent "list marketplaces and last 5 products"
+scraper agent "scrape this URL" -s scrape-assistant --local
 scraper workflow scrape_to_export --url "https://..." --marketplace shopify
+scraper plugins                             # source plugin catalog
 ```
 
-CLI uses the same HTTP API as the web panel (`/gateway/*`). Use `--local` on `scraper agent` to run in-process without the server.
+CLI uses the same HTTP API as the web panel (`/gateway/*`). Use `--local` on `scraper agent` / `scraper skills` to skip the HTTP server.
+
+Shell helpers: see [scripts/README.md](scripts/README.md) (`setup.sh`, `dev-ui.sh`, `dev-stack.sh`).
 
 ### Agent page + cron schedules
 
 Open **Agent** in the sidebar (`/ui/agent`) for chat, tool trace, and background cron tasks.
 
-Prompt templates live in `libs/prompts/*.md`. Schedules in `config/agent_schedules.json`:
+Role prompts: `libs/prompts/*.md` · Agent skills: `skills/*/SKILL.md` (enable in `config/agent_skills.yaml` or **Agent → Skills**).
+
+Schedules in `config/agent_schedules.json`:
 
 ```bash
 cp config/agent_schedules.example.json config/agent_schedules.json

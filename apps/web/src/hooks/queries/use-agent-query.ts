@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, queryKeys, type AgentSchedule, type AgentScheduleCreate, type GatewayAgentResponse } from '../../lib/api'
+import {
+  api,
+  apiFormData,
+  queryKeys,
+  type AgentSchedule,
+  type AgentScheduleCreate,
+  type GatewayAgentResponse,
+} from '../../lib/api'
 
 export function useGatewayPromptsQuery() {
   return useQuery({
@@ -60,10 +67,47 @@ export function useAgentSchedulesQuery() {
   })
 }
 
+export function useGatewaySkillsQuery() {
+  return useQuery({
+    queryKey: queryKeys.gatewaySkills,
+    queryFn: () => api<import('../../lib/api').GatewaySkillList>('/gateway/skills'),
+    staleTime: 30_000,
+  })
+}
+
+export function useSetEnabledSkillsMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (enabled: string[]) =>
+      api<import('../../lib/api').GatewaySkillList>('/gateway/skills/enabled', {
+        method: 'PUT',
+        body: JSON.stringify({ enabled }),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewaySkills })
+    },
+  })
+}
+
+export function useInstallSkillMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ file, replace }: { file: File; replace?: boolean }) => {
+      const form = new FormData()
+      form.append('file', file)
+      const q = replace ? '?replace=true' : ''
+      return apiFormData<{ ok: boolean; skill_id: string }>(`/gateway/skills/install${q}`, form)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewaySkills })
+    },
+  })
+}
+
 export function useRunAgentMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { message: string; prompt_id?: string }) =>
+    mutationFn: (payload: { message: string; prompt_id?: string; skill_ids?: string[] }) =>
       api<GatewayAgentResponse>('/gateway/agent/run', {
         method: 'POST',
         body: JSON.stringify(payload),

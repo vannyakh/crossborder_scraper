@@ -4,11 +4,12 @@ import {
   History,
   Layers,
   MessageSquare,
+  Sparkles,
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
 
-export type AgentSectionId = 'chat' | 'schedules' | 'runs' | 'workflows' | 'tools'
+export type AgentSectionId = 'chat' | 'schedules' | 'runs' | 'workflows' | 'tools' | 'skills'
 
 export type AgentNavGroup = 'channel' | 'data' | 'automation'
 
@@ -60,6 +61,13 @@ export const AGENT_NAV: AgentNavItem[] = [
     label: 'Tool catalog',
     description: 'Available gateway tools and parameters',
     icon: Wrench,
+    group: 'automation',
+  },
+  {
+    id: 'skills',
+    label: 'Skills',
+    description: 'Install and enable scraper-focused agent skills (SKILL.md)',
+    icon: Sparkles,
     group: 'automation',
   },
 ]

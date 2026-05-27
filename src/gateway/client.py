@@ -61,10 +61,27 @@ class GatewayClient:
     def list_workflows(self) -> dict[str, Any]:
         return self._request("GET", "/gateway/workflows")
 
-    def agent_run(self, message: str, *, prompt_id: str | None = None) -> dict[str, Any]:
+    def list_prompts(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/prompts")
+
+    def list_skills(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/skills")
+
+    def set_enabled_skills(self, skill_ids: list[str]) -> dict[str, Any]:
+        return self._request("PUT", "/gateway/skills/enabled", body={"enabled": skill_ids})
+
+    def agent_run(
+        self,
+        message: str,
+        *,
+        prompt_id: str | None = None,
+        skill_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
         body: dict[str, Any] = {"message": message}
         if prompt_id:
             body["prompt_id"] = prompt_id
+        if skill_ids is not None:
+            body["skill_ids"] = skill_ids
         return self._request("POST", "/gateway/agent/run", body=body)
 
     def run_workflow(self, workflow_id: str, inputs: dict[str, Any]) -> dict[str, Any]:
@@ -79,8 +96,12 @@ class GatewayClient:
         from config import get_settings
 
         settings = get_settings()
+        host = settings.panel_host
+        if host in ("0.0.0.0", "::"):
+            host = "127.0.0.1"
+        default_url = f"http://{host}:{settings.panel_port}"
         return cls(
-            base_url or "http://127.0.0.1:8000",
+            base_url or default_url,
             username=settings.panel_username,
             password=settings.panel_password,
         )

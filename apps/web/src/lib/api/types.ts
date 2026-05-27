@@ -349,6 +349,8 @@ export type GatewayStatus = {
   control_plane: string
   clients: string[]
   tools_count: number
+  skills_count?: number
+  enabled_skills_count?: number
   workflows_count: number
   schedules_count?: number
   enabled_schedules_count?: number
@@ -383,6 +385,8 @@ export type ServiceGatewaySummary = {
   control_plane: string
   clients: string[]
   tools_count: number
+  skills_count?: number
+  enabled_skills_count?: number
   workflows_count: number
   schedules_count: number
   enabled_schedules_count: number
@@ -465,6 +469,29 @@ export type GatewayAgentResponse = {
   tool_calls: GatewayToolCall[]
   model?: string | null
   prompt_id?: string | null
+  skill_ids?: string[]
+}
+
+export type GatewaySkill = {
+  id: string
+  name: string
+  description: string
+  version: string
+  category: string
+  emoji: string
+  tools: string[]
+  homepage: string
+  enabled: boolean
+  installed: boolean
+  kind: 'builtin' | 'installed'
+  trusted: boolean
+  path: string
+}
+
+export type GatewaySkillList = {
+  items: GatewaySkill[]
+  total: number
+  enabled: string[]
 }
 
 export type GatewayToolCall = {

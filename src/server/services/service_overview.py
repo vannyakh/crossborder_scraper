@@ -27,6 +27,8 @@ async def get_service_overview() -> dict[str, Any]:
             "control_plane": gateway["control_plane"],
             "clients": gateway["clients"],
             "tools_count": gateway["tools_count"],
+            "skills_count": gateway.get("skills_count", 0),
+            "enabled_skills_count": gateway.get("enabled_skills_count", 0),
             "workflows_count": gateway["workflows_count"],
             "schedules_count": gateway["schedules_count"],
             "enabled_schedules_count": gateway["enabled_schedules_count"],

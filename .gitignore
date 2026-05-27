@@ -20,6 +20,10 @@ data/
 installed_plugins/*
 !installed_plugins/.gitkeep
 
+installed_skills/*
+!installed_skills/README.md
+config/agent_skills.yaml
+
 # Secrets
 .env
 config/ui_config.json

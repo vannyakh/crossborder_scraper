@@ -8,6 +8,7 @@ import {
   Play,
   ScrollText,
   Settings,
+  Sparkles,
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
@@ -38,6 +39,7 @@ export const SOFTWARE_TOOL_ICONS = {
   logs: ScrollText,
   support: LifeBuoy,
   tools: Wrench,
+  skills: Sparkles,
 } as const satisfies Record<string, LucideIcon>
 
 export type SoftwareToolIconKey = keyof typeof SOFTWARE_TOOL_ICONS
@@ -183,7 +185,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'agent',
           icon: 'agent',
           title: 'Gateway agent',
-          description: 'Chat, cron schedules, pipelines, and tool catalog.',
+          description: 'Chat, cron schedules, OpenClaw-style skills, and tool catalog.',
           to: '/agent/chat',
           status:
             aiAgentOn && enabledSchedules > 0
@@ -193,6 +195,18 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
                 : 'Off',
           statusTone: aiAgentOn ? 'success' : 'neutral',
           primaryAction: { label: 'Chat', to: '/agent/chat' },
+        }),
+        card({
+          id: 'skills',
+          icon: 'skills',
+          title: 'Agent skills',
+          description: 'Install SKILL.md packages — scrape, batch, catalog, export playbooks.',
+          to: '/agent/skills',
+          status: stats.gateway?.skills_count
+            ? `${stats.gateway.enabled_skills_count ?? 0}/${stats.gateway.skills_count} on`
+            : 'SKILL.md',
+          statusTone: aiAgentOn ? 'success' : 'neutral',
+          primaryAction: { label: 'Skills', to: '/agent/skills' },
         }),
         card({
           id: 'workflows',

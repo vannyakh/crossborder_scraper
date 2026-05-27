@@ -195,6 +195,10 @@ class PanelConfigUpdate(BaseModel):
 class GatewayAgentRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=8000)
     prompt_id: str | None = None
+    skill_ids: list[str] | None = Field(
+        default=None,
+        description="Optional skill ids; omit to use config/agent_skills.yaml enabled set",
+    )
 
 
 class GatewayAgentResponse(BaseModel):
@@ -203,6 +207,48 @@ class GatewayAgentResponse(BaseModel):
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
     model: str | None = None
     prompt_id: str | None = None
+    skill_ids: list[str] = Field(default_factory=list)
+
+
+class GatewaySkillInfo(BaseModel):
+    id: str
+    name: str
+    description: str
+    version: str = "1.0.0"
+    category: str = "scrape"
+    emoji: str = "🤖"
+    tools: list[str] = Field(default_factory=list)
+    homepage: str = ""
+    enabled: bool = False
+    installed: bool = True
+    kind: Literal["builtin", "installed"] = "builtin"
+    trusted: bool = True
+    path: str = ""
+
+
+class GatewaySkillListResponse(BaseModel):
+    items: list[GatewaySkillInfo]
+    total: int
+    enabled: list[str] = Field(default_factory=list)
+
+
+class GatewaySkillEnableRequest(BaseModel):
+    enabled: list[str] = Field(default_factory=list)
+
+
+class SkillInstallResponse(BaseModel):
+    ok: bool = True
+    skill_id: str
+    name: str = ""
+    version: str = "1.0.0"
+    workspace: str = ""
+    tools: list[str] = Field(default_factory=list)
+
+
+class SkillUninstallResponse(BaseModel):
+    ok: bool = True
+    skill_id: str
+    removed: bool = True
 
 
 class GatewayPromptInfo(BaseModel):
@@ -277,6 +323,8 @@ class GatewayStatusResponse(BaseModel):
     control_plane: str
     clients: list[str]
     tools_count: int
+    skills_count: int = 0
+    enabled_skills_count: int = 0
     workflows_count: int
     schedules_count: int = 0
     enabled_schedules_count: int = 0
@@ -290,6 +338,8 @@ class ServiceGatewaySummary(BaseModel):
     control_plane: str
     clients: list[str]
     tools_count: int
+    skills_count: int = 0
+    enabled_skills_count: int = 0
     workflows_count: int
     schedules_count: int = 0
     enabled_schedules_count: int = 0

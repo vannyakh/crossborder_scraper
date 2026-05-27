@@ -28,12 +28,17 @@ class GatewayService:
         enabled_schedules = sum(1 for s in schedules if s.get("enabled"))
         recent_runs = load_runs(limit=5) if _schedules_ready() else []
         failed_runs = sum(1 for r in recent_runs if r.get("ok") is False)
+        from gateway.skills import get_skill_manager
+
+        skill_mgr = get_skill_manager()
         return {
             "service": "crossborder-scraper-gateway",
             "version": APP_VERSION,
             "control_plane": "fastapi",
             "clients": ["web-ui", "cli", "agent", "cron"],
             "tools_count": len(TOOL_DEFINITIONS),
+            "skills_count": len(skill_mgr.all_manifests()),
+            "enabled_skills_count": len(skill_mgr.enabled_ids()),
             "workflows_count": len(WORKFLOW_TEMPLATES),
             "schedules_count": len(schedules),
             "enabled_schedules_count": enabled_schedules,
@@ -59,12 +64,38 @@ class GatewayService:
             for wf_id, meta in WORKFLOW_TEMPLATES.items()
         ]
 
-    async def run_agent(self, message: str, *, prompt_id: str | None = None) -> dict[str, Any]:
+    def list_skills(self) -> dict[str, Any]:
+        from gateway.skills import get_skill_manager
+
+        mgr = get_skill_manager()
+        return {
+            "items": mgr.list_catalog(),
+            "total": len(mgr.all_manifests()),
+            "enabled": sorted(mgr.enabled_ids()),
+        }
+
+    def set_enabled_skills(self, skill_ids: list[str]) -> list[str]:
+        from gateway.skills import get_skill_manager
+
+        return get_skill_manager().set_enabled(skill_ids)
+
+    async def run_agent(
+        self,
+        message: str,
+        *,
+        prompt_id: str | None = None,
+        skill_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
         from server.manager import get_manager
 
         mgr = get_manager()
         agent = GatewayAgent(mgr.settings)
-        return await agent.run(message.strip(), manager=mgr, prompt_id=prompt_id)
+        return await agent.run(
+            message.strip(),
+            manager=mgr,
+            prompt_id=prompt_id,
+            skill_ids=skill_ids,
+        )
 
     async def run_workflow(self, workflow_id: str, *, inputs: dict[str, Any]) -> dict[str, Any]:
         from server.manager import get_manager

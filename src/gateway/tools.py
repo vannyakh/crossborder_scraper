@@ -166,8 +166,11 @@ async def _runtime_status(_manager: Any) -> dict[str, Any]:
     return get_service_runtime()
 
 
-def tools_for_llm() -> list[dict[str, Any]]:
+def tools_for_llm(*, allow_names: set[str] | None = None) -> list[dict[str, Any]]:
     """OpenAI-compatible tool schemas for chat/completions."""
+    defs = TOOL_DEFINITIONS
+    if allow_names:
+        defs = [t for t in defs if t["name"] in allow_names]
     return [
         {
             "type": "function",
@@ -177,7 +180,7 @@ def tools_for_llm() -> list[dict[str, Any]]:
                 "parameters": t["parameters"],
             },
         }
-        for t in TOOL_DEFINITIONS
+        for t in defs
     ]
 
 

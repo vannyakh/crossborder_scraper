@@ -37,7 +37,9 @@ crossborder_scraper/
 │
 ├── data/                      # Cookies, scrape output, SQLite (gitignored)
 ├── installed_plugins/         # ZIP-installed sandboxed plugins
-├── libs/prompts/              # Gateway agent markdown prompts
+├── libs/prompts/              # Gateway agent role prompts (*.md)
+├── skills/                    # Built-in agent skills (SKILL.md, OpenClaw-style)
+├── installed_skills/          # ZIP-installed custom agent skills
 │
 ├── main.py                    # CLI entry (`python main.py` → cli)
 ├── pyproject.toml
@@ -62,6 +64,7 @@ Use `core.plugins` for scrape/source plugins and `core.paths` instead of `Path(_
 
 ```python
 from core.plugins import get_plugin_manager, PLUGIN_SPECS
+from gateway.skills import get_skill_manager
 from core.paths import repo_root, ui_dist_dir, config_dir, data_dir
 ```
 
@@ -71,8 +74,9 @@ Run CLI and API from the **repository root** so relative `config/` and `data/` p
 
 | Command | Module |
 |---------|--------|
-| `uv run scraper` | `cli:app` |
+| `uv run scraper` | `cli:app` (see `src/cli/commands/`) |
 | `uv run serve` | `server.__main__:main` |
+| `bash scripts/setup.sh` | First-time deps + Playwright + panel setup |
 | `python main.py` | Same as `scraper` |
 | Docker | `uvicorn server.app:app` |
 

@@ -49,5 +49,17 @@ def prompts_dir() -> Path:
     return repo_root() / "libs" / "prompts"
 
 
+def builtin_skills_dir() -> Path:
+    return repo_root() / "skills"
+
+
+def installed_skills_dir() -> Path:
+    return repo_root() / "installed_skills"
+
+
+def agent_skills_config_path() -> Path:
+    return config_dir() / "agent_skills.yaml"
+
+
 def env_file_path() -> Path:
     return repo_root() / ".env"

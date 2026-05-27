@@ -10,10 +10,9 @@ import httpx
 from loguru import logger
 
 from config import Settings
-from gateway.tools import execute_tool, parse_tool_call, tools_for_llm
-
-
 from gateway.prompts import DEFAULT_PROMPT_ID, load_prompt
+from gateway.skills import get_skill_manager
+from gateway.tools import execute_tool, parse_tool_call, tools_for_llm
 
 
 class GatewayAgent:
@@ -46,6 +45,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         *,
         manager: Any,
         prompt_id: str | None = None,
+        skill_ids: list[str] | None = None,
         max_tool_rounds: int = 3,
     ) -> dict[str, Any]:
         if not self.enabled:
@@ -54,9 +54,16 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                 "message": "AI agent disabled. Enable ai_enabled and set ai_api_key in panel config.",
                 "tool_calls": [],
                 "prompt_id": prompt_id or DEFAULT_PROMPT_ID,
+                "skill_ids": [],
             }
 
-        resolved_id, system_prompt = load_prompt(prompt_id)
+        resolved_id, base_prompt = load_prompt(prompt_id)
+        skill_mgr = get_skill_manager()
+        resolved_skills, system_prompt, skill_tools = skill_mgr.compose_instructions(
+            base_prompt,
+            skill_ids=skill_ids,
+        )
+        allow_tools = skill_tools if skill_tools else None
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": message},
@@ -64,7 +71,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         tool_calls_log: list[dict[str, Any]] = []
 
         for _ in range(max_tool_rounds):
-            response = await self._chat(messages, tools=tools_for_llm())
+            response = await self._chat(messages, tools=tools_for_llm(allow_names=allow_tools))
             choice = response["choices"][0]["message"]
             tool_calls = choice.get("tool_calls") or []
 
@@ -75,6 +82,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                     "tool_calls": tool_calls_log,
                     "model": self.settings.ai_model,
                     "prompt_id": resolved_id,
+                    "skill_ids": resolved_skills,
                 }
 
             messages.append(choice)
@@ -101,6 +109,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             "tool_calls": tool_calls_log,
             "model": self.settings.ai_model,
             "prompt_id": resolved_id,
+            "skill_ids": resolved_skills,
         }
 
     async def _chat(
