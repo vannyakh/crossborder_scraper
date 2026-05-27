@@ -66,12 +66,21 @@ class ProxyPool:
         cls,
         single: str | None,
         list_path: Path | str | None,
+        *,
+        vpn_enabled: bool = False,
+        vpn_endpoint: str | None = None,
     ) -> "ProxyPool":
         if isinstance(list_path, str):
             list_path = Path(list_path) if list_path.strip() else None
-        proxies: list[ProxyConfig] = []
         if list_path and list_path.exists():
-            return cls.from_file(list_path)
+            pool = cls.from_file(list_path)
+            if pool.size > 0:
+                return pool
+        if vpn_enabled and vpn_endpoint:
+            cfg = ProxyConfig.parse_line(vpn_endpoint)
+            if cfg:
+                return cls([cfg])
+        proxies: list[ProxyConfig] = []
         if single:
             cfg = ProxyConfig.parse_line(single)
             if cfg:
@@ -103,3 +112,13 @@ class ProxyPool:
         if index is not None:
             return self._proxies[index % len(self._proxies)]
         return self.next()
+
+
+def proxy_pool_for_settings(settings) -> ProxyPool:
+    """Build the active proxy pool from panel settings (pool file > VPN > single)."""
+    return ProxyPool.from_settings(
+        settings.proxy_server,
+        settings.proxy_list_path,
+        vpn_enabled=bool(getattr(settings, "vpn_enabled", False)),
+        vpn_endpoint=getattr(settings, "vpn_local_endpoint", None),
+    )

@@ -56,10 +56,7 @@ const SETTINGS_LABEL_KEYS: Record<(typeof SETTINGS_NAV)[number]['id'], { label: 
   panel: { label: 'nav.panelTheme', description: 'nav.panelThemeDesc' },
   network: { label: 'nav.networkFirewall', description: 'nav.networkFirewallDesc' },
   ai: { label: 'nav.aiLlm', description: 'nav.aiLlmDesc' },
-  scrape: { label: 'nav.scrapeEngine', description: 'nav.scrapeEngineDesc' },
   proxy: { label: 'nav.proxy', description: 'nav.proxyDesc' },
-  pricing: { label: 'nav.pricing', description: 'nav.pricingDesc' },
-  marketplaces: { label: 'nav.marketplaces', description: 'nav.marketplacesDesc' },
 }
 
 const SCRAPE_LABEL_KEYS = {

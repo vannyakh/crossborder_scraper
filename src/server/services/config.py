@@ -25,6 +25,11 @@ class ConfigService:
         data["ai_api_key_set"] = bool(s.ai_api_key)
         data["ai_base_url"] = s.ai_base_url
         data["proxy_server_set"] = bool(s.proxy_server)
+        data["vpn_enabled"] = s.vpn_enabled
+        data["vpn_mode"] = s.vpn_mode
+        data["vpn_endpoint_set"] = bool(s.vpn_local_endpoint)
+        if s.vpn_config_path:
+            data["vpn_config_path"] = str(s.vpn_config_path)
         max_jobs = s.max_concurrent_jobs
         workers = data.get("scrape_default_workers") or max_jobs
         data["scrape_default_workers"] = min(int(workers), max_jobs)

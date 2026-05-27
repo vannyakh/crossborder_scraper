@@ -57,6 +57,10 @@
   "proxy_list_path": "config/proxies.txt",
   "proxy_rotation_strategy": "round_robin",
   "proxy_server": "",
+  "vpn_enabled": false,
+  "vpn_mode": "local_socks",
+  "vpn_local_endpoint": "",
+  "vpn_config_path": "",
   "request_delay_seconds": 2,
   "scrape_default_workers": 3,
   "telegram": {

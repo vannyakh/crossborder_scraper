@@ -38,6 +38,11 @@ class PanelConfigResponse(BaseModel):
     ai_api_key_masked: str | None = None
     proxy_server_set: bool = False
     proxy_server_masked: str | None = None
+    vpn_enabled: bool = False
+    vpn_mode: Literal["local_socks", "wireguard"] = "local_socks"
+    vpn_endpoint_set: bool = False
+    vpn_local_endpoint_masked: str | None = None
+    vpn_config_path: str | None = None
     marketplaces: dict[str, MarketplaceEntry]
     ui_config_path: str
     config_dir: str
@@ -63,6 +68,10 @@ class PanelConfigUpdate(BaseModel):
     proxy_rotation_strategy: Literal["round_robin", "random"] | None = None
     max_concurrent_jobs: int | None = Field(default=None, ge=1, le=50)
     proxy_server: str | None = None
+    vpn_enabled: bool | None = None
+    vpn_mode: Literal["local_socks", "wireguard"] | None = None
+    vpn_local_endpoint: str | None = None
+    vpn_config_path: str | None = None
     ai_api_key: str | None = None
     ai_base_url: str | None = None
     marketplaces: dict[str, MarketplaceCredentialsUpdate] | None = None
@@ -125,6 +134,29 @@ class LLMHealthResponse(BaseModel):
     models_count: int | None = None
     model_available: bool | None = None
     probe: str | None = None
+
+
+class ProxyStatusResponse(BaseModel):
+    mode: Literal["direct", "single", "pool", "vpn"]
+    pool_size: int
+    rotation: str
+    vpn_enabled: bool
+    vpn_mode: str
+    proxy_server_set: bool = False
+    proxy_list_path: str | None = None
+    list_exists: bool = False
+    list_count: int = 0
+    vpn_endpoint_set: bool = False
+    vpn_config_path: str | None = None
+
+
+class ProxyTestResponse(BaseModel):
+    ok: bool
+    message: str
+    direct_ip: str | None = None
+    exit_ip: str | None = None
+    proxied: bool = False
+    mode: Literal["direct", "single", "pool", "vpn"] = "direct"
 
 
 class PanelAccessResponse(BaseModel):

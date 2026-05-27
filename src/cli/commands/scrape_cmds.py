@@ -16,7 +16,7 @@ from config import get_settings
 from core.browser import BrowserManager
 from core.cookies import CookieManager
 from core.engine import ScrapeEngine, ScrapeJob
-from core.proxy import ProxyPool
+from core.proxy import proxy_pool_for_settings
 from export.registry import get_exporter
 from pipeline.normalize import to_export_listing
 from pipeline.storage import ProductStore
@@ -207,7 +207,7 @@ def register_scrape_commands(app: typer.Typer) -> None:
     def engine_info() -> None:
         """Show scrape engine configuration (workers, proxies, cookies, AI)."""
         settings = get_settings()
-        pool = ProxyPool.from_settings(settings.proxy_server, settings.proxy_list_path)
+        pool = proxy_pool_for_settings(settings)
         cookies = CookieManager(settings.cookies_dir)
 
         table = Table(title="Scrape Engine")

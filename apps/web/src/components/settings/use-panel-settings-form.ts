@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react'
-import type { LlmProviderId, MarketplaceEntry, PanelConfigUpdate } from '../../lib/api'
+import type { LlmProviderId, PanelConfigUpdate } from '../../lib/api'
 import {
   useCheckLLMHealthMutation,
   useLlmProvidersQuery,
   usePanelConfigQuery,
   useUpdatePanelConfigMutation,
 } from '../../hooks'
+import {
+  buildProxyLine,
+  emptyParsedProxy,
+  type ParsedProxy,
+  type ProxyScheme,
+} from './proxy-url'
+
+export type VpnMode = 'local_socks' | 'wireguard'
 
 export function usePanelSettingsForm() {
   const { data: panel, isLoading } = usePanelConfigQuery()
@@ -22,17 +30,13 @@ export function usePanelSettingsForm() {
   const [aiApiKey, setAiApiKey] = useState('')
   const [maxHtmlChars, setMaxHtmlChars] = useState(24000)
   const [timeoutSeconds, setTimeoutSeconds] = useState(90)
-  const [markupPercent, setMarkupPercent] = useState(35)
-  const [currency, setCurrency] = useState('USD')
-  const [workers, setWorkers] = useState(3)
-  const [maxJobs, setMaxJobs] = useState(3)
-  const [headless, setHeadless] = useState(true)
-  const [browserTimeoutMs, setBrowserTimeoutMs] = useState(30000)
-  const [requestDelaySeconds, setRequestDelaySeconds] = useState(1)
-  const [proxyServer, setProxyServer] = useState('')
+  const [proxyParts, setProxyParts] = useState<ParsedProxy>(emptyParsedProxy())
   const [proxyListPath, setProxyListPath] = useState('')
   const [proxyRotation, setProxyRotation] = useState<'round_robin' | 'random'>('round_robin')
-  const [marketplaces, setMarketplaces] = useState<Record<string, MarketplaceEntry>>({})
+  const [vpnEnabled, setVpnEnabled] = useState(false)
+  const [vpnMode, setVpnMode] = useState<VpnMode>('local_socks')
+  const [vpnLocalEndpoint, setVpnLocalEndpoint] = useState('')
+  const [vpnConfigPath, setVpnConfigPath] = useState('')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -46,36 +50,19 @@ export function usePanelSettingsForm() {
     setAiApiKey('')
     setMaxHtmlChars(panel.ai_max_html_chars)
     setTimeoutSeconds(panel.ai_timeout_seconds)
-    setMarkupPercent(panel.price_markup_percent)
-    setCurrency(panel.default_currency)
-    setWorkers(panel.scrape_default_workers)
-    setMaxJobs(panel.max_concurrent_jobs)
-    setHeadless(panel.headless)
-    setBrowserTimeoutMs(panel.browser_timeout_ms)
-    setRequestDelaySeconds(panel.request_delay_seconds)
-    setProxyServer('')
+    setProxyParts(emptyParsedProxy())
     setProxyListPath(panel.proxy_list_path ?? '')
     setProxyRotation(
       panel.proxy_rotation_strategy === 'random' ? 'random' : 'round_robin',
     )
-    setMarketplaces(panel.marketplaces ?? {})
+    setVpnEnabled(panel.vpn_enabled ?? false)
+    setVpnMode(panel.vpn_mode === 'wireguard' ? 'wireguard' : 'local_socks')
+    setVpnLocalEndpoint('')
+    setVpnConfigPath(panel.vpn_config_path ?? '')
   }, [panel])
 
-  function handleMarketplaceChange(platformId: string, patch: Partial<MarketplaceEntry>) {
-    setMarketplaces((prev) => ({
-      ...prev,
-      [platformId]: { ...prev[platformId], ...patch },
-    }))
-  }
-
-  function handleCredentialChange(platformId: string, key: string, value: string) {
-    setMarketplaces((prev) => ({
-      ...prev,
-      [platformId]: {
-        ...prev[platformId],
-        credentials: { ...prev[platformId].credentials, [key]: value },
-      },
-    }))
+  function patchProxyParts(patch: Partial<ParsedProxy>) {
+    setProxyParts((prev) => ({ ...prev, ...patch }))
   }
 
   function handleProviderChange(next: LlmProviderId) {
@@ -95,28 +82,16 @@ export function usePanelSettingsForm() {
       ai_base_url: aiBaseUrl,
       ai_max_html_chars: maxHtmlChars,
       ai_timeout_seconds: timeoutSeconds,
-      price_markup_percent: markupPercent,
-      default_currency: currency.toUpperCase(),
-      scrape_default_workers: workers,
-      max_concurrent_jobs: maxJobs,
-      headless,
-      browser_timeout_ms: browserTimeoutMs,
-      request_delay_seconds: requestDelaySeconds,
       proxy_list_path: proxyListPath.trim() || null,
       proxy_rotation_strategy: proxyRotation,
-      marketplaces: Object.fromEntries(
-        Object.entries(marketplaces).map(([id, entry]) => [
-          id,
-          {
-            enabled: entry.enabled,
-            label: entry.label,
-            credentials: entry.credentials,
-          },
-        ]),
-      ),
+      vpn_enabled: vpnEnabled,
+      vpn_mode: vpnMode,
+      vpn_config_path: vpnConfigPath.trim() || null,
     }
+    const proxyLine = buildProxyLine(proxyParts)
+    if (proxyLine) payload.proxy_server = proxyLine
+    if (vpnLocalEndpoint.trim()) payload.vpn_local_endpoint = vpnLocalEndpoint.trim()
     if (aiApiKey.trim()) payload.ai_api_key = aiApiKey.trim()
-    if (proxyServer.trim()) payload.proxy_server = proxyServer.trim()
     return payload
   }
 
@@ -125,7 +100,8 @@ export function usePanelSettingsForm() {
     try {
       await updateMutation.mutateAsync(buildPayload())
       setAiApiKey('')
-      setProxyServer('')
+      setProxyParts(emptyParsedProxy())
+      setVpnLocalEndpoint('')
       setMessage(`Saved to ${panel?.ui_config_path ?? 'config/ui_config.json'}`)
     } catch (err) {
       setMessage(String((err as Error).message || err))
@@ -166,29 +142,21 @@ export function usePanelSettingsForm() {
     setMaxHtmlChars,
     timeoutSeconds,
     setTimeoutSeconds,
-    markupPercent,
-    setMarkupPercent,
-    currency,
-    setCurrency,
-    workers,
-    setWorkers,
-    maxJobs,
-    setMaxJobs,
-    headless,
-    setHeadless,
-    browserTimeoutMs,
-    setBrowserTimeoutMs,
-    requestDelaySeconds,
-    setRequestDelaySeconds,
-    proxyServer,
-    setProxyServer,
+    proxyParts,
+    patchProxyParts,
+    setProxyScheme: (scheme: ProxyScheme) => patchProxyParts({ scheme }),
     proxyListPath,
     setProxyListPath,
     proxyRotation,
     setProxyRotation,
-    marketplaces,
-    handleMarketplaceChange,
-    handleCredentialChange,
+    vpnEnabled,
+    setVpnEnabled,
+    vpnMode,
+    setVpnMode,
+    vpnLocalEndpoint,
+    setVpnLocalEndpoint,
+    vpnConfigPath,
+    setVpnConfigPath,
     handleSave,
     handleHealthCheck,
   }

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from core.proxy import ProxyPool
+from core.proxy import proxy_pool_for_settings
 from server.core.constants import APP_VERSION, SERVICE_STARTED_AT
 from server.services.batch import get_batch_service
 from server.services.config import get_config_service
@@ -35,7 +35,7 @@ def build_runtime_status(*, started_at: datetime | None = None) -> dict[str, Any
     config = get_config_service()
     started = started_at or SERVICE_STARTED_AT
     s = ctx.settings
-    proxy_pool = ProxyPool.from_settings(s.proxy_server, s.proxy_list_path)
+    proxy_pool = proxy_pool_for_settings(s)
     uptime = (datetime.utcnow() - started).total_seconds()
     stats = get_stats()
     return {

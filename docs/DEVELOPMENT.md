@@ -23,13 +23,15 @@ pnpm install
 pnpm dev
 ```
 
-Vite reads `PANEL_PORT` from the repo root `.env` and proxies `/health`, `/jobs`, etc. to the API. On startup you should see:
+Vite probes `http://127.0.0.1:<port>/health` on startup and proxies API routes to the first match among **8000**, `PANEL_PORT` from `.env`, and **8787**. Override with `VITE_API_PORT` in `apps/web/.env.local` if needed.
+
+On startup you should see:
 
 ```text
-[vite] API proxy → http://127.0.0.1:8000
+[vite] API proxy → http://127.0.0.1:8000 (auto-detected)
 ```
 
-**502 on `/health`:** the Vite proxy port does not match the running API — align `PANEL_PORT` in `.env` and restart both processes.
+**502 on `/health`:** the API is not running, or nothing responds on those ports — start `uv run serve` (or uvicorn on 8000) and restart Vite.
 
 Production UI: `pnpm build` in `apps/web`, then served by the API at `http://localhost:<PANEL_PORT>/ui/`.
 

@@ -40,6 +40,10 @@ PANEL_SCALAR_KEYS = AI_UI_KEYS | frozenset(
         "proxy_rotation_strategy",
         "max_concurrent_jobs",
         "proxy_server",
+        "vpn_enabled",
+        "vpn_mode",
+        "vpn_local_endpoint",
+        "vpn_config_path",
         "ai_api_key",
         "ai_base_url",
     }
@@ -67,6 +71,10 @@ ENV_UI_VAR_NAMES = frozenset(
         "PROXY_LIST_PATH",
         "PROXY_ROTATION_STRATEGY",
         "PROXY_SERVER",
+        "VPN_ENABLED",
+        "VPN_MODE",
+        "VPN_LOCAL_ENDPOINT",
+        "VPN_CONFIG_PATH",
         "MAX_CONCURRENT_JOBS",
         "AI_API_KEY",
         "AI_BASE_URL",
@@ -141,6 +149,10 @@ def _default_panel_raw() -> dict[str, Any]:
         "proxy_list_path": "config/proxies.txt",
         "proxy_rotation_strategy": "round_robin",
         "proxy_server": "",
+        "vpn_enabled": False,
+        "vpn_mode": "local_socks",
+        "vpn_local_endpoint": "",
+        "vpn_config_path": "",
         "price_markup_percent": 35,
         "default_currency": "USD",
         "marketplaces": default_marketplaces(),
@@ -294,7 +306,7 @@ def save_panel_config(
             if key not in PANEL_SCALAR_KEYS:
                 continue
             if value is None or value == "":
-                if key in ("ai_api_key", "proxy_server"):
+                if key in ("ai_api_key", "proxy_server", "vpn_local_endpoint"):
                     raw[key] = ""
                 else:
                     raw.pop(key, None)
@@ -377,6 +389,11 @@ def panel_config_for_api(*, mask_secrets: bool = True) -> dict[str, Any]:
         if scalars.get("proxy_server"):
             scalars["proxy_server_masked"] = mask_api_key(str(scalars["proxy_server"]))
         scalars.pop("proxy_server", None)
+        if scalars.get("vpn_local_endpoint"):
+            scalars["vpn_local_endpoint_masked"] = mask_api_key(str(scalars["vpn_local_endpoint"]))
+        scalars.pop("vpn_local_endpoint", None)
+        if scalars.get("vpn_config_path"):
+            scalars["vpn_config_path"] = str(scalars["vpn_config_path"])
         marketplaces = mask_marketplaces(marketplaces, mask_api_key)
     from config.telegram_store import normalize_telegram
 

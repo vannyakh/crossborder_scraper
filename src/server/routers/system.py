@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from config import get_settings
+from core.proxy_health import proxy_status, test_proxy_egress
 from server.auth import require_panel_auth
 from server.core.constants import APP_VERSION
 from server.core.panel_bind import get_panel_bind_info
@@ -11,6 +12,8 @@ from server.schemas import (
     PanelAccessResponse,
     PanelConfigResponse,
     PanelConfigUpdate,
+    ProxyStatusResponse,
+    ProxyTestResponse,
     StatsResponse,
 )
 from server.services.audit import log_operation
@@ -63,6 +66,17 @@ async def patch_panel_config(
         details=f"Updated settings: {', '.join(sorted(updates.keys()))}",
     )
     return PanelConfigResponse(**result)
+
+
+@protected.get("/config/proxy/status", response_model=ProxyStatusResponse)
+async def get_proxy_status() -> ProxyStatusResponse:
+    return ProxyStatusResponse(**proxy_status(get_settings()))
+
+
+@protected.post("/config/proxy/test", response_model=ProxyTestResponse)
+async def post_proxy_test() -> ProxyTestResponse:
+    result = await test_proxy_egress(get_settings())
+    return ProxyTestResponse(**result)
 
 
 @protected.get("/stats", response_model=StatsResponse)

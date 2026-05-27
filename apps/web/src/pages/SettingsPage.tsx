@@ -3,12 +3,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Navigate, useParams } from 'react-router-dom'
 import {
   AiSettingsSection,
-  MarketplacesSettingsSection,
   PanelSecuritySection,
   PanelAppearanceSection,
-  PricingSettingsSection,
   ProxySettingsSection,
-  ScrapeSettingsSection,
 } from '../components/settings/SettingsSectionPanels'
 import { SettingsSaveBar } from '../components/settings/SettingsSaveBar'
 import {
@@ -39,14 +36,8 @@ function SettingsSectionContent({
       return <PanelSecuritySection />
     case 'ai':
       return <AiSettingsSection form={form} health={health} />
-    case 'scrape':
-      return <ScrapeSettingsSection form={form} />
     case 'proxy':
       return <ProxySettingsSection form={form} />
-    case 'pricing':
-      return <PricingSettingsSection form={form} />
-    case 'marketplaces':
-      return <MarketplacesSettingsSection form={form} />
     default:
       return null
   }

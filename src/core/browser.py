@@ -6,7 +6,7 @@ from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
 from config import Settings
 from core.cookies import CookieManager
-from core.proxy import ProxyConfig
+from core.proxy import ProxyConfig, proxy_pool_for_settings
 
 
 class BrowserManager:
@@ -51,8 +51,10 @@ class BrowserManager:
             ),
         }
         proxy = self.proxy
-        if not proxy and self.settings.proxy_server:
-            proxy = ProxyConfig.parse_line(self.settings.proxy_server)
+        if not proxy:
+            pool = proxy_pool_for_settings(self.settings)
+            if pool.size:
+                proxy = pool.get(0)
         if proxy:
             context_opts["proxy"] = proxy.to_playwright()
 

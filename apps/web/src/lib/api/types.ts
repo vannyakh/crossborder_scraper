@@ -168,6 +168,11 @@ export type PanelConfig = {
   ai_api_key_masked: string | null
   proxy_server_set?: boolean
   proxy_server_masked?: string | null
+  vpn_enabled?: boolean
+  vpn_mode?: 'local_socks' | 'wireguard'
+  vpn_endpoint_set?: boolean
+  vpn_local_endpoint_masked?: string | null
+  vpn_config_path?: string | null
   marketplaces: Record<string, MarketplaceEntry>
   ui_config_path: string
   config_dir: string
@@ -193,6 +198,10 @@ export type PanelConfigUpdate = {
   proxy_rotation_strategy?: string
   max_concurrent_jobs?: number
   proxy_server?: string | null
+  vpn_enabled?: boolean
+  vpn_mode?: 'local_socks' | 'wireguard'
+  vpn_local_endpoint?: string | null
+  vpn_config_path?: string | null
   ai_api_key?: string | null
   ai_base_url?: string | null
   marketplaces?: Record<

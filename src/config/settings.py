@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     proxy_server: str | None = None
     proxy_list_path: Path | None = Field(default=Path("config/proxies.txt"))
     proxy_rotation_strategy: Literal["round_robin", "random"] = "round_robin"
+    vpn_enabled: bool = False
+    vpn_mode: Literal["local_socks", "wireguard"] = "local_socks"
+    vpn_local_endpoint: str | None = None
+    vpn_config_path: Path | None = None
 
     # Scrape engine concurrency
     max_concurrent_jobs: int = 3

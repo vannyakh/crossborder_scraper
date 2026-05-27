@@ -4,23 +4,16 @@ import {
   Code,
   Dialog,
   Field,
+  Grid,
   HStack,
   Input,
   List,
+  SimpleGrid,
   Text,
   VStack,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Copy,
-  Eye,
-  EyeOff,
-  Globe,
-  KeyRound,
-  Lock,
-  RefreshCw,
-  Shield,
-} from 'lucide-react'
+import { Copy, Eye, EyeOff, Globe, Lock, RefreshCw, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   applyHostFirewall,
@@ -33,9 +26,17 @@ import {
   type PanelSecurityStatus,
 } from '../../lib/api/panel-security'
 import { queryKeys } from '../../lib/api/query-keys'
+import { useAccentPalette } from '../../hooks/use-ui-config'
 import { fieldStyles } from '../ui/field-styles'
-import { Section, SectionCard, SubtitleText } from '../ui/Section'
+import { Section } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
+import {
+  InputWithAction,
+  LinkCopyBlock,
+  SettingNotice,
+  SettingRow,
+  SettingsCard,
+} from './panel-security-ui'
 
 function checkTone(ok: boolean | null | undefined): 'success' | 'danger' | 'neutral' | 'running' {
   if (ok === true) return 'success'
@@ -45,12 +46,10 @@ function checkTone(ok: boolean | null | undefined): 'success' | 'danger' | 'neut
 
 function AccessCheckRow({ check }: { check: NetworkAccessCheck }) {
   return (
-    <HStack justify="space-between" align="flex-start" gap={4} py={2}>
+    <HStack justify="space-between" align="center" gap={3} py={2}>
       <Box flex={1} minW={0}>
-        <Text fontSize="sm" fontWeight="medium">
-          {check.label}
-        </Text>
-        <Text fontSize="xs" color="fg.muted" mt={0.5}>
+        <Text fontSize="sm">{check.label}</Text>
+        <Text fontSize="xs" color="fg.subtle" mt={0.5} lineClamp={2}>
           {check.detail}
         </Text>
       </Box>
@@ -62,94 +61,48 @@ function AccessCheckRow({ check }: { check: NetworkAccessCheck }) {
   )
 }
 
-function ConfigRow({
-  label,
-  description,
-  value,
-  children,
+function StatusStrip({
+  data,
+  networkReady,
 }: {
-  label: string
-  description?: string
-  value?: string
-  children?: React.ReactNode
+  data: PanelSecurityStatus
+  networkReady: boolean
 }) {
   return (
-    <Box py={3} borderTopWidth="1px" borderColor="border.muted" _first={{ borderTopWidth: 0, pt: 0 }}>
-      <Text fontSize="sm" fontWeight="medium">
-        {label}
-        {description ? (
-          <Text as="span" fontWeight="normal" color="fg.muted">
-            {' '}
-            — {description}
-          </Text>
-        ) : null}
-      </Text>
-      <HStack mt={2} gap={2} flexWrap="wrap" align="flex-start">
-        {value !== undefined ? (
-          <Input {...fieldStyles} flex={1} minW="12rem" value={value} readOnly disabled />
-        ) : null}
-        {children}
-      </HStack>
-    </Box>
-  )
-}
-
-function AlertHint({ children }: { children: React.ReactNode }) {
-  return (
     <HStack
-      mt={2}
       gap={2}
+      flexWrap="wrap"
+      mb={4}
       px={3}
-      py={2}
-      borderRadius="md"
-      bg="bg.muted"
+      py={2.5}
+      borderRadius="var(--radius-input)"
       borderWidth="1px"
-      borderColor="border.muted"
-      align="flex-start"
+      borderColor="border.subtle"
+      bg="bg.muted"
     >
-      <Shield size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-      <Text fontSize="xs" color="fg.muted">
-        {children}
-      </Text>
+      <StatusBadge
+        status={data.security_entrance_enabled ? 'success' : 'neutral'}
+        label={data.security_entrance_enabled ? 'Entrance on' : 'Entrance off'}
+      />
+      <StatusBadge status="neutral" label={`Port ${data.panel_port}`} />
+      <StatusBadge
+        status={networkReady ? 'success' : 'running'}
+        label={networkReady ? 'Network OK' : 'Check firewall'}
+      />
     </HStack>
   )
 }
 
-function UrlCopyRow({ label, url }: { label: string; url: string | null }) {
-  if (!url) return null
-  return (
-    <Box>
-      <Text fontSize="xs" color="fg.muted" mb={1}>
-        {label}
-      </Text>
-      <HStack gap={2}>
-        <Code fontSize="xs" flex={1} px={2} py={1} borderRadius="md" wordBreak="break-all">
-          {url}
-        </Code>
-        <Button
-          size="xs"
-          variant="ghost"
-          onClick={() => void navigator.clipboard.writeText(url)}
-          aria-label={`Copy ${label}`}
-        >
-          <Copy size={14} />
-        </Button>
-      </HStack>
-    </Box>
-  )
-}
-
 export function PanelSecuritySection() {
+  const accentPalette = useAccentPalette()
   const queryClient = useQueryClient()
   const [message, setMessage] = useState<string | null>(null)
   const [revealedKey, setRevealedKey] = useState<string | null>(null)
   const [showKey, setShowKey] = useState(false)
-
   const [domainDraft, setDomainDraft] = useState('')
   const [entryDraft, setEntryDraft] = useState('')
   const [userDraft, setUserDraft] = useState('')
   const [passDraft, setPassDraft] = useState('')
-
   const [entryDialogOpen, setEntryDialogOpen] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
 
@@ -160,6 +113,8 @@ export function PanelSecuritySection() {
   })
 
   const data = securityQuery.data
+  const network = data?.network
+  const networkReady = Boolean(network?.local_health && network?.public_bind)
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.panelSecurity })
@@ -188,7 +143,7 @@ export function PanelSecuritySection() {
   const applyMutation = useMutation({
     mutationFn: (enableUfw: boolean) => applyHostFirewall({ enable_ufw: enableUfw }),
     onSuccess: (res) => {
-      setMessage(res.messages.join(' · ') || 'Host firewall updated')
+      setMessage(res.messages.join(' · ') || 'Firewall updated')
       invalidate()
     },
     onError: (err: Error) => setMessage(err.message),
@@ -210,6 +165,21 @@ export function PanelSecuritySection() {
     onError: (err: Error) => setMessage(err.message),
   })
 
+  useEffect(() => {
+    if (data) setDomainDraft(data.external_host ?? '')
+  }, [data?.external_host])
+
+  const ruleText = network?.cloud_rule
+    ? `${network.cloud_rule.protocol} ${network.cloud_rule.port} · ${network.cloud_rule.source} · ${network.cloud_rule.action}`
+    : ''
+
+  const displayKey =
+    revealedKey && showKey
+      ? revealedKey
+      : data?.access_key_configured
+        ? '••••••••••••••••••••••••••••••••'
+        : ''
+
   const openEntryDialog = (status: PanelSecurityStatus) => {
     setEntryDraft(status.entry_path ?? '')
     setEntryDialogOpen(true)
@@ -221,285 +191,257 @@ export function PanelSecuritySection() {
     setAuthDialogOpen(true)
   }
 
-  useEffect(() => {
-    if (data) {
-      setDomainDraft(data.external_host ?? '')
-    }
-  }, [data?.external_host])
-
-  const network = data?.network
-  const rule = network?.cloud_rule
-  const ruleText = rule
-    ? `${rule.direction} · ${rule.protocol} ${rule.port} · ${rule.source} · ${rule.action}`
-    : ''
-
-  const displayKey =
-    revealedKey && showKey
-      ? revealedKey
-      : data?.access_key_configured
-        ? '••••••••••••••••••••••••••••••••'
-        : ''
-
   return (
-    <Section
-      title="Network & security"
-      description="Domain, panel port, security entrance, login credentials, and firewall"
-      mt={0}
-    >
-      <VStack align="stretch" gap={4}>
-        <SectionCard>
-          <HStack gap={2} mb={2}>
-            <Globe size={18} />
-            <Text fontSize="sm" fontWeight="semibold">
-              Network & access
-            </Text>
-          </HStack>
-          <SubtitleText mb={4}>Configure panel network settings and access URLs</SubtitleText>
+    <Section title="Network & security" description="Access URLs, login, and firewall" mt={0}>
+      {securityQuery.isLoading ? (
+        <Text fontSize="sm" color="fg.muted">
+          Loading…
+        </Text>
+      ) : securityQuery.isError ? (
+        <SettingNotice>
+          Could not load settings. {String(securityQuery.error)} Restart the panel after updating
+          server code.
+        </SettingNotice>
+      ) : data ? (
+        <>
+          <StatusStrip data={data} networkReady={networkReady} />
 
-          {securityQuery.isLoading ? (
-            <Text fontSize="sm" color="fg.muted">
-              Loading…
-            </Text>
-          ) : securityQuery.isError ? (
-            <Text fontSize="sm" color="red.500">
-              {String(securityQuery.error)}
-            </Text>
-          ) : data ? (
-            <>
-              <ConfigRow
+          <SimpleGrid columns={{ base: 1, xl: 2 }} gap={4}>
+            <SettingsCard icon={Globe} title="Access">
+              <SettingRow
                 label="Public domain or IP"
-                description="Used in access card and login URLs"
+                hint="Shown in the sidebar access card and login links."
               >
-                <Input
-                  {...fieldStyles}
-                  flex={1}
-                  minW="12rem"
-                  placeholder="Optional — e.g. 203.0.113.10 or panel.example.com"
+                <InputWithAction
                   value={domainDraft || data.external_host || ''}
-                  onChange={(e) => setDomainDraft(e.target.value)}
-                />
-                <Button
-                  size="sm"
-                  colorPalette="blue"
-                  loading={updateMutation.isPending}
-                  onClick={() =>
-                    void updateMutation.mutate({
-                      external_host: domainDraft.trim() || '',
-                    })
+                  placeholder="203.0.113.10"
+                  actionLabel="Save"
+                  actionLoading={updateMutation.isPending}
+                  onChange={setDomainDraft}
+                  onAction={() =>
+                    void updateMutation.mutate({ external_host: domainDraft.trim() || '' })
                   }
-                >
-                  Save
-                </Button>
-              </ConfigRow>
-              <AlertHint>
-                After setting, prefer opening the panel via the entrance or login URL below, not
-                bare IP:port.
-              </AlertHint>
+                />
+              </SettingRow>
 
-              <ConfigRow
-                label="Panel port"
-                description={`Suggested: 8787–65535 · bind ${data.panel_host}`}
-                value={String(data.panel_port)}
-              >
-                <Button size="sm" variant="outline" disabled title="Change in .env and restart">
-                  Modify
-                </Button>
-              </ConfigRow>
-              <AlertHint>
-                If using a cloud security group, allow inbound TCP on this port after changing it.
-              </AlertHint>
-
-              <ConfigRow
-                label="Security entrance"
-                description="Secret path prefix — panel admin entry"
-                value={data.entry_path_display ?? 'Disabled'}
-              >
-                <Button size="sm" colorPalette="blue" onClick={() => openEntryDialog(data)}>
-                  Modify
-                </Button>
-              </ConfigRow>
-              <AlertHint>
-                {data.security_entrance_enabled
-                  ? 'Only login via the specified entrance path. Bare http://host:port returns 404.'
-                  : 'Enable to hide the panel behind a random URL path (recommended on VPS).'}
-              </AlertHint>
-
-              <ConfigRow label="Access key" description="Required before login when entrance is on">
-                <Input
-                  {...fieldStyles}
-                  flex={1}
-                  minW="12rem"
-                  type={showKey && revealedKey ? 'text' : 'password'}
-                  value={displayKey}
+              <SettingRow label="Panel port" hint={`Listening on ${data.panel_host}. Change in .env, then restart.`}>
+                <InputWithAction
+                  value={String(data.panel_port)}
                   readOnly
                   disabled
+                  mono
+                  actionLabel="Modify"
+                  actionVariant="outline"
+                  actionDisabled
                 />
-                {data.access_key_configured || revealedKey ? (
+              </SettingRow>
+
+              <SettingRow
+                label="Security entrance"
+                hint={
+                  data.security_entrance_enabled
+                    ? 'Login only works through the entrance URL below.'
+                    : 'Recommended on VPS — hides the panel behind a secret path.'
+                }
+              >
+                <InputWithAction
+                  value={data.entry_path_display ?? 'Off'}
+                  readOnly
+                  disabled
+                  mono
+                  actionLabel="Modify"
+                  actionVariant="outline"
+                  onAction={() => openEntryDialog(data)}
+                />
+              </SettingRow>
+
+              <SettingRow
+                label="Access key"
+                hint="Required with entrance enabled. Resetting invalidates old bookmarks."
+              >
+                <HStack gap={2} flexWrap="wrap">
+                  <Input
+                    {...fieldStyles}
+                    flex={1}
+                    minW="10rem"
+                    fontSize="sm"
+                    fontFamily="mono"
+                    type={showKey && revealedKey ? 'text' : 'password'}
+                    value={displayKey}
+                    readOnly
+                    disabled
+                    placeholder={data.access_key_configured ? undefined : 'Not set'}
+                  />
+                  {(data.access_key_configured || revealedKey) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      borderColor="border.subtle"
+                      aria-label={showKey ? 'Hide key' : 'Show key'}
+                      onClick={() => setShowKey((v) => !v)}
+                      disabled={!revealedKey}
+                    >
+                      {showKey && revealedKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setShowKey((v) => !v)}
+                    borderColor="border.subtle"
                     disabled={!revealedKey}
-                    title={revealedKey ? undefined : 'Regenerate to reveal a new key'}
-                  >
-                    {showKey && revealedKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </Button>
-                ) : null}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!revealedKey}
-                  onClick={() => {
-                    if (revealedKey) void navigator.clipboard.writeText(revealedKey)
-                  }}
-                >
-                  <Copy size={14} />
-                </Button>
-                <Button
-                  size="sm"
-                  colorPalette="blue"
-                  loading={updateMutation.isPending}
-                  onClick={() => void updateMutation.mutate({ regenerate_access_key: true })}
-                >
-                  Reset key
-                </Button>
-              </ConfigRow>
-              <AlertHint>Keep your access key private. Reset invalidates old login links.</AlertHint>
-
-              <VStack align="stretch" gap={3} mt={4} pt={3} borderTopWidth="1px" borderColor="border.muted">
-                <UrlCopyRow label="Entrance URL" url={data.urls.entrance} />
-                <UrlCopyRow label="Login URL" url={data.urls.login} />
-                <Text fontSize="xs" color="fg.subtle">
-                  {data.urls.bare_host_note}
-                </Text>
-              </VStack>
-            </>
-          ) : null}
-        </SectionCard>
-
-        <SectionCard>
-          <HStack gap={2} mb={2}>
-            <Lock size={18} />
-            <Text fontSize="sm" fontWeight="semibold">
-              Authentication
-            </Text>
-          </HStack>
-          <SubtitleText mb={4}>Panel login username and password (.env)</SubtitleText>
-
-          {data ? (
-            <>
-              <ConfigRow label="Panel user" description="HTTP Basic / login username" value={data.panel_username ?? ''}>
-                <Button size="sm" colorPalette="blue" onClick={() => openAuthDialog(data)}>
-                  Modify
-                </Button>
-              </ConfigRow>
-              <ConfigRow label="Panel password" description="Stored in .env on the server" value="********">
-                <Button size="sm" colorPalette="blue" onClick={() => openAuthDialog(data)}>
-                  Modify
-                </Button>
-              </ConfigRow>
-            </>
-          ) : null}
-        </SectionCard>
-
-        <SectionCard>
-          <HStack justify="space-between" mb={4} flexWrap="wrap" gap={2}>
-            <HStack gap={2}>
-              <Shield size={18} />
-              <Text fontSize="sm" fontWeight="semibold">
-                Host firewall & cloud
-              </Text>
-              {network ? (
-                <StatusBadge
-                  status={network.local_health && network.public_bind ? 'success' : 'running'}
-                  label={`:${network.port}`}
-                />
-              ) : null}
-            </HStack>
-            <HStack gap={2}>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void securityQuery.refetch()}
-                loading={securityQuery.isFetching}
-              >
-                <RefreshCw size={14} />
-                Refresh
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                loading={applyMutation.isPending}
-                disabled={!network?.can_manage_host_firewall}
-                onClick={() => void applyMutation.mutate(false)}
-              >
-                Open port (ufw)
-              </Button>
-              <Button
-                size="sm"
-                colorPalette="blue"
-                loading={setupMutation.isPending}
-                onClick={() => void setupMutation.mutate()}
-              >
-                Full setup
-              </Button>
-            </HStack>
-          </HStack>
-
-          {network ? (
-            <VStack align="stretch" gap={4}>
-              <Box borderTopWidth="1px" borderColor="border.muted" pt={2}>
-                {network.checks.map((check) => (
-                  <AccessCheckRow key={check.id} check={check} />
-                ))}
-              </Box>
-              <Box>
-                <Text fontSize="sm" fontWeight="semibold" mb={2}>
-                  Cloud security group (inbound)
-                </Text>
-                <HStack gap={2} mb={2}>
-                  <Code fontSize="xs" flex={1} px={2} py={1}>
-                    {ruleText}
-                  </Code>
-                  <Button
-                    size="xs"
-                    variant="ghost"
+                    aria-label="Copy access key"
                     onClick={() => {
-                      if (ruleText) void navigator.clipboard.writeText(ruleText)
+                      if (revealedKey) void navigator.clipboard.writeText(revealedKey)
                     }}
                   >
                     <Copy size={14} />
                   </Button>
+                  <Button
+                    size="sm"
+                    colorPalette={accentPalette}
+                    loading={updateMutation.isPending}
+                    onClick={() => void updateMutation.mutate({ regenerate_access_key: true })}
+                  >
+                    Reset
+                  </Button>
                 </HStack>
-                <List.Root fontSize="xs" color="fg.muted" gap={1} ml={4}>
-                  {network.cloud_steps.map((step) => (
-                    <List.Item key={step}>{step}</List.Item>
-                  ))}
-                </List.Root>
-              </Box>
-            </VStack>
-          ) : null}
-        </SectionCard>
+              </SettingRow>
 
-        <SectionCard>
-          <HStack gap={2} mb={2}>
-            <KeyRound size={18} />
-            <Text fontSize="sm" fontWeight="semibold">
-              HTTPS (production)
-            </Text>
-          </HStack>
-          <SubtitleText>
-            Put nginx or another reverse proxy in front for TLS. CLI:{' '}
-            <Code fontSize="xs">crossborder deploy nginx -n your.domain.com</Code>
-          </SubtitleText>
-        </SectionCard>
+              {(data.urls.entrance || data.urls.login) && (
+                <Box pt={1}>
+                  <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={2.5} textTransform="uppercase" letterSpacing="0.04em">
+                    Your links
+                  </Text>
+                  <VStack align="stretch" gap={2.5}>
+                    <LinkCopyBlock label="Entrance" url={data.urls.entrance} />
+                    <LinkCopyBlock label="Login" url={data.urls.login} />
+                  </VStack>
+                </Box>
+              )}
+            </SettingsCard>
 
-        {message ? (
-          <Text fontSize="xs" color="fg.muted" px={1}>
+            <SettingsCard icon={Lock} title="Login">
+              <SettingRow label="Username">
+                <InputWithAction
+                  value={data.panel_username ?? '—'}
+                  readOnly
+                  disabled
+                  actionLabel="Change"
+                  actionVariant="outline"
+                  onAction={() => openAuthDialog(data)}
+                />
+              </SettingRow>
+              <SettingRow label="Password" hint="Stored in server .env">
+                <InputWithAction
+                  value="••••••••"
+                  readOnly
+                  disabled
+                  type="password"
+                  actionLabel="Change"
+                  actionVariant="outline"
+                  onAction={() => openAuthDialog(data)}
+                />
+              </SettingRow>
+              <SettingNotice>
+                For HTTPS in production, put a reverse proxy in front of the panel. CLI:{' '}
+                <Code fontSize="xs">crossborder deploy nginx -n your.domain.com</Code>
+              </SettingNotice>
+            </SettingsCard>
+
+            <Grid gridColumn={{ xl: '1 / -1' }}>
+              <SettingsCard icon={Shield} title="Firewall">
+                <HStack justify="space-between" mb={4} flexWrap="wrap" gap={2}>
+                  <Text fontSize="xs" color="fg.subtle">
+                    Host ufw / firewalld and cloud security group
+                  </Text>
+                  <HStack gap={2} flexWrap="wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      borderColor="border.subtle"
+                      onClick={() => void securityQuery.refetch()}
+                      loading={securityQuery.isFetching}
+                    >
+                      <RefreshCw size={14} />
+                      Refresh
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      borderColor="border.subtle"
+                      loading={applyMutation.isPending}
+                      disabled={!network?.can_manage_host_firewall}
+                      onClick={() => void applyMutation.mutate(false)}
+                    >
+                      Open port
+                    </Button>
+                    <Button
+                      size="sm"
+                      colorPalette={accentPalette}
+                      loading={setupMutation.isPending}
+                      onClick={() => void setupMutation.mutate()}
+                    >
+                      Auto setup
+                    </Button>
+                  </HStack>
+                </HStack>
+
+                {network ? (
+                  <VStack align="stretch" gap={4}>
+                    <Box borderTopWidth="1px" borderColor="border.muted" pt={1}>
+                      {network.checks.map((check) => (
+                        <AccessCheckRow key={check.id} check={check} />
+                      ))}
+                    </Box>
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2}>
+                        Cloud security group
+                      </Text>
+                      <HStack gap={2} mb={2}>
+                        <Code fontSize="xs" flex={1} px={2.5} py={1.5} borderRadius="md">
+                          {ruleText || '—'}
+                        </Code>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          borderColor="border.subtle"
+                          disabled={!ruleText}
+                          onClick={() => {
+                            if (ruleText) void navigator.clipboard.writeText(ruleText)
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </HStack>
+                      <List.Root fontSize="xs" color="fg.subtle" gap={1.5} ml={4}>
+                        {network.cloud_steps.map((step) => (
+                          <List.Item key={step}>{step}</List.Item>
+                        ))}
+                      </List.Root>
+                    </Box>
+                  </VStack>
+                ) : null}
+              </SettingsCard>
+            </Grid>
+          </SimpleGrid>
+        </>
+      ) : null}
+
+      {message ? (
+        <Box
+          mt={4}
+          px={3}
+          py={2}
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="border.subtle"
+          bg="bg.muted"
+        >
+          <Text fontSize="sm" color="fg.muted">
             {message}
           </Text>
-        ) : null}
-      </VStack>
+        </Box>
+      ) : null}
 
       <Dialog.Root
         open={entryDialogOpen}
@@ -515,15 +457,18 @@ export function PanelSecuritySection() {
             </Dialog.Header>
             <Dialog.Body>
               <Field.Root>
-                <Field.Label fontSize="xs">Entrance path (8 hex chars, without slashes)</Field.Label>
+                <Field.Label fontSize="sm">Path (8 hex characters)</Field.Label>
                 <Input
                   {...fieldStyles}
+                  fontFamily="mono"
                   placeholder="a1b2c3d4"
                   value={entryDraft}
-                  onChange={(e) => setEntryDraft(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 8))}
+                  onChange={(e) =>
+                    setEntryDraft(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 8))
+                  }
                 />
                 <Field.HelperText fontSize="xs">
-                  Or leave empty and use Regenerate for a random path
+                  Or tap Regenerate for a random path.
                 </Field.HelperText>
               </Field.Root>
             </Dialog.Body>
@@ -534,7 +479,7 @@ export function PanelSecuritySection() {
                   void updateMutation.mutate({ enable_entrance: false, entry_path: 'off' })
                 }
               >
-                Disable
+                Turn off
               </Button>
               <Button
                 variant="outline"
@@ -544,7 +489,7 @@ export function PanelSecuritySection() {
                 Regenerate
               </Button>
               <Button
-                colorPalette="blue"
+                colorPalette={accentPalette}
                 loading={updateMutation.isPending}
                 onClick={() =>
                   void updateMutation.mutate({
@@ -570,12 +515,12 @@ export function PanelSecuritySection() {
         <Dialog.Positioner display="flex" alignItems="center" justifyContent="center" p={4}>
           <Dialog.Content maxW="md">
             <Dialog.Header>
-              <Dialog.Title>Panel credentials</Dialog.Title>
+              <Dialog.Title>Change login</Dialog.Title>
             </Dialog.Header>
             <Dialog.Body>
               <VStack align="stretch" gap={4}>
                 <Field.Root>
-                  <Field.Label fontSize="xs">Username</Field.Label>
+                  <Field.Label fontSize="sm">Username</Field.Label>
                   <Input
                     {...fieldStyles}
                     value={userDraft}
@@ -584,28 +529,28 @@ export function PanelSecuritySection() {
                   />
                 </Field.Root>
                 <Field.Root>
-                  <Field.Label fontSize="xs">New password (min 8 characters)</Field.Label>
+                  <Field.Label fontSize="sm">New password</Field.Label>
                   <Input
                     {...fieldStyles}
                     type="password"
                     value={passDraft}
                     onChange={(e) => setPassDraft(e.target.value)}
                     autoComplete="new-password"
-                    placeholder="Leave blank to keep current"
+                    placeholder="Min. 8 characters — leave blank to keep"
                   />
                 </Field.Root>
               </VStack>
             </Dialog.Body>
             <Dialog.Footer>
               <Button
-                colorPalette="blue"
+                colorPalette={accentPalette}
                 loading={updateMutation.isPending}
                 onClick={() => {
                   const body: Parameters<typeof updatePanelSecurity>[0] = {}
                   if (userDraft.trim()) body.username = userDraft.trim()
                   if (passDraft) body.password = passDraft
                   if (!body.username && !body.password) {
-                    setMessage('Enter a username and/or new password')
+                    setMessage('Enter a username or new password')
                     return
                   }
                   void updateMutation.mutate(body)

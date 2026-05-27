@@ -9,7 +9,7 @@ from core.cookies import CookieManager
 from core.engine.jobs import BatchReport, JobResult, JobStatus, ScrapeJob
 from core.engine.pipeline import PhaseEvent, run_scrape_pipeline
 from core.engine.pool import BrowserPool
-from core.proxy import ProxyPool
+from core.proxy import proxy_pool_for_settings
 from pipeline.storage import ProductStore
 
 
@@ -31,10 +31,7 @@ class ScrapeEngine:
         self.settings = settings or Settings()
         self.settings.ensure_dirs()
         self.max_workers = max_workers or self.settings.max_concurrent_jobs
-        self.proxy_pool = ProxyPool.from_settings(
-            self.settings.proxy_server,
-            self.settings.proxy_list_path,
-        )
+        self.proxy_pool = proxy_pool_for_settings(self.settings)
         self.cookies = CookieManager(self.settings.cookies_dir)
         self.pool = BrowserPool(
             self.settings,

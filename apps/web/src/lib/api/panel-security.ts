@@ -1,5 +1,6 @@
-import { api } from './client'
-import type { NetworkAccessStatus } from './network-access'
+import { api, publicApi } from './client'
+import { fetchNetworkAccess, type NetworkAccessStatus } from './network-access'
+import type { PanelAccess } from './types'
 
 export type PanelSecurityUrls = {
   entrance: string | null
@@ -40,8 +41,48 @@ export type PanelSecurityUpdateResponse = {
   restart_required: boolean
 }
 
-export function fetchPanelSecurity() {
-  return api<PanelSecurityStatus>('/deploy/security')
+function isNotFoundError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('404')
+}
+
+async function fetchPanelSecurityLegacy(): Promise<PanelSecurityStatus> {
+  const [network, access] = await Promise.all([
+    fetchNetworkAccess(),
+    publicApi<PanelAccess>('/panel/access'),
+  ])
+  const entry = access.entry_path?.trim() || null
+  const host = network.external_host ?? access.access_ip
+  const port = network.port
+
+  return {
+    security_entrance_enabled: Boolean(entry),
+    entry_path: entry,
+    entry_path_display: entry ? `/${entry}` : null,
+    access_key_configured: false,
+    panel_host: network.bind_host,
+    panel_port: port,
+    external_host: network.external_host,
+    panel_username: null,
+    urls: {
+      entrance: access.entrance_url ?? null,
+      login: access.panel_url ?? null,
+      local_login: null,
+      bare_host_note: entry
+        ? `http://${host}:${port} returns 404 when security entrance is enabled`
+        : `http://${host}:${port}/ui/ — standard panel URL`,
+    },
+    network,
+    restart_required: false,
+  }
+}
+
+export async function fetchPanelSecurity(): Promise<PanelSecurityStatus> {
+  try {
+    return await api<PanelSecurityStatus>('/deploy/security')
+  } catch (err) {
+    if (!isNotFoundError(err)) throw err
+    return fetchPanelSecurityLegacy()
+  }
 }
 
 export function updatePanelSecurity(body: PanelSecurityUpdateBody) {

@@ -10,6 +10,8 @@ from .config import (
     PanelAccessResponse,
     PanelConfigResponse,
     PanelConfigUpdate,
+    ProxyStatusResponse,
+    ProxyTestResponse,
 )
 from .gateway import (
     AgentRunListResponse,
@@ -120,6 +122,8 @@ __all__ = [
     "AIConfigUpdate",
     "PanelConfigResponse",
     "PanelConfigUpdate",
+    "ProxyStatusResponse",
+    "ProxyTestResponse",
     "BatchDetailResponse",
     "BatchListResponse",
     "BatchReport",

@@ -53,6 +53,7 @@ export {
 export { useRunningBatchesLive } from './use-running-batches-live'
 export type { BatchLiveSnapshot } from './use-running-batches-live'
 export { useChartTheme } from './use-chart-theme'
+export { useProxyStatusQuery, useTestProxyMutation } from './queries/use-proxy-query'
 export { useStatsQuery } from './queries/use-stats-query'
 export {
   useStoreCatalogQuery,

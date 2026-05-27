@@ -42,10 +42,7 @@ const SETTINGS_LABEL_KEYS: Record<(typeof SETTINGS_NAV)[number]['id'], string> =
   panel: 'nav.panelTheme',
   network: 'nav.networkFirewall',
   ai: 'nav.aiLlm',
-  scrape: 'nav.scrapeEngine',
   proxy: 'nav.proxy',
-  pricing: 'nav.pricing',
-  marketplaces: 'nav.marketplaces',
 }
 
 const ARTIFACT_LABEL_KEYS: Record<ArtifactSectionId, string> = {
