@@ -18,12 +18,12 @@ from server.schemas import (
     GatewaySkillListResponse,
     GatewayStatusResponse,
     GatewayToolListResponse,
-    PanelUpdateApplyRequest,
-    PanelUpdateApplyResponse,
-    PanelUpdateStatusResponse,
     GatewayWorkflowListResponse,
     GatewayWorkflowRunRequest,
     GatewayWorkflowRunResponse,
+    PanelUpdateApplyRequest,
+    PanelUpdateApplyResponse,
+    PanelUpdateStatusResponse,
     SkillInstallResponse,
     SkillUninstallResponse,
 )
@@ -193,7 +193,9 @@ async def list_agent_runs(limit: int = 30) -> AgentRunListResponse:
 
 
 @router.post("/workflows/{workflow_id}/run", response_model=GatewayWorkflowRunResponse)
-async def workflow_run(workflow_id: str, body: GatewayWorkflowRunRequest) -> GatewayWorkflowRunResponse:
+async def workflow_run(
+    workflow_id: str, body: GatewayWorkflowRunRequest
+) -> GatewayWorkflowRunResponse:
     svc = get_gateway_service()
     try:
         result = await svc.run_workflow(workflow_id, inputs=body.inputs)

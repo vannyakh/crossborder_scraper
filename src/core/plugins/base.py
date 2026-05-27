@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 
 from core.base_scraper import BaseScraper
-from core.models import ScrapedProduct, SourcePlatform
+from core.models import ScrapedProduct
 from core.plugins.spec import EcommerceScrapeSpec, ScrapeCategory
 
 PluginKind = Literal["source", "service", "site"]
@@ -53,7 +53,11 @@ class SourcePluginManifest:
             "installed": installed,
             "enabled": enabled,
             "status": st,
-            "mode": "source" if installed and kind == "source" else ("site" if kind == "site" else None),
+            "mode": (
+                "source"
+                if installed and kind == "source"
+                else ("site" if kind == "site" else None)
+            ),
             "trusted": kind in ("source", "site"),
             "sandboxed": False,
         }

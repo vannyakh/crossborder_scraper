@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import shutil
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 from core.plugins.manager import get_plugin_manager

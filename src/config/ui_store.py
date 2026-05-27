@@ -112,7 +112,10 @@ def ensure_ui_config_file() -> Path:
                 encoding="utf-8",
             )
         else:
-            UI_CONFIG_PATH.write_text(json.dumps(_default_panel_raw(), indent=2) + "\n", encoding="utf-8")
+            UI_CONFIG_PATH.write_text(
+                json.dumps(_default_panel_raw(), indent=2) + "\n",
+                encoding="utf-8",
+            )
     _secure_file(UI_CONFIG_PATH)
     return UI_CONFIG_PATH
 
@@ -329,7 +332,8 @@ def apply_ui_config(settings: Any) -> Any:
             valid[key] = None
             continue
         annotation = str(getattr(field, "annotation", ""))
-        if val is not None and ("Path" in annotation or key.endswith("_path") or key.endswith("_dir")):
+        is_path_key = key.endswith("_path") or key.endswith("_dir")
+        if val is not None and ("Path" in annotation or is_path_key):
             valid[key] = Path(val) if not isinstance(val, Path) else val
     if not valid:
         merged = settings

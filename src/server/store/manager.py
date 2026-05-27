@@ -10,9 +10,14 @@ from typing import Any
 from fastapi import HTTPException
 
 from config import get_settings
+from core.plugins import (
+    get_installed_spec,
+    get_plugin_manager,
+    get_source_spec,
+    list_source_catalog,
+)
 from server.store import catalog, docker, probes, state
-from core.plugins import get_installed_spec, get_plugin_manager, get_source_spec, list_source_catalog
-from server.store.catalog import InstallMode, StorePluginDefinition, get_plugin, list_catalog
+from server.store.catalog import StorePluginDefinition, get_plugin, list_catalog
 
 
 def _port_free(port: int, host: str = "127.0.0.1") -> bool:
@@ -74,7 +79,8 @@ class StoreManager:
         if catalog_row and catalog_row.get("kind") in ("site", "source"):
             inst = state.get_installed(plugin_id)
             if inst:
-                catalog_row = {**catalog_row, "installation": self._public_installed(plugin_id, inst)}
+                installation = self._public_installed(plugin_id, inst)
+                catalog_row = {**catalog_row, "installation": installation}
             return catalog_row
 
         installed_spec = get_installed_spec(plugin_id)
@@ -167,14 +173,20 @@ class StoreManager:
             "host": "127.0.0.1",
             "port": bind_port,
             "password": password or None,
-            "username": "panel" if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"} else None,
+            "username": (
+                "panel"
+                if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"}
+                else None
+            ),
             "database": "panel" if plugin.id in {"postgresql", "mysql", "mongodb"} else None,
             "container_name": plugin.container_name,
         }
         if plugin.id == "rabbitmq":
             config["management_port"] = bind_port + 10000 if bind_port < 20000 else 15672
 
-        record = state.new_install_record(plugin_id, mode="docker", config=config, status="installing")
+        record = state.new_install_record(
+            plugin_id, mode="docker", config=config, status="installing"
+        )
         state.save_installed(plugin_id, record)
 
         try:
@@ -198,7 +210,9 @@ class StoreManager:
     async def connect_external(self, plugin_id: str, config: dict[str, Any]) -> dict[str, Any]:
         plugin = self._require_plugin(plugin_id)
         if not plugin.supports_external:
-            raise HTTPException(status_code=400, detail="plugin does not support external connection")
+            raise HTTPException(
+                status_code=400, detail="plugin does not support external connection"
+            )
         existing = state.get_installed(plugin_id)
         if existing and existing.get("mode") == "docker":
             raise HTTPException(
@@ -253,7 +267,9 @@ class StoreManager:
         ok, msg = await asyncio.to_thread(docker.compose_stop, pdir)
         if not ok:
             raise HTTPException(status_code=500, detail=msg)
-        record = state.touch_record(record, status="stopped", probe={"ok": False, "message": "stopped"})
+        record = state.touch_record(
+            record, status="stopped", probe={"ok": False, "message": "stopped"}
+        )
         state.save_installed(plugin_id, record)
         return self._public_installed(plugin_id, record)
 
@@ -292,7 +308,8 @@ class StoreManager:
 
         status = record.get("status") or "installed"
         if record.get("mode") == "docker":
-            running = docker.container_running(str(config.get("container_name") or plugin.container_name))
+            container = str(config.get("container_name") or plugin.container_name)
+            running = docker.container_running(container)
             if not running:
                 status = "stopped"
             elif probe.get("ok"):
@@ -311,7 +328,9 @@ class StoreManager:
         state.save_installed(plugin_id, record)
         return self._public_installed(plugin_id, record)
 
-    def _write_compose_and_up(self, plugin: StorePluginDefinition, port: int, password: str) -> None:
+    def _write_compose_and_up(
+        self, plugin: StorePluginDefinition, port: int, password: str
+    ) -> None:
         pdir = state.plugin_dir(plugin.id)
         compose = catalog.render_compose(plugin, port=port, password=password)
         (pdir / "docker-compose.yml").write_text(compose, encoding="utf-8")

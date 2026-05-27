@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +24,9 @@ class SkillManifest:
     trusted: bool = True
     path: str = ""
 
-    def to_catalog_dict(self, *, enabled: bool, installed: bool, kind: str = "builtin") -> dict[str, Any]:
+    def to_catalog_dict(
+        self, *, enabled: bool, installed: bool, kind: str = "builtin"
+    ) -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
@@ -52,7 +54,9 @@ def _crossborder_meta(meta: dict[str, Any]) -> dict[str, Any]:
     return raw if isinstance(raw, dict) else {}
 
 
-def parse_skill_md(text: str, *, skill_id: str, path: str = "", trusted: bool = True) -> SkillManifest:
+def parse_skill_md(
+    text: str, *, skill_id: str, path: str = "", trusted: bool = True
+) -> SkillManifest:
     body = text.strip()
     meta: dict[str, Any] = {}
     match = _FRONTMATTER_RE.match(text)
@@ -89,7 +93,9 @@ def parse_skill_md(text: str, *, skill_id: str, path: str = "", trusted: bool = 
     )
 
 
-def load_skill_file(path: Path, *, skill_id: str | None = None, trusted: bool = True) -> SkillManifest:
+def load_skill_file(
+    path: Path, *, skill_id: str | None = None, trusted: bool = True
+) -> SkillManifest:
     sid = skill_id or path.parent.name
     text = path.read_text(encoding="utf-8")
     rel = str(path).replace("\\", "/")

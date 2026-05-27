@@ -39,7 +39,8 @@ class AliExpressScraper(BaseScraper):
             ["h1[data-pl='product-title']", "h1", "[class*='title--']"],
         ) or f"AliExpress Product {product_id}"
 
-        price_text = self.first_text(soup, ["[class*='price--']", "[class*='uniform-banner-box-price']"])
+        price_selectors = ["[class*='price--']", "[class*='uniform-banner-box-price']"]
+        price_text = self.first_text(soup, price_selectors)
         images = self.collect_images(
             soup,
             ["[class*='slider--'] img", "img[src*='alicdn']"],

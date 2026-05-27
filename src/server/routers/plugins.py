@@ -1,8 +1,8 @@
 from fastapi import Depends, File, HTTPException, Query, UploadFile
 
 from core.plugins import (
-    PluginSecurityError,
     STANDARD_DATA_FIELDS,
+    PluginSecurityError,
     get_plugin_installer,
     get_plugin_manager,
     list_source_catalog,

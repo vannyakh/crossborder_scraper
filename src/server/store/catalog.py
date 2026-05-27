@@ -137,7 +137,9 @@ PLUGINS: dict[str, StorePluginDefinition] = {
         id="mongodb",
         name="MongoDB",
         category="database",
-        description="Document database for flexible product catalogs and unstructured scrape payloads.",
+        description=(
+            "Document database for flexible product catalogs and unstructured scrape payloads."
+        ),
         version="7",
         default_port=27017,
         supports_docker=True,

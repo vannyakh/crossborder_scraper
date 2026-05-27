@@ -30,7 +30,10 @@ class LazadaExporter(BaseExporter):
 
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
-            raise ValueError("Lazada API credentials missing. Configure Lazada in Settings → Marketplaces.")
+            raise ValueError(
+                "Lazada API credentials missing. "
+                "Configure Lazada in Settings → Marketplaces."
+            )
 
         # Full Lazada integration requires signed requests — stub for structure
         payload = {
@@ -58,6 +61,6 @@ class LazadaExporter(BaseExporter):
         }
 
         logger.info("Lazada publish (configure signing): sku={}", listing.sku)
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=60):
             # Production: use lazop SDK with HMAC signature
             return {"status": "dry_run", "marketplace": self.marketplace, "payload": payload}

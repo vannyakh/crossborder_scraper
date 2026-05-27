@@ -9,7 +9,7 @@ import zipfile
 from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from core.plugins.spec import ScrapeCategory, parse_scrape_spec
 
@@ -72,7 +72,9 @@ _BLOCKED_CALLS = frozenset({"eval", "exec", "compile", "__import__", "open", "in
 # Playwright/browser stack is provided by the host engine — plugins use BaseScraper helpers.
 _BROWSER_IMPORTS = frozenset({"playwright", "selenium", "pyppeteer"})
 
-_NETWORK_IMPORTS = frozenset({"socket", "ssl", "http", "urllib", "requests", "httpx", "aiohttp", "websockets"})
+_NETWORK_IMPORTS = frozenset({
+    "socket", "ssl", "http", "urllib", "requests", "httpx", "aiohttp", "websockets",
+})
 
 
 @dataclass(frozen=True)

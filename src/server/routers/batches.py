@@ -1,8 +1,8 @@
 from fastapi import HTTPException
 
 from server.deps import protected_router
-from server.services.context import get_context
 from server.schemas import BatchDetailResponse, BatchListResponse, BatchSummary
+from server.services.context import get_context
 
 router = protected_router(prefix="/batches", tags=["batches"])
 

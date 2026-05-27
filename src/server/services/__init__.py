@@ -6,9 +6,9 @@ from server.services.config import ConfigService, get_config_service
 from server.services.context import AppContext, get_context
 from server.services.export import ExportService, get_export_service
 from server.services.marketplace import list_marketplace_items
+from server.services.panel_support import get_service_scheduler, get_service_support
 from server.services.product import ProductService, get_product_service
 from server.services.runtime import build_runtime_status, get_service_runtime, get_stats
-from server.services.panel_support import get_service_scheduler, get_service_support
 from server.services.service_overview import get_service_overview
 
 __all__ = [

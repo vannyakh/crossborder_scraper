@@ -16,7 +16,9 @@ def _tcp_reachable(host: str, port: int, timeout: float = 3.0) -> tuple[bool, st
         return False, str(exc)
 
 
-def _redis_ping(host: str, port: int, password: str | None, timeout: float = 3.0) -> tuple[bool, str]:
+def _redis_ping(
+    host: str, port: int, password: str | None, timeout: float = 3.0
+) -> tuple[bool, str]:
     ok, msg = _tcp_reachable(host, port, timeout)
     if not ok:
         return False, msg

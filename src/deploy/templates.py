@@ -46,7 +46,14 @@ def nginx_site(
     upstream_port: int = DEFAULT_PANEL_PORT,
     ssl: bool = False,
 ) -> str:
-    listen = "listen 443 ssl http2;\n    ssl_certificate     /path/to/fullchain.pem;\n    ssl_certificate_key /path/to/privkey.pem;" if ssl else "listen 80;"
+    if ssl:
+        listen = (
+            "listen 443 ssl http2;\n"
+            "    ssl_certificate     /path/to/fullchain.pem;\n"
+            "    ssl_certificate_key /path/to/privkey.pem;"
+        )
+    else:
+        listen = "listen 80;"
     return f"""# Reverse proxy for Crossborder Scraper panel (place in sites-enabled)
 server {{
     {listen}

@@ -4,7 +4,7 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ProxyConfig(BaseModel):

@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import Any
 
@@ -7,7 +6,7 @@ from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
 from config import Settings
 from core.cookies import CookieManager
-from core.proxy import ProxyConfig, ProxyPool
+from core.proxy import ProxyConfig
 
 
 class BrowserManager:

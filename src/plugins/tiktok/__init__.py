@@ -1,3 +1,3 @@
-from plugins.tiktok.plugin import TikTokScraper, MANIFEST
+from plugins.tiktok.plugin import MANIFEST, TikTokScraper
 
 __all__ = ["TikTokScraper", "MANIFEST"]

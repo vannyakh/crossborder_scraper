@@ -2,9 +2,9 @@ from config.settings import Settings, SourceSite, TargetMarketplace, get_setting
 from config.ui_store import (
     ENV_LOCKED_KEYS,
     ENV_UI_VAR_NAMES,
+    PANEL_SCALAR_KEYS,
     UI_CONFIG_DIR,
     UI_CONFIG_PATH,
-    PANEL_SCALAR_KEYS,
     UI_EDITABLE_KEYS,
     apply_ui_config,
     ensure_ui_config_file,

@@ -1,3 +1,3 @@
-from plugins.linkedin.plugin import LinkedInScraper, MANIFEST
+from plugins.linkedin.plugin import MANIFEST, LinkedInScraper
 
 __all__ = ["LinkedInScraper", "MANIFEST"]

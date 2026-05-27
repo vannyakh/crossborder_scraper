@@ -60,7 +60,9 @@ class SandboxedPluginLoader:
 
         cls = getattr(module, self.manifest.entry_class, None)
         if cls is None:
-            raise PluginSecurityError(f"class {self.manifest.entry_class} not found in plugin module")
+            raise PluginSecurityError(
+                f"class {self.manifest.entry_class} not found in plugin module"
+            )
 
         if not isinstance(cls, type) or not issubclass(cls, BaseScraper):
             raise PluginSecurityError("entry_class must subclass core.base_scraper.BaseScraper")

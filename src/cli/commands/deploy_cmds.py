@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
-from rich.panel import Panel
 from rich.table import Table
 
 from cli.helpers import console, gateway_client

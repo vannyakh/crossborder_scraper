@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -15,7 +15,7 @@ MAX_LOGS = 500
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _read_logs() -> list[dict[str, Any]]:
@@ -127,7 +127,7 @@ def import_agent_runs_to_cron_logs() -> int:
         trigger = run.get("trigger") or "cron"
         name = run.get("schedule_name") or run.get("schedule_id") or "Agent schedule"
         status = run.get("status") or "unknown"
-        ok = run.get("ok")
+        run.get("ok")
         detail = run.get("response") or run.get("error") or run.get("message") or ""
         append_service_log(
             "cron",

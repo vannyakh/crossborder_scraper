@@ -10,7 +10,14 @@ WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
         "description": "Scrape a product URL, then prepare marketplace listing export.",
         "steps": [
             {"tool": "scrape_product", "args": {"url": "{url}", "save": True}},
-            {"tool": "export_listing", "args": {"product_id": "{product_id}", "marketplace": "{marketplace}", "dry_run": True}},
+            {
+                "tool": "export_listing",
+                "args": {
+                    "product_id": "{product_id}",
+                    "marketplace": "{marketplace}",
+                    "dry_run": True,
+                },
+            },
         ],
         "inputs": ["url", "marketplace"],
     },

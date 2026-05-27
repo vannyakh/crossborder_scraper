@@ -17,13 +17,13 @@ from core.paths import (
     repo_root,
 )
 from core.plugins.base import SourcePluginManifest, SourcePluginSpec
-from core.plugins.builtin_specs import PLUGIN_SPECS, SITE_SPECS
+from core.plugins.builtin_specs import SITE_SPECS
+from core.plugins.sandbox import SandboxedPluginLoader, SandboxedScraperAdapter
 from core.plugins.security import (
     InstalledPluginManifest,
     SecurityPolicy,
     load_manifest_file,
 )
-from core.plugins.sandbox import SandboxedPluginLoader, SandboxedScraperAdapter
 
 if TYPE_CHECKING:
     from core.base_scraper import BaseScraper
@@ -154,7 +154,11 @@ class PluginManager:
                     continue
                 loader = SandboxedPluginLoader(child, manifest)
                 adapter = SandboxedScraperAdapter(manifest, self.security_policy, loader)
-                specs.append(InstalledPluginSpec(manifest=manifest, adapter=adapter, workspace=child))
+                specs.append(
+                    InstalledPluginSpec(
+                        manifest=manifest, adapter=adapter, workspace=child
+                    )
+                )
             except Exception:
                 continue
         return specs
@@ -163,10 +167,14 @@ class PluginManager:
         if self._builtin_cache is not None:
             return self._builtin_cache
 
-        from plugins.custom_plugin import CustomPluginScraper, MANIFEST as custom_manifest
-        from plugins.instagram import InstagramScraper, MANIFEST as instagram_manifest
-        from plugins.linkedin import LinkedInScraper, MANIFEST as linkedin_manifest
-        from plugins.tiktok import TikTokScraper, MANIFEST as tiktok_manifest
+        from plugins.custom_plugin import MANIFEST as custom_manifest
+        from plugins.custom_plugin import CustomPluginScraper
+        from plugins.instagram import MANIFEST as instagram_manifest
+        from plugins.instagram import InstagramScraper
+        from plugins.linkedin import MANIFEST as linkedin_manifest
+        from plugins.linkedin import LinkedInScraper
+        from plugins.tiktok import MANIFEST as tiktok_manifest
+        from plugins.tiktok import TikTokScraper
 
         self._builtin_cache = [
             SourcePluginSpec(instagram_manifest, InstagramScraper),
@@ -196,7 +204,9 @@ class PluginManager:
                 return spec
         return None
 
-    def get_catalog_item(self, plugin_id: str, *, installed_ids: set[str] | None = None) -> dict[str, Any] | None:
+    def get_catalog_item(
+        self, plugin_id: str, *, installed_ids: set[str] | None = None
+    ) -> dict[str, Any] | None:
         for row in self.list_source_catalog(installed_ids=installed_ids or set()):
             if row.get("id") == plugin_id:
                 return row
@@ -306,7 +316,11 @@ class PluginManager:
 
     def supported_labels(self) -> list[str]:
         labels = [spec.manifest.name for spec in self.list_specs() if self.is_enabled(spec.id)]
-        labels.extend(spec.manifest.name for spec in self.list_installed_specs() if self.is_enabled(spec.id))
+        labels.extend(
+            spec.manifest.name
+            for spec in self.list_installed_specs()
+            if self.is_enabled(spec.id)
+        )
         return labels
 
     def security_policy_dict(self) -> dict[str, Any]:

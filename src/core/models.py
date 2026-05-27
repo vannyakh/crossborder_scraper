@@ -1,12 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class SourcePlatform(str, Enum):
+class SourcePlatform(StrEnum):
     ALIBABA_1688 = "1688"
     TAOBAO = "taobao"
     ALIEXPRESS = "aliexpress"

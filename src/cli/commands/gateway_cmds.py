@@ -170,7 +170,9 @@ def register_gateway_commands(app: typer.Typer) -> None:
     def skills_enable(
         skill_id: list[str] = typer.Argument(..., help="Skill ids to enable"),
         url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
-        local: bool = typer.Option(False, "--local", help="Update config/agent_skills.yaml locally"),
+        local: bool = typer.Option(
+            False, "--local", help="Update config/agent_skills.yaml locally"
+        ),
     ) -> None:
         """Enable skill ids (replaces enabled set when using API; merges when --local)."""
         if local:

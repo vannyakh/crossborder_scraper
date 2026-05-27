@@ -17,8 +17,10 @@ def build_app() -> typer.Typer:
     app = typer.Typer(
         name="crossborder",
         help=(
-            "[bold bright_blue]Crossborder Scraper[/] — scrape, export, self-host panel, gateway agent.\n\n"
-            "[bold]Onboard:[/]  [cyan]crossborder install[/]  ·  [cyan]crossborder setup --server[/]\n"
+            "[bold bright_blue]Crossborder Scraper[/] — scrape, export, "
+            "self-host panel, gateway agent.\n\n"
+            "[bold]Onboard:[/]  [cyan]crossborder install[/]  ·  "
+            "[cyan]crossborder setup --server[/]\n"
             "[bold]Run panel:[/] [cyan]crossborder serve --no-reload[/]"
         ),
         rich_markup_mode="rich",

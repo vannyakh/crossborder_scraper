@@ -7,7 +7,7 @@ from sqlalchemy import DateTime, Integer, String, Text, create_engine, desc, fun
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from config import Settings
-from core.engine.jobs import BatchReport, JobResult, JobStatus
+from core.engine.jobs import BatchReport, JobResult
 from core.models import ScrapedProduct
 
 
@@ -112,7 +112,9 @@ class ProductStore:
                 return None
             return ScrapedProduct.model_validate_json(record.payload_json)
 
-    def list_products(self, *, limit: int = 50, offset: int = 0, source: str | None = None) -> list[dict]:
+    def list_products(
+        self, *, limit: int = 50, offset: int = 0, source: str | None = None
+    ) -> list[dict]:
         with Session(self.engine) as session:
             q = select(ProductRecord).order_by(desc(ProductRecord.updated_at))
             if source:

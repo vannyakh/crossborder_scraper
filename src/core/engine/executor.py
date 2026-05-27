@@ -10,7 +10,6 @@ from core.ai import AIExtractor, ScrapeAgent
 from core.cookies import CookieManager
 from core.engine.jobs import BatchReport, JobResult, JobStatus, ScrapeJob
 from core.engine.pool import BrowserPool
-from core.models import ScrapedProduct
 from core.proxy import ProxyPool
 from pipeline.storage import ProductStore
 
@@ -61,7 +60,8 @@ class ScrapeEngine:
         if self.proxy_pool.size == 0:
             return None
         strategy = self.settings.proxy_rotation_strategy
-        return self.proxy_pool.get(job.proxy_index if job.proxy_index is not None else worker_id, strategy)
+        index = job.proxy_index if job.proxy_index is not None else worker_id
+        return self.proxy_pool.get(index, strategy)
 
     async def run_job(self, job: ScrapeJob, worker_id: int = 0) -> JobResult:
         """Execute a single scrape job."""

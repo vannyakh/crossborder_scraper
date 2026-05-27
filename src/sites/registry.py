@@ -1,5 +1,6 @@
 from core.base_scraper import BaseScraper
-from core.plugins import enabled_scraper_classes, get_scraper_for_url as get_plugin_scraper
+from core.plugins import enabled_scraper_classes
+from core.plugins import get_scraper_for_url as get_plugin_scraper
 from sites.alibaba_1688 import Alibaba1688Scraper
 from sites.aliexpress import AliExpressScraper
 from sites.taobao import TaobaoScraper

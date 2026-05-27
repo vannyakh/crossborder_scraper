@@ -6,7 +6,7 @@ import platform
 import re
 import socket
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -131,7 +131,7 @@ def collect_hardware(*, disk_path: Path | str | None = None) -> dict[str, Any]:
         pass
 
     return {
-        "collected_at": datetime.now(timezone.utc),
+        "collected_at": datetime.now(UTC),
         "hostname": socket.gethostname(),
         "platform": platform_str,
         "python_version": python_version,

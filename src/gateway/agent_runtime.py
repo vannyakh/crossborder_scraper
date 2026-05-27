@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import json
-import re
 from typing import Any
 
 import httpx
-from loguru import logger
 
 from config import Settings
 from gateway.prompts import DEFAULT_PROMPT_ID, load_prompt
@@ -31,7 +29,9 @@ Use available tools to scrape, list, export, and report status. Be concise."""
 
     @property
     def enabled(self) -> bool:
-        return self.settings.ai_enabled and bool(self.settings.ai_api_key or self.settings.ai_base_url)
+        return self.settings.ai_enabled and bool(
+            self.settings.ai_api_key or self.settings.ai_base_url
+        )
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
@@ -51,7 +51,9 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         if not self.enabled:
             return {
                 "ok": False,
-                "message": "AI agent disabled. Enable ai_enabled and set ai_api_key in panel config.",
+                "message": (
+                    "AI agent disabled. Enable ai_enabled and set ai_api_key in panel config."
+                ),
                 "tool_calls": [],
                 "prompt_id": prompt_id or DEFAULT_PROMPT_ID,
                 "skill_ids": [],

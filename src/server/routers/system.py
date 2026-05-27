@@ -4,13 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from config import get_settings
 from server.auth import require_panel_auth
-from server.deps import protected_router
-from server.services.config import get_config_service
-from server.services.runtime import get_stats
 from server.core.constants import APP_VERSION
 from server.core.panel_bind import get_panel_bind_info
-from server.schemas import PanelAccessResponse, PanelConfigResponse, PanelConfigUpdate, StatsResponse
+from server.deps import protected_router
+from server.schemas import (
+    PanelAccessResponse,
+    PanelConfigResponse,
+    PanelConfigUpdate,
+    StatsResponse,
+)
 from server.services.audit import log_operation
+from server.services.config import get_config_service
+from server.services.runtime import get_stats
 
 public_router = APIRouter(tags=["system"])
 protected = protected_router(tags=["system"])

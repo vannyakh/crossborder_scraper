@@ -50,7 +50,10 @@ def _fetch_github_latest(repo: str) -> tuple[str | None, str | None, str | None,
     url = f"https://api.github.com/repos/{repo}/releases/latest"
     req = urllib.request.Request(
         url,
-        headers={"Accept": "application/vnd.github+json", "User-Agent": "crossborder-scraper-panel"},
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "crossborder-scraper-panel",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=8) as resp:

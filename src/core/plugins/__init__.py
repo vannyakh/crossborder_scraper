@@ -34,6 +34,7 @@ from core.plugins.manager import (
     source_plugin_settings,
     supported_source_labels,
 )
+from core.plugins.sandbox import SandboxedPluginLoader, SandboxedScraperAdapter
 from core.plugins.security import (
     InstalledPluginManifest,
     PluginPermissions,
@@ -44,7 +45,6 @@ from core.plugins.security import (
     validate_plugin_workspace,
     validate_python_source,
 )
-from core.plugins.sandbox import SandboxedPluginLoader, SandboxedScraperAdapter
 from core.plugins.spec import (
     STANDARD_DATA_FIELDS,
     EcommerceScrapeSpec,

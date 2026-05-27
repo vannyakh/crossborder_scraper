@@ -5,15 +5,11 @@ from __future__ import annotations
 import shutil
 import subprocess
 from dataclasses import dataclass, field
-from enum import Enum
-from pathlib import Path
+from enum import StrEnum
 
 from core.paths import (
     config_dir,
     data_dir,
-    env_file_path,
-    installed_plugins_dir,
-    installed_skills_dir,
     repo_root,
 )
 from deploy.docker_compose import compose_restart, compose_status_running, docker_ready, run_compose
@@ -22,7 +18,7 @@ from deploy.platform import detect_platform, python_executable
 SYSTEMD_UNIT = "crossborder-scraper"
 
 
-class RuntimeKind(str, Enum):
+class RuntimeKind(StrEnum):
     DOCKER = "docker"
     SYSTEMD = "systemd"
     PROCESS = "process"
@@ -182,7 +178,10 @@ def run_sync(
             result.warn(f"docker rebuild exited {code}")
 
     elif result.runtime == RuntimeKind.DOCKER and deps:
-        result.warn("docker stack running — run: scraper tools restart  (or tools sync --docker-rebuild)")
+        result.warn(
+            "docker stack running — run: scraper tools restart "
+            "(or tools sync --docker-rebuild)"
+        )
 
     return result
 
@@ -238,7 +237,7 @@ def run_restart(*, runtime: RuntimeKind | None = None) -> MaintenanceResult:
     if rt == RuntimeKind.PROCESS:
         killed = _stop_panel_process()
         if killed:
-            result.ok(f"stopped panel process (port listener)")
+            result.ok("stopped panel process (port listener)")
             result.warn("start again: uv run scraper serve --no-reload")
         else:
             result.warn("could not stop panel process — stop manually and run scraper serve")
@@ -270,7 +269,7 @@ def _stop_panel_process() -> bool:
     return stopped
 
 
-class ResetScope(str, Enum):
+class ResetScope(StrEnum):
     CREDENTIALS = "credentials"
     CONFIG = "config"
     DATA = "data"

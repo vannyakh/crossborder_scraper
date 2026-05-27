@@ -7,9 +7,9 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-_DEFAULT_HOST = "0.0.0.0"
 from deploy.network import DEFAULT_PANEL_PORT
 
+_DEFAULT_HOST = "0.0.0.0"
 _DEFAULT_PORT = DEFAULT_PANEL_PORT
 
 _info: PanelBindInfo | None = None

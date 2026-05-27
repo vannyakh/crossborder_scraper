@@ -3,8 +3,8 @@ from fastapi import HTTPException
 from config import get_settings
 from core.ai.health import check_llm_health
 from server.deps import protected_router
-from server.services.config import get_config_service
 from server.schemas import AIConfigResponse, AIConfigUpdate, LLMHealthResponse
+from server.services.config import get_config_service
 
 router = protected_router(prefix="/ai", tags=["ai"])
 

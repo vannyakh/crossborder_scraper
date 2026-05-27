@@ -3,14 +3,14 @@ from typing import Any
 from fastapi import HTTPException
 
 from server.deps import protected_router
-from server.services.context import get_context
-from server.services.export import get_export_service
 from server.schemas import (
     ExportRequest,
     ExportResponse,
     ProductListResponse,
     ProductSummary,
 )
+from server.services.context import get_context
+from server.services.export import get_export_service
 
 router = protected_router(prefix="/products", tags=["products"])
 
@@ -22,7 +22,8 @@ async def list_products(
     source: str | None = None,
 ) -> ProductListResponse:
     ctx = get_context()
-    items = [ProductSummary(**p) for p in ctx.store.list_products(limit=limit, offset=offset, source=source)]
+    rows = ctx.store.list_products(limit=limit, offset=offset, source=source)
+    items = [ProductSummary(**p) for p in rows]
     return ProductListResponse(
         items=items,
         total=ctx.store.count_products(source=source),

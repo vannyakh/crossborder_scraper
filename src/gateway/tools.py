@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from loguru import logger
 
@@ -25,7 +26,10 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "export_listing",
-        "description": "Export a saved product to a marketplace (shopee, lazada, tiktok_shop, shopify).",
+        "description": (
+            "Export a saved product to a marketplace "
+            "(shopee, lazada, tiktok_shop, shopify)."
+        ),
         "parameters": {
             "type": "object",
             "properties": {

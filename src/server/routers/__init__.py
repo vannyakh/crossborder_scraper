@@ -1,4 +1,18 @@
-from server.routers import ai, auth, batches, files, gateway, jobs, logs, monitor, plugins, products, realtime, runtime, system
+from server.routers import (
+    ai,
+    auth,
+    batches,
+    files,
+    gateway,
+    jobs,
+    logs,
+    monitor,
+    plugins,
+    products,
+    realtime,
+    runtime,
+    system,
+)
 
 __all__ = [
     "ai",

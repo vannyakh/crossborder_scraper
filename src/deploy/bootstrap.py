@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.paths import (
-    agent_skills_config_path,
     config_dir,
     data_dir,
     env_file_path,
@@ -32,7 +31,11 @@ class ServerBootstrap:
             (self.root / "data" / "cookies"),
             (self.root / "data" / "output"),
             config_dir() if self.root == repo_root() else self.root / "config",
-            installed_plugins_dir() if self.root == repo_root() else self.root / "installed_plugins",
+            (
+                installed_plugins_dir()
+                if self.root == repo_root()
+                else self.root / "installed_plugins"
+            ),
             installed_skills_dir() if self.root == repo_root() else self.root / "installed_skills",
         ):
             path.mkdir(parents=True, exist_ok=True)

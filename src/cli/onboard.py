@@ -7,7 +7,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from cli.theme import brand, cmd, console, hint, panel_border_style, warn
+from cli.theme import cmd, console, hint, panel_border_style, warn
 
 STEP_LABELS: dict[str, str] = {
     "directories": "Create data & config folders",

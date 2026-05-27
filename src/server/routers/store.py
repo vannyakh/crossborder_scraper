@@ -2,20 +2,20 @@ from typing import Any
 
 from fastapi import Depends, HTTPException
 
+from core.plugins import get_source_spec
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
     MessageResponse,
     StoreCatalogResponse,
+    StoreConnectRequest,
     StoreEnvironmentResponse,
-    StoreInstallRequest,
     StoreInstalledListResponse,
     StoreInstalledResponse,
+    StoreInstallRequest,
     StorePluginDetailResponse,
-    StoreConnectRequest,
 )
 from server.services.audit import log_operation
-from core.plugins import get_source_spec
 from server.store import get_store_manager
 
 router = protected_router(prefix="/store", tags=["store"])

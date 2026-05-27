@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from core.paths import prompts_dir
 
 PROMPTS_DIR = prompts_dir()

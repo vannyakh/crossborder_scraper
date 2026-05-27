@@ -80,7 +80,9 @@ def is_port_free(host: str, port: int) -> bool:
         return False
 
 
-def pick_panel_port(preferred: int = DEFAULT_PANEL_PORT, *, max_tries: int = 20) -> tuple[int, bool]:
+def pick_panel_port(
+    preferred: int = DEFAULT_PANEL_PORT, *, max_tries: int = 20
+) -> tuple[int, bool]:
     if is_port_free("0.0.0.0", preferred):
         return preferred, False
     for offset in range(1, max_tries):

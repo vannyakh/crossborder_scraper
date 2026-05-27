@@ -2,8 +2,8 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 from server.deps import protected_router
-from server.services.context import get_context
 from server.schemas import FileEntry, FileListResponse
+from server.services.context import get_context
 
 router = protected_router(prefix="/files", tags=["files"])
 

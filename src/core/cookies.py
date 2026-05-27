@@ -32,14 +32,25 @@ class CookieManager:
                 logger.warning("Invalid cookie file {}: {}", path, exc)
                 return []
 
-    async def apply(self, context: BrowserContext, site_key: str, session_id: str | None = None) -> int:
+    async def apply(
+        self,
+        context: BrowserContext,
+        site_key: str,
+        session_id: str | None = None,
+    ) -> int:
         cookies = self.load_raw(site_key, session_id)
         if cookies:
             await context.add_cookies(cookies)
-            logger.debug("Applied {} cookies for {}/{}", len(cookies), site_key, session_id or "default")
+            sid = session_id or "default"
+            logger.debug("Applied {} cookies for {}/{}", len(cookies), site_key, sid)
         return len(cookies)
 
-    async def save(self, context: BrowserContext, site_key: str, session_id: str | None = None) -> Path:
+    async def save(
+        self,
+        context: BrowserContext,
+        site_key: str,
+        session_id: str | None = None,
+    ) -> Path:
         path = self.path_for(site_key, session_id)
         cookies = await context.cookies()
         with self._lock:

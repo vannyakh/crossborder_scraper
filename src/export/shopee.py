@@ -43,7 +43,10 @@ class ShopeeExporter(BaseExporter):
 
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
-            raise ValueError("Shopee API credentials missing. Configure Shopee in Settings → Marketplaces.")
+            raise ValueError(
+                "Shopee API credentials missing. "
+                "Configure Shopee in Settings → Marketplaces."
+            )
 
         path = "/api/v2/product/add_item"
         timestamp = int(time.time())
@@ -56,7 +59,8 @@ class ShopeeExporter(BaseExporter):
             "item_sku": listing.sku,
             "currency": listing.currency,
             "stock_list": [{"stock": listing.stock}],
-            "image": {"image_id_list": []},  # Upload images via /api/v2/media_space/upload_image first
+            # Upload images via /api/v2/media_space/upload_image first
+            "image": {"image_id_list": []},
             "weight": listing.weight_kg or 0.5,
             "dimension": {"package_length": 20, "package_width": 15, "package_height": 10},
         }

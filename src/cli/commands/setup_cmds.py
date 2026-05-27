@@ -153,9 +153,9 @@ def register_setup_commands(app: typer.Typer) -> None:
     @app.command("env-clean")
     def env_clean() -> None:
         """Move UI prefs to config/ui_config.json and remove them from .env."""
+        from cli.theme import ok
         from config.credentials import clean_env_file
         from config.ui_store import UI_CONFIG_PATH, load_ui_config
-        from cli.theme import ok
 
         load_ui_config()
         removed = clean_env_file()
@@ -167,7 +167,9 @@ def register_setup_commands(app: typer.Typer) -> None:
 
     @app.command()
     def serve(
-        reload: bool = typer.Option(True, "--reload/--no-reload", help="Auto-reload on code changes"),
+        reload: bool = typer.Option(
+            True, "--reload/--no-reload", help="Auto-reload on code changes"
+        ),
     ) -> None:
         """Run the FastAPI panel API (same as `uv run serve`)."""
         import os
@@ -191,7 +193,9 @@ def register_setup_commands(app: typer.Typer) -> None:
 
     @app.command("plugins")
     def plugins_list(
-        category: str | None = typer.Option(None, "--category", "-c", help="Filter: ecommerce, social, …"),
+        category: str | None = typer.Option(
+            None, "--category", "-c", help="Filter: ecommerce, social, …"
+        ),
     ) -> None:
         """List built-in and installed scrape source plugins."""
         from core.plugins import list_source_catalog

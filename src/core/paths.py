@@ -30,7 +30,7 @@ def ui_is_built() -> bool:
 
 
 def config_dir() -> Path:
-    """Runtime YAML/JSON (``plugins.yaml``, ``ui_config.json``) — not the Python ``config`` package."""
+    """Runtime YAML/JSON (plugins.yaml, ui_config.json) — not the Python config package."""
     return repo_root() / "config"
 
 

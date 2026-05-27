@@ -144,7 +144,10 @@ def _migrate_ui_prefs(env_path: Path) -> None:
     load_ui_config()
     removed = clean_env_file(env_path)
     if removed:
-        logger.info("Moved UI prefs to config/ui_config.json; removed from .env: {}", ", ".join(removed))
+        logger.info(
+            "Moved UI prefs to config/ui_config.json; removed from .env: {}",
+            ", ".join(removed),
+        )
 
 
 def print_panel_credentials(
@@ -165,8 +168,8 @@ def print_panel_credentials(
         print_panel_access_card(access, mode=mode, next_commands=cmds)
         return
 
-    from deploy.network import build_panel_access_info
     from config import get_settings
+    from deploy.network import build_panel_access_info
 
     settings = get_settings()
     path = env_path or _repo_env_path()
