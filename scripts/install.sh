@@ -15,6 +15,7 @@
 #   CROSSBORDER_START=1         start panel after install (default: 1)
 #   CROSSBORDER_START=0         skip auto-start
 #   CROSSBORDER_SKIP_BROWSER=1  skip Playwright (Docker-only hosts)
+#   CROSSBORDER_SKIP_UI_BUILD=1 skip apps/web build (use dev-ui.sh on :5173 instead)
 #   CROSSBORDER_KEEP_LOCAL=1    keep local git commits (fail instead of reset)
 #
 set -euo pipefail
@@ -194,6 +195,41 @@ EOF
   done
 }
 
+build_panel_ui() {
+  local root="$1"
+  if [[ -f "${root}/apps/web/dist/index.html" ]]; then
+    echo "==> panel UI already built"
+    return 0
+  fi
+  if [[ "${CROSSBORDER_SKIP_UI_BUILD:-}" == "1" ]]; then
+    echo "==> skipping UI build (use port 8787 + bash scripts/dev-ui.sh for dev UI on :5173)"
+    return 0
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    echo "==> Node.js not found — panel API works; build UI later:"
+    echo "    cd ${root}/apps/web && pnpm install && pnpm build"
+    return 0
+  fi
+  echo "==> build panel web UI"
+  (
+    cd "${root}/apps/web"
+    if command -v corepack >/dev/null 2>&1; then
+      corepack enable 2>/dev/null || true
+      corepack prepare pnpm@9.15.9 --activate 2>/dev/null || true
+    fi
+    if ! command -v pnpm >/dev/null 2>&1; then
+      npm install -g pnpm@9.15.9 2>/dev/null || true
+    fi
+    if command -v pnpm >/dev/null 2>&1; then
+      pnpm install --frozen-lockfile
+      pnpm build
+    else
+      echo "==> pnpm not available — install Node 20+ or run bash scripts/dev-ui.sh" >&2
+      return 1
+    fi
+  )
+}
+
 run_bootstrap() {
   local root="$1"
   cd "${root}"
@@ -201,6 +237,8 @@ run_bootstrap() {
 
   echo "==> sync Python dependencies"
   uv sync
+
+  build_panel_ui "${root}"
 
   if [[ "${CROSSBORDER_SKIP_BROWSER:-}" != "1" ]]; then
     echo "==> install Playwright Chromium"
@@ -295,7 +333,7 @@ print(ips[0] if ips else '')
     echo "  Panel:  not started (set CROSSBORDER_START=1 or run: crossborder serve --no-reload)"
   fi
   echo ""
-  echo "  Login URL (open in browser):"
+  echo "  Login URL (open in browser — use port ${port}, NOT :5173):"
   echo "    ${login_local}"
   [[ -n "${login_lan}" ]] && echo "    ${login_lan}  (LAN)"
   [[ -n "${login_public}" ]] && echo "    ${login_public}  (public — open firewall port ${port})"
