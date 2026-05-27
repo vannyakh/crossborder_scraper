@@ -135,3 +135,5 @@ class PanelAccessResponse(BaseModel):
     panel_path: str
     panel_url: str
     copy_text: str
+    entry_path: str | None = None
+    entrance_url: str | None = None

@@ -128,7 +128,7 @@ def cloud_console_steps(*, port: int) -> list[str]:
         "Add an inbound rule: protocol TCP, port "
         f"{port}, source 0.0.0.0/0 (or your IP only for tighter access).",
         "Save the rule and wait ~1 minute for it to apply.",
-        f"Test from your PC: curl -s http://<public-ip>:{port}/health",
+        f"Test from your PC: use the entrance URL from the install card (bare IP:port returns 404)",
     ]
 
 
@@ -216,6 +216,15 @@ def build_network_access_status(
     public_bind = is_publicly_bound(port)
     local_ok = probe_local_health(port)
 
+    from deploy.panel_security import build_login_url, health_path, normalize_entry_path
+
+    try:
+        entry = normalize_entry_path(get_settings().panel_entry_path)
+    except Exception:
+        entry = None
+
+    health_url = f"http://127.0.0.1:{port}{health_path(entry)}"
+
     checks: list[dict[str, Any]] = [
         {
             "id": "panel_listen",
@@ -233,7 +242,7 @@ def build_network_access_status(
             "id": "local_health",
             "label": "Local /health",
             "ok": local_ok,
-            "detail": f"http://127.0.0.1:{port}/health",
+            "detail": health_url,
         },
         {
             "id": "ufw",
@@ -257,8 +266,8 @@ def build_network_access_status(
     ]
 
     login_urls: dict[str, str | None] = {
-        "local": f"http://127.0.0.1:{port}/ui/login",
-        "public": f"http://{ext}:{port}/ui/login" if ext else None,
+        "local": build_login_url("127.0.0.1", port, entry),
+        "public": build_login_url(ext, port, entry) if ext else None,
     }
 
     return {

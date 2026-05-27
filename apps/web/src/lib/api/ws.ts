@@ -1,5 +1,6 @@
 import { getBasicAuthHeader, useAuthStore } from '../../stores/auth-store'
 import { isTerminalBatchEvent } from '../batch-live'
+import { withPanelPrefix } from './panel-prefix'
 
 export type RealtimeHandler = (event: string, data: unknown) => void
 
@@ -14,7 +15,8 @@ export function buildBatchWsUrl(batchId: string): string {
   const auth = getBasicAuthHeader().Authorization
   if (auth) params.set('authorization', auth)
   const qs = params.toString()
-  return `${protocol}//${window.location.host}/jobs/${encodeURIComponent(batchId)}/ws${qs ? `?${qs}` : ''}`
+  const path = withPanelPrefix(`/jobs/${encodeURIComponent(batchId)}/ws`)
+  return `${protocol}//${window.location.host}${path}${qs ? `?${qs}` : ''}`
 }
 
 export function connectBatchWebSocket(

@@ -1,4 +1,5 @@
 import { getBasicAuthHeader, useAuthStore } from '../../stores/auth-store'
+import { withPanelPrefix } from './panel-prefix'
 
 export type AuthStatus = {
   auth_enabled: boolean
@@ -13,7 +14,7 @@ export type LoginResponse = {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(withPanelPrefix(path), {
     headers: {
       'content-type': 'application/json',
       ...getBasicAuthHeader(),
@@ -40,7 +41,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 /** Multipart upload (e.g. skill/plugin ZIP) — do not set Content-Type; browser sets boundary. */
 export async function apiFormData<T>(path: string, form: FormData, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(withPanelPrefix(path), {
     ...init,
     method: init?.method ?? 'POST',
     body: form,
@@ -68,7 +69,7 @@ export async function apiFormData<T>(path: string, form: FormData, init?: Reques
 
 /** Public — no credentials required */
 export async function publicApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(withPanelPrefix(path), {
     headers: { 'content-type': 'application/json', ...(init?.headers || {}) },
     ...init,
   })

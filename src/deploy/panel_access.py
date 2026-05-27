@@ -101,6 +101,9 @@ def configure_panel_bind(
             "PANEL_AUTH_ENABLED": "true",
         },
     )
+    from deploy.panel_security import ensure_panel_entrance
+
+    ensure_panel_entrance(path)
     return bind, preferred, adjusted
 
 
@@ -135,6 +138,10 @@ def build_access_from_env(
     path = env_path or env_file_path()
     settings = get_settings()
     username, password, _generated = ensure_panel_credentials(path, force_regenerate=False)
+    from deploy.panel_security import normalize_entry_path
+
+    entry = normalize_entry_path(settings.panel_entry_path)
+    access_key = (settings.panel_access_key or "").strip() or None
     if external is not None:
         ext = persist_external_host(external, env_path=path)
     else:
@@ -148,6 +155,8 @@ def build_access_from_env(
         credentials_generated=False,
         env_path=str(path),
         external_host=ext,
+        entry_path=entry,
+        access_key=access_key,
     )
 
 
@@ -157,6 +166,10 @@ def _access_table(info: PanelAccessInfo) -> Table:
     table.add_column(style="value")
 
     table.add_row("Bind", f"{info.bind_host}:{info.port}")
+    if info.security_entrance_enabled:
+        table.add_row("Entrance", hint(f"/{info.entry_path}/  (IP:port alone returns 404)"))
+        if info.access_key:
+            table.add_row("Access key", secret(info.access_key))
     table.add_row("Panel", link_markup(info.primary_access_url))
     table.add_row("Login", link_markup(info.primary_login_url))
     table.add_row("Local", link_markup(info.local_url))
@@ -164,7 +177,9 @@ def _access_table(info: PanelAccessInfo) -> Table:
     if info.lan_ips:
         for i, ip in enumerate(info.lan_ips):
             label = "LAN" if i == 0 else ""
-            url = f"http://{ip}:{info.port}/ui/"
+            from deploy.panel_security import build_entrance_url
+
+            url = build_entrance_url(ip, info.port, info.entry_path)
             table.add_row(label, link_markup(url))
 
     if info.external_url:
@@ -182,9 +197,17 @@ def _access_table(info: PanelAccessInfo) -> Table:
         )
 
     if info.credentials_generated:
-        table.add_row("", hint("Save password now — not shown again on later runs"))
+        table.add_row(
+            "",
+            hint("Save login URL, access key, and password now — not shown again"),
+        )
     else:
         table.add_row("", hint("Using existing credentials from .env"))
+    if info.security_entrance_enabled:
+        table.add_row(
+            "",
+            hint("Open the Login URL (includes access key) — bare IP:port shows 404"),
+        )
 
     return table
 

@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     panel_host: str = "0.0.0.0"
     panel_port: int = 8787
     panel_external_host: str | None = None
+    # Security entrance: secret path (e.g. /a1b2c3d4/) + access key before login
+    panel_entry_path: str | None = None
+    panel_access_key: str | None = None
+    panel_security_entrance: bool = False
 
     # Paths
     data_dir: Path = Field(default=Path("data"))

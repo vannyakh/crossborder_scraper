@@ -49,6 +49,7 @@ const apiProxy = {
   '/store': apiTarget,
   '/plugins': apiTarget,
   '/panel': apiTarget,
+  '/deploy': apiTarget,
   '/logs': apiTarget,
 }
 

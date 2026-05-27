@@ -11,18 +11,27 @@ export function fallbackPanelAccess(): PanelAccess {
       panel_path: '/ui/',
       panel_url: 'http://127.0.0.1:8000/ui/',
       copy_text: '127.0.0.1:8000',
+      entry_path: null,
+      entrance_url: null,
     }
   }
   const port = Number(window.location.port) || 8000
   const ip = window.location.hostname || '127.0.0.1'
+  const prefixMatch = window.location.pathname.match(/^\/([a-f0-9]{8})\//)
+  const entry = prefixMatch?.[1] ?? null
+  const prefix = entry ? `/${entry}` : ''
   return {
     bind_host: '0.0.0.0',
     bind_port: port,
     access_ip: ip,
     access_port: port,
-    panel_path: '/ui/',
-    panel_url: `${window.location.protocol}//${window.location.host}/ui/`,
-    copy_text: `${ip}:${port}`,
+    panel_path: entry ? `${prefix}/ui/` : '/ui/',
+    panel_url: `${window.location.protocol}//${window.location.host}${prefix}/ui/`,
+    copy_text: entry ? `${ip}:${port}/${entry}` : `${ip}:${port}`,
+    entry_path: entry,
+    entrance_url: entry
+      ? `${window.location.protocol}//${window.location.host}${prefix}/`
+      : null,
   }
 }
 

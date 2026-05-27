@@ -8,7 +8,13 @@ from pathlib import Path
 
 from loguru import logger
 
-_ENV_KEYS = ("PANEL_USERNAME", "PANEL_PASSWORD", "PANEL_AUTH_ENABLED")
+_ENV_KEYS = (
+    "PANEL_USERNAME",
+    "PANEL_PASSWORD",
+    "PANEL_AUTH_ENABLED",
+    "PANEL_ENTRY_PATH",
+    "PANEL_ACCESS_KEY",
+)
 
 
 def clean_env_file(env_path: Path | None = None) -> list[str]:
@@ -137,6 +143,22 @@ def ensure_panel_credentials(
     return username, password, True
 
 
+def ensure_panel_security_entrance(
+    env_path: Path | None = None,
+    *,
+    force: bool = False,
+    enable: bool | None = None,
+) -> tuple[str | None, str | None, bool]:
+    """Ensure security entrance path + access key (VPS / explicit enable)."""
+    from deploy.panel_security import ensure_panel_entrance
+
+    return ensure_panel_entrance(
+        env_path or _repo_env_path(),
+        force=force,
+        enable=enable,
+    )
+
+
 def _migrate_ui_prefs(env_path: Path) -> None:
     """Move UI preference keys from .env into config/ui_config.json, then strip them."""
     from config.ui_store import load_ui_config
@@ -171,9 +193,13 @@ def print_panel_credentials(
     from config import get_settings
     from deploy.network import build_panel_access_info
 
+    from deploy.panel_security import normalize_entry_path
+
     settings = get_settings()
     path = env_path or _repo_env_path()
     ext = settings.panel_external_host
+    entry = normalize_entry_path(settings.panel_entry_path)
+    access_key = (settings.panel_access_key or "").strip() or None
     info = build_panel_access_info(
         username=username,
         password=password,
@@ -182,5 +208,7 @@ def print_panel_credentials(
         credentials_generated=False,
         env_path=str(path),
         external_host=ext.strip() if ext else None,
+        entry_path=entry,
+        access_key=access_key,
     )
     print_panel_access_card(info, mode=mode, next_commands=cmds)

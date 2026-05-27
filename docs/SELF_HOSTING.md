@@ -89,7 +89,9 @@ Put **nginx** in front for HTTPS: `crossborder deploy nginx -n your.domain.com`
 
 ### After install
 
-The one-liner **starts the panel in the background** and prints **Login URL**, **username**, and **password** at the end. Open that URL in your browser — no extra `uv run` step.
+The one-liner **starts the panel in the background** and prints the **access card**: **Login URL** (secret entrance path + access key), **username**, and **password**. Open the **Login URL** in your browser — not bare `http://<ip>:<port>` (that returns **404** when security entrance is enabled).
+
+**Security entrance** (enabled on VPS install): random path prefix (e.g. `http://203.0.113.10:8787/a1b2c3d4/ui/login?access_key=…`) plus username/password. Values live in `.env` as `PANEL_ENTRY_PATH` and `PANEL_ACCESS_KEY`. Disable with `PANEL_ENTRY_PATH=off` and restart the panel.
 
 Global CLI (any terminal):
 

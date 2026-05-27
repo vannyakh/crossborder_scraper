@@ -103,6 +103,15 @@ class ServerBootstrap:
             env_path,
             force_regenerate=regenerate,
         )
+        from deploy.panel_security import ensure_panel_entrance, normalize_entry_path
+
+        entry, access_key, _entrance_new = ensure_panel_entrance(env_path)
+        if not entry:
+            from config.settings import Settings
+
+            s = Settings()
+            entry = normalize_entry_path(s.panel_entry_path)
+            access_key = (s.panel_access_key or "").strip() or None
         self.steps_done.append("env")
 
         access = build_panel_access_info(
@@ -114,6 +123,8 @@ class ServerBootstrap:
             env_path=str(env_path),
             port_auto_adjusted=port_adjusted,
             external_host=ext_host,
+            entry_path=entry,
+            access_key=access_key,
         )
         return access
 

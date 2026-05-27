@@ -1,6 +1,6 @@
 """Deploy / VPS network access API for the settings panel."""
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 
 from server.auth import require_panel_auth
 from server.deps import protected_router
@@ -11,9 +11,37 @@ from server.schemas.network import (
     NetworkAccessSetupResponse,
     NetworkAccessStatusResponse,
 )
+from server.schemas.panel_security import (
+    PanelSecurityStatusResponse,
+    PanelSecurityUpdateRequest,
+    PanelSecurityUpdateResponse,
+)
 from server.services.network_access import get_network_access_service
+from server.services.panel_security import get_panel_security_service
 
 router = protected_router(prefix="/deploy", tags=["deploy"])
+
+
+@router.get("/security", response_model=PanelSecurityStatusResponse)
+async def get_panel_security() -> PanelSecurityStatusResponse:
+    """Network, security entrance, domain, and login settings."""
+    return PanelSecurityStatusResponse(**get_panel_security_service().get_status())
+
+
+@router.patch("/security", response_model=PanelSecurityUpdateResponse)
+async def patch_panel_security(
+    body: PanelSecurityUpdateRequest,
+    username: str = Depends(require_panel_auth),
+) -> PanelSecurityUpdateResponse:
+    """Update domain, entrance path, access key, or panel credentials (.env)."""
+    payload = body.model_dump(exclude_unset=True)
+    if not payload:
+        raise HTTPException(status_code=400, detail="no fields to update")
+    try:
+        result = get_panel_security_service().apply_update(actor=username, **payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return PanelSecurityUpdateResponse(**result)
 
 
 @router.get("/network", response_model=NetworkAccessStatusResponse)
