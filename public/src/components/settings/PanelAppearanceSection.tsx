@@ -30,7 +30,16 @@ import {
   type PageTransitionStyle,
   type MotionSpeed,
 } from '../../theme/config'
-import { THEME_COLOR_PRESETS, THEME_STYLE_OPTIONS } from '../../theme/panel-appearance'
+import {
+  DEFAULT_LOGIN_BACKGROUND,
+  DEFAULT_LOGIN_PATH_BACKGROUND_URL,
+  DEFAULT_PANEL_FAVICON_URL,
+  DEFAULT_PANEL_LOGO_URL,
+  hasCustomLoginBackgroundImage,
+  THEME_COLOR_PRESETS,
+  THEME_STYLE_OPTIONS,
+  type LoginBackgroundConfig,
+} from '../../theme/panel-appearance'
 import type { PanelSettingsForm } from './use-panel-settings-form'
 import { Section, SectionCard, SubtitleText } from '../ui/Section'
 import { fieldStyles } from '../ui/field-styles'
@@ -99,13 +108,15 @@ function SettingBlock({
 function OpacityControl({
   value,
   onChange,
+  compact = false,
 }: {
   value: number
   onChange: (value: number) => void
+  compact?: boolean
 }) {
   return (
-    <HStack gap={4} flexWrap="wrap" align="center">
-      <Box flex="1" minW="120px" maxW="200px">
+    <HStack gap={compact ? 2 : 4} flexWrap="wrap" align="center">
+      <Box flex="1" minW={compact ? '100px' : '120px'} maxW={compact ? 'none' : '200px'}>
         <Slider.Root
           min={1}
           max={100}
@@ -130,9 +141,11 @@ function OpacityControl({
         value={String(value)}
         onChange={(e) => onChange(Number(e.target.value) || 1)}
       />
-      <Text fontSize="xs" color="fg.subtle">
-        (1–100, lower = more transparent)
-      </Text>
+      {!compact ? (
+        <Text fontSize="xs" color="fg.subtle">
+          (1–100, lower = more transparent)
+        </Text>
+      ) : null}
     </HStack>
   )
 }
@@ -165,9 +178,12 @@ function PanelImageDropzoneDeleteButton({
 
 function PanelImageDropzoneContent({
   previewUrl,
+  hasCustomImage = true,
   onReset,
 }: {
   previewUrl: string | null
+  /** When false, preview shows the built-in default and remove is hidden. */
+  hasCustomImage?: boolean
   onReset: () => void
 }) {
   const fileUpload = useFileUploadContext()
@@ -216,13 +232,15 @@ function PanelImageDropzoneContent({
     return (
       <Box className="panel-image-dropzone" position="relative" w="full" minH="120px">
         <img src={previewUrl} alt="" className="panel-image-dropzone__img" />
-        <PanelImageDropzoneDeleteButton
-          label="Remove saved image"
-          onRemove={() => {
-            fileUpload.clearFiles()
-            onReset()
-          }}
-        />
+        {hasCustomImage ? (
+          <PanelImageDropzoneDeleteButton
+            label="Remove custom image"
+            onRemove={() => {
+              fileUpload.clearFiles()
+              onReset()
+            }}
+          />
+        ) : null}
       </Box>
     )
   }
@@ -240,7 +258,13 @@ function PanelImageDropzoneContent({
   )
 }
 
-function PanelImageResetButton({ onReset }: { onReset: () => void }) {
+function PanelImageResetButton({
+  onReset,
+  label = 'Reset default',
+}: {
+  onReset: () => void
+  label?: string
+}) {
   const fileUpload = useFileUploadContext()
 
   return (
@@ -254,7 +278,7 @@ function PanelImageResetButton({ onReset }: { onReset: () => void }) {
         onReset()
       }}
     >
-      Reset default
+      {label}
     </Button>
   )
 }
@@ -263,14 +287,18 @@ function ImageUploadField({
   label,
   hint,
   previewUrl,
+  hasCustomImage,
   uploadLabel,
+  resetLabel = 'Reset default',
   onUpload,
   onReset,
 }: {
   label: string
   hint: string
   previewUrl: string | null
+  hasCustomImage?: boolean
   uploadLabel: string
+  resetLabel?: string
   onUpload: (dataUrl: string) => void
   onReset: () => void
 }) {
@@ -327,7 +355,11 @@ function ImageUploadField({
             p={previewUrl ? 2 : 3}
           >
             <FileUpload.DropzoneContent w="full">
-              <PanelImageDropzoneContent previewUrl={previewUrl} onReset={onReset} />
+              <PanelImageDropzoneContent
+                previewUrl={previewUrl}
+                hasCustomImage={hasCustomImage}
+                onReset={onReset}
+              />
             </FileUpload.DropzoneContent>
           </FileUpload.Dropzone>
 
@@ -343,11 +375,146 @@ function ImageUploadField({
                 {uploadLabel}
               </Button>
             </FileUpload.Trigger>
-            <PanelImageResetButton onReset={onReset} />
+            {hasCustomImage !== false ? (
+              <PanelImageResetButton onReset={onReset} label={resetLabel} />
+            ) : null}
           </HStack>
+          {hasCustomImage !== undefined ? (
+            <Text fontSize="xs" color="fg.subtle">
+              {hasCustomImage ? 'Custom image saved in this browser.' : 'Using built-in default.'}
+            </Text>
+          ) : null}
         </VStack>
       </FileUpload.Root>
     </SettingBlock>
+  )
+}
+
+function LoginPageBackgroundSettings({
+  background,
+  accentPalette,
+  onPatch,
+  onReset,
+}: {
+  background: LoginBackgroundConfig
+  accentPalette: string
+  onPatch: (background: LoginBackgroundConfig) => void
+  onReset: () => void
+}) {
+  const usingDefault = !hasCustomLoginBackgroundImage(background)
+
+  function patch(partial: Partial<LoginBackgroundConfig>) {
+    onPatch({ ...background, ...partial })
+  }
+
+  return (
+    <>
+      <Text fontSize="md" fontWeight="semibold" mb={2} mt={2}>
+        Login page
+      </Text>
+
+      <SettingBlock
+        label="Sign-in background"
+        hint="Upload a custom wallpaper or leave empty to use the built-in default."
+      >
+        <HStack justify="space-between" maxW="xs" mb={background.enabled ? 3 : 0}>
+          <Text fontSize="sm">Show background</Text>
+          <Switch.Root
+            checked={background.enabled}
+            onCheckedChange={(e) => patch({ enabled: !!e.checked })}
+            colorPalette={accentPalette}
+          >
+            <Switch.HiddenInput />
+            <Switch.Control />
+          </Switch.Root>
+        </HStack>
+
+        {!background.enabled ? (
+          <Text fontSize="xs" color="fg.subtle">
+            The sign-in page uses a plain canvas when disabled.
+          </Text>
+        ) : (
+          <VStack align="stretch" gap={4}>
+            <ImageUploadField
+              label="Wallpaper (light)"
+              hint="1920×1080 recommended · max 2MB. Empty uses the default image."
+              previewUrl={background.lightUrl ?? DEFAULT_LOGIN_PATH_BACKGROUND_URL}
+              hasCustomImage={Boolean(background.lightUrl)}
+              uploadLabel="Upload"
+              resetLabel="Use default"
+              onUpload={(lightUrl) => patch({ lightUrl })}
+              onReset={() => patch({ lightUrl: null })}
+            />
+
+            <ImageUploadField
+              label="Wallpaper (dark)"
+              hint="Optional — falls back to light, then the default."
+              previewUrl={
+                background.darkUrl ?? background.lightUrl ?? DEFAULT_LOGIN_PATH_BACKGROUND_URL
+              }
+              hasCustomImage={Boolean(background.darkUrl)}
+              uploadLabel="Upload"
+              resetLabel="Use default"
+              onUpload={(darkUrl) => patch({ darkUrl })}
+              onReset={() => patch({ darkUrl: null })}
+            />
+
+            <Text fontSize="xs" color="fg.subtle">
+              {usingDefault ? 'Using bundled default wallpaper.' : 'Custom images saved in this browser.'}
+            </Text>
+
+            <Box
+              borderWidth="1px"
+              borderColor="border.subtle"
+              borderRadius="var(--radius-input)"
+              px={3}
+              py={3}
+            >
+              <Text fontSize="xs" fontWeight="medium" color="fg.muted" mb={3}>
+                Display
+              </Text>
+              <VStack align="stretch" gap={3}>
+                <HStack justify="space-between" gap={3} flexWrap="wrap">
+                  <Text fontSize="sm" minW="5rem">
+                    Image
+                  </Text>
+                  <Box flex="1" minW="160px">
+                    <OpacityControl
+                      value={background.imageOpacity}
+                      onChange={(imageOpacity) => patch({ imageOpacity })}
+                      compact
+                    />
+                  </Box>
+                </HStack>
+                <HStack justify="space-between" gap={3} flexWrap="wrap">
+                  <Text fontSize="sm" minW="5rem">
+                    Overlay
+                  </Text>
+                  <Box flex="1" minW="160px">
+                    <OpacityControl
+                      value={background.overlayOpacity}
+                      onChange={(overlayOpacity) => patch({ overlayOpacity })}
+                      compact
+                    />
+                  </Box>
+                </HStack>
+              </VStack>
+            </Box>
+
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              alignSelf="flex-start"
+              onClick={onReset}
+            >
+              Reset login background
+            </Button>
+          </VStack>
+        )}
+      </SettingBlock>
+    </>
   )
 }
 
@@ -494,8 +661,10 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
         <ImageUploadField
           label="Logo"
           hint="Shown in the left sidebar (recommended 32×32, SVG or PNG)."
-          previewUrl={config.branding.logoUrl}
+          previewUrl={config.branding.logoUrl ?? DEFAULT_PANEL_LOGO_URL}
+          hasCustomImage={Boolean(config.branding.logoUrl)}
           uploadLabel="Upload logo"
+          resetLabel="Use default"
           onUpload={(logoUrl) =>
             setConfig({ branding: { ...config.branding, logoUrl } })
           }
@@ -507,8 +676,10 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
         <ImageUploadField
           label="Favicon"
           hint="Browser tab icon (16×16 ICO, PNG, or SVG recommended)."
-          previewUrl={config.branding.faviconUrl}
+          previewUrl={config.branding.faviconUrl ?? DEFAULT_PANEL_FAVICON_URL}
+          hasCustomImage={Boolean(config.branding.faviconUrl)}
           uploadLabel="Upload favicon"
+          resetLabel="Use default"
           onUpload={(faviconUrl) =>
             setConfig({ branding: { ...config.branding, faviconUrl } })
           }
@@ -625,23 +796,14 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
 
         <Separator borderColor="border.subtle" />
 
-        <Text fontSize="md" fontWeight="semibold" mb={2} mt={2}>
-          Login page settings
-        </Text>
-
-        <SettingBlock label="Login background" hint="Reserved for a future login wallpaper.">
-          <HStack justify="space-between" maxW="xs">
-            <Text fontSize="sm">Show login background</Text>
-            <Switch.Root
-              checked={config.loginBackgroundEnabled}
-              onCheckedChange={(e) => setConfig({ loginBackgroundEnabled: !!e.checked })}
-              colorPalette={accentPalette}
-            >
-              <Switch.HiddenInput />
-              <Switch.Control />
-            </Switch.Root>
-          </HStack>
-        </SettingBlock>
+        <LoginPageBackgroundSettings
+          background={config.loginPage.background}
+          accentPalette={accentPalette}
+          onPatch={(background) => setConfig({ loginPage: { background } })}
+          onReset={() =>
+            setConfig({ loginPage: { background: DEFAULT_LOGIN_BACKGROUND } })
+          }
+        />
 
         <Separator borderColor="border.subtle" />
 

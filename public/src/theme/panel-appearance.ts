@@ -1,4 +1,14 @@
 import type { ColorMode } from './config'
+import defaultLoginPathBackground from '../assets/huaban-5235401074.webp'
+
+/** Bundled default login wallpaper when no custom upload is set. */
+export const DEFAULT_LOGIN_PATH_BACKGROUND_URL = defaultLoginPathBackground
+
+/** Default sidebar logo (`public/images/logo.png`). */
+export const DEFAULT_PANEL_LOGO_URL = '/images/logo.png'
+
+/** Default browser tab icon (`public/images/logo.svg`; matches bundled shell logo). */
+export const DEFAULT_PANEL_FAVICON_URL = '/images/logo.svg'
 
 export type ThemeStyleOption = {
   value: ColorMode
@@ -34,3 +44,55 @@ export function matchThemeColorPreset(hex: string | null | undefined): ThemeColo
   const norm = hex.toLowerCase()
   return THEME_COLOR_PRESETS.find((p) => p.hex.toLowerCase() === norm) ?? null
 }
+
+export type LoginBackgroundConfig = {
+  enabled: boolean
+  /** Custom image for light mode; `null` uses the bundled default. */
+  lightUrl: string | null
+  /** Custom image for dark mode; `null` falls back to `lightUrl` then the default. */
+  darkUrl: string | null
+  /** Wallpaper layer opacity (1–100). */
+  imageOpacity: number
+  /** Gradient overlay for form readability (1–100). */
+  overlayOpacity: number
+}
+
+export type LoginPageBackgroundConfig = {
+  background: LoginBackgroundConfig
+}
+
+export const DEFAULT_LOGIN_BACKGROUND: LoginBackgroundConfig = {
+  enabled: true,
+  lightUrl: null,
+  darkUrl: null,
+  imageOpacity: 45,
+  overlayOpacity: 85,
+}
+
+export const DEFAULT_LOGIN_PAGE_BACKGROUND: LoginPageBackgroundConfig = {
+  background: DEFAULT_LOGIN_BACKGROUND,
+}
+
+export function clampOpacityPercent(value: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(100, Math.max(1, Math.round(value)))
+}
+
+export function hasCustomLoginBackgroundImage(bg: LoginBackgroundConfig): boolean {
+  return Boolean(bg.lightUrl || bg.darkUrl)
+}
+
+export function resolveLoginBackgroundImageUrl(
+  bg: LoginBackgroundConfig,
+  resolved: 'light' | 'dark',
+): string {
+  const custom = resolved === 'dark' ? (bg.darkUrl ?? bg.lightUrl) : bg.lightUrl
+  return custom ?? DEFAULT_LOGIN_PATH_BACKGROUND_URL
+}
+
+export function resolveLoginBackgroundOpacity(bg: LoginBackgroundConfig): number {
+  return clampOpacityPercent(bg.imageOpacity, DEFAULT_LOGIN_BACKGROUND.imageOpacity) / 100
+}
+
+/** @deprecated Use `LoginBackgroundConfig` */
+export type LoginPathBackgroundConfig = LoginBackgroundConfig

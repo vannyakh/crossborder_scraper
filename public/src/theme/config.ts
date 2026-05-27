@@ -1,3 +1,13 @@
+import {
+  clampOpacityPercent,
+  DEFAULT_LOGIN_BACKGROUND,
+  DEFAULT_LOGIN_PAGE_BACKGROUND,
+  type LoginBackgroundConfig,
+  type LoginPageBackgroundConfig,
+} from './panel-appearance'
+
+export type { LoginBackgroundConfig, LoginPageBackgroundConfig, LoginPathBackgroundConfig } from './panel-appearance'
+
 export type ColorMode = 'light' | 'dark' | 'system'
 
 export type AccentKey = 'blue' | 'purple' | 'green' | 'orange' | 'rose'
@@ -39,7 +49,9 @@ export type ThemeConfig = {
   sidebarOpacity: number
   branding: PanelBranding
   mainBackground: PanelMainBackground
-  loginBackgroundEnabled: boolean
+  /** @deprecated Legacy flag; migrated into `loginPage.background`. */
+  loginBackgroundEnabled?: boolean
+  loginPage: LoginPageBackgroundConfig
 }
 
 export const defaultThemeConfig: ThemeConfig = {
@@ -65,6 +77,7 @@ export const defaultThemeConfig: ThemeConfig = {
     contentOpacity: 100,
   },
   loginBackgroundEnabled: false,
+  loginPage: DEFAULT_LOGIN_PAGE_BACKGROUND,
 }
 
 /** Chakra colorPalette names for accent-driven controls */
@@ -132,13 +145,73 @@ const motionDurationValues: Record<MotionSpeed, string> = {
   slow: '0.45s',
 }
 
+type LegacyLoginPage = {
+  path?: Partial<LoginBackgroundConfig> & {
+    darkOpacity?: number
+    lightOpacity?: number
+  }
+  background?: Partial<LoginBackgroundConfig>
+  customWallpaperEnabled?: boolean
+  customWallpaperOpacity?: number
+}
+
+function migrateLoginBackgroundConfig(partial: Partial<ThemeConfig>): LoginBackgroundConfig {
+  const lp = partial.loginPage as LegacyLoginPage | undefined
+  const legacy = { ...lp?.path, ...lp?.background }
+
+  let lightUrl = legacy.lightUrl ?? null
+  let darkUrl = legacy.darkUrl ?? null
+
+  const useMainWallpaper =
+    lp?.customWallpaperEnabled ?? partial.loginBackgroundEnabled ?? false
+  if (useMainWallpaper && partial.mainBackground?.enabled) {
+    if (!lightUrl) lightUrl = partial.mainBackground.lightUrl
+    if (!darkUrl) darkUrl = partial.mainBackground.darkUrl
+  }
+
+  let imageOpacity = legacy.imageOpacity
+  if (imageOpacity === undefined) {
+    const dark = legacy.darkOpacity
+    const light = legacy.lightOpacity
+    if (dark !== undefined || light !== undefined) {
+      imageOpacity = Math.round(
+        ((dark ?? DEFAULT_LOGIN_BACKGROUND.imageOpacity) +
+          (light ?? DEFAULT_LOGIN_BACKGROUND.imageOpacity)) /
+          2,
+      )
+    } else if (lp?.customWallpaperOpacity !== undefined) {
+      imageOpacity = lp.customWallpaperOpacity
+    }
+  }
+
+  return {
+    enabled: legacy.enabled ?? DEFAULT_LOGIN_BACKGROUND.enabled,
+    lightUrl,
+    darkUrl,
+    imageOpacity: clampOpacityPercent(
+      imageOpacity ?? DEFAULT_LOGIN_BACKGROUND.imageOpacity,
+      DEFAULT_LOGIN_BACKGROUND.imageOpacity,
+    ),
+    overlayOpacity: clampOpacityPercent(
+      legacy.overlayOpacity ?? DEFAULT_LOGIN_BACKGROUND.overlayOpacity,
+      DEFAULT_LOGIN_BACKGROUND.overlayOpacity,
+    ),
+  }
+}
+
+function migrateLoginPageConfig(partial: Partial<ThemeConfig>): LoginPageBackgroundConfig {
+  return { background: migrateLoginBackgroundConfig(partial) }
+}
+
 export function mergeThemeConfig(partial?: Partial<ThemeConfig> | null): ThemeConfig {
   if (!partial) return { ...defaultThemeConfig }
+  const loginPage = migrateLoginPageConfig(partial)
   return {
     ...defaultThemeConfig,
     ...partial,
     branding: { ...defaultThemeConfig.branding, ...partial.branding },
     mainBackground: { ...defaultThemeConfig.mainBackground, ...partial.mainBackground },
+    loginPage,
   }
 }
 

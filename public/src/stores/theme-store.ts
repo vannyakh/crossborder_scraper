@@ -52,7 +52,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'crossborder-theme',
-      version: 3,
+      version: 5,
       partialize: (s) => ({ mode: s.mode, config: s.config }),
       migrate: (persisted) => {
         const state = persisted as { mode?: ColorMode; config?: Partial<ThemeConfig> }

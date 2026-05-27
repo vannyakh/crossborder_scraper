@@ -8,6 +8,12 @@ import {
   type ColorMode,
   type ThemeConfig,
 } from './config'
+import {
+  clampOpacityPercent,
+  DEFAULT_LOGIN_BACKGROUND,
+  DEFAULT_LOGIN_PAGE_BACKGROUND,
+  resolveLoginBackgroundOpacity,
+} from './panel-appearance'
 
 function accentMutedFromHex(accent: string, isDark: boolean): string {
   return `color-mix(in srgb, ${accent} ${isDark ? '18%' : '12%'}, transparent)`
@@ -100,6 +106,15 @@ export function applyThemeConfigToDocument(
   root.style.setProperty(
     '--panel-content-opacity',
     String(Math.min(100, Math.max(1, merged.mainBackground.contentOpacity)) / 100),
+  )
+
+  const loginBg = merged.loginPage?.background ?? DEFAULT_LOGIN_PAGE_BACKGROUND.background
+  root.style.setProperty('--login-path-bg-opacity', String(resolveLoginBackgroundOpacity(loginBg)))
+  root.style.setProperty(
+    '--login-overlay-opacity',
+    String(
+      clampOpacityPercent(loginBg.overlayOpacity, DEFAULT_LOGIN_BACKGROUND.overlayOpacity) / 100,
+    ),
   )
 
   const chartFg = isDark ? '#c9d1d9' : '#374151'

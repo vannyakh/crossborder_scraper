@@ -854,6 +854,61 @@ button:focus-visible {
   }
 }
 
+/* —— Login page —— */
+.login-page {
+  background: var(--app-canvas);
+  color: var(--app-fg);
+}
+
+.login-page__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 10%, color-mix(in srgb, var(--app-accent) 10%, transparent), transparent),
+    var(--app-canvas);
+  pointer-events: none;
+}
+
+.login-page__path-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: var(--login-path-bg-opacity, 0.52);
+  pointer-events: none;
+}
+
+.login-page__backdrop-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--app-canvas) 92%, transparent) 0%,
+    color-mix(in srgb, var(--app-canvas) 78%, transparent) 38%,
+    color-mix(in srgb, var(--app-canvas) 52%, transparent) 72%,
+    color-mix(in srgb, var(--app-canvas) 38%, transparent) 100%
+  );
+  opacity: var(--login-overlay-opacity, 0.85);
+  pointer-events: none;
+}
+
+.login-page__card {
+  box-shadow: 0 16px 48px color-mix(in srgb, black 18%, transparent);
+}
+
+.dark .login-page__card {
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+.login-page__code {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--app-accent) 10%, var(--chakra-colors-bg-subtle, #161b22));
+}
+
 .agent-chat__tool-toggle {
   margin-top: 0.5rem;
   padding: 0;
