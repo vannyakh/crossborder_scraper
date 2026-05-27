@@ -1,8 +1,7 @@
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
+from core.paths import ui_dist_dir
 from server.bootstrap import panel_lifespan
 from server.core.constants import APP_VERSION
 from server.infra.spa_static import SPAStaticFiles
@@ -15,7 +14,9 @@ from server.routers import (
     jobs,
     logs,
     monitor,
+    plugins,
     products,
+    realtime,
     runtime,
     service,
     store,
@@ -29,8 +30,7 @@ app = FastAPI(
     lifespan=panel_lifespan,
 )
 
-_repo_root = Path(__file__).resolve().parents[2]
-_ui_dist = _repo_root / "public" / "dist"
+_ui_dist = ui_dist_dir()
 
 # Public + system
 app.include_router(auth.router)
@@ -42,10 +42,12 @@ app.include_router(runtime.router)
 app.include_router(monitor.router)
 app.include_router(logs.router)
 app.include_router(service.router)
+app.include_router(plugins.router)
 app.include_router(store.router)
 app.include_router(gateway.router)
 
 # Scrape pipeline
+app.include_router(realtime.router)
 app.include_router(jobs.router)
 app.include_router(batches.router)
 app.include_router(products.router)

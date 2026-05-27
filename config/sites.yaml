@@ -16,6 +16,10 @@ sources:
     requires_login: false
     currency: USD
 
+# Source plugins — packages in src/plugins/, registry in core/plugin_manager.py
+# Installed state & workspaces: installed_plugins/ (repo root)
+# Toggles: config/plugins.yaml
+
 targets:
   shopee:
     docs: https://open.shopee.com/documents

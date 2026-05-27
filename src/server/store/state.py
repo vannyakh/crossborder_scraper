@@ -1,4 +1,4 @@
-"""Persist installed store plugins under data/store/."""
+"""Persist installed plugins under ``installed_plugins/`` at repo root."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from config import get_settings
-
+from core.plugins import get_plugin_manager
 from server.store.catalog import InstallMode, StorePluginStatus
 
 
@@ -17,19 +17,22 @@ def _now_iso() -> str:
 
 
 def store_root() -> Path:
+    """Panel store metadata (environment paths, legacy)."""
     root = get_settings().data_dir / "store"
     root.mkdir(parents=True, exist_ok=True)
     return root
 
 
+def installed_root() -> Path:
+    return get_plugin_manager().ensure_layout()
+
+
 def state_path() -> Path:
-    return store_root() / "installed.json"
+    return get_plugin_manager().installed_state_path()
 
 
 def plugin_dir(plugin_id: str) -> Path:
-    path = store_root() / "plugins" / plugin_id
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    return get_plugin_manager().workspace(plugin_id)
 
 
 def _read_state() -> dict[str, Any]:
@@ -55,7 +58,7 @@ def _write_state(data: dict[str, Any]) -> None:
 
 
 def ensure_store_state() -> Path:
-    store_root()
+    installed_root()
     if not state_path().exists():
         _write_state({"plugins": {}})
     return state_path()

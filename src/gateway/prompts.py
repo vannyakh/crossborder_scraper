@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-PROMPTS_DIR = Path(__file__).resolve().parents[2] / "libs" / "prompts"
+from core.paths import prompts_dir
+
+PROMPTS_DIR = prompts_dir()
 DEFAULT_PROMPT_ID = "gateway_agent"
 
 _FALLBACK_PROMPT = """You are the Crossborder Scraper gateway agent.

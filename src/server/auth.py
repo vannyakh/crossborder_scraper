@@ -1,6 +1,7 @@
+import base64
 import secrets
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, WebSocket, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from config import get_settings
@@ -41,3 +42,37 @@ def require_panel_auth(
         )
 
     return credentials.username
+
+
+def _parse_basic_authorization(value: str) -> tuple[str, str] | None:
+    raw_value = value.strip()
+    if not raw_value.lower().startswith("basic "):
+        return None
+    try:
+        decoded = base64.b64decode(raw_value[6:].strip(), validate=True).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return None
+    username, sep, password = decoded.partition(":")
+    if not sep:
+        return None
+    return username, password
+
+
+def authenticate_websocket(websocket: WebSocket) -> str | None:
+    """Validate panel credentials for a WebSocket upgrade (query or header)."""
+    settings = get_settings()
+    if not settings.panel_auth_enabled:
+        return "anonymous"
+
+    auth = websocket.query_params.get("authorization") or websocket.headers.get("authorization")
+    if not auth:
+        return None
+
+    parsed = _parse_basic_authorization(auth)
+    if not parsed:
+        return None
+
+    username, password = parsed
+    if verify_panel_credentials(username, password):
+        return username
+    return None

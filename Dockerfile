@@ -1,7 +1,7 @@
 FROM node:20-slim AS ui-build
 
 WORKDIR /ui
-COPY public/package.json public/pnpm-lock.yaml* public/ /ui/
+COPY apps/web/package.json apps/web/pnpm-lock.yaml* apps/web/ /ui/
 RUN corepack enable && pnpm install
 RUN pnpm build
 
@@ -23,7 +23,7 @@ COPY src /app/src
 COPY main.py /app/main.py
 COPY config /app/config
 COPY .env.example /app/.env.example
-COPY --from=ui-build /ui/dist /app/public/dist
+COPY --from=ui-build /ui/dist /app/apps/web/dist
 
 RUN pip install --no-cache-dir -e . \
     && python -m playwright install --with-deps chromium

@@ -1,4 +1,4 @@
-"""App store catalog (aaPanel-style installable server components)."""
+"""Service/infrastructure plugins for the panel app store (Redis, PostgreSQL, …)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 PluginCategory = Literal["database", "cache", "queue", "search"]
-InstallMode = Literal["docker", "external"]
+InstallMode = Literal["docker", "external", "source"]
 
 StorePluginStatus = Literal[
     "not_installed",
@@ -16,6 +16,7 @@ StorePluginStatus = Literal[
     "stopped",
     "error",
     "external",
+    "disabled",
 ]
 
 
@@ -47,6 +48,7 @@ class StorePluginDefinition:
     def to_catalog_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
+            "kind": "service",
             "name": self.name,
             "category": self.category,
             "description": self.description,

@@ -569,21 +569,54 @@ class StoreConnectionField(BaseModel):
     default: str | int | None = None
 
 
+class ScrapeCapabilitiesResponse(BaseModel):
+    supports_login: bool = False
+    supports_pagination: bool = False
+    supports_variants: bool = False
+    supports_browser: bool = True
+    supports_ai_extraction: bool = True
+    supports_ai_enrichment: bool = True
+    supports_batch: bool = True
+    max_concurrency: int = 5
+    requires_cookies: bool = False
+    anti_bot_level: Literal["low", "medium", "high"] = "medium"
+
+
+class PluginScrapeSpecResponse(BaseModel):
+    plugin_type: str
+    market: str
+    data_fields: list[str] = Field(default_factory=list)
+    page_types: list[str] = Field(default_factory=list)
+    example_urls: list[str] = Field(default_factory=list)
+    output_model: str = "ScrapedProduct"
+    currency_default: str = "CNY"
+    capabilities: ScrapeCapabilitiesResponse = Field(default_factory=ScrapeCapabilitiesResponse)
+    notes: str = ""
+    standard_fields_available: list[str] = Field(default_factory=list)
+
+
 class StoreCatalogItem(BaseModel):
     id: str
+    kind: Literal["service", "source", "site"] | None = None
     name: str
     category: str
     description: str
     version: str
-    default_port: int
-    supports_docker: bool
-    supports_external: bool
-    docker_image: str
+    default_port: int = 0
+    supports_docker: bool = False
+    supports_external: bool = False
+    docker_image: str = ""
     tags: list[str] = Field(default_factory=list)
     connection_fields: list[StoreConnectionField] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
     installed: bool = False
     status: str = "not_installed"
     mode: str | None = None
+    enabled: bool | None = None
+    trusted: bool | None = None
+    sandboxed: bool | None = None
+    permissions: dict[str, bool] | None = None
+    scrape_spec: PluginScrapeSpecResponse | None = None
 
 
 class StoreCatalogResponse(BaseModel):
@@ -642,6 +675,44 @@ class StoreInstalledListResponse(BaseModel):
 
 class StorePluginDetailResponse(StoreCatalogItem):
     installation: StoreInstalledResponse | None = None
+
+
+class PluginPermissionsResponse(BaseModel):
+    network: bool = False
+    browser: bool = False
+    filesystem: bool = False
+    subprocess: bool = False
+
+
+class PluginSecurityPolicyResponse(BaseModel):
+    max_zip_bytes: int
+    max_files_in_zip: int
+    max_plugin_py_bytes: int
+    scrape_timeout_seconds: int
+    trusted_builtin_ids: list[str]
+    blocked_import_roots: list[str]
+    install_requirements: list[str]
+
+
+class PluginInstallResponse(BaseModel):
+    ok: bool = True
+    plugin_id: str
+    version: str
+    sandboxed: bool = True
+    workspace: str
+    permissions: dict[str, bool] = Field(default_factory=dict)
+
+
+class PluginUninstallResponse(BaseModel):
+    ok: bool = True
+    plugin_id: str
+    removed: bool = True
+
+
+class PluginScrapeSpecificationsResponse(BaseModel):
+    items: list[StoreCatalogItem]
+    total: int
+    standard_data_fields: list[str] = Field(default_factory=list)
 
 
 class StoreInstallRequest(BaseModel):
@@ -711,6 +782,10 @@ __all__ = [
     "StoreInstalledResponse",
     "StorePluginDetailResponse",
     "StoreProbeResponse",
+    "PluginPermissionsResponse",
+    "PluginSecurityPolicyResponse",
+    "PluginInstallResponse",
+    "PluginUninstallResponse",
     "SubmitRequest",
     "SubmitResponse",
 ]

@@ -66,7 +66,7 @@ src/
 ├── core/ai/              # Extraction + post-process agent
 ├── cli/                  # Typer — local ops + gateway client
 ├── config/               # .env (panel auth) + ui_config.json (everything else)
-public/                   # Web client (React)
+apps/web/                 # Web client (React + Vite)
 config/ui_config.json     # Panel config (AI, engine, marketplaces)
 ```
 

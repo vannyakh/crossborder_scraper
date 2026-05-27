@@ -16,6 +16,10 @@ wheels/
 data/
 *.db
 
+# Per-plugin install workspaces (keep directory marker)
+installed_plugins/*
+!installed_plugins/.gitkeep
+
 # Secrets
 .env
 config/ui_config.json

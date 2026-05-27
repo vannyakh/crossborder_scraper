@@ -1,0 +1,49 @@
+{
+  "id": "my_shop_scraper",
+  "name": "My Shop Scraper",
+  "version": "1.0.0",
+  "description": "Sandboxed e-commerce product scraper for custom storefronts.",
+  "category": "ecommerce",
+  "domains": ["shop.example.com", "www.shop.example.com"],
+  "entry_module": "plugin",
+  "entry_class": "ShopScraper",
+  "permissions": {
+    "network": false,
+    "browser": false,
+    "filesystem": false,
+    "subprocess": false
+  },
+  "tags": ["ecommerce", "custom"],
+  "scrape_spec": {
+    "plugin_type": "ecommerce_product",
+    "market": "b2c",
+    "data_fields": [
+      "title",
+      "description",
+      "price",
+      "currency",
+      "images",
+      "variants",
+      "sku",
+      "category",
+      "seller_name"
+    ],
+    "page_types": ["product_detail", "collection"],
+    "example_urls": ["https://shop.example.com/products/sample-item"],
+    "output_model": "ScrapedProduct",
+    "currency_default": "USD",
+    "capabilities": {
+      "supports_login": false,
+      "supports_pagination": true,
+      "supports_variants": true,
+      "supports_browser": false,
+      "supports_ai_extraction": true,
+      "supports_ai_enrichment": true,
+      "supports_batch": true,
+      "max_concurrency": 3,
+      "requires_cookies": false,
+      "anti_bot_level": "low"
+    },
+    "notes": "Subclass BaseScraper; host enforces domain allowlist and scrape timeout."
+  }
+}

@@ -13,7 +13,6 @@ from core.engine.pool import BrowserPool
 from core.models import ScrapedProduct
 from core.proxy import ProxyPool
 from pipeline.storage import ProductStore
-from sites.registry import get_scraper_for_url
 
 
 class ScrapeEngine:
@@ -74,41 +73,47 @@ class ScrapeEngine:
 
         async with self._semaphore:
             try:
+                from sites.registry import get_scraper_for_url
+
                 scraper = get_scraper_for_url(job.url)
                 site_key = job.site_key or scraper.site_key
+                html = ""
 
-                async with self.pool.page_session(
-                    site_key=site_key,
-                    worker_id=worker_id,
-                    proxy=proxy,
-                    session_id=job.session_id,
-                ) as (page, _ctx):
-                    html = await scraper.fetch_page(page, job.url)
-                    product = await scraper.parse_html(job.url, html)
+                if getattr(scraper, "sandboxed", False):
+                    product = await scraper.scrape_product(job.url)
+                else:
+                    async with self.pool.page_session(
+                        site_key=site_key,
+                        worker_id=worker_id,
+                        proxy=proxy,
+                        session_id=job.session_id,
+                    ) as (page, _ctx):
+                        html = await scraper.fetch_page(page, job.url)
+                        product = await scraper.parse_html(job.url, html)
 
-                    # AI fallback when CSS parse is weak or forced
-                    need_ai = use_ai and self.ai.enabled
-                    if need_ai and (
-                        job.use_ai is True
-                        or (self.settings.ai_fallback and self.ai.is_parse_incomplete(product))
-                    ):
-                        logger.info("[{}] AI extraction for {}", job.id, job.url)
-                        product = await self.ai.extract(
-                            html,
-                            job.url,
-                            scraper.platform,
-                            scraper.extract_product_id(job.url) or "unknown",
-                        )
-                        ai_used = True
+                        if self.settings.output_dir:
+                            raw = scraper._save_raw_html(job.url, html)
+                            product.raw_html_path = str(raw)
 
-                    if self.agent.enabled and (ai_used or use_ai):
-                        logger.info("[{}] AI agent validate/enrich for {}", job.id, job.url)
-                        product = await self.agent.validate_and_enrich(product)
-                        ai_used = True
+                # AI fallback when CSS parse is weak or forced
+                need_ai = use_ai and self.ai.enabled
+                if need_ai and html and (
+                    job.use_ai is True
+                    or (self.settings.ai_fallback and self.ai.is_parse_incomplete(product))
+                ):
+                    logger.info("[{}] AI extraction for {}", job.id, job.url)
+                    product = await self.ai.extract(
+                        html,
+                        job.url,
+                        scraper.platform,
+                        scraper.extract_product_id(job.url) or "unknown",
+                    )
+                    ai_used = True
 
-                    if self.settings.output_dir:
-                        raw = scraper._save_raw_html(job.url, html)
-                        product.raw_html_path = str(raw)
+                if self.agent.enabled and (ai_used or use_ai):
+                    logger.info("[{}] AI agent validate/enrich for {}", job.id, job.url)
+                    product = await self.agent.validate_and_enrich(product)
+                    ai_used = True
 
                 duration = time.perf_counter() - start
                 result = JobResult(

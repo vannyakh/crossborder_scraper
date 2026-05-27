@@ -161,26 +161,23 @@ python main.py batch urls.txt --ai
 ## Project layout
 
 ```
-src/crossborder_scraper/
-├── cli.py              # Typer CLI
-├── config/             # Settings from .env
-├── core/
-│   ├── engine/         # ScrapeEngine, BrowserPool, jobs
-│   ├── ai/             # LLM product extractor
-│   ├── proxy.py        # Proxy pool
-│   ├── cookies.py      # Cookie sessions
-│   └── ...
+apps/web/               # React panel (Vite)
+src/
+├── cli/                # Typer CLI (`scraper` command)
+├── config/             # Settings from .env + ui_config.json
+├── core/               # Engine, AI, plugins, models
 ├── sites/              # 1688, Taobao, AliExpress
+├── plugins/            # Built-in social/custom source plugins
 ├── pipeline/           # Normalize + SQLite storage
-└── export/             # Shopee, Lazada, TikTok Shop, Shopify
-config/
-├── proxies.txt         # Proxy list for rotation
-└── sites.yaml
-data/
-├── cookies/            # Per-site session cookies
-├── output/             # JSON + raw HTML
-└── products.db
+├── export/             # Shopee, Lazada, TikTok Shop, Shopify
+├── gateway/            # Agent tools & workflows
+└── server/             # FastAPI API + App Store
+config/                 # Runtime YAML/JSON (plugins.yaml, sites.yaml)
+data/                   # Cookies, output, products.db
+installed_plugins/      # Sandboxed ZIP scrape plugins
 ```
+
+Full map: [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
 
 ## Adding a new source site
 
@@ -265,9 +262,13 @@ API will be on `http://localhost:8000`.
 Dev UI (with API proxy):
 
 ```bash
-cd public
+cd apps/web
 pnpm install
 pnpm dev
 ```
 
-Production UI is built into `public/dist` and served by the API at `http://localhost:8000/ui/`.
+Or from the repo root: `bash scripts/dev-ui.sh`
+
+Production UI is built into `apps/web/dist` and served by the API at `http://localhost:8000/ui/`.
+
+See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for the full folder map.

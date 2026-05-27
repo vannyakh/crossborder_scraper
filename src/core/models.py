@@ -10,6 +10,10 @@ class SourcePlatform(str, Enum):
     ALIBABA_1688 = "1688"
     TAOBAO = "taobao"
     ALIEXPRESS = "aliexpress"
+    INSTAGRAM = "instagram"
+    TIKTOK = "tiktok"
+    LINKEDIN = "linkedin"
+    CUSTOM = "custom_plugin"
 
 
 class ProductVariant(BaseModel):

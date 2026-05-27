@@ -11,6 +11,7 @@ from fastapi import HTTPException
 
 from config import get_settings
 from server.store import catalog, docker, probes, state
+from core.plugins import get_installed_spec, get_plugin_manager, get_source_spec, list_source_catalog
 from server.store.catalog import InstallMode, StorePluginDefinition, get_plugin, list_catalog
 
 
@@ -30,6 +31,7 @@ class StoreManager:
     def get_environment(self) -> dict[str, Any]:
         info = docker.environment_info()
         info["store_dir"] = str(state.store_root())
+        info["installed_plugins_dir"] = str(state.installed_root())
         info["builtin_sqlite"] = {
             "label": "Panel SQLite",
             "path": str(get_settings().db_path),
@@ -39,7 +41,7 @@ class StoreManager:
 
     def list_catalog(self) -> list[dict[str, Any]]:
         installed = state.list_installed()
-        items = []
+        items: list[dict[str, Any]] = []
         for entry in list_catalog():
             pid = entry["id"]
             inst = installed.get(pid)
@@ -51,12 +53,55 @@ class StoreManager:
                     "mode": inst.get("mode") if inst else None,
                 }
             )
+        for entry in list_source_catalog(installed_ids=set(installed.keys())):
+            pid = entry["id"]
+            inst = installed.get(pid)
+            row = {**entry, "installed": inst is not None}
+            if inst:
+                row["status"] = inst.get("status") or row.get("status")
+                row["mode"] = inst.get("mode")
+            items.append(row)
         return items
 
     def list_installed(self) -> list[dict[str, Any]]:
         return [self._public_installed(pid, entry) for pid, entry in state.list_installed().items()]
 
     def get_plugin_detail(self, plugin_id: str) -> dict[str, Any]:
+        catalog_row = get_plugin_manager().get_catalog_item(
+            plugin_id,
+            installed_ids=set(state.list_installed().keys()),
+        )
+        if catalog_row and catalog_row.get("kind") in ("site", "source"):
+            inst = state.get_installed(plugin_id)
+            if inst:
+                catalog_row = {**catalog_row, "installation": self._public_installed(plugin_id, inst)}
+            return catalog_row
+
+        installed_spec = get_installed_spec(plugin_id)
+        if installed_spec:
+            inst = state.get_installed(plugin_id)
+            row = installed_spec.manifest.to_catalog_dict(
+                installed=inst is not None,
+                status=str(inst.get("status")) if inst else "not_installed",
+            )
+            row["domains"] = list(installed_spec.manifest.domains)
+            if inst:
+                row["installation"] = self._public_installed(plugin_id, inst)
+            return row
+
+        source = get_source_spec(plugin_id)
+        if source:
+            installed = state.list_installed()
+            catalog_rows = list_source_catalog(installed_ids=set(installed.keys()))
+            catalog_item = next((r for r in catalog_rows if r["id"] == plugin_id), None)
+            if not catalog_item:
+                raise HTTPException(status_code=404, detail="unknown plugin")
+            inst = state.get_installed(plugin_id)
+            catalog_item["installed"] = inst is not None
+            if inst:
+                catalog_item["installation"] = self._public_installed(plugin_id, inst)
+            return catalog_item
+
         plugin = self._require_plugin(plugin_id)
         inst = state.get_installed(plugin_id)
         catalog_item = plugin.to_catalog_dict()
@@ -64,6 +109,37 @@ class StoreManager:
         if inst:
             catalog_item["installation"] = self._public_installed(plugin_id, inst)
         return catalog_item
+
+    async def enable_source(self, plugin_id: str) -> dict[str, Any]:
+        spec = get_source_spec(plugin_id)
+        if not spec:
+            raise HTTPException(status_code=404, detail="unknown plugin")
+        if not spec.is_enabled():
+            raise HTTPException(
+                status_code=400,
+                detail="plugin disabled in config/plugins.yaml",
+            )
+        if state.get_installed(plugin_id):
+            raise HTTPException(status_code=409, detail="plugin already enabled")
+
+        config: dict[str, Any] = {"domains": list(spec.all_domains())}
+        record = state.new_install_record(
+            plugin_id,
+            mode="source",
+            config=config,
+            status="running",
+        )
+        record = state.touch_record(record, probe={"ok": True, "message": "source plugin active"})
+        state.save_installed(plugin_id, record)
+        return self._public_installed(plugin_id, record)
+
+    async def disable_source(self, plugin_id: str) -> dict[str, Any]:
+        record = self._require_installed(plugin_id)
+        if record.get("mode") != "source":
+            raise HTTPException(status_code=400, detail="not a source plugin")
+        if not state.remove_installed(plugin_id):
+            raise HTTPException(status_code=404, detail="plugin not installed")
+        return {"message": "source plugin disabled", "plugin_id": plugin_id}
 
     async def install_docker(
         self,
@@ -197,6 +273,19 @@ class StoreManager:
 
     async def refresh_status(self, plugin_id: str) -> dict[str, Any]:
         record = self._require_installed(plugin_id)
+        if record.get("mode") == "source":
+            spec = get_source_spec(plugin_id)
+            ok = bool(spec and spec.is_enabled())
+            probe = {"ok": ok, "message": "source plugin active" if ok else "disabled in config"}
+            record = state.touch_record(
+                record,
+                status="running" if ok else "disabled",
+                probe=probe,
+                error=None if ok else probe.get("message"),
+            )
+            state.save_installed(plugin_id, record)
+            return self._public_installed(plugin_id, record)
+
         plugin = self._require_plugin(plugin_id)
         config = record.get("config") or {}
         probe = probes.probe_plugin(plugin, config)
@@ -236,15 +325,24 @@ class StoreManager:
 
     def _public_installed(self, plugin_id: str, entry: dict[str, Any]) -> dict[str, Any]:
         plugin = get_plugin(plugin_id)
+        source = get_source_spec(plugin_id)
         config = dict(entry.get("config") or {})
         safe_config = {**config}
         if safe_config.get("password"):
             safe_config["password_set"] = True
             safe_config.pop("password", None)
+        name = plugin.name if plugin else source.manifest.name if source else plugin_id
+        category = (
+            plugin.category
+            if plugin
+            else source.manifest.category
+            if source
+            else "database"
+        )
         return {
             "plugin_id": plugin_id,
-            "name": plugin.name if plugin else plugin_id,
-            "category": plugin.category if plugin else "database",
+            "name": name,
+            "category": category,
             "mode": entry.get("mode"),
             "status": entry.get("status"),
             "installed_at": entry.get("installed_at"),
@@ -256,6 +354,11 @@ class StoreManager:
         }
 
     def _require_plugin(self, plugin_id: str) -> StorePluginDefinition:
+        if get_source_spec(plugin_id):
+            raise HTTPException(
+                status_code=400,
+                detail="source plugins use enable/disable, not docker lifecycle",
+            )
         plugin = get_plugin(plugin_id)
         if not plugin:
             raise HTTPException(status_code=404, detail="unknown plugin")

@@ -15,6 +15,7 @@ from server.schemas import (
     StoreConnectRequest,
 )
 from server.services.audit import log_operation
+from core.plugins import get_source_spec
 from server.store import get_store_manager
 
 router = protected_router(prefix="/store", tags=["store"])
@@ -53,6 +54,16 @@ async def store_install(
     body: StoreInstallRequest,
     username: str = Depends(require_panel_auth),
 ) -> StoreInstalledResponse:
+    if get_source_spec(plugin_id):
+        result = await get_store_manager().enable_source(plugin_id)
+        log_operation(
+            user=username,
+            operation_type="Store enable source",
+            details=f"Enabled source plugin {plugin_id}",
+            meta={"plugin_id": plugin_id, "mode": "source"},
+        )
+        return StoreInstalledResponse(**result)
+
     if body.mode != "docker":
         raise HTTPException(status_code=400, detail="use POST /connect for external mode")
     result = await get_store_manager().install_docker(plugin_id, port=body.port)

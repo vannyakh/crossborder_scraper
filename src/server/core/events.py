@@ -50,4 +50,9 @@ def sse_frame(event_type: str, data: dict[str, Any]) -> str:
     return f"event: {event_type}\ndata: {payload}\n\n"
 
 
+def ws_message(event_type: str, data: dict[str, Any]) -> str:
+    """JSON frame for WebSocket clients: ``{ "event", "data" }``."""
+    return json.dumps({"event": event_type, "data": data}, default=str)
+
+
 batch_events = BatchEventBus()

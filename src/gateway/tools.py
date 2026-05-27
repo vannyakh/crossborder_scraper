@@ -12,7 +12,7 @@ ToolHandler = Callable[..., Awaitable[dict[str, Any]]]
 TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "scrape_product",
-        "description": "Scrape a product URL from 1688, Taobao, or AliExpress.",
+        "description": "Scrape a URL from 1688, Taobao, AliExpress, or enabled source plugins.",
         "parameters": {
             "type": "object",
             "properties": {

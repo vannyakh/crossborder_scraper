@@ -44,7 +44,9 @@ def clean_env_file(env_path: Path | None = None) -> list[str]:
 
 
 def _repo_env_path() -> Path:
-    return Path(__file__).resolve().parents[2] / ".env"
+    from core.paths import env_file_path
+
+    return env_file_path()
 
 
 def _generate_username() -> str:
