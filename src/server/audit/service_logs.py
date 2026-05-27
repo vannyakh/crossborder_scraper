@@ -10,8 +10,13 @@ from typing import Any, Literal
 
 LogCategory = Literal["operation", "run", "cron"]
 
-LOGS_PATH = Path("data/service_logs.json")
 MAX_LOGS = 500
+
+
+def logs_file_path() -> Path:
+    from core.paths import logs_dir
+
+    return logs_dir() / "service_logs.jsonl"
 
 
 def _now_iso() -> str:
@@ -19,28 +24,31 @@ def _now_iso() -> str:
 
 
 def _read_logs() -> list[dict[str, Any]]:
-    if not LOGS_PATH.exists():
+    path = logs_file_path()
+    if not path.exists():
         return []
     try:
-        raw = json.loads(LOGS_PATH.read_text(encoding="utf-8"))
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return []
     return raw if isinstance(raw, list) else []
 
 
 def _write_logs(entries: list[dict[str, Any]]) -> None:
-    LOGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    LOGS_PATH.write_text(
+    path = logs_file_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
         json.dumps(entries[:MAX_LOGS], indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
 
 def ensure_logs_file() -> Path:
-    LOGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if not LOGS_PATH.exists():
+    path = logs_file_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
         _write_logs([])
-    return LOGS_PATH
+    return path
 
 
 def append_service_log(
@@ -127,7 +135,6 @@ def import_agent_runs_to_cron_logs() -> int:
         trigger = run.get("trigger") or "cron"
         name = run.get("schedule_name") or run.get("schedule_id") or "Agent schedule"
         status = run.get("status") or "unknown"
-        run.get("ok")
         detail = run.get("response") or run.get("error") or run.get("message") or ""
         append_service_log(
             "cron",

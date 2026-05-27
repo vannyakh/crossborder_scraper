@@ -348,6 +348,18 @@ run_bootstrap() {
   echo "==> panel setup (host, port ${PANEL_PORT}, credentials)"
   "$(crossborder_bin "${root}")" "${setup_args[@]}"
   ensure_panel_bind_all_interfaces "${root}"
+
+  if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" ]]; then
+    echo "CROSSBORDER_VAR_LAYOUT=1" >>"${root}/.env" 2>/dev/null || true
+    PYTHONPATH="${root}/src" "${root}/.venv/bin/python" -c "
+from deploy.vps_layout import init_runtime_tree
+created = init_runtime_tree()
+print('==> runtime folders:', ', '.join(created))
+from core.paths import layout_summary
+for k, v in layout_summary().items():
+    print(f'    {k}: {v}')
+" 2>/dev/null || true
+  fi
 }
 
 maybe_start_panel() {
@@ -453,6 +465,16 @@ print(ips[0] if ips else '')
   echo "    crossborder serve --no-reload    # foreground"
   echo ""
   echo "  Install dir:  ${root}"
+  if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" ]]; then
+    echo ""
+    echo "  Runtime layout (mutable — backup this tree):"
+    echo "    ${root}/var/data/      scrape DB, cookies, output"
+    echo "    ${root}/var/plugins/   uploaded scrape plugins (ZIP)"
+    echo "    ${root}/var/skills/    uploaded agent skills (ZIP)"
+    echo "    ${root}/var/uploads/   panel file uploads"
+    echo "    ${root}/var/logs/       operation / cron logs"
+    echo "    ${root}/config/        panel settings (ui_config.json)"
+  fi
   echo "  Re-install:   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash"
   echo ""
   echo "  Stop panel:   kill \$(lsof -t -i:${port})   # macOS/Linux"

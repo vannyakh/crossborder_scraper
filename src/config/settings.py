@@ -87,15 +87,28 @@ class Settings(BaseSettings):
     shopify_api_version: str = "2025-01"
 
     def ensure_dirs(self) -> None:
-        for path in (self.data_dir, self.cookies_dir, self.output_dir, self.db_path.parent):
+        from core.paths import installed_plugins_dir, installed_skills_dir, uploads_dir
+
+        for path in (
+            self.data_dir,
+            self.cookies_dir,
+            self.output_dir,
+            self.db_path.parent,
+            uploads_dir(),
+            installed_plugins_dir(),
+            installed_skills_dir(),
+        ):
             path.mkdir(parents=True, exist_ok=True)
 
 
 def get_settings() -> Settings:
     from config.ui_store import apply_ui_config, ensure_ui_config_file
+    from core.paths import ensure_runtime_layout, resolve_settings_paths
 
     ensure_ui_config_file()
+    ensure_runtime_layout()
     settings = Settings()
     settings = apply_ui_config(settings)
+    settings = resolve_settings_paths(settings)
     settings.ensure_dirs()
     return settings

@@ -43,7 +43,9 @@ infra/              # SPA static files, Vite dev proxy
 | `server/app_store/` | **Infrastructure** marketplace (Docker services); API prefix `/store` |
 | `server/audit/` | **Audit logs** JSONL |
 | `pipeline/storage.py` | Scraped **products** SQLite |
-| `installed_plugins/` | User **scrape** ZIP plugins |
+| `var/plugins/` (VPS) or `installed_plugins/` | User **scrape** ZIP plugins |
+| `var/skills/` (VPS) or `installed_skills/` | User **agent** ZIP skills |
+| `var/data/` | Runtime data (DB, cookies, output) |
 | `core.plugins` | Built-in **source** scrapers |
 
 ## Adding an endpoint

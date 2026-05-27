@@ -12,11 +12,14 @@ wheels/
 # Virtual environments
 .venv
 
-# Project data
+# Project data (legacy layout at repo root)
 data/
 *.db
 
-# Per-plugin install workspaces (keep directory marker)
+# VPS runtime layout (self-host mutable state)
+var/
+
+# Per-plugin install workspaces (legacy at repo root)
 installed_plugins/*
 !installed_plugins/.gitkeep
 

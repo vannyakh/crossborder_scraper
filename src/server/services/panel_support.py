@@ -6,11 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from config import get_settings
-from gateway.schedules_store import RUNS_PATH, SCHEDULES_PATH
+from core.paths import layout_summary
+from gateway.schedules_store import agent_runs_path, schedules_path
+from server.audit.service_logs import count_service_logs, ensure_logs_file, logs_file_path
 from server.core.panel_bind import get_panel_bind_info
 from server.services.gateway_service import get_gateway_service
 from server.services.runtime import get_service_runtime, get_stats
-from server.audit.service_logs import LOGS_PATH, count_service_logs, ensure_logs_file
 
 
 def _support_links() -> list[dict[str, Any]]:
@@ -146,12 +147,13 @@ async def get_service_support() -> dict[str, Any]:
         "stats": stats,
         "logs": {
             **count_service_logs(),
-            "path": str(LOGS_PATH),
+            "path": str(logs_file_path()),
         },
         "paths": {
-            "schedules": str(SCHEDULES_PATH),
-            "agent_runs": str(RUNS_PATH),
-            "service_logs": str(LOGS_PATH),
+            **layout_summary(),
+            "schedules": str(schedules_path()),
+            "agent_runs": str(agent_runs_path()),
+            "service_logs": str(logs_file_path()),
             "db": str(settings.db_path),
             "output": str(settings.output_dir),
             "cookies": str(settings.cookies_dir),

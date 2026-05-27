@@ -8,9 +8,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-SCHEDULES_PATH = Path("config/agent_schedules.json")
-RUNS_PATH = Path("data/agent_runs.json")
 MAX_RUN_HISTORY = 100
+
+
+def schedules_path() -> Path:
+    from core.paths import config_dir
+
+    return config_dir() / "agent_schedules.json"
+
+
+def agent_runs_path() -> Path:
+    from core.paths import data_dir
+
+    return data_dir() / "agent_runs.json"
 
 
 def _read_json(path: Path) -> Any:
@@ -28,19 +38,20 @@ def _write_json(path: Path, data: Any) -> None:
 
 
 def ensure_schedules_file() -> Path:
-    SCHEDULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if not SCHEDULES_PATH.exists():
-        example = SCHEDULES_PATH.with_name("agent_schedules.example.json")
+    path = schedules_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        example = path.with_name("agent_schedules.example.json")
         if example.exists():
-            SCHEDULES_PATH.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
+            path.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
         else:
-            _write_json(SCHEDULES_PATH, {"schedules": []})
-    return SCHEDULES_PATH
+            _write_json(path, {"schedules": []})
+    return path
 
 
 def load_schedules() -> list[dict[str, Any]]:
     ensure_schedules_file()
-    raw = _read_json(SCHEDULES_PATH) or {}
+    raw = _read_json(schedules_path()) or {}
     schedules = raw.get("schedules") if isinstance(raw, dict) else raw
     if not isinstance(schedules, list):
         return []
@@ -48,7 +59,7 @@ def load_schedules() -> list[dict[str, Any]]:
 
 
 def save_schedules(schedules: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    _write_json(SCHEDULES_PATH, {"schedules": schedules})
+    _write_json(schedules_path(), {"schedules": schedules})
     return schedules
 
 
@@ -96,32 +107,34 @@ def delete_schedule(schedule_id: str) -> bool:
 
 
 def load_runs(limit: int = 50) -> list[dict[str, Any]]:
-    raw = _read_json(RUNS_PATH)
+    raw = _read_json(agent_runs_path())
     if not isinstance(raw, list):
         return []
     return raw[:limit]
 
 
 def append_run(entry: dict[str, Any]) -> dict[str, Any]:
-    runs = _read_json(RUNS_PATH)
+    path = agent_runs_path()
+    runs = _read_json(path)
     if not isinstance(runs, list):
         runs = []
     entry.setdefault("id", str(uuid.uuid4()))
     entry.setdefault("started_at", datetime.utcnow().isoformat() + "Z")
     runs.insert(0, entry)
-    _write_json(RUNS_PATH, runs[:MAX_RUN_HISTORY])
+    _write_json(path, runs[:MAX_RUN_HISTORY])
     return entry
 
 
 def update_run(run_id: str, patch: dict[str, Any]) -> None:
-    runs = _read_json(RUNS_PATH)
+    path = agent_runs_path()
+    runs = _read_json(path)
     if not isinstance(runs, list):
         return
     for r in runs:
         if r.get("id") == run_id:
             r.update(patch)
             break
-    _write_json(RUNS_PATH, runs)
+    _write_json(path, runs)
 
 
 def compute_next_run(cron: str, base: datetime | None = None) -> str:

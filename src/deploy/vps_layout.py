@@ -118,9 +118,17 @@ def prepare_wwwroot_site(
         except (subprocess.CalledProcessError, OSError) as exc:
             warnings.append(f"chown failed: {exc}")
 
-    # Site root + logs subdir (common wwwroot layout)
-    for sub in ("data", "config", "logs"):
-        (install_dir / sub).mkdir(parents=True, exist_ok=True)
+    (install_dir / "config").mkdir(parents=True, exist_ok=True)
     steps.append("wwwroot_dirs")
 
     return steps, warnings
+
+
+def init_runtime_tree() -> list[str]:
+    """Create ``var/`` runtime layout under the app root (call after clone on VPS)."""
+    import os
+
+    os.environ.setdefault("CROSSBORDER_VAR_LAYOUT", "1")
+    from core.paths import ensure_runtime_layout
+
+    return ensure_runtime_layout()

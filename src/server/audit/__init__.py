@@ -7,6 +7,7 @@ from server.audit.service_logs import (
     ensure_logs_file,
     import_agent_runs_to_cron_logs,
     list_service_logs,
+    logs_file_path,
 )
 
 __all__ = [

@@ -8,14 +8,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.paths import (
-    config_dir,
-    data_dir,
-    env_file_path,
-    installed_plugins_dir,
-    installed_skills_dir,
-    repo_root,
-)
+from core.paths import config_dir, env_file_path, repo_root
 from deploy.platform import PlatformInfo, detect_platform, python_executable
 
 
@@ -27,18 +20,31 @@ class ServerBootstrap:
     warnings: list[str] = field(default_factory=list)
 
     def ensure_directories(self) -> None:
-        for path in (
-            data_dir() if self.root == repo_root() else self.root / "data",
-            (self.root / "data" / "cookies"),
-            (self.root / "data" / "output"),
-            config_dir() if self.root == repo_root() else self.root / "config",
-            (
-                installed_plugins_dir()
-                if self.root == repo_root()
-                else self.root / "installed_plugins"
-            ),
-            installed_skills_dir() if self.root == repo_root() else self.root / "installed_skills",
-        ):
+        from core.paths import (
+            config_dir,
+            ensure_runtime_layout,
+            installed_plugins_dir,
+            installed_skills_dir,
+            uploads_dir,
+        )
+
+        cfg = config_dir() if self.root == repo_root() else self.root / "config"
+        cfg.mkdir(parents=True, exist_ok=True)
+        if self.root == repo_root():
+            ensure_runtime_layout()
+        else:
+            legacy_dirs = (
+                "data",
+                "data/cookies",
+                "data/output",
+                "uploads",
+                "plugins",
+                "skills",
+                "logs",
+            )
+            for name in legacy_dirs:
+                (self.root / name).mkdir(parents=True, exist_ok=True)
+        for path in (installed_plugins_dir(), installed_skills_dir(), uploads_dir()):
             path.mkdir(parents=True, exist_ok=True)
         self.steps_done.append("directories")
 

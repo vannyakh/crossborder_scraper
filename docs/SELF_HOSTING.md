@@ -68,9 +68,15 @@ crossborder deploy firewall    # ufw / firewalld allow 8787
 
 | Path | Purpose |
 |------|---------|
-| `/www/wwwroot/crossborder_scraper/` | App root (git clone, `.venv`, `apps/web`) |
-| `/www/wwwroot/crossborder_scraper/data/` | Cookies, SQLite, panel log |
+| `/www/wwwroot/crossborder_scraper/` | **App root** — code, `.venv`, `config/`, `.env` |
+| `/www/wwwroot/crossborder_scraper/var/data/` | Scrape DB, cookies, output, panel log |
+| `/www/wwwroot/crossborder_scraper/var/plugins/` | Uploaded scrape plugins (ZIP) |
+| `/www/wwwroot/crossborder_scraper/var/skills/` | Uploaded agent skills (ZIP) |
+| `/www/wwwroot/crossborder_scraper/var/uploads/` | File uploads |
+| `/www/wwwroot/crossborder_scraper/var/logs/` | Panel audit logs |
 | User `crossborder` | Optional service user when install runs as `root` |
+
+Full map: [DIRECTORY_LAYOUT.md](DIRECTORY_LAYOUT.md).
 
 Put **nginx** in front for HTTPS: `crossborder deploy nginx -n your.domain.com`
 
