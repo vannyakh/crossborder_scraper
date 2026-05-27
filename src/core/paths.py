@@ -24,6 +24,11 @@ def ui_dist_dir() -> Path:
     return apps_web_dir() / "dist"
 
 
+def ui_is_built() -> bool:
+    dist = ui_dist_dir()
+    return dist.is_dir() and (dist / "index.html").is_file()
+
+
 def config_dir() -> Path:
     """Runtime YAML/JSON (``plugins.yaml``, ``ui_config.json``) — not the Python ``config`` package."""
     return repo_root() / "config"

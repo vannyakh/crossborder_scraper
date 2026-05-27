@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
-# Vite dev server for apps/web (API proxy → localhost:8000).
+# Vite dev server for apps/web (API proxy → panel port from .env, default 8787).
 set -euo pipefail
 # shellcheck source=_lib.sh
 source "$(dirname "$0")/_lib.sh"
+
+if [[ -f "${ROOT}/.env" ]]; then
+  # shellcheck disable=SC1091
+  set -a
+  source "${ROOT}/.env"
+  set +a
+fi
+export PANEL_PORT="${PANEL_PORT:-8787}"
 
 need_pnpm
 cd "${ROOT}/apps/web"

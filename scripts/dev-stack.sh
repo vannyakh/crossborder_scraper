@@ -10,11 +10,11 @@ Crossborder scraper — local dev stack
 
 Terminal 1 (API):
   bash scripts/serve-api.sh
-  → http://127.0.0.1:${PORT}/ui/   (after: cd apps/web && pnpm build)
+  → http://127.0.0.1:${PORT}/ui/   (proxies to Vite when dist/ is missing)
 
 Terminal 2 (UI hot reload):
   bash scripts/dev-ui.sh
-  → http://127.0.0.1:5173/ui/
+  → http://127.0.0.1:5173/ui/   (or use API URL above after Vite is up)
 
 CLI:
   uv run scraper gateway

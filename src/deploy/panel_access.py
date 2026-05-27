@@ -34,6 +34,8 @@ def _print_compact_urls(info: PanelAccessInfo) -> None:
 
 
 def _print_quick_start(info: PanelAccessInfo, *, mode: str) -> None:
+    from core.paths import ui_is_built
+
     serve = cmd("uv run crossborder serve --no-reload")
     login = link_markup(info.primary_login_url, info.primary_login_url)
     lines = [
@@ -41,6 +43,11 @@ def _print_quick_start(info: PanelAccessInfo, *, mode: str) -> None:
         f"2. Open login in browser:       {login}",
         f"3. Sign in with username above  {user(info.username)}",
     ]
+    if not ui_is_built():
+        lines.insert(
+            2,
+            hint("   Dev UI: run bash scripts/dev-ui.sh in a second terminal (Vite on :5173)"),
+        )
     if mode in ("server", "install"):
         lines.append(hint("   CLI: run from install folder — uv run crossborder --help"))
     console.print(

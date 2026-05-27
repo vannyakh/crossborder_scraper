@@ -1,10 +1,13 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-from core.paths import ui_dist_dir
+from core.paths import ui_is_built
 from server.bootstrap import panel_lifespan
 from server.core.constants import APP_VERSION
 from server.infra.spa_static import SPAStaticFiles
+from server.infra.ui_dev_proxy import create_ui_dev_router
 from server.routers import (
     ai,
     auth,
@@ -30,7 +33,7 @@ app = FastAPI(
     lifespan=panel_lifespan,
 )
 
-_ui_dist = ui_dist_dir()
+_force_ui_dev = os.getenv("PANEL_UI_DEV", "").lower() in ("1", "true", "yes")
 
 # Public + system
 app.include_router(auth.router)
@@ -59,9 +62,13 @@ async def root() -> RedirectResponse:
     return RedirectResponse(url="/ui")
 
 
-if _ui_dist.is_dir() and (_ui_dist / "index.html").is_file():
+if not _force_ui_dev and ui_is_built():
+    from core.paths import ui_dist_dir
+
     app.mount(
         "/ui",
-        SPAStaticFiles(directory=str(_ui_dist), html=True),
+        SPAStaticFiles(directory=str(ui_dist_dir()), html=True),
         name="ui",
     )
+else:
+    app.include_router(create_ui_dev_router(), prefix="/ui")
