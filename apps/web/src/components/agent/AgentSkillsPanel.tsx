@@ -11,6 +11,7 @@ import { SectionCard } from '../ui/Section'
 import {
   useGatewaySkillsQuery,
   useInstallSkillMutation,
+  useInstallRegistrySkillMutation,
   useSetEnabledSkillsMutation,
   useUninstallSkillMutation,
 } from '../../hooks/queries/use-agent-query'
@@ -19,6 +20,7 @@ import type { GatewaySkill } from '../../lib/api'
 import { SkillCatalogCard } from './SkillCatalogCard'
 import { SkillCatalogListRow } from './SkillCatalogListRow'
 import { SkillDetailDrawer } from './SkillDetailDrawer'
+import { SkillRegistryPanel } from './SkillRegistryPanel'
 import {
   filterSkillsByCategory,
   filterSkillsByTab,
@@ -31,7 +33,6 @@ import {
 function SkillsTabContent({
   loading,
   items,
-  enabledIds,
   category,
   onCategoryChange,
   busy,
@@ -40,7 +41,6 @@ function SkillsTabContent({
 }: {
   loading: boolean
   items: GatewaySkill[]
-  enabledIds: string[]
   category: SkillCategoryFilter
   onCategoryChange: (value: SkillCategoryFilter) => void
   busy: boolean
@@ -61,11 +61,6 @@ function SkillsTabContent({
 
   return (
     <Box>
-      <Text fontSize="sm" color="fg.muted" mb={3}>
-        {enabledIds.length} enabled · built-in skills live in <code>skills/</code> · custom in{' '}
-        <code>installed_skills/</code>
-      </Text>
-
       <StoreFilterBar
         showCategoryFilters
         categoryFilters={SKILL_CATEGORY_FILTERS}
@@ -124,13 +119,14 @@ export function AgentSkillsPanel() {
   const accentPalette = useAccentPalette()
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const [tab, setTab] = useState<SkillTab>('catalog')
+  const [tab, setTab] = useState<SkillTab>('builtin')
   const [category, setCategory] = useState<SkillCategoryFilter>('all')
   const [detailSkillId, setDetailSkillId] = useState<string | null>(null)
 
   const skillsQuery = useGatewaySkillsQuery()
   const setEnabledMutation = useSetEnabledSkillsMutation()
   const installMutation = useInstallSkillMutation()
+  const installRegistryMutation = useInstallRegistrySkillMutation()
   const uninstallMutation = useUninstallSkillMutation()
 
   const items = skillsQuery.data?.items ?? []
@@ -141,12 +137,14 @@ export function AgentSkillsPanel() {
     [items, detailSkillId],
   )
 
+  const builtinCount = items.filter((s) => s.kind === 'builtin').length
+  const installedCount = items.filter((s) => s.kind === 'installed').length
   const enabledCount = items.filter((s) => s.enabled).length
-  const customCount = items.filter((s) => s.kind === 'installed').length
 
   const busy =
     setEnabledMutation.isPending ||
     installMutation.isPending ||
+    installRegistryMutation.isPending ||
     uninstallMutation.isPending
 
   async function handleToggle(skillId: string, on: boolean) {
@@ -159,7 +157,7 @@ export function AgentSkillsPanel() {
   async function handleUpload(file: File) {
     try {
       await installMutation.mutateAsync({ file, replace: false })
-      setTab('custom')
+      setTab('installed')
     } finally {
       if (fileRef.current) fileRef.current.value = ''
     }
@@ -170,13 +168,17 @@ export function AgentSkillsPanel() {
     setDetailSkillId(null)
   }
 
-  const error = installMutation.error ?? uninstallMutation.error ?? setEnabledMutation.error
+  const error =
+    installMutation.error ??
+    installRegistryMutation.error ??
+    uninstallMutation.error ??
+    setEnabledMutation.error
 
   return (
     <>
       <Toolbar
         title="Agent skills"
-        description="SKILL.md packages — instructions and tool scope for the gateway agent"
+        description="SKILL.md packages for the gateway agent"
         actions={
           <HStack gap={2}>
             <Button
@@ -232,15 +234,21 @@ export function AgentSkillsPanel() {
 
       <Tabs.Root
         value={tab}
-        onValueChange={(d) => setTab((d.value as SkillTab) ?? 'catalog')}
+        onValueChange={(d) => setTab((d.value as SkillTab) ?? 'builtin')}
         variant="line"
         size="sm"
       >
         <Tabs.List mb={3}>
-          <Tabs.Trigger value="catalog">
-            Catalog
+          <Tabs.Trigger value="builtin">
+            Built-in
             <Box as="span" ml={1.5} fontSize="xs" color="fg.muted">
-              {items.length}
+              {builtinCount}
+            </Box>
+          </Tabs.Trigger>
+          <Tabs.Trigger value="installed">
+            Installed
+            <Box as="span" ml={1.5} fontSize="xs" color="fg.muted">
+              {installedCount}
             </Box>
           </Tabs.Trigger>
           <Tabs.Trigger value="enabled">
@@ -249,19 +257,25 @@ export function AgentSkillsPanel() {
               {enabledCount}
             </Box>
           </Tabs.Trigger>
-          <Tabs.Trigger value="custom">
-            Custom
-            <Box as="span" ml={1.5} fontSize="xs" color="fg.muted">
-              {customCount}
-            </Box>
-          </Tabs.Trigger>
+          <Tabs.Trigger value="registry">Registry</Tabs.Trigger>
         </Tabs.List>
 
-        <Tabs.Content value="catalog" pt={0}>
+        <Tabs.Content value="builtin" pt={0}>
           <SkillsTabContent
             loading={skillsQuery.isLoading}
-            items={filterSkillsByTab(items, 'catalog')}
-            enabledIds={enabledIds}
+            items={filterSkillsByTab(items, 'builtin')}
+            category={category}
+            onCategoryChange={setCategory}
+            busy={busy}
+            onToggle={(id, on) => void handleToggle(id, on)}
+            onDetails={setDetailSkillId}
+          />
+        </Tabs.Content>
+
+        <Tabs.Content value="installed" pt={0}>
+          <SkillsTabContent
+            loading={skillsQuery.isLoading}
+            items={filterSkillsByTab(items, 'installed')}
             category={category}
             onCategoryChange={setCategory}
             busy={busy}
@@ -274,7 +288,6 @@ export function AgentSkillsPanel() {
           <SkillsTabContent
             loading={skillsQuery.isLoading}
             items={filterSkillsByTab(items, 'enabled')}
-            enabledIds={enabledIds}
             category={category}
             onCategoryChange={setCategory}
             busy={busy}
@@ -283,16 +296,14 @@ export function AgentSkillsPanel() {
           />
         </Tabs.Content>
 
-        <Tabs.Content value="custom" pt={0}>
-          <SkillsTabContent
-            loading={skillsQuery.isLoading}
-            items={filterSkillsByTab(items, 'custom')}
+        <Tabs.Content value="registry" pt={0}>
+          <SkillRegistryPanel
             enabledIds={enabledIds}
-            category={category}
-            onCategoryChange={setCategory}
             busy={busy}
-            onToggle={(id, on) => void handleToggle(id, on)}
-            onDetails={setDetailSkillId}
+            onOpenLocal={(slug) => {
+              setDetailSkillId(slug)
+              setTab('installed')
+            }}
           />
         </Tabs.Content>
       </Tabs.Root>

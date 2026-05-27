@@ -117,6 +117,68 @@ export function useUninstallSkillMutation() {
   })
 }
 
+export type SkillRegistryQueryParams = {
+  kind: 'skill' | 'plugin'
+  sort?: string
+  limit?: number
+  cursor?: string | null
+  q?: string
+}
+
+export function useSkillRegistryQuery(params: SkillRegistryQueryParams, enabled = true) {
+  const search = new URLSearchParams()
+  search.set('kind', params.kind)
+  search.set('sort', params.sort ?? 'downloads')
+  search.set('limit', String(params.limit ?? 24))
+  if (params.cursor) search.set('cursor', params.cursor)
+  if (params.q?.trim()) search.set('q', params.q.trim())
+
+  return useQuery({
+    queryKey: queryKeys.gatewaySkillRegistry({
+      kind: params.kind,
+      sort: params.sort ?? 'downloads',
+      limit: params.limit ?? 24,
+      cursor: params.cursor ?? null,
+      q: params.q?.trim() ?? '',
+    }),
+    queryFn: () =>
+      api<import('../../lib/api').SkillRegistryList>(`/gateway/skills/registry?${search.toString()}`),
+    staleTime: 60_000,
+    enabled,
+  })
+}
+
+export function useInstallRegistrySkillMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { slug: string; version?: string; replace?: boolean }) =>
+      api<{ ok: boolean; skill_id: string }>('/gateway/skills/registry/install', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewaySkills })
+      void queryClient.invalidateQueries({ queryKey: ['gateway', 'skills', 'registry'] })
+    },
+  })
+}
+
+export function useUpdateRegistrySkillMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ slug, version }: { slug: string; version?: string }) => {
+      const q = version ? `?version=${encodeURIComponent(version)}` : ''
+      return api<{ ok: boolean; skill_id: string }>(`/gateway/skills/registry/${slug}/update${q}`, {
+        method: 'POST',
+      })
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewaySkills })
+      void queryClient.invalidateQueries({ queryKey: ['gateway', 'skills', 'registry'] })
+    },
+  })
+}
+
 export function useRunAgentMutation() {
   const queryClient = useQueryClient()
   return useMutation({

@@ -4,6 +4,7 @@ export const SKILL_CATEGORY_LABEL: Record<string, string> = {
   scrape: 'Scrape',
   catalog: 'Catalog',
   export: 'Export',
+  general: 'General',
 }
 
 export const SKILL_CATEGORY_FILTERS = [
@@ -14,7 +15,8 @@ export const SKILL_CATEGORY_FILTERS = [
 ] as const
 
 export type SkillCategoryFilter = (typeof SKILL_CATEGORY_FILTERS)[number]['id']
-export type SkillTab = 'catalog' | 'enabled' | 'custom'
+export type SkillTab = 'builtin' | 'installed' | 'enabled' | 'registry'
+export type SkillRegistryKind = 'skill' | 'plugin'
 
 export function filterSkillsByCategory(items: GatewaySkill[], category: SkillCategoryFilter) {
   if (category === 'all') return items
@@ -23,7 +25,8 @@ export function filterSkillsByCategory(items: GatewaySkill[], category: SkillCat
 
 export function filterSkillsByTab(items: GatewaySkill[], tab: SkillTab) {
   if (tab === 'enabled') return items.filter((item) => item.enabled)
-  if (tab === 'custom') return items.filter((item) => item.kind === 'installed')
+  if (tab === 'installed') return items.filter((item) => item.kind === 'installed')
+  if (tab === 'builtin') return items.filter((item) => item.kind === 'builtin')
   return items
 }
 

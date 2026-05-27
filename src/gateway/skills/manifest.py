@@ -11,8 +11,9 @@ import yaml
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
-# YAML frontmatter key under `metadata:` — tools, emoji, category for agent integration.
+# YAML frontmatter keys under `metadata:` — tools, emoji, category for agent integration.
 AGENT_SKILL_META_KEY = "crossborder"
+OPENCLAW_SKILL_META_KEY = "openclaw"
 
 
 @dataclass(frozen=True)
@@ -32,9 +33,9 @@ class SkillManifest:
     path: str = ""
 
     def to_catalog_dict(
-        self, *, enabled: bool, installed: bool, kind: str = "builtin"
+        self, *, enabled: bool, installed: bool, kind: str = "builtin", **extra: Any
     ) -> dict[str, Any]:
-        return {
+        row: dict[str, Any] = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
@@ -49,17 +50,23 @@ class SkillManifest:
             "trusted": self.trusted,
             "path": self.path,
         }
+        row.update(extra)
+        return row
 
 
 def _agent_skill_meta(meta: dict[str, Any]) -> dict[str, Any]:
-    """Read gateway-agent fields from SKILL.md frontmatter (`metadata.crossborder`)."""
+    """Read gateway-agent fields from SKILL.md frontmatter metadata blocks."""
     nested = meta.get("metadata")
     if isinstance(nested, dict):
-        raw = nested.get(AGENT_SKILL_META_KEY)
+        for key in (AGENT_SKILL_META_KEY, OPENCLAW_SKILL_META_KEY):
+            raw = nested.get(key)
+            if isinstance(raw, dict):
+                return raw
+    for key in (AGENT_SKILL_META_KEY, OPENCLAW_SKILL_META_KEY):
+        raw = meta.get(key)
         if isinstance(raw, dict):
             return raw
-    raw = meta.get(AGENT_SKILL_META_KEY)
-    return raw if isinstance(raw, dict) else {}
+    return {}
 
 
 def parse_skill_md(
@@ -81,8 +88,8 @@ def parse_skill_md(
     version = str(meta.get("version") or "1.0.0")
     homepage = str(meta.get("homepage") or "")
     agent_meta = _agent_skill_meta(meta)
-    emoji = str(agent_meta.get("emoji") or "🤖")
-    category = str(agent_meta.get("category") or "scrape")
+    emoji = str(agent_meta.get("emoji") or meta.get("emoji") or "🤖")
+    category = str(agent_meta.get("category") or meta.get("category") or "general")
     tools_raw = agent_meta.get("tools") or []
     tools = tuple(str(t) for t in tools_raw) if isinstance(tools_raw, list) else ()
 

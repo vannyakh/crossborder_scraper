@@ -11,6 +11,7 @@ import yaml
 
 from core.paths import agent_skills_config_path, builtin_skills_dir, installed_skills_dir
 from gateway.skills.manifest import SkillManifest, load_skill_file
+from gateway.tools import TOOL_DEFINITIONS
 
 _BUILTIN_DEFAULT_ENABLED = (
     "scrape-assistant",
@@ -48,7 +49,8 @@ class SkillManager:
         return {str(x).strip() for x in enabled if str(x).strip()}
 
     def set_enabled(self, skill_ids: list[str]) -> list[str]:
-        ids = sorted({str(s).strip() for s in skill_ids if str(s).strip()})
+        known = set(self.all_manifests())
+        ids = sorted({str(s).strip() for s in skill_ids if str(s).strip() and str(s).strip() in known})
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         data = self.load_config()
         data["enabled"] = ids
@@ -94,21 +96,74 @@ class SkillManager:
         return merged
 
     def list_catalog(self) -> list[dict[str, Any]]:
+        from gateway.skills.registry_client import registry_skill_url
+
         enabled = self.enabled_ids()
+        installed_state = self.load_installed_state().get("skills") or {}
         items: list[dict[str, Any]] = []
         for sid, manifest in self.all_manifests().items():
             kind = "builtin" if (self.builtin_dir / sid).is_dir() else "installed"
-            items.append(
-                manifest.to_catalog_dict(
-                    enabled=sid in enabled,
-                    installed=True,
-                    kind=kind,
-                )
+            meta = installed_state.get(sid) if isinstance(installed_state.get(sid), dict) else {}
+            registry = str(meta.get("registry") or "").strip()
+            slug = str(meta.get("slug") or sid).strip()
+            source = "builtin" if kind == "builtin" else ("registry" if registry else "installed")
+            homepage = manifest.homepage or (registry_skill_url(slug) if registry else "")
+            row = manifest.to_catalog_dict(
+                enabled=sid in enabled,
+                installed=True,
+                kind=kind,
+                source=source,
+                registry_slug=slug if registry else "",
+                registry_url=registry_skill_url(slug) if registry else "",
+                installed_at=str(meta.get("installed_at") or ""),
+                registry_version=str(meta.get("version") or manifest.version),
             )
+            if homepage:
+                row["homepage"] = homepage
+            items.append(row)
         return sorted(items, key=lambda r: (r.get("kind") != "builtin", r.get("name") or ""))
 
     def get_manifest(self, skill_id: str) -> SkillManifest | None:
         return self.all_manifests().get(skill_id)
+
+    def resolve_registry_slug(self, slug: str) -> str | None:
+        """Map a registry slug to a locally installed skill id, if present."""
+        slug = slug.strip()
+        if not slug:
+            return None
+        if slug in self.all_manifests():
+            return slug
+        state = self.load_installed_state().get("skills") or {}
+        for sid, meta in state.items():
+            if isinstance(meta, dict) and str(meta.get("slug") or "").strip() == slug:
+                return str(sid).strip() or None
+        return None
+
+    def registry_match_ids(self) -> set[str]:
+        """Skill ids plus registry slugs — used to mark registry rows as installed."""
+        ids = set(self.all_manifests())
+        state = self.load_installed_state().get("skills") or {}
+        for sid, meta in state.items():
+            if isinstance(meta, dict):
+                reg_slug = str(meta.get("slug") or "").strip()
+                if reg_slug:
+                    ids.add(reg_slug)
+            sid_text = str(sid).strip()
+            if sid_text:
+                ids.add(sid_text)
+        return ids
+
+    def registry_enabled_ids(self) -> set[str]:
+        """Enabled skill ids plus their registry slugs for browse UI."""
+        enabled = set(self.enabled_ids())
+        state = self.load_installed_state().get("skills") or {}
+        for sid in list(enabled):
+            meta = state.get(sid)
+            if isinstance(meta, dict):
+                reg_slug = str(meta.get("slug") or "").strip()
+                if reg_slug:
+                    enabled.add(reg_slug)
+        return enabled
 
     def enabled_manifests(self, skill_ids: list[str] | None = None) -> list[SkillManifest]:
         ids = skill_ids if skill_ids is not None else sorted(self.enabled_ids())
@@ -132,12 +187,13 @@ class SkillManager:
             return [], base_prompt, set()
 
         sections = [base_prompt.strip(), "\n## Active skills\n"]
+        known_tools = {t["name"] for t in TOOL_DEFINITIONS}
         tool_names: set[str] = set()
         resolved: list[str] = []
 
         for m in manifests:
             resolved.append(m.id)
-            tool_names.update(m.tools)
+            tool_names.update(t for t in m.tools if t in known_tools)
             sections.append(f"\n### {m.emoji} {m.name} (`{m.id}`)\n")
             if m.description:
                 sections.append(f"{m.description}\n")

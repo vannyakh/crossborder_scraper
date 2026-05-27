@@ -20,6 +20,8 @@ export const queryKeys = {
   gatewayUpdateStatus: ['gateway', 'update', 'status'] as const,
   gatewayPrompts: ['gateway', 'prompts'] as const,
   gatewaySkills: ['gateway', 'skills'] as const,
+  gatewaySkillRegistry: (params: Record<string, string | number | null | undefined>) =>
+    ['gateway', 'skills', 'registry', params] as const,
   gatewayTools: ['gateway', 'tools'] as const,
   gatewayWorkflows: ['gateway', 'workflows'] as const,
   gatewayTelegram: ['gateway', 'telegram'] as const,

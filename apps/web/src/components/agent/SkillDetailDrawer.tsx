@@ -166,8 +166,21 @@ export function SkillDetailDrawer({
                       Package info
                     </Text>
                     <InfoRow label="Skill ID" value={skill.id} />
+                    {skill.source ? <InfoRow label="Source" value={skill.source} /> : null}
+                    {skill.registry_slug ? (
+                      <InfoRow label="Registry slug" value={skill.registry_slug} />
+                    ) : null}
+                    {skill.registry_version ? (
+                      <InfoRow label="Registry version" value={skill.registry_version} />
+                    ) : null}
+                    {skill.installed_at ? (
+                      <InfoRow label="Installed" value={skill.installed_at} />
+                    ) : null}
                     {skill.path ? <InfoRow label="Path" value={skill.path} /> : null}
                     {skill.homepage ? <InfoRow label="Homepage" value={skill.homepage} /> : null}
+                    {skill.registry_url ? (
+                      <InfoRow label="Registry" value={skill.registry_url} />
+                    ) : null}
                   </Box>
                 </VStack>
               ) : null}

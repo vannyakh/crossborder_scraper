@@ -39,6 +39,11 @@ class GatewaySkillInfo(BaseModel):
     kind: Literal["builtin", "installed"] = "builtin"
     trusted: bool = True
     path: str = ""
+    source: Literal["builtin", "installed", "registry"] = "builtin"
+    registry_slug: str = ""
+    registry_url: str = ""
+    installed_at: str = ""
+    registry_version: str = ""
 
 
 class GatewaySkillListResponse(BaseModel):
@@ -64,6 +69,50 @@ class SkillUninstallResponse(BaseModel):
     ok: bool = True
     skill_id: str
     removed: bool = True
+
+
+class SkillRegistryItem(BaseModel):
+    slug: str
+    name: str
+    description: str = ""
+    version: str = "1.0.0"
+    kind: Literal["skill", "plugin"] = "skill"
+    family: str = "skill"
+    owner_handle: str = ""
+    downloads: int = 0
+    stars: int = 0
+    executes_code: bool = False
+    is_official: bool = False
+    registry_url: str = ""
+    installed: bool = False
+    enabled: bool = False
+
+
+class SkillRegistryListResponse(BaseModel):
+    items: list[SkillRegistryItem]
+    next_cursor: str | None = None
+    registry_url: str = ""
+
+
+class SkillRegistryInstallRequest(BaseModel):
+    slug: str = Field(..., min_length=1, max_length=120)
+    version: str | None = Field(default=None, max_length=40)
+    replace: bool = False
+
+
+class SkillRegistryDetailResponse(BaseModel):
+    slug: str
+    name: str
+    description: str = ""
+    version: str = "1.0.0"
+    changelog: str = ""
+    license: str = ""
+    owner_handle: str = ""
+    registry_url: str = ""
+    stats: dict[str, Any] = Field(default_factory=dict)
+    installed: bool = False
+    enabled: bool = False
+    local_version: str = ""
 
 
 class GatewayPromptInfo(BaseModel):

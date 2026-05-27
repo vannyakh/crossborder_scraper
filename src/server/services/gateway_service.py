@@ -106,6 +106,93 @@ class GatewayService:
 
         return get_skill_manager().set_enabled(skill_ids)
 
+    async def browse_skill_registry(
+        self,
+        *,
+        kind: str = "skill",
+        sort: str = "downloads",
+        limit: int = 24,
+        cursor: str | None = None,
+        q: str | None = None,
+    ) -> dict[str, Any]:
+        from gateway.skills import get_skill_manager
+        from gateway.skills.registry_client import SkillRegistryError, browse_registry
+
+        mgr = get_skill_manager()
+        local = mgr.registry_match_ids()
+        enabled = mgr.registry_enabled_ids()
+        try:
+            return await browse_registry(
+                kind=kind,  # type: ignore[arg-type]
+                sort=sort,  # type: ignore[arg-type]
+                limit=limit,
+                cursor=cursor,
+                q=q,
+                local_ids=local,
+                enabled=enabled,
+            )
+        except SkillRegistryError as exc:
+            raise RuntimeError(str(exc)) from exc
+
+    async def get_registry_skill_detail(self, slug: str) -> dict[str, Any]:
+        from gateway.skills import get_skill_manager
+        from gateway.skills.registry_client import SkillRegistryError, fetch_registry_skill_detail
+
+        mgr = get_skill_manager()
+        try:
+            detail = await fetch_registry_skill_detail(slug)
+        except SkillRegistryError as exc:
+            raise RuntimeError(str(exc)) from exc
+        skill_id = mgr.resolve_registry_slug(slug) or slug.strip()
+        manifests = mgr.all_manifests()
+        state = mgr.load_installed_state().get("skills") or {}
+        meta = state.get(skill_id) if isinstance(state.get(skill_id), dict) else {}
+        manifest = manifests.get(skill_id)
+        local_version = str(meta.get("version") or (manifest.version if manifest else "") or "")
+        detail["installed"] = skill_id in manifests
+        detail["enabled"] = skill_id in mgr.enabled_ids()
+        detail["local_version"] = local_version
+        return detail
+
+    async def install_skill_from_registry(
+        self,
+        *,
+        slug: str,
+        version: str | None = None,
+        replace: bool = False,
+    ) -> dict[str, Any]:
+        from gateway.skills import SkillInstallError, get_skill_installer
+        from gateway.skills.registry_client import (
+            SkillRegistryError,
+            download_registry_skill,
+            registry_base_url,
+        )
+
+        try:
+            archive = await download_registry_skill(slug=slug, version=version)
+            return get_skill_installer().install_zip(
+                archive,
+                replace=replace,
+                slug=slug.strip(),
+                registry=registry_base_url(),
+            )
+        except SkillRegistryError as exc:
+            raise RuntimeError(str(exc)) from exc
+        except SkillInstallError as exc:
+            raise ValueError(str(exc)) from exc
+
+    async def update_skill_from_registry(
+        self,
+        slug: str,
+        *,
+        version: str | None = None,
+    ) -> dict[str, Any]:
+        return await self.install_skill_from_registry(
+            slug=slug,
+            version=version,
+            replace=True,
+        )
+
     async def run_agent(
         self,
         message: str,

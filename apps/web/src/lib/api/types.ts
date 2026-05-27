@@ -580,12 +580,40 @@ export type GatewaySkill = {
   kind: 'builtin' | 'installed'
   trusted: boolean
   path: string
+  source?: 'builtin' | 'installed' | 'registry'
+  registry_slug?: string
+  registry_url?: string
+  installed_at?: string
+  registry_version?: string
 }
 
 export type GatewaySkillList = {
   items: GatewaySkill[]
   total: number
   enabled: string[]
+}
+
+export type SkillRegistryItem = {
+  slug: string
+  name: string
+  description: string
+  version: string
+  kind: 'skill' | 'plugin'
+  family: string
+  owner_handle: string
+  downloads: number
+  stars: number
+  executes_code: boolean
+  is_official: boolean
+  registry_url: string
+  installed: boolean
+  enabled: boolean
+}
+
+export type SkillRegistryList = {
+  items: SkillRegistryItem[]
+  next_cursor: string | null
+  registry_url: string
 }
 
 export type GatewayToolCall = {

@@ -25,6 +25,9 @@ from server.schemas import (
     PanelUpdateApplyResponse,
     PanelUpdateStatusResponse,
     SkillInstallResponse,
+    SkillRegistryDetailResponse,
+    SkillRegistryInstallRequest,
+    SkillRegistryListResponse,
     SkillUninstallResponse,
     TelegramChannelConfig,
     TelegramChannelUpdate,
@@ -141,6 +144,73 @@ async def uninstall_agent_skill(skill_id: str) -> SkillUninstallResponse:
     except SkillInstallError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return SkillUninstallResponse(**result)
+
+
+@router.get("/skills/registry", response_model=SkillRegistryListResponse)
+async def browse_skill_registry(
+    kind: str = Query("skill", pattern="^(skill|plugin)$"),
+    sort: str = Query("downloads", pattern="^(downloads|updated|newest|stars|installs)$"),
+    limit: int = Query(24, ge=1, le=100),
+    cursor: str | None = Query(None),
+    q: str | None = Query(None, max_length=200),
+) -> SkillRegistryListResponse:
+    svc = get_gateway_service()
+    try:
+        data = await svc.browse_skill_registry(
+            kind=kind,
+            sort=sort,
+            limit=limit,
+            cursor=cursor,
+            q=q,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return SkillRegistryListResponse(**data)
+
+
+@router.get("/skills/registry/{slug}", response_model=SkillRegistryDetailResponse)
+async def get_registry_skill_detail(slug: str) -> SkillRegistryDetailResponse:
+    svc = get_gateway_service()
+    try:
+        data = await svc.get_registry_skill_detail(slug)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return SkillRegistryDetailResponse(**data)
+
+
+@router.post("/skills/registry/install", response_model=SkillInstallResponse)
+async def install_registry_skill(
+    body: SkillRegistryInstallRequest,
+    _username: str = Depends(require_panel_auth),
+) -> SkillInstallResponse:
+    svc = get_gateway_service()
+    try:
+        result = await svc.install_skill_from_registry(
+            slug=body.slug,
+            version=body.version,
+            replace=body.replace,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return SkillInstallResponse(**result)
+
+
+@router.post("/skills/registry/{slug}/update", response_model=SkillInstallResponse)
+async def update_registry_skill(
+    slug: str,
+    version: str | None = Query(None, max_length=40),
+    _username: str = Depends(require_panel_auth),
+) -> SkillInstallResponse:
+    svc = get_gateway_service()
+    try:
+        result = await svc.update_skill_from_registry(slug, version=version)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return SkillInstallResponse(**result)
 
 
 @router.post("/agent/run", response_model=GatewayAgentResponse)

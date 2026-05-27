@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import zipfile
 from datetime import UTC, datetime
@@ -17,8 +18,9 @@ class SkillInstallError(ValueError):
     """Raised when a skill package fails validation."""
 
 
-_MAX_ZIP_BYTES = 2_097_152
-_MAX_FILES = 16
+_MAX_ZIP_BYTES = 5_242_880
+_MAX_FILES = 64
+_MAX_SINGLE_FILE_BYTES = 512_000
 
 
 def _safe_zip_name(name: str) -> str:
@@ -50,7 +52,12 @@ def extract_skill_zip(data: bytes, dest: Path) -> Path:
                 raise SkillInstallError(f"path escapes skill directory: {info.filename}")
             target.parent.mkdir(parents=True, exist_ok=True)
             with zf.open(info) as src, target.open("wb") as out:
-                out.write(src.read())
+                payload = src.read()
+                if len(payload) > _MAX_SINGLE_FILE_BYTES:
+                    raise SkillInstallError(
+                        f"file '{info.filename}' exceeds {_MAX_SINGLE_FILE_BYTES} bytes",
+                    )
+                out.write(payload)
             if target.name == "SKILL.md":
                 skill_md_path = target
 
@@ -65,8 +72,39 @@ def extract_skill_zip(data: bytes, dest: Path) -> Path:
     return skill_md_path.parent
 
 
+def resolve_skill_id(workspace: Path, *, slug_hint: str | None = None) -> str:
+    hint = (slug_hint or "").strip()
+    if hint:
+        return hint
+
+    meta_path = workspace / "_meta.json"
+    if meta_path.is_file():
+        try:
+            data = json.loads(meta_path.read_text(encoding="utf-8"))
+            slug = str(data.get("slug") or "").strip()
+            if slug:
+                return slug
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    folder = workspace.name.strip()
+    if folder and not folder.startswith("."):
+        return folder
+
+    raise SkillInstallError(
+        "cannot determine skill id; install from the skill registry or include _meta.json with slug",
+    )
+
+
 class SkillInstaller:
-    def install_zip(self, data: bytes, *, replace: bool = False) -> dict[str, Any]:
+    def install_zip(
+        self,
+        data: bytes,
+        *,
+        replace: bool = False,
+        slug: str | None = None,
+        registry: str | None = None,
+    ) -> dict[str, Any]:
         mgr = get_skill_manager()
         staging = mgr.installed_root / ".staging"
         if staging.exists():
@@ -76,7 +114,8 @@ class SkillInstaller:
         try:
             workspace = extract_skill_zip(data, staging)
             skill_md = workspace / "SKILL.md"
-            manifest = load_skill_file(skill_md, trusted=False)
+            skill_id = resolve_skill_id(workspace, slug_hint=slug)
+            manifest = load_skill_file(skill_md, skill_id=skill_id, trusted=False)
             target = mgr.installed_root / manifest.id
 
             if target.exists() and any(target.iterdir()) and not replace:
@@ -95,6 +134,10 @@ class SkillInstaller:
                 "installed_at": datetime.now(UTC).isoformat(),
                 "version": manifest.version,
             }
+            if registry:
+                plugins[manifest.id]["registry"] = registry.strip()
+            if slug:
+                plugins[manifest.id]["slug"] = slug.strip()
             mgr.write_installed_state(state)
 
             enabled = mgr.enabled_ids()
