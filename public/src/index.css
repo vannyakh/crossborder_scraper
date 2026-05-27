@@ -220,6 +220,49 @@ button:focus-visible {
   gap: 10px;
 }
 
+/* Compact pick cards in Theme & UI drawer */
+.theme-pick-group--drawer {
+  gap: 8px;
+}
+
+.theme-pick-card--drawer {
+  width: 64px;
+}
+
+.theme-pick-card--drawer .theme-pick-card__content {
+  height: 44px;
+}
+
+.theme-pick-card--drawer .theme-pick-card__label {
+  font-size: 0.6875rem;
+  padding: 5px 2px 6px;
+  line-height: 1.2;
+}
+
+.theme-pick-card--drawer.theme-pick-card--custom .theme-pick-card__content {
+  padding: 6px;
+}
+
+/* Theme & UI drawer — header + segmented tabs */
+.theme-drawer-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding-right: 2rem;
+}
+
+.theme-drawer-segments {
+  margin-top: 12px;
+}
+
+.theme-drawer-segments [data-part='item'] {
+  flex: 1;
+  justify-content: center;
+  min-height: 32px;
+  font-size: 0.8125rem;
+}
+
 .theme-pick-card {
   position: relative;
   display: flex;
@@ -308,6 +351,22 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.panel-image-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.panel-image-dropzone__img {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  min-height: 120px;
+  object-fit: contain;
+  border-radius: calc(var(--radius-input) - 2px);
 }
 
 /* —— Collapsed sidebar icon rail —— */

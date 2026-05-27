@@ -2,17 +2,22 @@ import {
   Box,
   Button,
   Field,
+  FileUpload,
+  Float,
   Grid,
   HStack,
+  IconButton,
   Input,
   Separator,
   Slider,
   Switch,
   Text,
   VStack,
+  useFileUploadContext,
 } from '@chakra-ui/react'
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { Image, Monitor, Moon, Sun, X } from 'lucide-react'
 import { useRef } from 'react'
+import { useThemeActions } from '../../hooks/use-theme-actions'
 import { useUiConfig } from '../../hooks/use-ui-config'
 import {
   defaultThemeConfig,
@@ -25,15 +30,12 @@ import {
   type PageTransitionStyle,
   type MotionSpeed,
 } from '../../theme/config'
-import {
-  DEFAULT_THEME_COLOR_HEX,
-  matchThemeColorPreset,
-  THEME_COLOR_PRESETS,
-  THEME_STYLE_OPTIONS,
-} from '../../theme/panel-appearance'
+import { THEME_COLOR_PRESETS, THEME_STYLE_OPTIONS } from '../../theme/panel-appearance'
 import type { PanelSettingsForm } from './use-panel-settings-form'
 import { Section, SectionCard, SubtitleText } from '../ui/Section'
 import { fieldStyles } from '../ui/field-styles'
+
+const PANEL_IMAGE_MAX_BYTES = 2 * 1024 * 1024
 
 function readImageFile(file: File, maxBytes: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -135,6 +137,128 @@ function OpacityControl({
   )
 }
 
+function PanelImageDropzoneDeleteButton({
+  label,
+  onRemove,
+}: {
+  label: string
+  onRemove: () => void
+}) {
+  return (
+    <Float placement="top-end" offset="6">
+      <IconButton
+        aria-label={label}
+        size="2xs"
+        variant="solid"
+        colorPalette="gray"
+        borderRadius="full"
+        onClick={(e) => {
+          e.stopPropagation()
+          onRemove()
+        }}
+      >
+        <X size={12} strokeWidth={2.5} />
+      </IconButton>
+    </Float>
+  )
+}
+
+function PanelImageDropzoneContent({
+  previewUrl,
+  onReset,
+}: {
+  previewUrl: string | null
+  onReset: () => void
+}) {
+  const fileUpload = useFileUploadContext()
+  const file = fileUpload.acceptedFiles[0]
+
+  if (file) {
+    return (
+      <Box className="panel-image-dropzone" position="relative" w="full" minH="120px">
+        <FileUpload.ItemGroup w="full" minH="120px" display="flex" alignItems="center" justifyContent="center">
+          <FileUpload.Item
+            file={file}
+            w="full"
+            h="full"
+            minH="120px"
+            p={0}
+            border="none"
+            bg="transparent"
+            position="relative"
+          >
+            <FileUpload.ItemPreviewImage
+              w="full"
+              h="full"
+              minH="120px"
+              maxH="180px"
+              objectFit="contain"
+              borderRadius="var(--radius-input)"
+            />
+            <Float placement="top-end" offset="6">
+              <FileUpload.ItemDeleteTrigger
+                boxSize="4"
+                layerStyle="fill.solid"
+                borderRadius="full"
+                aria-label={`Remove ${file.name}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <X size={12} strokeWidth={2.5} />
+              </FileUpload.ItemDeleteTrigger>
+            </Float>
+          </FileUpload.Item>
+        </FileUpload.ItemGroup>
+      </Box>
+    )
+  }
+
+  if (previewUrl) {
+    return (
+      <Box className="panel-image-dropzone" position="relative" w="full" minH="120px">
+        <img src={previewUrl} alt="" className="panel-image-dropzone__img" />
+        <PanelImageDropzoneDeleteButton
+          label="Remove saved image"
+          onRemove={() => {
+            fileUpload.clearFiles()
+            onReset()
+          }}
+        />
+      </Box>
+    )
+  }
+
+  return (
+    <VStack gap={1.5} py={4} color="fg.muted" pointerEvents="none">
+      <Image size={22} strokeWidth={1.75} />
+      <Text fontSize="sm" fontWeight="medium" color="fg">
+        Drop image here
+      </Text>
+      <Text fontSize="xs" color="fg.subtle" textAlign="center" px={2}>
+        PNG, JPG, WebP, SVG, or ICO · max 2MB
+      </Text>
+    </VStack>
+  )
+}
+
+function PanelImageResetButton({ onReset }: { onReset: () => void }) {
+  const fileUpload = useFileUploadContext()
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      borderColor="border.subtle"
+      borderRadius="input"
+      onClick={() => {
+        fileUpload.clearFiles()
+        onReset()
+      }}
+    >
+      Reset default
+    </Button>
+  )
+}
+
 function ImageUploadField({
   label,
   hint,
@@ -150,56 +274,79 @@ function ImageUploadField({
   onUpload: (dataUrl: string) => void
   onReset: () => void
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const hadAcceptedFilesRef = useRef(false)
 
-  async function onFileChange(file: File | undefined) {
+  async function onFileAccept(files: File[]) {
+    const file = files[0]
     if (!file) return
     try {
-      const dataUrl = await readImageFile(file, 2 * 1024 * 1024)
-      onUpload(dataUrl)
+      onUpload(await readImageFile(file, PANEL_IMAGE_MAX_BYTES))
     } catch (err) {
       window.alert(String((err as Error).message || err))
     }
   }
 
+  function onFileReject(details: FileUpload.FileRejectDetails) {
+    const message = details.files.flatMap((f) => f.errors).join(', ')
+    window.alert(message || 'File type not accepted')
+  }
+
   return (
     <SettingBlock label={label} hint={hint}>
-      <Box className="panel-image-preview">
-        {previewUrl ? (
-          <img src={previewUrl} alt="" />
-        ) : (
-          <Text fontSize="xs" color="fg.muted">
-            No custom image
-          </Text>
-        )}
-      </Box>
-      <HStack gap={2} mt={3} flexWrap="wrap">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,.ico"
-          hidden
-          onChange={(e) => void onFileChange(e.target.files?.[0])}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          borderColor="border.subtle"
-          borderRadius="input"
-          onClick={() => inputRef.current?.click()}
-        >
-          {uploadLabel}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          borderColor="border.subtle"
-          borderRadius="input"
-          onClick={onReset}
-        >
-          Reset default
-        </Button>
-      </HStack>
+      <FileUpload.Root
+        accept="image/*"
+        maxFiles={1}
+        maxFileSize={PANEL_IMAGE_MAX_BYTES}
+        onFileAccept={(details) => void onFileAccept(details.files)}
+        onFileReject={onFileReject}
+        onFileChange={(details) => {
+          const hasFiles = details.acceptedFiles.length > 0
+          if (hasFiles) {
+            hadAcceptedFilesRef.current = true
+            return
+          }
+          if (hadAcceptedFilesRef.current) {
+            hadAcceptedFilesRef.current = false
+            onReset()
+          }
+        }}
+      >
+        <FileUpload.HiddenInput />
+        <VStack align="stretch" gap={3}>
+          <FileUpload.Dropzone
+            w="full"
+            minH="120px"
+            borderWidth="1px"
+            borderColor="border.subtle"
+            borderRadius="var(--radius-input)"
+            bg="bg.subtle"
+            _hover={{ borderColor: 'border.emphasized' }}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            p={previewUrl ? 2 : 3}
+          >
+            <FileUpload.DropzoneContent w="full">
+              <PanelImageDropzoneContent previewUrl={previewUrl} onReset={onReset} />
+            </FileUpload.DropzoneContent>
+          </FileUpload.Dropzone>
+
+          <HStack gap={2} flexWrap="wrap">
+            <FileUpload.Trigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                borderColor="border.subtle"
+                borderRadius="input"
+              >
+                <Image size={16} strokeWidth={2} />
+                {uploadLabel}
+              </Button>
+            </FileUpload.Trigger>
+            <PanelImageResetButton onReset={onReset} />
+          </HStack>
+        </VStack>
+      </FileUpload.Root>
     </SettingBlock>
   )
 }
@@ -226,13 +373,13 @@ function PanelPathsFooter({ form }: { form: PanelSettingsForm }) {
 export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
   const customColorRef = useRef<HTMLInputElement>(null)
   const { mode, config, accentPalette, setMode, setConfig, resetConfig } = useUiConfig()
-  const activeHex = config.customAccentHex ?? DEFAULT_THEME_COLOR_HEX
-  const activePreset = matchThemeColorPreset(activeHex)
-  const isCustomColor = !activePreset
-
-  function setAccentHex(hex: string) {
-    setConfig({ customAccentHex: hex })
-  }
+  const {
+    activeAccentHex,
+    activePreset,
+    isCustomAccentColor,
+    setAccentHex,
+    resetAccentColor,
+  } = useThemeActions()
 
   return (
     <Section
@@ -298,7 +445,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
               </ThemePickCard>
             ))}
             <ThemePickCard
-              active={isCustomColor}
+              active={isCustomAccentColor}
               label="Custom"
               onClick={() => customColorRef.current?.click()}
             >
@@ -306,7 +453,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
                 ref={customColorRef}
                 type="color"
                 className="theme-color-input"
-                value={activeHex}
+                value={activeAccentHex}
                 onChange={(e) => setAccentHex(e.target.value)}
                 aria-label="Custom accent color"
               />
@@ -320,7 +467,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
               <Input
                 {...fieldStyles}
                 size="sm"
-                value={activeHex}
+                value={activeAccentHex}
                 onChange={(e) => setAccentHex(e.target.value)}
                 fontFamily="mono"
               />
@@ -331,7 +478,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
               borderColor="border.subtle"
               borderRadius="input"
               mt={5}
-              onClick={() => setAccentHex(DEFAULT_THEME_COLOR_HEX)}
+              onClick={resetAccentColor}
             >
               Restore default color
             </Button>
