@@ -2,6 +2,7 @@ import type { AppLocale, MessageTree, TranslateFn } from './types'
 import { messages } from './messages/index.ts'
 
 function resolvePath(tree: MessageTree, key: string): string | undefined {
+  if (!key) return undefined
   const value = key.split('.').reduce<unknown>((node, part) => {
     if (node && typeof node === 'object' && part in node) {
       return (node as MessageTree)[part]
@@ -16,6 +17,7 @@ export function createTranslator(locale: AppLocale): TranslateFn {
   const tree = messages[locale]
 
   return (key, vars) => {
+    if (!key) return ''
     const template = resolvePath(tree, key) ?? resolvePath(messages.en, key) ?? key
     if (!vars) return template
 

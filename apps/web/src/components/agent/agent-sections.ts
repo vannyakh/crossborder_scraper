@@ -4,6 +4,7 @@ import {
   History,
   Layers,
   MessageSquare,
+  ScrollText,
   Sparkles,
   Wrench,
   type LucideIcon,
@@ -16,6 +17,7 @@ export type AgentSectionId =
   | 'workflows'
   | 'tools'
   | 'skills'
+  | 'rules'
 
 export type AgentNavGroup = 'channel' | 'data' | 'automation'
 
@@ -76,13 +78,20 @@ export const AGENT_NAV: AgentNavItem[] = [
     icon: Sparkles,
     group: 'automation',
   },
+  {
+    id: 'rules',
+    label: 'Rules',
+    description: 'Control gateway AI behavior with RULE.md policies',
+    icon: ScrollText,
+    group: 'automation',
+  },
 ]
 
 export const AGENT_SECTION_MAP = Object.fromEntries(
   AGENT_NAV.map((item) => [item.id, item]),
 ) as Record<AgentSectionId, AgentNavItem>
 
-export const DEFAULT_AGENT_SECTION: AgentSectionId = 'chat'
+export { DEFAULT_AGENT_SECTION } from '../../routes/route-config'
 
 export function isAgentSectionId(value: string | undefined): value is AgentSectionId {
   return value !== undefined && value in AGENT_SECTION_MAP

@@ -22,6 +22,7 @@ import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem, StoreConnectRequest, StoreInstalled } from '../../lib/api'
 import { StoreConnectForm } from '../store/StoreConnectForm'
+import { StoreInstallDialog, type StoreInstallOptions } from '../store/StoreInstallDialog'
 import { pluginIcon, statusTone } from '../store/store-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
 import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
@@ -107,12 +108,18 @@ export function DatabaseEnginePanel({
 
   const [search, setSearch] = useState('')
   const [installing, setInstalling] = useState(false)
+  const [showInstall, setShowInstall] = useState(false)
   const [showConnect, setShowConnect] = useState(false)
   const [connectForm, setConnectForm] = useState<StoreConnectRequest>({})
 
   const dockerReady = Boolean(env.data?.docker_available && env.data?.compose_available)
+  const nativeReady = Boolean(env.data?.native_driver_available)
   const catalogItem = catalog.data?.find((item) => item.id === pluginId)
   const installed = installedQuery.data?.find((row) => row.plugin_id === pluginId)
+  const canInstall =
+    !installed &&
+    ((catalogItem?.supports_native && nativeReady) ||
+      (catalogItem?.supports_docker && dockerReady))
 
   const serviceLabel = catalogItem?.name ?? pluginId
   const Icon = pluginIcon(pluginId)
@@ -135,11 +142,16 @@ export function DatabaseEnginePanel({
     return haystack.includes(q)
   }, [installed, search, serviceLabel])
 
-  async function handleInstall() {
-    if (!catalogItem) return
+  async function handleInstallConfirm(options: StoreInstallOptions) {
     setInstalling(true)
     try {
-      await installMutation.mutateAsync({ pluginId, port: catalogItem.default_port })
+      await installMutation.mutateAsync({
+        pluginId: options.pluginId,
+        mode: options.mode,
+        version: options.version,
+        port: options.port,
+      })
+      setShowInstall(false)
     } finally {
       setInstalling(false)
     }
@@ -166,6 +178,14 @@ export function DatabaseEnginePanel({
 
   return (
     <Box>
+      <StoreInstallDialog
+        item={catalogItem}
+        env={env.data}
+        open={showInstall}
+        installing={installing}
+        onClose={() => setShowInstall(false)}
+        onConfirm={(options) => void handleInstallConfirm(options)}
+      />
       <HStack
         mb={4}
         gap={2}
@@ -179,8 +199,8 @@ export function DatabaseEnginePanel({
             colorPalette={accentPalette}
             borderRadius="input"
             loading={installing}
-            disabled={Boolean(installed) || !catalogItem.supports_docker || !dockerReady}
-            onClick={() => void handleInstall()}
+            disabled={Boolean(installed) || !canInstall}
+            onClick={() => setShowInstall(true)}
           >
             <Plus size={14} />
             {t('db.engine.addDb')}
@@ -239,7 +259,7 @@ export function DatabaseEnginePanel({
         </HStack>
       </HStack>
 
-      {!dockerReady && !installed && catalogItem.supports_docker ? (
+      {!canInstall && !installed && (catalogItem.supports_native || catalogItem.supports_docker) ? (
         <Text mb={3} fontSize="xs" color="fg.subtle">
           {t('db.install.dockerHint')}
         </Text>
@@ -312,8 +332,13 @@ export function DatabaseEnginePanel({
                     colorPalette={accentPalette}
                     borderRadius="input"
                     loading={installing}
-                    disabled={!catalogItem.supports_docker || !dockerReady}
-                    onClick={() => void handleInstall()}
+                    disabled={!canInstall}
+                    onClick={() => void handleInstallConfirm({
+                      pluginId: pluginId,
+                      mode: 'native',
+                      version: catalogItem.version,
+                      port: catalogItem.default_port ?? 0,
+                    })}
                   >
                     <Plus size={14} />
                     {t('db.engine.addDb')}

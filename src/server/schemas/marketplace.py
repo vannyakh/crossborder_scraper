@@ -47,6 +47,10 @@ class StoreCatalogItem(BaseModel):
     default_port: int = 0
     supports_docker: bool = False
     supports_external: bool = False
+    supports_native: bool = False
+    available_versions: list[str] = Field(default_factory=list)
+    default_version: str = ""
+    systemd_unit: str = ""
     docker_image: str = ""
     tags: list[str] = Field(default_factory=list)
     connection_fields: list[StoreConnectionField] = Field(default_factory=list)
@@ -75,6 +79,8 @@ class StoreBuiltinSqlite(BaseModel):
 class StoreEnvironmentResponse(BaseModel):
     docker_available: bool
     compose_available: bool
+    native_driver_available: bool = False
+    platform: str = "unknown"
     store_dir: str
     builtin_sqlite: StoreBuiltinSqlite
 
@@ -158,8 +164,9 @@ class PluginScrapeSpecificationsResponse(BaseModel):
 
 
 class StoreInstallRequest(BaseModel):
-    mode: Literal["docker"] = "docker"
+    mode: Literal["native", "docker"] = "native"
     port: int | None = Field(default=None, ge=1, le=65535)
+    version: str | None = None
 
 
 class StoreConnectRequest(BaseModel):

@@ -20,6 +20,8 @@ export const queryKeys = {
   gatewayUpdateStatus: ['gateway', 'update', 'status'] as const,
   gatewayPrompts: ['gateway', 'prompts'] as const,
   gatewaySkills: ['gateway', 'skills'] as const,
+  gatewayRules: ['gateway', 'rules'] as const,
+  gatewayRule: (ruleId: string) => ['gateway', 'rules', ruleId] as const,
   gatewaySkillRegistry: (params: Record<string, string | number | null | undefined>) =>
     ['gateway', 'skills', 'registry', params] as const,
   gatewayTools: ['gateway', 'tools'] as const,
@@ -42,4 +44,12 @@ export const queryKeys = {
   storeCatalog: ['store', 'catalog'] as const,
   storeInstalled: ['store', 'installed'] as const,
   storePlugin: (id: string) => ['store', 'plugin', id] as const,
+  dockerStatus: ['docker', 'status'] as const,
+  dockerConfig: ['docker', 'config'] as const,
+  dockerContainers: ['docker', 'containers'] as const,
+  dockerHub: (q: string) => ['docker', 'hub', q] as const,
+  firewallStatus: ['firewall', 'status'] as const,
+  firewallRules: ['firewall', 'rules'] as const,
+  firewallGroups: ['firewall', 'groups'] as const,
+  firewallExport: ['firewall', 'export'] as const,
 }

@@ -6,6 +6,7 @@ import {
   type StoreConnectRequest,
   type StoreEnvironment,
   type StoreInstalled,
+  type StoreInstallRequest,
   type StorePluginDetail,
 } from '../../lib/api'
 
@@ -37,14 +38,25 @@ export function useStoreInstalledQuery() {
 export function useStoreInstallMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ pluginId, port }: { pluginId: string; port?: number }) =>
+    mutationFn: ({
+      pluginId,
+      port,
+      mode = 'native',
+      version,
+    }: {
+      pluginId: string
+      port?: number
+      mode?: 'native' | 'docker'
+      version?: string
+    }) =>
       api<StoreInstalled>(`/store/plugins/${pluginId}/install`, {
         method: 'POST',
-        body: JSON.stringify({ mode: 'docker', port }),
+        body: JSON.stringify({ mode, port, version } satisfies StoreInstallRequest),
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.storeCatalog })
       void qc.invalidateQueries({ queryKey: queryKeys.storeInstalled })
+      void qc.invalidateQueries({ queryKey: queryKeys.storeEnvironment })
     },
   })
 }

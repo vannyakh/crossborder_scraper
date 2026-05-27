@@ -1,12 +1,13 @@
 import { FolderOpen, Package, Play } from 'lucide-react'
+import { ROUTE_PATHS } from '../routes/route-config'
 
-/** Routes — single source for scrape panel navigation */
+/** Routes — re-exported from central route config for scrape panel consumers. */
 export const SCRAPE_ROUTES = {
-  workflowBatches: '/workflow/batches',
-  artifactProducts: '/artifact/products',
-  artifactProduct: (id: number | string) => `/artifact/products/${id}`,
-  artifactFiles: '/artifact/files',
-  health: '/health',
+  workflowBatches: ROUTE_PATHS.workflow.batches,
+  artifactProducts: ROUTE_PATHS.artifact.products,
+  artifactProduct: ROUTE_PATHS.artifact.product,
+  artifactFiles: ROUTE_PATHS.artifact.files,
+  health: ROUTE_PATHS.health,
 } as const
 
 export type ScrapeNavBadgeKey = 'running_batches' | 'products' | 'output_files'

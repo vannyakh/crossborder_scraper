@@ -1,22 +1,22 @@
 import { Badge, Box, HStack, Text } from '@chakra-ui/react'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import type { StoreCatalogItem } from '../../lib/api'
+import type { StoreCatalogItem, StoreEnvironment } from '../../lib/api'
 import { StoreCatalogActions } from './StoreCatalogActions'
 import { pluginIcon, statusTone, STORE_CATEGORY_LABEL } from './store-utils'
 import { PluginScrapeSpecSummary } from './PluginScrapeSpecPanel'
 
 export function StoreCatalogListRow({
   item,
-  dockerReady,
+  env,
   installing,
   onInstall,
   onSettings,
 }: {
   item: StoreCatalogItem
-  dockerReady: boolean
+  env?: StoreEnvironment
   installing: boolean
-  onInstall: (id: string, port: number) => void
+  onInstall: (id: string) => void
   onSettings: (id: string) => void
 }) {
   const accentPalette = useAccentPalette()
@@ -71,7 +71,11 @@ export function StoreCatalogListRow({
                 {tag}
               </Badge>
             ))}
-            {item.docker_image ? (
+            {item.supports_native ? (
+              <Text fontSize="xs" color="fg.subtle">
+                host driver
+              </Text>
+            ) : item.docker_image ? (
               <Text fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={1}>
                 {item.docker_image}
               </Text>
@@ -83,7 +87,7 @@ export function StoreCatalogListRow({
       <Box flexShrink={0} w={{ base: 'full', lg: '200px' }}>
         <StoreCatalogActions
           item={item}
-          dockerReady={dockerReady}
+          env={env}
           installing={installing}
           onInstall={onInstall}
           onSettings={onSettings}

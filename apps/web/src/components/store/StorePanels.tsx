@@ -11,9 +11,10 @@ import {
   useStoreInstallMutation,
   useStoreInstalledQuery,
 } from '../../hooks/queries/use-store-query'
-import type { StoreCatalogItem, StoreInstalled } from '../../lib/api'
+import type { StoreCatalogItem, StoreEnvironment, StoreInstalled } from '../../lib/api'
 import { StoreCatalogCard } from './StoreCatalogCard'
 import { StoreCatalogListRow } from './StoreCatalogListRow'
+import { StoreInstallDialog, type StoreInstallOptions } from './StoreInstallDialog'
 import { StorePluginSettingsDrawer } from './StorePluginSettingsDrawer'
 import { StoreFilterBar } from './StoreFilterBar'
 import { StoreInstalledList } from './StoreInstalledList'
@@ -38,7 +39,8 @@ export function StorePanels() {
   const [installingId, setInstallingId] = useState<string | null>(null)
   const [settingsPluginId, setSettingsPluginId] = useState<string | null>(null)
 
-  const dockerReady = Boolean(env.data?.docker_available && env.data?.compose_available)
+  const [installTarget, setInstallTarget] = useState<StoreCatalogItem | null>(null)
+
   const settingsCatalogItem = useMemo(
     () => catalog.data?.find((c) => c.id === settingsPluginId),
     [catalog.data, settingsPluginId],
@@ -51,14 +53,45 @@ export function StorePanels() {
 
   const error = installMutation.error
 
-  async function handleInstall(pluginId: string, port: number) {
-    setInstallingId(pluginId)
+  function isSourceItem(item: StoreCatalogItem) {
+    return (
+      item.kind === 'source' ||
+      item.kind === 'site' ||
+      item.category === 'ecommerce' ||
+      item.category === 'social' ||
+      item.category === 'custom'
+    )
+  }
+
+  async function handleInstallConfirm(options: StoreInstallOptions) {
+    setInstallingId(options.pluginId)
     try {
-      await installMutation.mutateAsync({ pluginId, port })
+      await installMutation.mutateAsync({
+        pluginId: options.pluginId,
+        mode: options.mode,
+        version: options.version,
+        port: options.port,
+      })
+      setInstallTarget(null)
       setTab('installed')
     } finally {
       setInstallingId(null)
     }
+  }
+
+  function handleInstallClick(id: string) {
+    const item = catalog.data?.find((c) => c.id === id)
+    if (!item) return
+    if (isSourceItem(item)) {
+      void handleInstallConfirm({
+        pluginId: id,
+        mode: 'native',
+        version: item.version,
+        port: item.default_port,
+      })
+      return
+    }
+    setInstallTarget(item)
   }
 
   return (
@@ -93,6 +126,15 @@ export function StorePanels() {
         </SectionCard>
       ) : null}
 
+      <StoreInstallDialog
+        item={installTarget}
+        env={env.data}
+        open={Boolean(installTarget)}
+        installing={Boolean(installTarget && installingId === installTarget.id)}
+        onClose={() => setInstallTarget(null)}
+        onConfirm={(options) => void handleInstallConfirm(options)}
+      />
+
       <StorePluginSettingsDrawer
         pluginId={settingsPluginId}
         catalogItem={settingsCatalogItem}
@@ -123,12 +165,12 @@ export function StorePanels() {
         <Tabs.Content value="catalog" pt={0}>
           <CatalogTabContent
             loading={catalog.isLoading}
-            dockerReady={dockerReady}
+            env={env.data}
             installingId={installingId}
             catalogBase={catalogBase}
             category={category}
             onCategoryChange={setCategory}
-            onInstall={(id, port) => void handleInstall(id, port)}
+            onInstall={handleInstallClick}
             onSettings={setSettingsPluginId}
           />
         </Tabs.Content>
@@ -147,7 +189,7 @@ export function StorePanels() {
 
 function CatalogTabContent({
   loading,
-  dockerReady,
+  env,
   installingId,
   catalogBase,
   category,
@@ -156,12 +198,12 @@ function CatalogTabContent({
   onSettings,
 }: {
   loading: boolean
-  dockerReady: boolean
+  env?: StoreEnvironment
   installingId: string | null
   catalogBase: StoreCatalogItem[]
   category: StoreCategoryFilter
   onCategoryChange: (value: StoreCategoryFilter) => void
-  onInstall: (id: string, port: number) => void
+  onInstall: (id: string) => void
   onSettings: (id: string) => void
 }) {
   const list = useStoreListState(6)
@@ -195,7 +237,7 @@ function CatalogTabContent({
             <StoreCatalogCard
               key={item.id}
               item={item}
-              dockerReady={dockerReady}
+              env={env}
               installing={installingId === item.id}
               onInstall={onInstall}
               onSettings={onSettings}
@@ -208,7 +250,7 @@ function CatalogTabContent({
             <StoreCatalogListRow
               key={item.id}
               item={item}
-              dockerReady={dockerReady}
+              env={env}
               installing={installingId === item.id}
               onInstall={onInstall}
               onSettings={onSettings}

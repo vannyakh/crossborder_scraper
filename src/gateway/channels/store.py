@@ -11,6 +11,7 @@ from config.integrate_channels_store import (
 )
 from config.telegram_store import load_telegram_config, merge_telegram_updates, normalize_telegram
 from gateway.channels.catalog import ALL_CHANNEL_IDS, CHANNEL_CATALOG, get_catalog_entry
+from gateway.channels.guides import load_setup_guide, setup_guide_path
 
 _SECRET_SUFFIX = "_masked"
 _SET_SUFFIX = "_set"
@@ -127,6 +128,8 @@ def channel_detail(channel_id: str) -> dict[str, Any]:
     return {
         **channel_summary(channel_id),
         "setup_steps": list(meta.get("setup_steps") or []),
+        "setup_guide_md": load_setup_guide(channel_id),
+        "setup_guide_path": setup_guide_path(channel_id),
         "fields": list(meta.get("fields") or []),
         "config": load_channel_for_api(channel_id),
     }

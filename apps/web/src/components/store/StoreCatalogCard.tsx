@@ -1,22 +1,22 @@
 import { Badge, Box, HStack, Text } from '@chakra-ui/react'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import type { StoreCatalogItem } from '../../lib/api'
+import type { StoreCatalogItem, StoreEnvironment } from '../../lib/api'
 import { StoreCatalogActions } from './StoreCatalogActions'
 import { pluginIcon, statusTone, STORE_CATEGORY_LABEL } from './store-utils'
 import { PluginScrapeSpecSummary } from './PluginScrapeSpecPanel'
 
 export function StoreCatalogCard({
   item,
-  dockerReady,
+  env,
   installing,
   onInstall,
   onSettings,
 }: {
   item: StoreCatalogItem
-  dockerReady: boolean
+  env?: StoreEnvironment
   installing: boolean
-  onInstall: (id: string, port: number) => void
+  onInstall: (id: string) => void
   onSettings: (id: string) => void
 }) {
   const accentPalette = useAccentPalette()
@@ -87,7 +87,14 @@ export function StoreCatalogCard({
 
         {item.scrape_spec ? <PluginScrapeSpecSummary spec={item.scrape_spec} /> : null}
 
-        {item.docker_image ? (
+        {item.supports_native ? (
+          <Text mt={2} fontSize="xs" color="fg.subtle">
+            Host driver · v{item.default_version || item.version}
+            {item.available_versions && item.available_versions.length > 1
+              ? ` (${item.available_versions.join(', ')})`
+              : ''}
+          </Text>
+        ) : item.docker_image ? (
           <Text mt={2} fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={1} title={item.docker_image}>
             {item.docker_image}
           </Text>
@@ -101,7 +108,7 @@ export function StoreCatalogCard({
       <Box px={4} py={3} borderTopWidth="1px" borderColor="border.subtle" bg="bg.panelHover">
         <StoreCatalogActions
           item={item}
-          dockerReady={dockerReady}
+          env={env}
           installing={installing}
           onInstall={onInstall}
           onSettings={onSettings}

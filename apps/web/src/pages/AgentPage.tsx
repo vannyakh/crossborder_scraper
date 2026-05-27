@@ -2,6 +2,7 @@ import { Box } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Navigate, useParams } from 'react-router-dom'
 import { AgentToolsPanel, AgentWorkflowsPanel } from '../components/agent/AgentAutomationPanels'
+import { AgentRulesPanel } from '../components/agent/AgentRulesPanel'
 import { AgentSkillsPanel } from '../components/agent/AgentSkillsPanel'
 import { AgentChatPanel } from '../components/agent/AgentChatPanel'
 import { AgentRunsPanel } from '../components/agent/AgentRunsPanel'
@@ -30,6 +31,8 @@ function AgentSectionContent({ section }: { section: AgentSectionId }) {
       return <AgentToolsPanel />
     case 'skills':
       return <AgentSkillsPanel />
+    case 'rules':
+      return <AgentRulesPanel />
     default:
       return null
   }

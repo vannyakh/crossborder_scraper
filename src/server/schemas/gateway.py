@@ -23,6 +23,56 @@ class GatewayAgentResponse(BaseModel):
     model_ref: str | None = None
     prompt_id: str | None = None
     skill_ids: list[str] = Field(default_factory=list)
+    rule_ids: list[str] = Field(default_factory=list)
+
+
+class AgentRuleInfo(BaseModel):
+    id: str
+    name: str
+    description: str = ""
+    category: str = "general"
+    priority: int = 50
+    enabled: bool = False
+    kind: Literal["builtin", "custom"] = "builtin"
+    path: str = ""
+    body_preview: str = ""
+
+
+class AgentRuleDetail(AgentRuleInfo):
+    body: str = ""
+
+
+class AgentRuleListResponse(BaseModel):
+    items: list[AgentRuleInfo]
+    total: int
+    enabled: list[str] = Field(default_factory=list)
+
+
+class AgentRuleEnableRequest(BaseModel):
+    enabled: list[str] = Field(default_factory=list)
+
+
+class AgentRuleCreateRequest(BaseModel):
+    id: str = Field(..., min_length=1, max_length=64, pattern=r"^[a-z0-9][a-z0-9_-]*$")
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str = Field(default="", max_length=500)
+    category: Literal["safety", "behavior", "tools", "output", "general"] = "general"
+    body: str = Field(..., min_length=1, max_length=12000)
+    priority: int = Field(default=50, ge=0, le=999)
+
+
+class AgentRuleUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=500)
+    category: Literal["safety", "behavior", "tools", "output", "general"] | None = None
+    body: str | None = Field(default=None, min_length=1, max_length=12000)
+    priority: int | None = Field(default=None, ge=0, le=999)
+
+
+class AgentRuleDeleteResponse(BaseModel):
+    ok: bool = True
+    rule_id: str
+    removed: bool = True
 
 
 class GatewaySkillInfo(BaseModel):
@@ -256,6 +306,8 @@ class IntegrateChannelListResponse(BaseModel):
 
 class IntegrateChannelDetailResponse(IntegrateChannelSummary):
     setup_steps: list[str] = Field(default_factory=list)
+    setup_guide_md: str = ""
+    setup_guide_path: str = ""
     fields: list[IntegrateChannelField] = Field(default_factory=list)
     config: dict[str, Any] = Field(default_factory=dict)
 
@@ -283,6 +335,8 @@ class GatewayStatusResponse(BaseModel):
     tools_count: int
     skills_count: int = 0
     enabled_skills_count: int = 0
+    rules_count: int = 0
+    enabled_rules_count: int = 0
     workflows_count: int
     schedules_count: int = 0
     enabled_schedules_count: int = 0
@@ -301,6 +355,8 @@ class ServiceGatewaySummary(BaseModel):
     tools_count: int
     skills_count: int = 0
     enabled_skills_count: int = 0
+    rules_count: int = 0
+    enabled_rules_count: int = 0
     workflows_count: int
     schedules_count: int = 0
     enabled_schedules_count: int = 0

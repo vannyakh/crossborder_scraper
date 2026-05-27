@@ -29,9 +29,11 @@ class GatewayService:
         enabled_schedules = sum(1 for s in schedules if s.get("enabled"))
         recent_runs = load_runs(limit=5) if _schedules_ready() else []
         failed_runs = sum(1 for r in recent_runs if r.get("ok") is False)
+        from gateway.rules import get_rule_manager
         from gateway.skills import get_skill_manager
 
         skill_mgr = get_skill_manager()
+        rule_mgr = get_rule_manager()
         update = get_update_service().get_status()
         from config.telegram_store import load_telegram_config
 
@@ -46,6 +48,8 @@ class GatewayService:
             "tools_count": len(TOOL_DEFINITIONS),
             "skills_count": len(skill_mgr.all_manifests()),
             "enabled_skills_count": len(skill_mgr.enabled_ids()),
+            "rules_count": len(rule_mgr.all_manifests()),
+            "enabled_rules_count": len(rule_mgr.enabled_ids()),
             "workflows_count": len(WORKFLOW_TEMPLATES),
             "schedules_count": len(schedules),
             "enabled_schedules_count": enabled_schedules,
@@ -131,6 +135,48 @@ class GatewayService:
         from gateway.skills import get_skill_manager
 
         return get_skill_manager().set_enabled(skill_ids)
+
+    def list_rules(self) -> dict[str, Any]:
+        from gateway.rules import get_rule_manager
+
+        mgr = get_rule_manager()
+        return {
+            "items": mgr.list_catalog(),
+            "total": len(mgr.all_manifests()),
+            "enabled": sorted(mgr.enabled_ids()),
+        }
+
+    def set_enabled_rules(self, rule_ids: list[str]) -> list[str]:
+        from gateway.rules import get_rule_manager
+
+        return get_rule_manager().set_enabled(rule_ids)
+
+    def get_rule(self, rule_id: str) -> dict[str, Any]:
+        from gateway.rules import get_rule_manager
+
+        return get_rule_manager().get_detail(rule_id)
+
+    def create_rule(self, payload: dict[str, Any]) -> dict[str, Any]:
+        from gateway.rules import get_rule_manager
+
+        return get_rule_manager().create_custom_rule(
+            rule_id=payload["id"],
+            name=payload["name"],
+            description=payload.get("description") or "",
+            category=payload.get("category") or "general",
+            body=payload["body"],
+            priority=int(payload.get("priority") or 50),
+        )
+
+    def update_rule(self, rule_id: str, patch: dict[str, Any]) -> dict[str, Any]:
+        from gateway.rules import get_rule_manager
+
+        return get_rule_manager().update_custom_rule(rule_id, **patch)
+
+    def delete_rule(self, rule_id: str) -> dict[str, Any]:
+        from gateway.rules import get_rule_manager
+
+        return get_rule_manager().delete_custom_rule(rule_id)
 
     async def browse_skill_registry(
         self,

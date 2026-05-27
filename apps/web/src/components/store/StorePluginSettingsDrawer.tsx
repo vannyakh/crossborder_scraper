@@ -113,7 +113,7 @@ export function StorePluginSettingsDrawer({
   const name = merged?.name ?? installation?.name ?? pluginId ?? 'Plugin'
   const Icon = pluginIcon(pluginId ?? '')
   const busy = lifecycleMutation.isPending || uninstallMutation.isPending || refreshMutation.isPending
-  const isDocker = installation?.mode === 'docker'
+  const isManaged = installation?.mode === 'docker' || installation?.mode === 'native'
   const status = installation?.status ?? merged?.status ?? 'unknown'
   const scrapeSpec = merged?.scrape_spec
   const domains = merged?.domains ?? []
@@ -235,7 +235,7 @@ export function StorePluginSettingsDrawer({
             </Box>
 
             <HStack gap={2} flexWrap="wrap">
-              {isDocker ? (
+              {isManaged ? (
                 <>
                   <Button
                     size="sm"

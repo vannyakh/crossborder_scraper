@@ -8,6 +8,7 @@ from typing import Any
 from config import Settings
 from core.ai.llm_client import LLMClient
 from gateway.prompts import DEFAULT_PROMPT_ID, load_prompt
+from gateway.rules import get_rule_manager
 from gateway.skills import get_skill_manager
 from gateway.tools import execute_tool, parse_tool_call, tools_for_llm
 
@@ -50,14 +51,17 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                 "tool_calls": [],
                 "prompt_id": prompt_id or DEFAULT_PROMPT_ID,
                 "skill_ids": [],
+                "rule_ids": [],
                 "provider": self.llm.cfg.provider_id,
                 "model_ref": self.llm.cfg.model_ref,
             }
 
         resolved_id, base_prompt = load_prompt(prompt_id)
+        rule_mgr = get_rule_manager()
+        resolved_rules, prompt_with_rules = rule_mgr.apply_rules(base_prompt)
         skill_mgr = get_skill_manager()
         resolved_skills, system_prompt, skill_tools = skill_mgr.compose_instructions(
-            base_prompt,
+            prompt_with_rules,
             skill_ids=skill_ids,
         )
         allow_tools = skill_tools if skill_tools else None
@@ -84,6 +88,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                     "model_ref": self.llm.cfg.model_ref,
                     "prompt_id": resolved_id,
                     "skill_ids": resolved_skills,
+                    "rule_ids": resolved_rules,
                 }
 
             assistant_msg: dict[str, Any] = {
@@ -119,4 +124,5 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             "model_ref": self.llm.cfg.model_ref,
             "prompt_id": resolved_id,
             "skill_ids": resolved_skills,
+            "rule_ids": resolved_rules,
         }

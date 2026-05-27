@@ -64,16 +64,43 @@ async def store_install(
         )
         return StoreInstalledResponse(**result)
 
-    if body.mode != "docker":
-        raise HTTPException(status_code=400, detail="use POST /connect for external mode")
-    result = await get_store_manager().install_docker(plugin_id, port=body.port)
-    log_operation(
-        user=username,
-        operation_type="Store install",
-        details=f"Installed {plugin_id} via Docker on port {result['config'].get('port')}",
-        meta={"plugin_id": plugin_id, "mode": "docker"},
-    )
-    return StoreInstalledResponse(**result)
+    if body.mode == "docker":
+        result = await get_store_manager().install_docker(
+            plugin_id,
+            port=body.port,
+            version=body.version,
+        )
+        log_operation(
+            user=username,
+            operation_type="Store install",
+            details=(
+                f"Installed {plugin_id} via Docker "
+                f"v{result['config'].get('driver_version')} "
+                f"on port {result['config'].get('port')}"
+            ),
+            meta={"plugin_id": plugin_id, "mode": "docker"},
+        )
+        return StoreInstalledResponse(**result)
+
+    if body.mode == "native":
+        result = await get_store_manager().install_native(
+            plugin_id,
+            port=body.port,
+            version=body.version,
+        )
+        log_operation(
+            user=username,
+            operation_type="Store install",
+            details=(
+                f"Installed {plugin_id} native driver "
+                f"v{result['config'].get('driver_version')} "
+                f"on port {result['config'].get('port')}"
+            ),
+            meta={"plugin_id": plugin_id, "mode": "native"},
+        )
+        return StoreInstalledResponse(**result)
+
+    raise HTTPException(status_code=400, detail="use POST /connect for external mode")
 
 
 @router.post("/plugins/{plugin_id}/connect", response_model=StoreInstalledResponse)

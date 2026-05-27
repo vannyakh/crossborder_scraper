@@ -56,6 +56,8 @@ const API_PROXY_PATHS = [
   '/plugins',
   '/panel',
   '/deploy',
+  '/docker',
+  '/firewall',
   '/logs',
 ] as const
 

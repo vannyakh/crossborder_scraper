@@ -46,7 +46,7 @@ export const INTEGRATE_CHANNEL_MAP = Object.fromEntries(
   INTEGRATE_CHANNELS.map((item) => [item.id, item]),
 ) as Record<IntegrateChannelId, IntegrateChannelItem>
 
-export const DEFAULT_INTEGRATE_CHANNEL: IntegrateChannelId = 'telegram'
+export { DEFAULT_INTEGRATE_CHANNEL } from '../../routes/route-config'
 
 export function isIntegrateChannelId(value: string | undefined): value is IntegrateChannelId {
   return value !== undefined && value in INTEGRATE_CHANNEL_MAP

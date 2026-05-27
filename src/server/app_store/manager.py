@@ -16,6 +16,8 @@ from core.plugins import (
     get_source_spec,
     list_source_catalog,
 )
+from deploy.drivers import install as driver_install
+from deploy.drivers.registry import docker_image_for, get_driver_spec
 from server.app_store import catalog, docker, probes, state
 from server.app_store.catalog import StorePluginDefinition, get_plugin, list_catalog
 
@@ -35,6 +37,7 @@ def _generate_password() -> str:
 class StoreManager:
     def get_environment(self) -> dict[str, Any]:
         info = docker.environment_info()
+        info.update(driver_install.environment_info())
         info["store_dir"] = str(state.store_root())
         info["installed_plugins_dir"] = str(state.installed_root())
         info["builtin_sqlite"] = {
@@ -147,11 +150,88 @@ class StoreManager:
             raise HTTPException(status_code=404, detail="plugin not installed")
         return {"message": "source plugin disabled", "plugin_id": plugin_id}
 
+    async def install_native(
+        self,
+        plugin_id: str,
+        *,
+        version: str | None = None,
+        port: int | None = None,
+    ) -> dict[str, Any]:
+        plugin = self._require_plugin(plugin_id)
+        driver = get_driver_spec(plugin_id)
+        if not driver:
+            raise HTTPException(status_code=400, detail="plugin does not support native driver install")
+        if state.get_installed(plugin_id):
+            raise HTTPException(status_code=409, detail="plugin already installed")
+        if not driver_install.environment_info().get("native_driver_available"):
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Native driver install requires a Linux VPS with apt or yum. "
+                    "Use Docker install or connect an external instance."
+                ),
+            )
+
+        resolved = driver.resolve_version(version)
+        bind_port = port or plugin.default_port
+        if not _port_free(bind_port):
+            raise HTTPException(status_code=409, detail=f"port {bind_port} is already in use")
+
+        password = _generate_password() if plugin.id != "memcached" else ""
+        config: dict[str, Any] = {
+            "host": "127.0.0.1",
+            "port": bind_port,
+            "password": password or None,
+            "username": (
+                "panel"
+                if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"}
+                else None
+            ),
+            "database": "panel" if plugin.id in {"postgresql", "mysql", "mongodb"} else None,
+            "driver_version": resolved.id,
+        }
+        if plugin.id == "rabbitmq":
+            config["management_port"] = bind_port + 10000 if bind_port < 20000 else 15672
+
+        record = state.new_install_record(
+            plugin_id, mode="native", config=config, status="installing"
+        )
+        state.save_installed(plugin_id, record)
+
+        pdir = state.plugin_dir(plugin_id)
+        try:
+            result = await asyncio.to_thread(
+                driver_install.run_native_install,
+                plugin_id,
+                version=resolved.id,
+                port=bind_port,
+                password=password,
+                workspace=pdir,
+            )
+            if not result.get("ok"):
+                raise RuntimeError(result.get("message") or "native install failed")
+            probe = probes.probe_plugin(plugin, config)
+            running = driver_install.native_service_running(plugin_id)
+            status = "running" if probe.get("ok") and running else "installed"
+            record = state.touch_record(
+                record,
+                status=status,
+                probe=probe,
+                error=None if probe.get("ok") else probe.get("message"),
+            )
+            state.save_installed(plugin_id, record)
+            return self._public_installed(plugin_id, record)
+        except Exception as exc:
+            record = state.touch_record(record, status="error", error=str(exc))
+            state.save_installed(plugin_id, record)
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
     async def install_docker(
         self,
         plugin_id: str,
         *,
         port: int | None = None,
+        version: str | None = None,
     ) -> dict[str, Any]:
         plugin = self._require_plugin(plugin_id)
         if not plugin.supports_docker:
@@ -169,6 +249,9 @@ class StoreManager:
             raise HTTPException(status_code=409, detail=f"port {bind_port} is already in use")
 
         password = _generate_password() if plugin.id != "memcached" else ""
+        image = docker_image_for(plugin_id, version) or plugin.docker_image
+        driver = get_driver_spec(plugin_id)
+        driver_version = driver.resolve_version(version).id if driver else plugin.version
         config: dict[str, Any] = {
             "host": "127.0.0.1",
             "port": bind_port,
@@ -180,6 +263,8 @@ class StoreManager:
             ),
             "database": "panel" if plugin.id in {"postgresql", "mysql", "mongodb"} else None,
             "container_name": plugin.container_name,
+            "docker_image": image,
+            "driver_version": driver_version,
         }
         if plugin.id == "rabbitmq":
             config["management_port"] = bind_port + 10000 if bind_port < 20000 else 15672
@@ -190,7 +275,13 @@ class StoreManager:
         state.save_installed(plugin_id, record)
 
         try:
-            await asyncio.to_thread(self._write_compose_and_up, plugin, bind_port, password)
+            await asyncio.to_thread(
+                self._write_compose_and_up,
+                plugin,
+                bind_port,
+                password,
+                image,
+            )
             probe = probes.probe_plugin(plugin, config)
             running = docker.container_running(plugin.container_name)
             status = "running" if probe.get("ok") and running else "installed"
@@ -214,10 +305,10 @@ class StoreManager:
                 status_code=400, detail="plugin does not support external connection"
             )
         existing = state.get_installed(plugin_id)
-        if existing and existing.get("mode") == "docker":
+        if existing and existing.get("mode") in {"docker", "native"}:
             raise HTTPException(
                 status_code=409,
-                detail="uninstall docker instance before switching to external connection",
+                detail="uninstall the managed instance before switching to external connection",
             )
 
         host = str(config.get("host") or "127.0.0.1").strip()
@@ -246,32 +337,53 @@ class StoreManager:
 
     async def start(self, plugin_id: str) -> dict[str, Any]:
         record = self._require_installed(plugin_id)
-        if record.get("mode") != "docker":
-            raise HTTPException(status_code=400, detail="only docker plugins can be started")
-        plugin = self._require_plugin(plugin_id)
-        pdir = state.plugin_dir(plugin_id)
-        ok, msg = await asyncio.to_thread(docker.compose_start, pdir)
-        if not ok:
-            raise HTTPException(status_code=500, detail=msg)
-        probe = probes.probe_plugin(plugin, record["config"])
-        status = "running" if probe.get("ok") else "installed"
-        record = state.touch_record(record, status=status, probe=probe, error=None)
-        state.save_installed(plugin_id, record)
-        return self._public_installed(plugin_id, record)
+        mode = record.get("mode")
+        if mode == "docker":
+            plugin = self._require_plugin(plugin_id)
+            pdir = state.plugin_dir(plugin_id)
+            ok, msg = await asyncio.to_thread(docker.compose_start, pdir)
+            if not ok:
+                raise HTTPException(status_code=500, detail=msg)
+            probe = probes.probe_plugin(plugin, record["config"])
+            status = "running" if probe.get("ok") else "installed"
+            record = state.touch_record(record, status=status, probe=probe, error=None)
+            state.save_installed(plugin_id, record)
+            return self._public_installed(plugin_id, record)
+        if mode == "native":
+            result = await asyncio.to_thread(driver_install.run_native_service, plugin_id, "start")
+            if not result.get("ok"):
+                raise HTTPException(status_code=500, detail=result.get("message"))
+            plugin = self._require_plugin(plugin_id)
+            probe = probes.probe_plugin(plugin, record["config"])
+            status = "running" if probe.get("ok") else "installed"
+            record = state.touch_record(record, status=status, probe=probe, error=None)
+            state.save_installed(plugin_id, record)
+            return self._public_installed(plugin_id, record)
+        raise HTTPException(status_code=400, detail="only docker or native plugins can be started")
 
     async def stop(self, plugin_id: str) -> dict[str, Any]:
         record = self._require_installed(plugin_id)
-        if record.get("mode") != "docker":
-            raise HTTPException(status_code=400, detail="only docker plugins can be stopped")
-        pdir = state.plugin_dir(plugin_id)
-        ok, msg = await asyncio.to_thread(docker.compose_stop, pdir)
-        if not ok:
-            raise HTTPException(status_code=500, detail=msg)
-        record = state.touch_record(
-            record, status="stopped", probe={"ok": False, "message": "stopped"}
-        )
-        state.save_installed(plugin_id, record)
-        return self._public_installed(plugin_id, record)
+        mode = record.get("mode")
+        if mode == "docker":
+            pdir = state.plugin_dir(plugin_id)
+            ok, msg = await asyncio.to_thread(docker.compose_stop, pdir)
+            if not ok:
+                raise HTTPException(status_code=500, detail=msg)
+            record = state.touch_record(
+                record, status="stopped", probe={"ok": False, "message": "stopped"}
+            )
+            state.save_installed(plugin_id, record)
+            return self._public_installed(plugin_id, record)
+        if mode == "native":
+            result = await asyncio.to_thread(driver_install.run_native_service, plugin_id, "stop")
+            if not result.get("ok"):
+                raise HTTPException(status_code=500, detail=result.get("message"))
+            record = state.touch_record(
+                record, status="stopped", probe={"ok": False, "message": "stopped"}
+            )
+            state.save_installed(plugin_id, record)
+            return self._public_installed(plugin_id, record)
+        raise HTTPException(status_code=400, detail="only docker or native plugins can be stopped")
 
     async def restart(self, plugin_id: str) -> dict[str, Any]:
         await self.stop(plugin_id)
@@ -281,9 +393,13 @@ class StoreManager:
         record = state.get_installed(plugin_id)
         if not record:
             raise HTTPException(status_code=404, detail="plugin not installed")
-        if record.get("mode") == "docker":
+        mode = record.get("mode")
+        if mode == "docker":
             pdir = state.plugin_dir(plugin_id)
             await asyncio.to_thread(docker.compose_down, pdir, volumes=True)
+        elif mode == "native":
+            pdir = state.plugin_dir(plugin_id)
+            await asyncio.to_thread(driver_install.run_native_uninstall, plugin_id, workspace=pdir)
         state.remove_installed(plugin_id)
         return {"plugin_id": plugin_id, "removed": True}
 
@@ -316,6 +432,14 @@ class StoreManager:
                 status = "running"
             else:
                 status = "error"
+        elif record.get("mode") == "native":
+            running = driver_install.native_service_running(plugin_id)
+            if not running:
+                status = "stopped"
+            elif probe.get("ok"):
+                status = "running"
+            else:
+                status = "error"
         elif record.get("mode") == "external":
             status = "external" if probe.get("ok") else "error"
 
@@ -329,10 +453,19 @@ class StoreManager:
         return self._public_installed(plugin_id, record)
 
     def _write_compose_and_up(
-        self, plugin: StorePluginDefinition, port: int, password: str
+        self,
+        plugin: StorePluginDefinition,
+        port: int,
+        password: str,
+        docker_image: str,
     ) -> None:
         pdir = state.plugin_dir(plugin.id)
-        compose = catalog.render_compose(plugin, port=port, password=password)
+        compose = catalog.render_compose(
+            plugin,
+            port=port,
+            password=password,
+            docker_image=docker_image,
+        )
         (pdir / "docker-compose.yml").write_text(compose, encoding="utf-8")
         env_lines = [f"PORT={port}"]
         if password:

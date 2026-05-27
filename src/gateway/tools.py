@@ -113,6 +113,19 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "list_agent_rules",
+        "description": (
+            "List gateway agent behavior rules (RULE.md) with enabled state. "
+            "Rules are injected into the agent system prompt when enabled."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "list_firewall_rules",
+        "description": "List host UFW port rules, groups, and firewall status for VPS security.",
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
         "name": "list_integrate_channels",
         "description": (
             "List integrate messaging channels (Telegram, Discord, Slack, Email) "
@@ -170,6 +183,8 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "network_access_status": _network_access_status,
         "apply_panel_firewall": _apply_panel_firewall,
         "setup_network_access": _setup_network_access,
+        "list_agent_rules": _list_agent_rules,
+        "list_firewall_rules": _list_firewall_rules,
         "list_integrate_channels": _list_integrate_channels,
         "configure_integrate_channel": _configure_integrate_channel,
         "reload_integrate_channel": _reload_integrate_channel,
@@ -301,6 +316,28 @@ async def _setup_network_access(
         enable_ufw=enable_ufw,
         username="gateway-agent",
     )
+
+
+async def _list_agent_rules(_manager: Any) -> dict[str, Any]:
+    from gateway.rules import get_rule_manager
+
+    mgr = get_rule_manager()
+    return {
+        "items": mgr.list_catalog(),
+        "total": len(mgr.all_manifests()),
+        "enabled": sorted(mgr.enabled_ids()),
+    }
+
+
+async def _list_firewall_rules(_manager: Any) -> dict[str, Any]:
+    from server.services.firewall_service import get_firewall_service
+
+    svc = get_firewall_service()
+    return {
+        "status": svc.get_status(),
+        "rules": svc.list_rules(),
+        "groups": svc.list_groups(),
+    }
 
 
 async def _list_integrate_channels(_manager: Any) -> dict[str, Any]:

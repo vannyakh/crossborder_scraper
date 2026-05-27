@@ -5,8 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from deploy.drivers.registry import get_driver_spec
+
 PluginCategory = Literal["database", "cache", "queue", "search"]
-InstallMode = Literal["docker", "external", "source"]
+InstallMode = Literal["native", "docker", "external", "source"]
 
 StorePluginStatus = Literal[
     "not_installed",
@@ -46,7 +48,7 @@ class StorePluginDefinition:
     tags: tuple[str, ...] = ()
 
     def to_catalog_dict(self) -> dict[str, Any]:
-        return {
+        row: dict[str, Any] = {
             "id": self.id,
             "kind": "service",
             "name": self.name,
@@ -56,6 +58,7 @@ class StorePluginDefinition:
             "default_port": self.default_port,
             "supports_docker": self.supports_docker,
             "supports_external": self.supports_external,
+            "supports_native": bool(get_driver_spec(self.id)),
             "docker_image": self.docker_image,
             "tags": list(self.tags),
             "connection_fields": [
@@ -69,6 +72,14 @@ class StorePluginDefinition:
                 for f in self.connection_fields
             ],
         }
+        driver = get_driver_spec(self.id)
+        if driver:
+            row.update(driver.to_catalog_extra())
+        else:
+            row["supports_native"] = False
+            row["available_versions"] = [self.version]
+            row["default_version"] = self.version
+        return row
 
 
 def _db_fields(default_port: int, *, with_database: bool = True) -> tuple[ConnectionField, ...]:
@@ -206,13 +217,20 @@ def list_catalog() -> list[dict[str, Any]]:
     return [p.to_catalog_dict() for p in PLUGINS.values()]
 
 
-def render_compose(plugin: StorePluginDefinition, *, port: int, password: str) -> str:
+def render_compose(
+    plugin: StorePluginDefinition,
+    *,
+    port: int,
+    password: str,
+    docker_image: str | None = None,
+) -> str:
     """Docker Compose v2 manifest for a single plugin."""
+    image = docker_image or plugin.docker_image
     if plugin.id == "redis":
         auth = f'--requirepass "{password}"' if password else ""
         return f"""services:
   redis:
-    image: {plugin.docker_image}
+    image: {image}
     container_name: {plugin.container_name}
     ports:
       - "{port}:6379"
@@ -222,7 +240,7 @@ def render_compose(plugin: StorePluginDefinition, *, port: int, password: str) -
     if plugin.id == "postgresql":
         return f"""services:
   postgres:
-    image: {plugin.docker_image}
+    image: {image}
     container_name: {plugin.container_name}
     environment:
       POSTGRES_USER: panel
@@ -235,7 +253,7 @@ def render_compose(plugin: StorePluginDefinition, *, port: int, password: str) -
     if plugin.id == "mysql":
         return f"""services:
   mysql:
-    image: {plugin.docker_image}
+    image: {image}
     container_name: {plugin.container_name}
     environment:
       MYSQL_ROOT_PASSWORD: {password}
@@ -249,7 +267,7 @@ def render_compose(plugin: StorePluginDefinition, *, port: int, password: str) -
     if plugin.id == "mongodb":
         return f"""services:
   mongo:
-    image: {plugin.docker_image}
+    image: {image}
     container_name: {plugin.container_name}
     environment:
       MONGO_INITDB_ROOT_USERNAME: panel
@@ -262,7 +280,7 @@ def render_compose(plugin: StorePluginDefinition, *, port: int, password: str) -
     if plugin.id == "memcached":
         return f"""services:
   memcached:
-    image: {plugin.docker_image}
+    image: {image}
     container_name: {plugin.container_name}
     ports:
       - "{port}:11211"
@@ -272,7 +290,7 @@ def render_compose(plugin: StorePluginDefinition, *, port: int, password: str) -
         mgmt = port + 10000 if port < 20000 else 15672
         return f"""services:
   rabbitmq:
-    image: {plugin.docker_image}
+    image: {image}
     container_name: {plugin.container_name}
     environment:
       RABBITMQ_DEFAULT_USER: panel

@@ -89,6 +89,83 @@ export function useSetEnabledSkillsMutation() {
   })
 }
 
+export function useGatewayRulesQuery() {
+  return useQuery({
+    queryKey: queryKeys.gatewayRules,
+    queryFn: () => api<import('../../lib/api').AgentRuleList>('/gateway/rules'),
+    staleTime: 30_000,
+  })
+}
+
+export function useAgentRuleQuery(ruleId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.gatewayRule(ruleId ?? ''),
+    queryFn: () => api<import('../../lib/api').AgentRuleDetail>(`/gateway/rules/${ruleId}`),
+    enabled: Boolean(ruleId),
+    staleTime: 30_000,
+  })
+}
+
+export function useSetEnabledRulesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (enabled: string[]) =>
+      api<import('../../lib/api').AgentRuleList>('/gateway/rules/enabled', {
+        method: 'PUT',
+        body: JSON.stringify({ enabled }),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayRules })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
+    },
+  })
+}
+
+export function useCreateAgentRuleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: import('../../lib/api').AgentRuleCreate) =>
+      api<import('../../lib/api').AgentRuleDetail>('/gateway/rules', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayRules })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
+    },
+  })
+}
+
+export function useUpdateAgentRuleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      ruleId,
+      ...patch
+    }: Partial<Omit<import('../../lib/api').AgentRuleCreate, 'id'>> & { ruleId: string }) =>
+      api<import('../../lib/api').AgentRuleDetail>(`/gateway/rules/${ruleId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayRules })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayRule(variables.ruleId) })
+    },
+  })
+}
+
+export function useDeleteAgentRuleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ruleId: string) =>
+      api<{ ok: boolean; rule_id: string }>(`/gateway/rules/${ruleId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayRules })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
+    },
+  })
+}
+
 export function useInstallSkillMutation() {
   const queryClient = useQueryClient()
   return useMutation({

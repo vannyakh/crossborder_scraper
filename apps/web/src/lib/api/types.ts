@@ -449,6 +449,8 @@ export type IntegrateChannelSummary = {
 
 export type IntegrateChannelDetail = IntegrateChannelSummary & {
   setup_steps: string[]
+  setup_guide_md: string
+  setup_guide_path: string
   fields: IntegrateChannelField[]
   config: Record<string, unknown>
 }
@@ -463,6 +465,8 @@ export type GatewayStatus = {
   tools_count: number
   skills_count?: number
   enabled_skills_count?: number
+  rules_count?: number
+  enabled_rules_count?: number
   workflows_count: number
   schedules_count?: number
   enabled_schedules_count?: number
@@ -502,6 +506,8 @@ export type ServiceGatewaySummary = {
   tools_count: number
   skills_count?: number
   enabled_skills_count?: number
+  rules_count?: number
+  enabled_rules_count?: number
   workflows_count: number
   schedules_count: number
   enabled_schedules_count: number
@@ -588,6 +594,38 @@ export type GatewayAgentResponse = {
   model_ref?: string | null
   prompt_id?: string | null
   skill_ids?: string[]
+  rule_ids?: string[]
+}
+
+export type AgentRule = {
+  id: string
+  name: string
+  description: string
+  category: string
+  priority: number
+  enabled: boolean
+  kind: 'builtin' | 'custom'
+  path: string
+  body_preview: string
+}
+
+export type AgentRuleDetail = AgentRule & {
+  body: string
+}
+
+export type AgentRuleList = {
+  items: AgentRule[]
+  total: number
+  enabled: string[]
+}
+
+export type AgentRuleCreate = {
+  id: string
+  name: string
+  description?: string
+  category?: 'safety' | 'behavior' | 'tools' | 'output' | 'general'
+  body: string
+  priority?: number
 }
 
 export type GatewaySkill = {
@@ -725,6 +763,10 @@ export type StoreCatalogItem = {
   default_port: number
   supports_docker: boolean
   supports_external: boolean
+  supports_native?: boolean
+  available_versions?: string[]
+  default_version?: string
+  systemd_unit?: string
   docker_image: string
   tags: string[]
   connection_fields: StoreConnectionField[]
@@ -742,12 +784,20 @@ export type StoreCatalogItem = {
 export type StoreEnvironment = {
   docker_available: boolean
   compose_available: boolean
+  native_driver_available?: boolean
+  platform?: string
   store_dir: string
   builtin_sqlite: {
     label: string
     path: string
     description: string
   }
+}
+
+export type StoreInstallRequest = {
+  mode?: 'native' | 'docker'
+  port?: number
+  version?: string
 }
 
 export type StoreInstalled = {
@@ -775,4 +825,170 @@ export type StoreConnectRequest = {
 
 export type StorePluginDetail = StoreCatalogItem & {
   installation?: StoreInstalled | null
+}
+
+export type DockerStatus = {
+  installed: boolean
+  daemon_running: boolean
+  service_status: 'running' | 'stopped' | 'not_installed'
+  docker_available: boolean
+  compose_available: boolean
+  hostname: string
+  system: string
+  architecture: string
+  kernel: string
+  cpu_cores?: number | null
+  memory_gb?: number | null
+  docker_version: string
+  compose_version: string
+  unix_socket: string
+  config_path: string
+  install_dir: string
+  needs_install: boolean
+  can_install: boolean
+}
+
+export type DockerConfig = {
+  registry_mirrors: string[]
+  registry_mirror_display: string
+  compose_path: string
+  install_dir: string
+  log_max_size: string
+  log_max_file: number
+  ipv6: boolean
+  iptables: boolean
+  live_restore: boolean
+}
+
+export type DockerInstallResult = {
+  ok: boolean
+  already_installed?: boolean
+  messages: string[]
+  status?: DockerStatus
+}
+
+export type DockerServiceResult = {
+  ok: boolean
+  action?: string
+  message: string
+  status?: DockerStatus
+}
+
+export type DockerContainer = {
+  id: string
+  name: string
+  image: string
+  status: string
+  ports: string
+  running: boolean
+  created: string
+}
+
+export type DockerContainerList = {
+  items: DockerContainer[]
+  total: number
+  error?: string | null
+}
+
+export type DockerHubItem = {
+  name: string
+  image: string
+  description: string
+  stars?: number
+  pulls?: number
+  official?: boolean
+}
+
+export type DockerHubList = {
+  items: DockerHubItem[]
+  total: number
+  query?: string | null
+  error?: string | null
+}
+
+export type DockerRunResult = {
+  ok: boolean
+  container_id?: string
+  container_name?: string
+  image?: string
+  message: string
+}
+
+export type FirewallStatus = {
+  installed: boolean
+  active: boolean
+  can_manage: boolean
+  port_allowed: boolean
+  ssh_allowed: boolean
+  summary: string
+  port_rule_count: number
+  inbound_rule_count: number
+  outbound_rule_count: number
+  ip_rule_count: number
+  forward_rule_count: number
+  area_rule_count: number
+  group_count: number
+  block_icmp: boolean
+  icmp_blocked: boolean
+  config_path: string
+  platform: string
+}
+
+export type FirewallRule = {
+  id: string
+  ufw_number: number
+  protocol: string
+  port: string
+  source: string
+  action: string
+  strategy: string
+  direction: 'inbound' | 'outbound'
+  remark: string
+  group_id?: string | null
+  group_label?: string | null
+  listening?: boolean | null
+  status_label: string
+  managed: boolean
+  ipv6: boolean
+}
+
+export type FirewallRuleList = {
+  items: FirewallRule[]
+  total: number
+}
+
+export type FirewallRuleCreate = {
+  protocol: 'tcp' | 'udp' | 'any'
+  port: string
+  source?: string
+  action?: 'allow' | 'deny'
+  direction?: 'inbound' | 'outbound'
+  remark?: string
+  group_id?: string | null
+}
+
+export type FirewallGroup = {
+  id: string
+  label: string
+  description: string
+  rule_count?: number
+}
+
+export type FirewallGroupList = {
+  items: FirewallGroup[]
+  total: number
+}
+
+export type FirewallActionResult = {
+  ok: boolean
+  message?: string
+  messages?: string[]
+}
+
+export type FirewallExport = {
+  version: number
+  block_icmp?: boolean
+  groups?: FirewallGroup[]
+  rules_meta?: Record<string, unknown>
+  live_rules?: FirewallRule[]
 }

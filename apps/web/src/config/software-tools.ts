@@ -23,6 +23,8 @@ import {
 export const OPERATIONS_TOOL_NAV = [
   { to: '/monitor', label: 'Live monitor' },
   { to: '/store', label: 'App Store' },
+  { to: '/docker', label: 'Docker' },
+  { to: '/firewall', label: 'Firewall' },
   { to: '/logs', label: 'Logs' },
   { to: '/health', label: 'Health' },
   { to: '/support', label: 'Support' },

@@ -40,7 +40,7 @@ export const SETTINGS_SECTION_MAP = Object.fromEntries(
   SETTINGS_NAV.map((item) => [item.id, item]),
 ) as Record<SettingsSectionId, SettingsNavItem>
 
-export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = 'ai'
+export { DEFAULT_SETTINGS_SECTION } from '../../routes/route-config'
 
 export function isSettingsSectionId(value: string | undefined): value is SettingsSectionId {
   return value !== undefined && value in SETTINGS_SECTION_MAP

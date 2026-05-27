@@ -145,6 +145,18 @@ def agent_skills_config_path() -> Path:
     return config_dir() / "agent_skills.yaml"
 
 
+def agent_rules_config_path() -> Path:
+    return config_dir() / "agent_rules.yaml"
+
+
+def builtin_agent_rules_dir() -> Path:
+    return repo_root() / "libs" / "agent_rules"
+
+
+def custom_agent_rules_dir() -> Path:
+    return data_dir() / "agent_rules"
+
+
 def runtime_layout_dirs() -> dict[str, Path]:
     """Named runtime directories for panel, installers, and docs."""
     return {
@@ -184,6 +196,14 @@ def ensure_runtime_layout() -> list[str]:
                 gitkeep.touch(exist_ok=True)
         created.append(str(path.relative_to(repo_root())))
     return created
+
+
+def docker_config_path() -> Path:
+    return config_dir() / "docker.yaml"
+
+
+def firewall_config_path() -> Path:
+    return config_dir() / "firewall_rules.yaml"
 
 
 def layout_summary() -> dict[str, str]:

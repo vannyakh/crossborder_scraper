@@ -1,19 +1,19 @@
 import { Button, Text, VStack } from '@chakra-ui/react'
 import { Settings } from 'lucide-react'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import type { StoreCatalogItem } from '../../lib/api'
+import type { StoreCatalogItem, StoreEnvironment } from '../../lib/api'
 
 export function StoreCatalogActions({
   item,
-  dockerReady,
+  env,
   installing,
   onInstall,
   onSettings,
 }: {
   item: StoreCatalogItem
-  dockerReady: boolean
+  env?: StoreEnvironment
   installing: boolean
-  onInstall: (id: string, port: number) => void
+  onInstall: (id: string) => void
   onSettings: (id: string) => void
 }) {
   const accentPalette = useAccentPalette()
@@ -40,7 +40,10 @@ export function StoreCatalogActions({
     )
   }
 
-  const canInstall = isSource || (item.supports_docker && dockerReady)
+  const nativeReady = Boolean(env?.native_driver_available)
+  const dockerReady = Boolean(env?.docker_available && env?.compose_available)
+  const canInstall =
+    isSource || (item.supports_native && nativeReady) || (item.supports_docker && dockerReady)
 
   return (
     <VStack align="stretch" gap={1.5} w="full">
@@ -51,13 +54,18 @@ export function StoreCatalogActions({
         borderRadius="var(--radius-input)"
         disabled={!canInstall}
         loading={installing}
-        onClick={() => onInstall(item.id, item.default_port)}
+        onClick={() => onInstall(item.id)}
       >
         {isSource ? 'Enable' : 'Install'}
       </Button>
-      {item.supports_docker && !dockerReady && !isSource ? (
+      {!isSource && !canInstall ? (
         <Text fontSize="xs" color="fg.subtle" textAlign="center">
-          Docker required for one-click install.
+          Install on a Linux VPS (host driver) or install Docker for container setup.
+        </Text>
+      ) : null}
+      {!isSource && canInstall && item.supports_native && nativeReady ? (
+        <Text fontSize="xs" color="fg.subtle" textAlign="center">
+          Host driver install with version selection
         </Text>
       ) : null}
       {isSource && item.domains?.length ? (

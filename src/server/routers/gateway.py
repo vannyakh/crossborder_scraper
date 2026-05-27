@@ -4,6 +4,13 @@ from gateway.skills import SkillInstallError, get_skill_installer
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
+    AgentRuleCreateRequest,
+    AgentRuleDeleteResponse,
+    AgentRuleDetail,
+    AgentRuleEnableRequest,
+    AgentRuleInfo,
+    AgentRuleListResponse,
+    AgentRuleUpdateRequest,
     AgentRunListResponse,
     AgentRunRecord,
     AgentSchedule,
@@ -162,6 +169,76 @@ async def set_enabled_skills(body: GatewaySkillEnableRequest) -> GatewaySkillLis
         total=data["total"],
         enabled=data["enabled"],
     )
+
+
+@router.get("/rules", response_model=AgentRuleListResponse)
+async def list_agent_rules() -> AgentRuleListResponse:
+    data = get_gateway_service().list_rules()
+    return AgentRuleListResponse(
+        items=[AgentRuleInfo(**i) for i in data["items"]],
+        total=data["total"],
+        enabled=data["enabled"],
+    )
+
+
+@router.put("/rules/enabled", response_model=AgentRuleListResponse)
+async def set_enabled_rules(body: AgentRuleEnableRequest) -> AgentRuleListResponse:
+    svc = get_gateway_service()
+    svc.set_enabled_rules(body.enabled)
+    data = svc.list_rules()
+    return AgentRuleListResponse(
+        items=[AgentRuleInfo(**i) for i in data["items"]],
+        total=data["total"],
+        enabled=data["enabled"],
+    )
+
+
+@router.get("/rules/{rule_id}", response_model=AgentRuleDetail)
+async def get_agent_rule(rule_id: str) -> AgentRuleDetail:
+    svc = get_gateway_service()
+    try:
+        data = svc.get_rule(rule_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return AgentRuleDetail(**data)
+
+
+@router.post("/rules", response_model=AgentRuleDetail)
+async def create_agent_rule(
+    body: AgentRuleCreateRequest,
+    _username: str = Depends(require_panel_auth),
+) -> AgentRuleDetail:
+    svc = get_gateway_service()
+    try:
+        data = svc.create_rule(body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AgentRuleDetail(**data)
+
+
+@router.patch("/rules/{rule_id}", response_model=AgentRuleDetail)
+async def update_agent_rule(rule_id: str, body: AgentRuleUpdateRequest) -> AgentRuleDetail:
+    svc = get_gateway_service()
+    patch = body.model_dump(exclude_unset=True)
+    try:
+        data = svc.update_rule(rule_id, patch)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AgentRuleDetail(**data)
+
+
+@router.delete("/rules/{rule_id}", response_model=AgentRuleDeleteResponse)
+async def delete_agent_rule(rule_id: str) -> AgentRuleDeleteResponse:
+    svc = get_gateway_service()
+    try:
+        result = svc.delete_rule(rule_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return AgentRuleDeleteResponse(**result)
 
 
 @router.post("/skills/install", response_model=SkillInstallResponse)
