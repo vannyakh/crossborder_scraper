@@ -4,6 +4,7 @@ import { gaugeOption } from '../charts/chart-options'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { Section } from '../ui/Section'
 import { gaugePercent } from './dashboard-utils'
+import { GaugeRowSkeleton } from './DashboardSkeleton'
 
 function ServiceGaugeTile({
   label,
@@ -43,14 +44,20 @@ export function ServiceGaugePanel({
   running,
   products,
   proxies,
+  loading,
 }: {
   active: number
   maxJobs: number
   running: number
   products: number
   proxies: number
+  loading?: boolean
 }) {
   const theme = useChartTheme()
+
+  if (loading) {
+    return <GaugeRowSkeleton title="Service workload" subtitle="Scraper engine and catalog utilization" />
+  }
 
   return (
     <Section title="Service workload" description="Scraper engine and catalog utilization">

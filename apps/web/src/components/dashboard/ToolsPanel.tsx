@@ -4,6 +4,7 @@ import type { SoftwareToolCard, SoftwareToolSection } from '../../config/softwar
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { Section, SectionDivider } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
+import { ToolsPanelSkeleton } from './DashboardSkeleton'
 
 function ToolCardTile({ tool }: { tool: SoftwareToolCard }) {
   const accentPalette = useAccentPalette()
@@ -43,7 +44,15 @@ function ToolCardTile({ tool }: { tool: SoftwareToolCard }) {
   )
 }
 
-export function ToolsPanel({ sections }: { sections: SoftwareToolSection[] }) {
+export function ToolsPanel({
+  sections,
+  loading,
+}: {
+  sections: SoftwareToolSection[]
+  loading?: boolean
+}) {
+  if (loading) return <ToolsPanelSkeleton />
+
   return (
     <Section
       title="Software tools"

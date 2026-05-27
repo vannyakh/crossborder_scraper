@@ -2,6 +2,7 @@ import { Box, Flex, useBreakpointValue } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Outlet } from 'react-router-dom'
 import { useMotionTransition } from '../../hooks/use-motion-props'
+import { useGatewayStatusQuery } from '../../hooks/queries/use-gateway-query'
 import { usePanelAccessQuery } from '../../hooks/queries/use-panel-access-query'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
 import { fallbackPanelAccess } from '../../lib/panel-access'
@@ -13,6 +14,7 @@ import {
 import { PageTransition } from '../motion/PageTransition'
 import { AppNavbar } from './AppNavbar'
 import {
+  BrandVersionBadge,
   ShellBrandText,
   ShellFooter,
   ShellHeaderRow,
@@ -31,25 +33,45 @@ const MotionOverlay = motion.create(Box)
 
 function SidebarHeader({
   collapsed,
+  version,
+  updateAvailable,
   onCopyCollapsed,
 }: {
   collapsed: boolean
+  version?: string
+  updateAvailable?: boolean
   onCopyCollapsed?: () => void
 }) {
   return (
-    <ShellHeaderRow justify={collapsed ? 'center' : 'flex-start'} bg="bg.sidebar">
+    <ShellHeaderRow
+      justify={collapsed ? 'center' : 'flex-start'}
+      bg="bg.sidebar"
+      flexDirection={collapsed ? 'column' : 'row'}
+      gap={collapsed ? 1 : 2}
+      py={collapsed ? 1.5 : undefined}
+    >
       <ShellLogoMark
         collapsed={collapsed}
         label="Crossborder"
         onClick={onCopyCollapsed}
       />
-      <ShellBrandText collapsed={collapsed} title="Crossborder" />
+      {collapsed ? (
+        <BrandVersionBadge version={version} updateAvailable={updateAvailable} />
+      ) : (
+        <ShellBrandText
+          collapsed={false}
+          title="Crossborder"
+          version={version}
+          updateAvailable={updateAvailable}
+        />
+      )}
     </ShellHeaderRow>
   )
 }
 
 export function AppShell() {
   usePanelAppearance()
+  const gateway = useGatewayStatusQuery()
   const { data: stats } = useStatsQuery()
   const panelAccess = usePanelAccessQuery()
   const access = panelAccess.data ?? fallbackPanelAccess()
@@ -108,6 +130,8 @@ export function AppShell() {
       >
         <SidebarHeader
           collapsed={navCollapsed}
+          version={gateway.data?.version}
+          updateAvailable={gateway.data?.update_available}
           onCopyCollapsed={
             navCollapsed ? () => void copyPanelAccess(access) : undefined
           }

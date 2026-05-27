@@ -7,6 +7,7 @@ from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.services.config import get_config_service
 from server.services.runtime import get_stats
+from server.core.constants import APP_VERSION
 from server.core.panel_bind import get_panel_bind_info
 from server.schemas import PanelAccessResponse, PanelConfigResponse, PanelConfigUpdate, StatsResponse
 from server.services.audit import log_operation
@@ -20,6 +21,7 @@ async def health() -> dict[str, Any]:
     settings = get_settings()
     return {
         "status": "ok",
+        "version": APP_VERSION,
         "auth_enabled": settings.panel_auth_enabled,
         "auth_configured": bool(settings.panel_username and settings.panel_password),
     }

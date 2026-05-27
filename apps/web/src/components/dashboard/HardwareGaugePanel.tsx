@@ -1,4 +1,4 @@
-import { Grid, Text } from '@chakra-ui/react'
+import { Grid } from '@chakra-ui/react'
 import type { HardwareMonitor } from '../../lib/api'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { Section } from '../ui/Section'
@@ -9,18 +9,13 @@ import {
   LoadHoverDetail,
   MemoryHoverDetail,
 } from './HardwareGaugeHoverDetail'
+import { GaugeRowSkeleton } from './DashboardSkeleton'
 
 export function HardwareGaugePanel({ hardware }: { hardware?: HardwareMonitor }) {
   const theme = useChartTheme()
 
   if (!hardware) {
-    return (
-      <Section title="Server hardware" description="CPU, memory, disk, and load" mt={0}>
-        <Text fontSize="sm" color="fg.muted">
-          Loading hardware metrics…
-        </Text>
-      </Section>
-    )
+    return <GaugeRowSkeleton title="Server hardware" subtitle="CPU, memory, disk, and load" />
   }
 
   const loadDetail = `${hardware.load.load_1} / ${hardware.load.load_5} / ${hardware.load.load_15}`

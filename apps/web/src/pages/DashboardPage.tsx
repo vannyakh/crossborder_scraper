@@ -1,5 +1,4 @@
-import { Box, Grid, HStack, Text, VStack } from '@chakra-ui/react'
-import { Link } from 'react-router-dom'
+import { Box, Grid, Text, VStack } from '@chakra-ui/react'
 import { HardwareGaugePanel } from '../components/dashboard/HardwareGaugePanel'
 import {
   HardwareTrendChart,
@@ -36,6 +35,13 @@ export function DashboardPage() {
   const activitySamples = useActivitySamples(runtime)
   const hardwareSamples = useHardwareSamples(hardware)
 
+  // True only on the initial fetch — subsequent refreshes keep showing data
+  const hardwareLoading = monitor.isLoading && !monitor.data
+  const runtimeLoading = monitor.isLoading && !monitor.data && gateway.isLoading && !gateway.data
+  const overviewLoading = runtimeLoading || (serviceOverview.isLoading && !serviceOverview.data)
+  const chartsLoading = hardwareLoading
+  const toolsLoading = serviceOverview.isLoading && !serviceOverview.data
+
   const maxJobs = runtime?.engine.max_concurrent_jobs ?? 3
   const active = runtime?.active_tasks ?? 0
   const running = runtime?.running_batches.length ?? stats.data?.running_batches ?? 0
@@ -65,11 +71,6 @@ export function DashboardPage() {
     <VStack align="stretch" gap={0}>
       <Stagger>
         <StaggerItem>
-          <HStack justify="flex-end" mb={2}>
-            <Text asChild fontSize="xs" color="brand.emphasis">
-              <Link to="/monitor">Open live monitor →</Link>
-            </Text>
-          </HStack>
           <HardwareGaugePanel hardware={hardware} />
         </StaggerItem>
 
@@ -80,6 +81,7 @@ export function DashboardPage() {
             running={running}
             products={products}
             proxies={proxies}
+            loading={runtimeLoading}
           />
         </StaggerItem>
 
@@ -93,6 +95,7 @@ export function DashboardPage() {
             gatewayWorkflows={gateway.data?.workflows_count ?? 0}
             scheduleCount={schedules.data?.items.length ?? 0}
             marketplaceConfigured={marketplaceConfigured}
+            loading={overviewLoading}
           />
         </StaggerItem>
 
@@ -105,17 +108,17 @@ export function DashboardPage() {
               w="full"
             >
               <Box minH={{ base: 'auto', xl: 'min(440px, 48vh)' }}>
-                <HardwareTrendChart samples={hardwareSamples} />
+                <HardwareTrendChart samples={hardwareSamples} loading={chartsLoading} />
               </Box>
               <Box minH={{ base: 'auto', xl: 'min(440px, 48vh)' }}>
-                <WorkloadChart samples={activitySamples} />
+                <WorkloadChart samples={activitySamples} loading={chartsLoading} />
               </Box>
             </Grid>
           </Box>
         </StaggerItem>
 
         <StaggerItem>
-          <ToolsPanel sections={toolSections} />
+          <ToolsPanel sections={toolSections} loading={toolsLoading} />
         </StaggerItem>
 
         {runtime?.running_batches.length ? (

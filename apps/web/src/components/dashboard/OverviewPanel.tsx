@@ -12,6 +12,7 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import { Section, SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import { countCookieSessions, formatUptime } from './dashboard-utils'
+import { OverviewSkeleton } from './DashboardSkeleton'
 
 function OverviewColumn({
   icon: Icon,
@@ -65,6 +66,7 @@ export function OverviewPanel({
   gatewayWorkflows,
   scheduleCount,
   marketplaceConfigured,
+  loading,
 }: {
   runtime?: RuntimeStatus
   stats?: Stats
@@ -74,8 +76,11 @@ export function OverviewPanel({
   gatewayWorkflows: number
   scheduleCount: number
   marketplaceConfigured: number
+  loading?: boolean
 }) {
   const accentPalette = useAccentPalette()
+
+  if (loading) return <OverviewSkeleton />
   const running = stats?.running_batches ?? runtime?.running_batches.length ?? 0
   const batches = stats?.batches ?? runtime?.storage.batches ?? 0
   const products = stats?.products ?? runtime?.storage.products ?? 0

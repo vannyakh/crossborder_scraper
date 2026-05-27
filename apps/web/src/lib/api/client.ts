@@ -86,6 +86,7 @@ export async function publicApi<T>(path: string, init?: RequestInit): Promise<T>
 
 export async function checkHealth(): Promise<{
   status: string
+  version?: string
   auth_enabled?: boolean
   auth_configured?: boolean
 }> {

@@ -1,4 +1,4 @@
-import { Box, HStack, type BoxProps, type StackProps } from '@chakra-ui/react'
+import { Badge, Box, HStack, type BoxProps, type StackProps } from '@chakra-ui/react'
 import { SHELL_HEADER_HEIGHT } from './constants'
 import { ShellLogoMark } from './ShellLogoMark'
 
@@ -51,26 +51,68 @@ export function ShellFooter({ children, ...props }: BoxProps) {
 }
 
 
-export function ShellBrandText({ collapsed, title }: { collapsed: boolean; title: string }) {
+export function BrandVersionBadge({
+  version,
+  updateAvailable,
+}: {
+  version?: string
+  updateAvailable?: boolean
+}) {
+  if (!version) return null
+
+  return (
+    <Badge
+      size="xs"
+      variant="subtle"
+      colorPalette={updateAvailable ? 'green' : 'gray'}
+      fontSize="2xs"
+      fontFamily="mono"
+      fontWeight="medium"
+      px={1}
+      py={0}
+      borderRadius="sm"
+      lineHeight="1.3"
+      flexShrink={0}
+      title={updateAvailable ? `Update available (v${version})` : `Version ${version}`}
+    >
+      v{version}
+    </Badge>
+  )
+}
+
+export function ShellBrandText({
+  collapsed,
+  title,
+  version,
+  updateAvailable,
+}: {
+  collapsed: boolean
+  title: string
+  version?: string
+  updateAvailable?: boolean
+}) {
   if (collapsed) return null
 
   return (
-    <Box
-      as="span"
-      minW={0}
-      flex={1}
-      display="block"
-      fontFamily="heading"
-      fontWeight="semibold"
-      fontSize="sm"
-      lineHeight="1"
-      letterSpacing="-0.05em"
-      textTransform="uppercase"
-      color="fg"
-      truncate
-    >
-      {title}
-    </Box>
+    <HStack gap={1.5} minW={0} flex={1} align="center">
+      <Box
+        as="span"
+        minW={0}
+        flex={1}
+        display="block"
+        fontFamily="heading"
+        fontWeight="semibold"
+        fontSize="sm"
+        lineHeight="1"
+        letterSpacing="-0.05em"
+        textTransform="uppercase"
+        color="fg"
+        truncate
+      >
+        {title}
+      </Box>
+      <BrandVersionBadge version={version} updateAvailable={updateAvailable} />
+    </HStack>
   )
 }
 

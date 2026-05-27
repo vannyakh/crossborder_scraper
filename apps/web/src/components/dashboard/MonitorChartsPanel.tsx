@@ -1,9 +1,10 @@
-import { Box, Grid, HStack, Text } from '@chakra-ui/react'
+import { Box, Grid, HStack, Skeleton, Text } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { EChart } from '../charts/EChart'
 import { multiLineOption } from '../charts/chart-options'
 import { Section, SectionCard } from '../ui/Section'
+import { ChartPanelSkeleton } from './DashboardSkeleton'
 import {
   formatChartTime,
   formatPercent,
@@ -101,17 +102,7 @@ function TrendChartCard({
           {range} · {ready ? 'Live' : 'Collecting…'}
         </Text>
         {!option ? (
-          <Box
-            flex={1}
-            minH={CHART_HEIGHT}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Text fontSize="sm" color="fg.muted">
-              Collecting samples…
-            </Text>
-          </Box>
+          <Skeleton flex={1} minH={CHART_HEIGHT} borderRadius="var(--radius-card)" />
         ) : (
           <EChart option={option} height={CHART_HEIGHT} className="chart-trend-panel" />
         )}
@@ -120,7 +111,14 @@ function TrendChartCard({
   )
 }
 
-export function WorkloadChart({ samples }: { samples: ActivitySample[] }) {
+export function WorkloadChart({
+  samples,
+  loading,
+}: {
+  samples: ActivitySample[]
+  loading?: boolean
+}) {
+  if (loading) return <ChartPanelSkeleton title="Workload" />
   const theme = useChartTheme()
   const latest = samples[samples.length - 1]
   const period = formatSamplePeriod(samples)
@@ -175,7 +173,14 @@ export function WorkloadChart({ samples }: { samples: ActivitySample[] }) {
   )
 }
 
-export function HardwareTrendChart({ samples }: { samples: HardwareSample[] }) {
+export function HardwareTrendChart({
+  samples,
+  loading,
+}: {
+  samples: HardwareSample[]
+  loading?: boolean
+}) {
+  if (loading) return <ChartPanelSkeleton title="Hardware trend" />
   const theme = useChartTheme()
   const latest = samples[samples.length - 1]
   const period = formatSamplePeriod(samples)

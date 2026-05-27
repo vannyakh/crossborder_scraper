@@ -13,12 +13,13 @@ import {
 import { type FormEvent, type ReactNode, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FadeIn } from '../components/motion/FadeIn'
+import { BrandVersionBadge } from '../components/layout/ShellChrome'
 import { ShellLogoMark } from '../components/layout/ShellLogoMark'
 import { fieldStyles } from '../components/ui/field-styles'
 import { Panel, PanelBody } from '../components/ui/Panel'
 import { ThemeSettingsButton } from '../components/theme/ThemeSettingsDrawer'
 import { useAccentPalette, useUiConfig } from '../hooks/use-ui-config'
-import { useAuth, useAuthStatusQuery } from '../hooks'
+import { useAuth, useAuthStatusQuery, usePublicHealthQuery } from '../hooks'
 import { usePanelAppearance } from '../hooks/use-panel-appearance'
 import { useThemeStore } from '../stores/theme-store'
 import { resolveLoginBackgroundImageUrl } from '../theme/panel-appearance'
@@ -49,7 +50,7 @@ function LoginNotice({
   )
 }
 
-function LoginBrandPanel() {
+function LoginBrandPanel({ version }: { version?: string }) {
   return (
     <VStack
       className="login-page__brand"
@@ -60,7 +61,7 @@ function LoginBrandPanel() {
       minH={{ base: 'auto', lg: '420px' }}
       py={{ base: 2, lg: 0 }}
     >
-      <HStackBrand />
+      <HStackBrand version={version} />
       <Box maxW="md">
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="semibold" lineHeight="short">
           Cross-border product intelligence
@@ -73,9 +74,9 @@ function LoginBrandPanel() {
   )
 }
 
-function HStackBrand() {
+function HStackBrand({ version }: { version?: string }) {
   return (
-    <Flex align="center" gap={3}>
+    <Flex align="center" gap={2}>
       <ShellLogoMark collapsed={false} label="Crossborder" />
       <Text
         fontFamily="heading"
@@ -88,6 +89,7 @@ function HStackBrand() {
       >
         Crossborder
       </Text>
+      <BrandVersionBadge version={version} />
     </Flex>
   )
 }
@@ -114,7 +116,8 @@ function LoginFormCard({
   onUsernameChange,
   onPasswordChange,
   onSubmit,
-}: LoginFormCardProps) {
+  version,
+}: LoginFormCardProps & { version?: string }) {
   const accentPalette = useAccentPalette()
 
   function handleSubmit(event: FormEvent) {
@@ -127,7 +130,7 @@ function LoginFormCard({
     <Panel className="login-page__card" w="full" maxW="md" mx={{ base: 'auto', lg: 0 }}>
       <PanelBody p={{ base: 5, md: 6 }}>
         <Box display={{ base: 'block', lg: 'none' }} mb={5}>
-          <HStackBrand />
+          <HStackBrand version={version} />
         </Box>
 
         <VStack align="stretch" gap={1} mb={5}>
@@ -220,6 +223,8 @@ export function LoginPage() {
   const location = useLocation()
   const { connect, isConnecting, connectError } = useAuth()
   const { data: authStatus } = useAuthStatusQuery()
+  const { data: health } = usePublicHealthQuery()
+  const appVersion = health?.version
   const { resolved } = useUiConfig()
   const loginBackground = useThemeStore((s) => s.config.loginPage.background)
 
@@ -276,11 +281,12 @@ export function LoginPage() {
           alignItems="center"
         >
           <FadeIn className="login-page__brand-fade">
-            <LoginBrandPanel />
+            <LoginBrandPanel version={appVersion} />
           </FadeIn>
 
           <FadeIn delay={0.08}>
             <LoginFormCard
+              version={appVersion}
               username={username}
               password={password}
               isConnecting={isConnecting}
