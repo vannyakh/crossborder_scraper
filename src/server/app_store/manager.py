@@ -16,8 +16,8 @@ from core.plugins import (
     get_source_spec,
     list_source_catalog,
 )
-from server.store import catalog, docker, probes, state
-from server.store.catalog import StorePluginDefinition, get_plugin, list_catalog
+from server.app_store import catalog, docker, probes, state
+from server.app_store.catalog import StorePluginDefinition, get_plugin, list_catalog
 
 
 def _port_free(port: int, host: str = "127.0.0.1") -> bool:

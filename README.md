@@ -205,8 +205,7 @@ src/
 ├── cli/                # Typer CLI (`scraper` command)
 ├── config/             # Settings from .env + ui_config.json
 ├── core/               # Engine, AI, plugins, models
-├── sites/              # 1688, Taobao, AliExpress
-├── plugins/            # Built-in social/custom source plugins
+├── plugins/            # Built-in source plugins (1688, Taobao, social, …)
 ├── pipeline/           # Normalize + SQLite storage
 ├── export/             # Shopee, Lazada, TikTok Shop, Shopify
 ├── gateway/            # Agent tools & workflows
@@ -218,11 +217,11 @@ installed_plugins/      # Sandboxed ZIP scrape plugins
 
 Full map: [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
 
-## Adding a new source site
+## Adding a new source plugin
 
-1. Create `src/sites/my_site.py` extending `BaseScraper`.
+1. Add `src/plugins/my_site/plugin.py` extending `BaseScraper` with a `SourcePluginManifest`.
 2. Implement `extract_product_id`, `parse_html`, and CSS selectors.
-3. Register in `sites/registry.py`.
+3. Register the package in `core/plugins/manager.py` and enable it in `config/plugins.yaml`.
 
 ## Marketplace API setup
 
@@ -240,7 +239,7 @@ Image upload: most APIs require uploading images to their CDN first, then refere
 - **Proxies**: set `PROXY_SERVER` in `.env` (residential recommended for Taobao).
 - **Rate limits**: increase `REQUEST_DELAY_SECONDS`.
 - **Legal**: respect each site's Terms of Service and robots rules; use official APIs where required.
-- **Selectors**: 1688/Taobao change layouts often — update `sites/*.py` selectors when parsing fails.
+- **Selectors**: 1688/Taobao change layouts often — update `src/plugins/*/plugin.py` selectors when parsing fails.
 
 ## Commands
 

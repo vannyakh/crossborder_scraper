@@ -141,7 +141,12 @@ class BatchService:
                         "error": result.error,
                         "duration_seconds": result.duration_seconds,
                         "ai_used": result.ai_used,
+                        "ai_extract_used": result.ai_extract_used,
+                        "agent_used": result.agent_used,
                         "proxy_used": result.proxy_used,
+                        "site_key": result.site_key,
+                        "phases": result.phases,
+                        "pipeline": [p.get("phase") for p in result.phases],
                         "product_title": result.product.title if result.product else None,
                     },
                 )

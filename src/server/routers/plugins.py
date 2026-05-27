@@ -17,7 +17,7 @@ from server.schemas import (
     PluginUninstallResponse,
 )
 from server.services.audit import log_operation
-from server.store import state
+from server.app_store import state
 
 router = protected_router(prefix="/plugins", tags=["plugins"])
 
@@ -63,7 +63,7 @@ async def source_plugin_detail(
     plugin_id: str,
     _username: str = Depends(require_panel_auth),
 ) -> dict:
-    from server.store import get_store_manager
+    from server.app_store import get_store_manager
 
     return get_store_manager().get_plugin_detail(plugin_id)
 

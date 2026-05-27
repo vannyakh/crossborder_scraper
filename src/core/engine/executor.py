@@ -3,12 +3,11 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from loguru import logger
-
 from config import Settings
 from core.ai import AIExtractor, ScrapeAgent
 from core.cookies import CookieManager
 from core.engine.jobs import BatchReport, JobResult, JobStatus, ScrapeJob
+from core.engine.pipeline import PhaseEvent, run_scrape_pipeline
 from core.engine.pool import BrowserPool
 from core.proxy import ProxyPool
 from pipeline.storage import ProductStore
@@ -16,10 +15,10 @@ from pipeline.storage import ProductStore
 
 class ScrapeEngine:
     """
-    Concurrent scrape engine: multiple jobs, worker pool, proxy rotation, cookies, AI fallback.
+    Concurrent scrape engine: worker pool, proxy rotation, cookies, unified AI pipeline.
 
-    Uses asyncio for parallel browser jobs (recommended for Playwright).
-    CPU-bound AI calls run in a thread pool via asyncio.to_thread when needed.
+    Each job runs ``run_scrape_pipeline`` (resolve → fetch → parse → AI → agent) so
+    gateway tools and the panel agent see the same stage order and phase events.
     """
 
     def __init__(
@@ -27,6 +26,7 @@ class ScrapeEngine:
         settings: Settings | None = None,
         max_workers: int | None = None,
         on_job_complete: Callable[[JobResult], Any] | None = None,
+        on_job_phase: Callable[[str, PhaseEvent], Any] | None = None,
     ):
         self.settings = settings or Settings()
         self.settings.ensure_dirs()
@@ -47,14 +47,26 @@ class ScrapeEngine:
         self._semaphore = asyncio.Semaphore(self.max_workers)
         self._queue: asyncio.Queue[ScrapeJob | None] = asyncio.Queue()
         self._on_job_complete = on_job_complete
+        self._on_job_phase = on_job_phase
         self._running = False
+        self._pool_started = False
+
+    async def ensure_pool(self) -> None:
+        if not self._pool_started:
+            await self.pool.start()
+            self._pool_started = True
+
+    async def shutdown_pool(self) -> None:
+        if self._pool_started:
+            await self.pool.stop()
+            self._pool_started = False
 
     async def __aenter__(self) -> "ScrapeEngine":
-        await self.pool.start()
+        await self.ensure_pool()
         return self
 
     async def __aexit__(self, *args: Any) -> None:
-        await self.pool.stop()
+        await self.shutdown_pool()
 
     def _resolve_proxy(self, job: ScrapeJob, worker_id: int):
         if self.proxy_pool.size == 0:
@@ -63,80 +75,63 @@ class ScrapeEngine:
         index = job.proxy_index if job.proxy_index is not None else worker_id
         return self.proxy_pool.get(index, strategy)
 
+    def _phase_callback(self, job_id: str):
+        if not self._on_job_phase:
+            return None
+
+        def _cb(event: PhaseEvent) -> None:
+            self._on_job_phase(job_id, event)
+
+        return _cb
+
     async def run_job(self, job: ScrapeJob, worker_id: int = 0) -> JobResult:
-        """Execute a single scrape job."""
+        """Execute a single scrape job through the unified pipeline."""
         start = time.perf_counter()
         proxy = self._resolve_proxy(job, worker_id)
         proxy_label = proxy.server if proxy else None
-        use_ai = job.use_ai if job.use_ai is not None else self.settings.ai_enabled
-        ai_used = False
 
         async with self._semaphore:
-            try:
-                from sites.registry import get_scraper_for_url
+            await self.ensure_pool()
+            pipeline = await run_scrape_pipeline(
+                job,
+                settings=self.settings,
+                pool=self.pool,
+                ai=self.ai,
+                agent=self.agent,
+                worker_id=worker_id,
+                proxy=proxy,
+                on_phase=self._phase_callback(job.id),
+            )
 
-                scraper = get_scraper_for_url(job.url)
-                site_key = job.site_key or scraper.site_key
-                html = ""
+            duration = time.perf_counter() - start
+            phase_dicts = [p.to_dict() for p in pipeline.phases]
 
-                if getattr(scraper, "sandboxed", False):
-                    product = await scraper.scrape_product(job.url)
-                else:
-                    async with self.pool.page_session(
-                        site_key=site_key,
-                        worker_id=worker_id,
-                        proxy=proxy,
-                        session_id=job.session_id,
-                    ) as (page, _ctx):
-                        html = await scraper.fetch_page(page, job.url)
-                        product = await scraper.parse_html(job.url, html)
-
-                        if self.settings.output_dir:
-                            raw = scraper._save_raw_html(job.url, html)
-                            product.raw_html_path = str(raw)
-
-                # AI fallback when CSS parse is weak or forced
-                need_ai = use_ai and self.ai.enabled
-                if need_ai and html and (
-                    job.use_ai is True
-                    or (self.settings.ai_fallback and self.ai.is_parse_incomplete(product))
-                ):
-                    logger.info("[{}] AI extraction for {}", job.id, job.url)
-                    product = await self.ai.extract(
-                        html,
-                        job.url,
-                        scraper.platform,
-                        scraper.extract_product_id(job.url) or "unknown",
-                    )
-                    ai_used = True
-
-                if self.agent.enabled and (ai_used or use_ai):
-                    logger.info("[{}] AI agent validate/enrich for {}", job.id, job.url)
-                    product = await self.agent.validate_and_enrich(product)
-                    ai_used = True
-
-                duration = time.perf_counter() - start
-                result = JobResult(
-                    job_id=job.id,
-                    url=job.url,
-                    status=JobStatus.SUCCESS,
-                    product=product,
-                    duration_seconds=round(duration, 2),
-                    worker_id=worker_id,
-                    proxy_used=proxy_label,
-                    ai_used=ai_used,
-                )
-            except Exception as exc:
-                duration = time.perf_counter() - start
-                logger.error("[{}] Job failed: {} — {}", job.id, job.url, exc)
+            if pipeline.error or not pipeline.product:
                 result = JobResult(
                     job_id=job.id,
                     url=job.url,
                     status=JobStatus.FAILED,
-                    error=str(exc),
+                    error=pipeline.error or "Scrape produced no product",
                     duration_seconds=round(duration, 2),
                     worker_id=worker_id,
                     proxy_used=proxy_label,
+                    site_key=pipeline.site_key,
+                    phases=phase_dicts,
+                )
+            else:
+                result = JobResult(
+                    job_id=job.id,
+                    url=job.url,
+                    status=JobStatus.SUCCESS,
+                    product=pipeline.product,
+                    duration_seconds=round(duration, 2),
+                    worker_id=worker_id,
+                    proxy_used=proxy_label,
+                    site_key=pipeline.site_key,
+                    ai_used=pipeline.ai_used,
+                    ai_extract_used=pipeline.ai_extract_used,
+                    agent_used=pipeline.agent_used,
+                    phases=phase_dicts,
                 )
 
         if self._on_job_complete:
@@ -152,6 +147,7 @@ class ScrapeEngine:
     ) -> BatchReport:
         """Run many jobs concurrently with worker limit."""
         report = BatchReport(total=len(jobs))
+        store = ProductStore(self.settings) if save else None
 
         done_count = 0
         done_lock = asyncio.Lock()
@@ -160,8 +156,7 @@ class ScrapeEngine:
             nonlocal done_count
             worker_id = idx % self.max_workers
             result = await self.run_job(job, worker_id=worker_id)
-            if save and result.product:
-                store = ProductStore(self.settings)
+            if store and result.product:
                 store.save(result.product)
                 store.export_json_file(result.product)
             if progress:
@@ -170,9 +165,13 @@ class ScrapeEngine:
                     progress(done_count, len(jobs), result)
             return result
 
-        async with self:
+        try:
+            await self.ensure_pool()
             tasks = [_worker(job, i) for i, job in enumerate(jobs)]
             results = await asyncio.gather(*tasks, return_exceptions=True)
+        finally:
+            if not self._running:
+                await self.shutdown_pool()
 
         for r in results:
             if isinstance(r, Exception):
@@ -216,7 +215,7 @@ class ScrapeEngine:
 
     async def start_workers(self) -> None:
         """Start N async workers + browser pool (for streaming job submission)."""
-        await self.pool.start()
+        await self.ensure_pool()
         self._running = True
         self._worker_tasks = [
             asyncio.create_task(self.worker_loop(i)) for i in range(self.max_workers)
@@ -228,7 +227,7 @@ class ScrapeEngine:
             await self._queue.put(None)
         if hasattr(self, "_worker_tasks"):
             await asyncio.gather(*self._worker_tasks, return_exceptions=True)
-        await self.pool.stop()
+        await self.shutdown_pool()
 
     async def submit(self, job: ScrapeJob) -> None:
         await self._queue.put(job)

@@ -1,4 +1,4 @@
-"""Built-in scrape source specifications (sites + first-party plugins)."""
+"""Built-in scrape source specifications for first-party plugins."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ SOCIAL_CONTENT = ScrapeCapabilities(
     anti_bot_level="medium",
 )
 
-SITE_SPECS: dict[str, EcommerceScrapeSpec] = {
+PLUGIN_SPECS: dict[str, EcommerceScrapeSpec] = {
     "1688": EcommerceScrapeSpec(
         plugin_type="ecommerce_wholesale",
         market="b2b",
@@ -103,9 +103,6 @@ SITE_SPECS: dict[str, EcommerceScrapeSpec] = {
         capabilities=ECOMMERCE_RETAIL,
         notes="Public pages; embedded JSON extraction with browser fallback.",
     ),
-}
-
-PLUGIN_SPECS: dict[str, EcommerceScrapeSpec] = {
     "instagram": EcommerceScrapeSpec(
         plugin_type="social_content",
         market="social",
@@ -149,3 +146,6 @@ PLUGIN_SPECS: dict[str, EcommerceScrapeSpec] = {
         notes="Template for custom domains via config/plugins.yaml extra_domains.",
     ),
 }
+
+# Backward-compatible alias (legacy "sites" catalog)
+SITE_SPECS = {k: PLUGIN_SPECS[k] for k in ("1688", "taobao", "aliexpress")}

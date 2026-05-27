@@ -1,6 +1,6 @@
-"""Backward-compatible re-exports — prefer server.stores.service_logs."""
+"""Backward-compatible re-exports — prefer ``server.audit``."""
 
-from server.stores.service_logs import (
+from server.audit.service_logs import (
     LogCategory,
     append_service_log,
     clear_service_logs,

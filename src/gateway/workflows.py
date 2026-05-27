@@ -80,8 +80,13 @@ async def run_workflow(
                 "context": context,
             }
         result = outcome.get("result") or {}
-        if tool == "scrape_product" and result.get("product_id"):
-            context["product_id"] = result["product_id"]
+        if tool == "scrape_product":
+            if result.get("product_id"):
+                context["product_id"] = result["product_id"]
+            if result.get("phases"):
+                context["last_scrape_phases"] = result["phases"]
+            if result.get("pipeline"):
+                context["last_pipeline"] = result["pipeline"]
 
     return {
         "workflow": workflow_id,

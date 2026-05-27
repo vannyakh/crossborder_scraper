@@ -39,8 +39,8 @@ flowchart LR
 | Stage | n8n analogy | OpenClaw analogy | Implementation |
 |-------|-------------|------------------|----------------|
 | Trigger | Webhook / manual | User message | URL submit, CLI, agent tool |
-| Scrape | HTTP + browser node | Tool call | `ScrapeEngine`, `scrape_product` tool |
-| AI enrich | AI node | Agent skill | `AIExtractor`, `ScrapeAgent`, gateway agent |
+| Scrape | HTTP + browser node | Tool call | `run_scrape_pipeline` → `ScrapeEngine`, `scrape_product` tool |
+| AI enrich | AI node | Agent skill | `AIExtractor` (fallback), `ScrapeAgent` (enrich), gateway LLM agent |
 | Store | Database node | Workspace | `ProductStore` (SQLite + JSON) |
 | Export | Integration node | Tool | Marketplace exporters, `export_listing` tool |
 | Monitor | Execution log | Gateway status | SSE batches, `/gateway/status` |
@@ -54,8 +54,10 @@ src/
 │   ├── workflows.py      # Declarative pipelines
 │   ├── agent_runtime.py  # LLM + tool loop
 │   └── client.py         # HTTP client for CLI
-├── server/               # FastAPI gateway host
-│   ├── manager.py        # ScrapeManager singleton
+├── server/               # FastAPI gateway host (see server/README.md)
+│   ├── api/registry.py   # Route registration
+│   ├── services/facade.py # ScrapeManager for gateway/CLI
+│   ├── schemas/          # Pydantic models by domain
 │   └── routers/
 │       ├── gateway.py    # /gateway/* agent + workflows
 │       ├── jobs.py       # batches, SSE

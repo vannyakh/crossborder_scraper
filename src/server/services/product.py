@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from core.engine import JobResult, ScrapeEngine, ScrapeJob
+from core.engine import JobResult, ScrapeJob
 from server.services.context import AppContext, get_context
+from server.services.engine import get_engine_service
 
 
 class ProductService:
@@ -18,10 +19,9 @@ class ProductService:
         save: bool = True,
         session_id: str | None = None,
     ) -> tuple[JobResult, int | None]:
-        engine = ScrapeEngine(self._ctx.settings, max_workers=1)
+        engine = await get_engine_service().get_engine(max_workers=1)
         job = ScrapeJob(url=url, use_ai=use_ai, session_id=session_id)
-        async with engine:
-            result = await engine.run_job(job)
+        result = await engine.run_job(job)
         product_id: int | None = None
         if save and result.product:
             product_id = self._ctx.store.save(result.product)

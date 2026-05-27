@@ -5,7 +5,7 @@ from __future__ import annotations
 import socket
 from typing import Any
 
-from server.store.catalog import StorePluginDefinition
+from server.app_store.catalog import StorePluginDefinition
 
 
 def _tcp_reachable(host: str, port: int, timeout: float = 3.0) -> tuple[bool, str]:

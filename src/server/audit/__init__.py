@@ -1,6 +1,6 @@
-"""Persistent JSON stores (logs, schedules re-exported from gateway)."""
+"""Panel audit trail — operation, scrape run, and cron logs (JSONL on disk)."""
 
-from server.stores.service_logs import (
+from server.audit.service_logs import (
     LogCategory,
     append_service_log,
     clear_service_logs,

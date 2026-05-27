@@ -106,12 +106,21 @@ async def _scrape_product(
 ) -> dict[str, Any]:
     result, product_id = await manager.scrape_single(url, use_ai=use_ai, save=save)
     product = result.product
+    agent_meta = {}
+    if product and product.attributes:
+        agent_meta = product.attributes.get("ai_agent") or {}
     return {
         "status": result.status.value,
         "product_id": product_id,
         "title": product.title if product else None,
         "url": url,
+        "site_key": result.site_key,
         "ai_used": result.ai_used,
+        "ai_extract_used": result.ai_extract_used,
+        "agent_used": result.agent_used,
+        "agent_valid": agent_meta.get("valid"),
+        "phases": result.phases,
+        "pipeline": [p.get("phase") for p in result.phases],
         "error": result.error,
     }
 

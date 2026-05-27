@@ -56,6 +56,7 @@ class ConfigService:
                 marketplace_updates=marketplace_updates,
             )
             self._ctx.reload_settings()
+            self._ctx.schedule_engine_reset()
         return self.get_panel_config()
 
     def _normalize_ai_provider_updates(self, scalar: dict[str, Any]) -> dict[str, Any]:

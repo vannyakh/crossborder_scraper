@@ -11,8 +11,8 @@ from gateway.scheduler import get_scheduler
 from gateway.schedules_store import ensure_schedules_file
 from server.core.panel_bind import configure_panel_bind
 from server.services.audit import log_operation
-from server.store.state import ensure_store_state
-from server.stores.service_logs import ensure_logs_file
+from server.app_store.state import ensure_store_state
+from server.audit.service_logs import ensure_logs_file
 
 
 @asynccontextmanager

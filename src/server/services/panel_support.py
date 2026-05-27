@@ -10,7 +10,7 @@ from gateway.schedules_store import RUNS_PATH, SCHEDULES_PATH
 from server.core.panel_bind import get_panel_bind_info
 from server.services.gateway_service import get_gateway_service
 from server.services.runtime import get_service_runtime, get_stats
-from server.stores.service_logs import LOGS_PATH, count_service_logs, ensure_logs_file
+from server.audit.service_logs import LOGS_PATH, count_service_logs, ensure_logs_file
 
 
 def _support_links() -> list[dict[str, Any]]:

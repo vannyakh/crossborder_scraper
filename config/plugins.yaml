@@ -1,5 +1,11 @@
-# Source scrape plugins (built-in under src/plugins/)
+# Built-in source scrape plugins (src/plugins/)
 source_plugins:
+  1688:
+    enabled: true
+  taobao:
+    enabled: true
+  aliexpress:
+    enabled: true
   instagram:
     enabled: true
   tiktok:
@@ -17,8 +23,10 @@ security:
   max_plugin_py_bytes: 262144     # 256 KB per .py file
   scrape_timeout_seconds: 120
   allowed_archive_extensions: [".zip"]
-  # Built-in plugin IDs are trusted (src/plugins/) and skip AST sandbox
   trusted_builtin_ids:
+    - "1688"
+    - taobao
+    - aliexpress
     - instagram
     - tiktok
     - linkedin

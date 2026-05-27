@@ -46,7 +46,6 @@ packages = [
   "src/export",
   "src/pipeline",
   "src/server",
-  "src/sites",
   "src/plugins",
   "src/gateway",
   "src/deploy",

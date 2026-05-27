@@ -2,21 +2,27 @@ import re
 
 from core.base_scraper import BaseScraper
 from core.models import ScrapedProduct, SourcePlatform
+from core.plugins.base import SourcePluginManifest
+from core.plugins.builtin_specs import PLUGIN_SPECS
+
+MANIFEST = SourcePluginManifest(
+    id="taobao",
+    name="Taobao",
+    category="ecommerce",
+    description="Taobao / Tmall product scraper (login cookies recommended).",
+    version="1.0.0",
+    domains=("taobao.com", "tmall.com"),
+    tags=("ecommerce", "builtin", "playwright"),
+    scrape_spec=PLUGIN_SPECS["taobao"],
+)
 
 
 class TaobaoScraper(BaseScraper):
-    """
-    Scraper for https://www.taobao.com/ and tmall.com links.
-
-    Taobao uses strong anti-bot; prefer logged-in sessions and residential proxy.
-    """
-
     platform = SourcePlatform.TAOBAO
     site_key = "taobao"
-    base_domains = ("taobao.com", "tmall.com")
+    base_domains = MANIFEST.domains
 
     def extract_product_id(self, url: str) -> str | None:
-        # id=123456789 or /item.htm?id=...
         match = re.search(r"[?&]id=(\d+)", url)
         if match:
             return match.group(1)

@@ -8,8 +8,7 @@ Installable packages live here as **flat top-level names** (`server`, `core`, `c
 | `config` | Settings & credentials |
 | `core` | Scrape engine, shared models |
 | `core/plugins` | Source plugin framework (spec, sandbox, manager) |
-| `sites` | Built-in marketplace scrapers |
-| `plugins` | Built-in social/custom source plugins |
+| `plugins` | Built-in source plugins (1688, Taobao, social, custom, …) |
 | `pipeline` | Normalize + SQLite storage |
 | `export` | Marketplace exporters |
 | `gateway` | AI agent, tools, workflows |

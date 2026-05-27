@@ -2,22 +2,29 @@ import re
 
 from core.base_scraper import BaseScraper
 from core.models import ScrapedProduct, SourcePlatform
+from core.plugins.base import SourcePluginManifest
+from core.plugins.builtin_specs import PLUGIN_SPECS
+
+MANIFEST = SourcePluginManifest(
+    id="1688",
+    name="1688.com",
+    category="ecommerce",
+    description="B2B wholesale product scraper (Playwright + cookies).",
+    version="1.0.0",
+    domains=("1688.com",),
+    tags=("ecommerce", "builtin", "playwright"),
+    scrape_spec=PLUGIN_SPECS["1688"],
+)
 
 
 class Alibaba1688Scraper(BaseScraper):
-    """
-    Scraper for https://www.1688.com/
-
-    1688 is heavily JS-rendered and often requires login for full data.
-    Run `scraper login 1688` once to persist cookies.
-    """
+    """Scraper for https://www.1688.com/ — run `crossborder login 1688` for cookies."""
 
     platform = SourcePlatform.ALIBABA_1688
     site_key = "1688"
-    base_domains = ("1688.com",)
+    base_domains = MANIFEST.domains
 
     def extract_product_id(self, url: str) -> str | None:
-        # https://detail.1688.com/offer/1234567890.html
         match = re.search(r"/offer/(\d+)", url)
         return match.group(1) if match else None
 
@@ -64,7 +71,9 @@ class Alibaba1688Scraper(BaseScraper):
             [".mod-detail-desc", "#desc-lazyload-container", "[class*='description']"],
         )
 
-        seller = self.first_text(soup, [".company-name", "[class*='seller']", ".shop-company-name"])
+        seller = self.first_text(
+            soup, [".company-name", "[class*='seller']", ".shop-company-name"]
+        )
 
         return ScrapedProduct(
             source=self.platform,

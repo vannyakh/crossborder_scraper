@@ -5,7 +5,7 @@ Scrape **source plugins**: built-ins under `src/plugins/`, ZIP installs under `i
 | Module | Role |
 |--------|------|
 | `spec.py` | `EcommerceScrapeSpec`, capabilities, standard data fields |
-| `builtin_specs.py` | Predefined specs for sites + social plugins |
+| `builtin_specs.py` | Predefined scrape specs for built-in plugins |
 | `base.py` | `SourcePluginManifest`, `SocialPageScraper`, `CustomDomainScraper` |
 | `security.py` | Manifest validation, ZIP extract, AST policy |
 | `sandbox.py` | Load untrusted `plugin.py`, domain allowlist, timeout |

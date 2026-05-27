@@ -39,7 +39,11 @@ class JobResult(BaseModel):
     duration_seconds: float = 0.0
     worker_id: int | None = None
     proxy_used: str | None = None
+    site_key: str | None = None
     ai_used: bool = False
+    ai_extract_used: bool = False
+    agent_used: bool = False
+    phases: list[dict[str, Any]] = Field(default_factory=list)
     finished_at: datetime = Field(default_factory=datetime.utcnow)
 
 

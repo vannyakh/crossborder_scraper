@@ -18,6 +18,18 @@ class AppContext:
     def reload_settings(self) -> None:
         self.settings = get_settings()
 
+    def schedule_engine_reset(self) -> None:
+        """Drop warm browser pool after panel config changes (best-effort)."""
+        import asyncio
+
+        from server.services.engine import get_engine_service
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(get_engine_service().shutdown())
+        except RuntimeError:
+            pass
+
 
 def get_context() -> AppContext:
     global _context

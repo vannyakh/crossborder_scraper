@@ -16,18 +16,19 @@ crossborder_scraper/
 │   ├── config/                # Settings, credentials, ui_config I/O
 │   ├── core/                  # Engine, AI, models, paths
 │   │   └── plugins/           # Source plugin framework (spec, sandbox, manager)
-│   ├── sites/                 # 1688, Taobao, AliExpress scrapers
-│   ├── plugins/               # Built-in source plugins (social, custom)
+│   ├── plugins/               # Built-in source plugins (1688, Taobao, social, …)
 │   ├── pipeline/              # Normalize + SQLite product store
 │   ├── export/                # Shopee, Lazada, TikTok Shop, Shopify
 │   ├── gateway/               # Agent tools, workflows, scheduler
-│   └── server/                # FastAPI app
-│       ├── routers/           # HTTP + WebSocket routes
-│       ├── services/          # Business logic
-│       ├── store/             # Plugin **marketplace** (Docker services catalog)
-│       ├── stores/            # Service **audit logs** (not the marketplace)
-│       ├── core/              # Events, constants, panel bind
-│       └── infra/             # SPA static file serving
+│   └── server/                # FastAPI app (see server/README.md)
+│       ├── api/               # Route registration
+│       ├── routers/           # Thin HTTP + WebSocket handlers
+│       ├── services/          # Domain logic (product, batch, config, facade)
+│       ├── schemas/           # Pydantic models by domain
+│       ├── app_store/         # App Store — Docker infra plugins
+│       ├── audit/             # Service audit logs (JSONL)
+│       ├── core/              # Auth, events, constants, panel bind
+│       └── infra/             # SPA static + Vite dev proxy
 │
 ├── config/                    # Runtime YAML/JSON (not `src/config/`)
 │   ├── plugins.yaml
@@ -55,7 +56,8 @@ crossborder_scraper/
 |------|------------|
 | `config/` (root) | Files on disk: plugins.yaml, ui_config.json |
 | `src/config/` | Python package: `Settings`, `.env` loading |
-| `server/store/` | Plugin marketplace API + Docker install |
+| `server/app_store/` | Plugin marketplace API + Docker install (`/store` routes) |
+| `server/audit/` | Panel operation / run / cron logs |
 | `pipeline/storage.py` | Product SQLite (`ProductStore`) |
 | `data/store/` | Legacy panel metadata (migrated to `installed_plugins/`) |
 | App Store UI “Store” | Frontend page for plugin marketplace |

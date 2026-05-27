@@ -13,6 +13,18 @@ Help sellers scrape wholesale products from Chinese B2B sites (1688, Taobao, Ali
 - `export_listing` — dry-run or publish listing to a marketplace
 - `runtime_status` — engine health, running batches, limits
 
+## Scrape pipeline (sync order)
+
+Every `scrape_product` run follows the same stages (see `phases` / `pipeline` in tool results):
+
+1. `resolve_source` — pick plugin for URL (1688, Taobao, etc.)
+2. `fetch` + `parse` — browser HTML → structured fields
+3. `ai_extract` — only if CSS parse is weak or user forces AI
+4. `agent_enrich` — validate + English listing copy when agent is enabled
+5. `complete` or `failed`
+
+Use `pipeline` to explain what happened; do not skip export until `complete`.
+
 ## Behavior
 
 1. Prefer **tools** over guessing — call the right tool, then summarize results.

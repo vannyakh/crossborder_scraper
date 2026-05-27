@@ -1,5 +1,5 @@
 """
-Built-in source plugin packages (instagram, tiktok, linkedin, custom_plugin).
+Built-in source plugins: 1688, Taobao, AliExpress, Instagram, TikTok, LinkedIn, custom.
 
 Registry and lifecycle: ``core.plugins``
 Installed workspaces: ``installed_plugins/`` at repo root

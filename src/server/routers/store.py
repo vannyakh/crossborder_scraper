@@ -16,7 +16,7 @@ from server.schemas import (
     StorePluginDetailResponse,
 )
 from server.services.audit import log_operation
-from server.store import get_store_manager
+from server.app_store import get_store_manager
 
 router = protected_router(prefix="/store", tags=["store"])
 

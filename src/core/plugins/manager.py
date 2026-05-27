@@ -16,8 +16,7 @@ from core.paths import (
     plugins_config_path,
     repo_root,
 )
-from core.plugins.base import SourcePluginManifest, SourcePluginSpec
-from core.plugins.builtin_specs import SITE_SPECS
+from core.plugins.base import SourcePluginSpec
 from core.plugins.sandbox import SandboxedPluginLoader, SandboxedScraperAdapter
 from core.plugins.security import (
     InstalledPluginManifest,
@@ -167,16 +166,25 @@ class PluginManager:
         if self._builtin_cache is not None:
             return self._builtin_cache
 
+        from plugins.alibaba_1688 import MANIFEST as alibaba_manifest
+        from plugins.alibaba_1688 import Alibaba1688Scraper
+        from plugins.aliexpress import MANIFEST as aliexpress_manifest
+        from plugins.aliexpress import AliExpressScraper
         from plugins.custom_plugin import MANIFEST as custom_manifest
         from plugins.custom_plugin import CustomPluginScraper
         from plugins.instagram import MANIFEST as instagram_manifest
         from plugins.instagram import InstagramScraper
         from plugins.linkedin import MANIFEST as linkedin_manifest
         from plugins.linkedin import LinkedInScraper
+        from plugins.taobao import MANIFEST as taobao_manifest
+        from plugins.taobao import TaobaoScraper
         from plugins.tiktok import MANIFEST as tiktok_manifest
         from plugins.tiktok import TikTokScraper
 
         self._builtin_cache = [
+            SourcePluginSpec(alibaba_manifest, Alibaba1688Scraper),
+            SourcePluginSpec(taobao_manifest, TaobaoScraper),
+            SourcePluginSpec(aliexpress_manifest, AliExpressScraper),
             SourcePluginSpec(instagram_manifest, InstagramScraper),
             SourcePluginSpec(tiktok_manifest, TikTokScraper),
             SourcePluginSpec(linkedin_manifest, LinkedInScraper),
@@ -215,38 +223,8 @@ class PluginManager:
     def all_domains(self, spec: SourcePluginSpec) -> tuple[str, ...]:
         return (*spec.manifest.domains, *self.extra_domains(spec.id))
 
-    def _site_catalog_entries(self) -> list[dict[str, Any]]:
-        """Built-in e-commerce site scrapers (1688 / Taobao / AliExpress)."""
-        sites = [
-            ("1688", "1688.com", ("1688.com",)),
-            ("taobao", "Taobao", ("taobao.com",)),
-            ("aliexpress", "AliExpress", ("aliexpress.com", "aliexpress.us")),
-        ]
-        rows: list[dict[str, Any]] = []
-        for site_id, name, domains in sites:
-            scrape_spec = SITE_SPECS.get(site_id)
-            manifest = SourcePluginManifest(
-                id=site_id,
-                name=name,
-                category="ecommerce",
-                description=scrape_spec.notes if scrape_spec else f"{name} product scraper",
-                version="1.0.0",
-                domains=domains,
-                tags=("ecommerce", "builtin", "playwright"),
-                scrape_spec=scrape_spec,
-            )
-            rows.append(
-                manifest.to_catalog_dict(
-                    enabled=True,
-                    installed=True,
-                    kind="site",
-                    status="running",
-                )
-            )
-        return rows
-
     def list_scrape_specifications(self) -> list[dict[str, Any]]:
-        """Full scrape plugin specs for online catalog (sites + plugins)."""
+        """Full scrape plugin specs for online catalog."""
         installed = set(self.load_installed_state().get("plugins") or {})
         seen: set[str] = set()
         items: list[dict[str, Any]] = []
@@ -260,11 +238,13 @@ class PluginManager:
 
     def list_source_catalog(self, *, installed_ids: set[str] | None = None) -> list[dict[str, Any]]:
         installed = installed_ids or set()
-        items: list[dict[str, Any]] = list(self._site_catalog_entries())
+        items: list[dict[str, Any]] = []
 
         for spec in self.list_specs():
             enabled = self.is_enabled(spec.id)
-            is_installed = spec.id in installed
+            is_installed = (
+                spec.id in self.security_policy.trusted_builtin_ids or spec.id in installed
+            )
             row = spec.manifest.to_catalog_dict(enabled=enabled, installed=is_installed)
             row["domains"] = list(self.all_domains(spec))
             row["trusted"] = True
@@ -313,6 +293,29 @@ class PluginManager:
                 return spec.adapter  # type: ignore[return-value]
 
         return None
+
+    def get_scraper_by_site(self, site: str) -> BaseScraper:
+        site_key = site.strip().lower()
+        for spec in self.list_specs():
+            if not self.is_enabled(spec.id):
+                continue
+            if spec.scraper_cls.platform.value == site_key or spec.id == site_key:
+                return spec.scraper_cls()
+        for spec in self.list_installed_specs():
+            if not self.is_enabled(spec.id):
+                continue
+            adapter = spec.adapter
+            if adapter.platform.value == site_key or spec.id == site_key:
+                return adapter  # type: ignore[return-value]
+        raise ValueError(f"No enabled source plugin for site: {site}")
+
+    def require_scraper_for_url(self, url: str) -> BaseScraper:
+        scraper = self.get_scraper_for_url(url)
+        if scraper is not None:
+            return scraper
+        enabled_ids = {spec.id for spec in self.list_specs() if self.is_enabled(spec.id)}
+        labels = ", ".join(sorted(enabled_ids))
+        raise ValueError(f"URL not supported. Enabled source plugins: {labels}")
 
     def supported_labels(self) -> list[str]:
         labels = [spec.manifest.name for spec in self.list_specs() if self.is_enabled(spec.id)]
@@ -383,6 +386,14 @@ def enabled_scraper_classes() -> list[type[BaseScraper]]:
 
 def get_scraper_for_url(url: str) -> BaseScraper | None:
     return get_plugin_manager().get_scraper_for_url(url)
+
+
+def require_scraper_for_url(url: str) -> BaseScraper:
+    return get_plugin_manager().require_scraper_for_url(url)
+
+
+def get_scraper_by_site(site: str) -> BaseScraper:
+    return get_plugin_manager().get_scraper_by_site(site)
 
 
 def supported_source_labels() -> list[str]:

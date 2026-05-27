@@ -1,10 +1,5 @@
-from fastapi import APIRouter, Depends
+"""Backward-compatible re-exports — prefer ``server.core.deps``."""
 
-from server.auth import require_panel_auth
+from server.core.deps import protected_router
 
-
-def protected_router(*args, **kwargs) -> APIRouter:
-    """APIRouter that requires panel HTTP Basic auth on all routes."""
-    deps = list(kwargs.pop("dependencies", []))
-    deps.append(Depends(require_panel_auth))
-    return APIRouter(*args, dependencies=deps, **kwargs)
+__all__ = ["protected_router"]

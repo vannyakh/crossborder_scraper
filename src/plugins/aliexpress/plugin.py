@@ -3,18 +3,25 @@ import re
 
 from core.base_scraper import BaseScraper
 from core.models import ScrapedProduct, SourcePlatform
+from core.plugins.base import SourcePluginManifest
+from core.plugins.builtin_specs import PLUGIN_SPECS
+
+MANIFEST = SourcePluginManifest(
+    id="aliexpress",
+    name="AliExpress",
+    category="ecommerce",
+    description="AliExpress product scraper (embedded JSON + browser fallback).",
+    version="1.0.0",
+    domains=("aliexpress.com", "aliexpress.us"),
+    tags=("ecommerce", "builtin", "playwright"),
+    scrape_spec=PLUGIN_SPECS["aliexpress"],
+)
 
 
 class AliExpressScraper(BaseScraper):
-    """
-    Scraper for https://www.aliexpress.com/
-
-    AliExpress often embeds product JSON in script tags — we try that first.
-    """
-
     platform = SourcePlatform.ALIEXPRESS
     site_key = "aliexpress"
-    base_domains = ("aliexpress.com", "aliexpress.us")
+    base_domains = MANIFEST.domains
 
     def extract_product_id(self, url: str) -> str | None:
         match = re.search(r"/item/(\d+)\.html", url)
@@ -39,8 +46,9 @@ class AliExpressScraper(BaseScraper):
             ["h1[data-pl='product-title']", "h1", "[class*='title--']"],
         ) or f"AliExpress Product {product_id}"
 
-        price_selectors = ["[class*='price--']", "[class*='uniform-banner-box-price']"]
-        price_text = self.first_text(soup, price_selectors)
+        price_text = self.first_text(
+            soup, ["[class*='price--']", "[class*='uniform-banner-box-price']"]
+        )
         images = self.collect_images(
             soup,
             ["[class*='slider--'] img", "img[src*='alicdn']"],
@@ -58,17 +66,12 @@ class AliExpressScraper(BaseScraper):
         )
 
     def _extract_embedded_json(self, html: str) -> dict | None:
-        patterns = [
-            r"window\.runParams\s*=\s*(\{.+?\});",
-            r'"subject"\s*:\s*"([^"]+)"',
-        ]
-        for pattern in patterns[:1]:
-            match = re.search(pattern, html, re.DOTALL)
-            if match:
-                try:
-                    return json.loads(match.group(1))
-                except json.JSONDecodeError:
-                    pass
+        match = re.search(r"window\.runParams\s*=\s*(\{.+?\});", html, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                pass
         return None
 
     def _from_embedded(self, url: str, product_id: str, data: dict) -> ScrapedProduct:

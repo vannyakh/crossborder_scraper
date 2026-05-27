@@ -9,7 +9,7 @@ from typing import Any
 
 from config import get_settings
 from core.plugins import get_plugin_manager
-from server.store.catalog import InstallMode, StorePluginStatus
+from server.app_store.catalog import InstallMode, StorePluginStatus
 
 
 def _now_iso() -> str:

@@ -11,6 +11,8 @@ from server.routers import (
     products,
     realtime,
     runtime,
+    service,
+    store,
     system,
 )
 
@@ -27,5 +29,7 @@ __all__ = [
     "products",
     "realtime",
     "runtime",
+    "service",
+    "store",
     "system",
 ]

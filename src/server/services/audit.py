@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from server.stores.service_logs import LogCategory, append_service_log
+from server.audit.service_logs import LogCategory, append_service_log
 
 
 def log_operation(
