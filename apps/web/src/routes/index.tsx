@@ -3,6 +3,7 @@ import { isRoadmapFeatureId, roadmapPath } from '../components/roadmap/roadmap-s
 import { AppShell } from '../components/layout/AppShell'
 import { AgentPage } from '../pages/AgentPage'
 import { ArtifactPage } from '../pages/ArtifactPage'
+import { DatabasesPage } from '../pages/DatabasesPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { HealthPage } from '../pages/HealthPage'
 import { MonitorPage } from '../pages/MonitorPage'
@@ -90,6 +91,8 @@ const router = createBrowserRouter(
             { path: 'files', element: <RedirectPreserveSearch to="/artifact/files" /> },
             { path: 'monitor', element: <MonitorPage /> },
             { path: 'store', element: <StorePage /> },
+            { path: 'databases', element: <Navigate to="/databases/mysql" replace /> },
+            { path: 'databases/:section', element: <DatabasesPage /> },
             { path: 'logs', element: <LogsPage /> },
             { path: 'health', element: <HealthPage /> },
             { path: 'support', element: <SupportPage /> },

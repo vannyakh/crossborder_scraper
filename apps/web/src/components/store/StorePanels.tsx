@@ -13,7 +13,6 @@ import {
 import type { StoreCatalogItem, StoreInstalled } from '../../lib/api'
 import { StoreCatalogCard } from './StoreCatalogCard'
 import { StoreCatalogListRow } from './StoreCatalogListRow'
-import { StoreEnvironmentBar } from './StoreEnvironmentBar'
 import { StorePluginSettingsDrawer } from './StorePluginSettingsDrawer'
 import { StoreFilterBar } from './StoreFilterBar'
 import { StoreInstalledList } from './StoreInstalledList'
@@ -92,9 +91,6 @@ export function StorePanels() {
           </Text>
         </SectionCard>
       ) : null}
-
-      <StoreEnvironmentBar env={env.data} dockerReady={dockerReady} />
-
 
       <StorePluginSettingsDrawer
         pluginId={settingsPluginId}

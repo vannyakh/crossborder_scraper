@@ -19,7 +19,9 @@ import { Monitor, Moon, SlidersHorizontal, Sun, X } from 'lucide-react'
 import { useState } from 'react'
 import { fieldStyles } from '../ui/field-styles'
 import { useThemeActions } from '../../hooks/use-theme-actions'
+import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette, useUiConfig } from '../../hooks/use-ui-config'
+import { LocaleSelector } from '../locale/LocaleSelector'
 import {
   motionSpeedOptions,
   pageTransitionOptions,
@@ -30,23 +32,22 @@ import {
   type PageTransitionStyle,
   type RadiusScale,
 } from '../../theme/config'
-import { THEME_COLOR_PRESETS, THEME_STYLE_OPTIONS } from '../../theme/panel-appearance'
+import { THEME_COLOR_PRESETS } from '../../theme/panel-appearance'
 import { useUiStore } from '../../stores/ui-store'
 
 type DrawerTab = 'theme' | 'layout' | 'motion'
 
-const DRAWER_TAB_ITEMS: { value: DrawerTab; label: string }[] = [
-  { value: 'theme', label: 'Theme' },
-  { value: 'layout', label: 'Layout' },
-  { value: 'motion', label: 'Motion' },
-]
-
 const THEME_DRAWER_ATTR = 'data-theme-settings-drawer'
 const bodyPortalRef = { current: typeof document !== 'undefined' ? document.body : null }
 
-const THEME_STYLE_HINT = 'Select the interface theme; Auto follows your system preference.'
-const THEME_COLOR_HINT =
-  'Preset accent colors or pick a custom hex value for the panel tone.'
+function useDrawerTabItems() {
+  const { t } = useLocale()
+  return [
+    { value: 'theme' as const, label: t('theme.tabs.theme') },
+    { value: 'layout' as const, label: t('theme.tabs.layout') },
+    { value: 'motion' as const, label: t('theme.tabs.motion') },
+  ]
+}
 
 function keepPickerOpenInsideThemeDrawer(event: { preventDefault: () => void; target?: EventTarget | null }) {
   const target = event.target
@@ -55,21 +56,21 @@ function keepPickerOpenInsideThemeDrawer(event: { preventDefault: () => void; ta
   }
 }
 
-const radiusOptions: { value: RadiusScale; label: string }[] = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
+const radiusOptions = (t: ReturnType<typeof useLocale>['t']): { value: RadiusScale; label: string }[] => [
+  { value: 'sm', label: t('theme.layout.small') },
+  { value: 'md', label: t('theme.layout.medium') },
+  { value: 'lg', label: t('theme.layout.large') },
 ]
 
-const fontOptions: { value: FontScale; label: string }[] = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
+const fontOptions = (t: ReturnType<typeof useLocale>['t']): { value: FontScale; label: string }[] => [
+  { value: 'sm', label: t('theme.layout.small') },
+  { value: 'md', label: t('theme.layout.medium') },
+  { value: 'lg', label: t('theme.layout.large') },
 ]
 
-const densityOptions: { value: Density; label: string }[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'comfortable', label: 'Comfortable' },
+const densityOptions = (t: ReturnType<typeof useLocale>['t']): { value: Density; label: string }[] => [
+  { value: 'compact', label: t('theme.layout.compact') },
+  { value: 'comfortable', label: t('theme.layout.comfortable') },
 ]
 
 function DrawerField({
@@ -177,6 +178,7 @@ function DrawerCustomColorPicker({
   active: boolean
   onChange: (hex: string) => void
 }) {
+  const { t } = useLocale()
   const [pickerOpen, setPickerOpen] = useState(false)
 
   return (
@@ -201,7 +203,7 @@ function DrawerCustomColorPicker({
           <button
             type="button"
             className={`theme-pick-card theme-pick-card--drawer theme-pick-card--custom${active ? ' is-active' : ''}`}
-            aria-label="Custom color"
+            aria-label={t('theme.color.customAria')}
             aria-pressed={active}
           >
             {active ? <span className="theme-pick-card__dot" aria-hidden /> : null}
@@ -214,7 +216,7 @@ function DrawerCustomColorPicker({
                 borderColor="border.subtle"
               />
             </div>
-            <div className="theme-pick-card__label">Custom</div>
+            <div className="theme-pick-card__label">{t('theme.color.custom')}</div>
           </button>
         </ColorPicker.Trigger>
       </ColorPicker.Control>
@@ -231,7 +233,7 @@ function DrawerCustomColorPicker({
           >
             <ColorPicker.Area />
             <HStack mt={3} gap={2} align="center">
-              <ColorPicker.EyeDropper size="xs" variant="outline" aria-label="Pick color from screen" />
+              <ColorPicker.EyeDropper size="xs" variant="outline" aria-label={t('theme.color.pickScreenAria')} />
               <ColorPicker.Sliders flex="1" />
             </HStack>
           </ColorPicker.Content>
@@ -242,6 +244,7 @@ function DrawerCustomColorPicker({
 }
 
 function DrawerThemeTab() {
+  const { t } = useLocale()
   const { mode, setMode } = useUiConfig()
   const {
     activeAccentHex,
@@ -251,11 +254,17 @@ function DrawerThemeTab() {
     resetAccentColor,
   } = useThemeActions()
 
+  const themeStyleOptions = [
+    { value: 'system' as const, label: t('theme.style.system') },
+    { value: 'light' as const, label: t('theme.style.light') },
+    { value: 'dark' as const, label: t('theme.style.dark') },
+  ]
+
   return (
     <VStack align="stretch" gap={4}>
-      <DrawerField label="Theme style" hint={THEME_STYLE_HINT}>
+      <DrawerField label={t('theme.style.label')} hint={t('theme.style.hint')}>
         <Box className="theme-pick-group theme-pick-group--drawer">
-          {THEME_STYLE_OPTIONS.map((opt) => (
+          {themeStyleOptions.map((opt) => (
             <ThemePickCard
               key={opt.value}
               active={mode === opt.value}
@@ -276,7 +285,7 @@ function DrawerThemeTab() {
 
       <Separator borderColor="border.subtle" />
 
-      <DrawerField label="Theme color" hint={THEME_COLOR_HINT}>
+      <DrawerField label={t('theme.color.label')} hint={t('theme.color.hint')}>
         <Box className="theme-pick-group theme-pick-group--drawer">
           {THEME_COLOR_PRESETS.map((preset) => (
             <ThemePickCard
@@ -297,7 +306,7 @@ function DrawerThemeTab() {
         <HStack mt={3} gap={2} flexWrap="wrap" align="flex-end">
           <Field.Root maxW="140px" flex="1" minW="120px">
             <Field.Label fontSize="xs" color="fg.muted">
-              Custom hex
+              {t('theme.color.customHex')}
             </Field.Label>
             <Input
               {...fieldStyles}
@@ -323,31 +332,29 @@ function DrawerThemeTab() {
 }
 
 function DrawerLayoutTab() {
+  const { t } = useLocale()
   const { config, accentPalette, setConfig } = useUiConfig()
 
   return (
     <VStack align="stretch" gap={4}>
       <OptionRow
-        label="Corner radius"
-        hint="Rounds corners on panels, inputs, and cards."
+        label={t('theme.layout.radius')}
         value={config.radius}
-        options={radiusOptions}
+        options={radiusOptions(t)}
         accentPalette={accentPalette}
         onChange={(radius) => setConfig({ radius })}
       />
       <OptionRow
-        label="Font size"
-        hint="Base text size across the app."
+        label={t('theme.layout.font')}
         value={config.fontScale}
-        options={fontOptions}
+        options={fontOptions(t)}
         accentPalette={accentPalette}
         onChange={(fontScale) => setConfig({ fontScale })}
       />
       <OptionRow
-        label="Density"
-        hint="Tighter or roomier spacing in lists and forms."
+        label={t('theme.layout.density')}
         value={config.density}
-        options={densityOptions}
+        options={densityOptions(t)}
         accentPalette={accentPalette}
         onChange={(density) => setConfig({ density })}
       />
@@ -356,14 +363,15 @@ function DrawerLayoutTab() {
 }
 
 function DrawerMotionTab() {
+  const { t } = useLocale()
   const { config, accentPalette, setConfig } = useUiConfig()
 
   return (
     <VStack align="stretch" gap={4}>
-      <DrawerField label="Page transitions" hint="Animate when navigating between pages.">
+      <DrawerField label={t('theme.motion.pageTransitions')} hint={t('theme.motion.pageTransitionsHint')}>
         <HStack justify="space-between" py={0.5}>
           <Text fontSize="sm" color="fg.muted">
-            {config.pageTransitions ? 'Enabled' : 'Disabled'}
+            {config.pageTransitions ? t('theme.motion.on') : t('theme.motion.off')}
           </Text>
           <Switch.Root
             checked={config.pageTransitions}
@@ -378,7 +386,7 @@ function DrawerMotionTab() {
 
       {config.pageTransitions ? (
         <OptionRow
-          label="Transition style"
+          label={t('theme.motion.style')}
           value={config.pageTransition === 'none' ? 'fade' : config.pageTransition}
           options={pageTransitionOptions.filter((o) => o.value !== 'none')}
           accentPalette={accentPalette}
@@ -389,17 +397,17 @@ function DrawerMotionTab() {
       ) : null}
 
       <OptionRow
-        label="Animation speed"
+        label={t('theme.motion.speed')}
         value={config.motionSpeed}
         options={motionSpeedOptions}
         accentPalette={accentPalette}
         onChange={(motionSpeed) => setConfig({ motionSpeed: motionSpeed as MotionSpeed })}
       />
 
-      <DrawerField label="Reduce motion" hint="Minimize animations site-wide.">
+      <DrawerField label={t('theme.motion.reducedMotion')} hint={t('theme.motion.reducedMotionHint')}>
         <HStack justify="space-between" py={0.5}>
           <Text fontSize="sm" color="fg.muted">
-            {config.reducedMotion ? 'On' : 'Off'}
+            {config.reducedMotion ? t('theme.motion.on') : t('theme.motion.off')}
           </Text>
           <Switch.Root
             checked={config.reducedMotion}
@@ -416,6 +424,8 @@ function DrawerMotionTab() {
 }
 
 function DrawerPanel() {
+  const { t } = useLocale()
+  const drawerTabItems = useDrawerTabItems()
   const { mode, config, accentPalette, resetConfig } = useUiConfig()
   const { activeAccentHex } = useThemeActions()
   const setOpen = useUiStore((s) => s.setSettingsDrawerOpen)
@@ -444,17 +454,17 @@ function DrawerPanel() {
           flexShrink={0}
         >
           <Drawer.CloseTrigger asChild position="absolute" top={3} right={3} zIndex={1}>
-            <IconButton aria-label="Close settings" size="sm" variant="ghost" borderRadius="var(--radius-input)">
+            <IconButton aria-label={t('theme.closeAria')} size="sm" variant="ghost" borderRadius="var(--radius-input)">
               <X size={18} />
             </IconButton>
           </Drawer.CloseTrigger>
 
           <Box className="theme-drawer-header">
             <Drawer.Title fontSize="md" fontWeight="semibold" lineHeight="short">
-              Theme & UI
+              {t('theme.drawerTitle')}
             </Drawer.Title>
             <Text fontSize="xs" color="fg.subtle" lineHeight="short">
-              Quick theme and layout — same values as Panel appearance settings.
+              {t('theme.drawerSubtitle')}
             </Text>
           </Box>
 
@@ -467,7 +477,7 @@ function DrawerPanel() {
             w="full"
           >
             <SegmentGroup.Indicator />
-            <SegmentGroup.Items items={DRAWER_TAB_ITEMS} />
+            <SegmentGroup.Items items={drawerTabItems} />
           </SegmentGroup.Root>
         </Drawer.Header>
 
@@ -478,8 +488,14 @@ function DrawerPanel() {
 
         <Separator borderColor="border.subtle" my={5} />
 
+        <DrawerField label={t('locale.label')} hint={t('locale.hint')}>
+          <LocaleSelector />
+        </DrawerField>
+
+        <Separator borderColor="border.subtle" my={5} />
+
         <Text fontSize="xs" color="fg.subtle" mb={2}>
-          Current
+          {t('theme.current')}
         </Text>
         <Box
           p={2.5}
@@ -503,7 +519,7 @@ function DrawerPanel() {
           mt={3}
           onClick={resetConfig}
         >
-          Reset to defaults
+          {t('theme.resetDefaults')}
         </Button>
         </Drawer.Body>
       </Box>
@@ -515,7 +531,7 @@ function DrawerPanel() {
           borderRadius="var(--radius-input)"
           onClick={() => setOpen(false)}
         >
-          Done
+          {t('theme.done')}
         </Button>
       </Drawer.Footer>
     </Drawer.Content>
@@ -539,12 +555,13 @@ export function ThemeSettingsDrawer() {
 }
 
 export function ThemeSettingsButton() {
+  const { t } = useLocale()
   const setOpen = useUiStore((s) => s.setSettingsDrawerOpen)
   const accentPalette = useAccentPalette()
 
   return (
     <IconButton
-      aria-label="Theme and UI settings"
+      aria-label={t('theme.settingsAria')}
       size="sm"
       variant="ghost"
       colorPalette={accentPalette}

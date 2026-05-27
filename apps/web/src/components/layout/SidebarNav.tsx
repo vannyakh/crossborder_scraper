@@ -1,6 +1,7 @@
 import { VStack } from '@chakra-ui/react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { navEntries, isPathActive } from '../../config/nav'
+import { isPathActive } from '../../config/nav'
+import { useNavEntries } from '../../hooks/use-nav-entries'
 import { formatScrapeBadge } from '../../config/scrape-panel'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
 import { SidebarNavGroup } from './SidebarNavGroup'
@@ -23,6 +24,7 @@ function resolveBadge(
 export function SidebarNav({ collapsed, onNavigate }: SidebarNavProps) {
   const location = useLocation()
   const { data: stats } = useStatsQuery()
+  const navEntries = useNavEntries()
 
   return (
     <VStack align="stretch" gap={0.5} flex={1} w="full">

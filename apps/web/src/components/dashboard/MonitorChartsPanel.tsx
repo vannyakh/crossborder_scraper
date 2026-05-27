@@ -119,11 +119,7 @@ export function WorkloadChart({
   samples: ActivitySample[]
   loading?: boolean
 }) {
-  if (loading) return <ChartPanelSkeleton title="Workload" />
   const theme = useChartTheme()
-  const latest = samples[samples.length - 1]
-  const period = formatSamplePeriod(samples)
-  const range = formatPeriodRange(samples)
   const activeValues = samples.map((s) => s.active)
   const runningValues = samples.map((s) => s.running)
 
@@ -137,6 +133,12 @@ export function WorkloadChart({
       ],
     })
   }, [samples, theme, activeValues, runningValues])
+
+  if (loading) return <ChartPanelSkeleton title="Workload" />
+
+  const latest = samples[samples.length - 1]
+  const period = formatSamplePeriod(samples)
+  const range = formatPeriodRange(samples)
 
   return (
     <TrendChartCard
@@ -181,11 +183,7 @@ export function HardwareTrendChart({
   samples: HardwareSample[]
   loading?: boolean
 }) {
-  if (loading) return <ChartPanelSkeleton title="Hardware trend" />
   const theme = useChartTheme()
-  const latest = samples[samples.length - 1]
-  const period = formatSamplePeriod(samples)
-  const range = formatPeriodRange(samples)
   const cpuValues = samples.map((s) => s.cpu)
   const memValues = samples.map((s) => s.memory)
   const diskValues = samples.map((s) => s.disk)
@@ -202,6 +200,12 @@ export function HardwareTrendChart({
       ],
     })
   }, [samples, theme, cpuValues, memValues, diskValues])
+
+  if (loading) return <ChartPanelSkeleton title="Hardware trend" />
+
+  const latest = samples[samples.length - 1]
+  const period = formatSamplePeriod(samples)
+  const range = formatPeriodRange(samples)
 
   return (
     <TrendChartCard

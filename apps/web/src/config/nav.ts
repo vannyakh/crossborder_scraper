@@ -1,8 +1,9 @@
-import { Bot, Home, Settings, Wrench, type LucideIcon } from 'lucide-react'
+import { Bot, Database, Home, Play, Settings, Wrench, type LucideIcon } from 'lucide-react'
 import { AGENT_NAV, agentSectionPath } from '../components/agent/agent-sections'
 import { SETTINGS_NAV, settingsSectionPath } from '../components/settings/settings-sections'
-import { SCRAPE_PANEL_NAV, type ScrapeNavBadgeKey } from './scrape-panel'
+import { SCRAPE_PANEL_ITEMS, type ScrapeNavBadgeKey } from './scrape-panel'
 import { OPERATIONS_TOOL_NAV } from './software-tools'
+import type { TranslateFn } from '../locale/types'
 
 export type NavLinkItem = {
   kind: 'link'
@@ -41,57 +42,121 @@ export type NavSectionItem = {
 
 export type NavEntry = NavLinkItem | NavGroupItem | NavSectionItem
 
-const agentNavChildren: NavChildLink[] = AGENT_NAV.map((item) => ({
-  to: agentSectionPath(item.id),
-  label: item.label,
-  description: item.description,
-}))
+const AGENT_LABEL_KEYS: Record<(typeof AGENT_NAV)[number]['id'], { label: string; description: string }> = {
+  chat: { label: 'nav.agentChat', description: 'nav.agentChatDesc' },
+  telegram: { label: 'nav.telegram', description: 'nav.telegramDesc' },
+  schedules: { label: 'nav.schedules', description: 'nav.schedulesDesc' },
+  runs: { label: 'nav.runHistory', description: 'nav.runHistoryDesc' },
+  workflows: { label: 'nav.workflows', description: 'nav.workflowsDesc' },
+  tools: { label: 'nav.toolCatalog', description: 'nav.toolCatalogDesc' },
+  skills: { label: 'nav.skills', description: 'nav.skillsDesc' },
+}
 
-const settingsNavChildren: NavChildLink[] = SETTINGS_NAV.map((item) => ({
-  to: settingsSectionPath(item.id),
-  label: item.label,
-  description: item.description,
-}))
+const SETTINGS_LABEL_KEYS: Record<(typeof SETTINGS_NAV)[number]['id'], { label: string; description: string }> = {
+  panel: { label: 'nav.panelTheme', description: 'nav.panelThemeDesc' },
+  network: { label: 'nav.networkFirewall', description: 'nav.networkFirewallDesc' },
+  ai: { label: 'nav.aiLlm', description: 'nav.aiLlmDesc' },
+  scrape: { label: 'nav.scrapeEngine', description: 'nav.scrapeEngineDesc' },
+  proxy: { label: 'nav.proxy', description: 'nav.proxyDesc' },
+  pricing: { label: 'nav.pricing', description: 'nav.pricingDesc' },
+  marketplaces: { label: 'nav.marketplaces', description: 'nav.marketplacesDesc' },
+}
 
-const scrapeNav = SCRAPE_PANEL_NAV.group
+const SCRAPE_LABEL_KEYS = {
+  batchQueue: { label: 'nav.batchQueue', description: 'nav.batchQueueDesc' },
+  productCatalog: { label: 'nav.productCatalog', description: 'nav.productCatalogDesc' },
+  exportFiles: { label: 'nav.exportFiles', description: 'nav.exportFilesDesc' },
+} as const
 
-export const navEntries: NavEntry[] = [
-  { kind: 'link', to: '/', label: 'Overview', icon: Home, end: true },
-  { kind: 'section', id: 'scrape-panel', label: SCRAPE_PANEL_NAV.sectionLabel },
-  {
-    kind: 'group',
-    id: scrapeNav.id,
-    label: scrapeNav.label,
-    icon: scrapeNav.icon,
-    description: scrapeNav.description,
-    children: [...scrapeNav.items],
-  },
-  { kind: 'section', id: 'panel-tools', label: 'Panel' },
-  {
-    kind: 'group',
-    id: 'tools',
-    label: 'Tools',
-    icon: Wrench,
-    children: [...OPERATIONS_TOOL_NAV],
-  },
-  {
-    kind: 'group',
-    id: 'agent',
-    label: 'Agent',
-    icon: Bot,
-    children: agentNavChildren,
-  },
-  {
-    kind: 'group',
-    id: 'settings',
-    label: 'Settings',
-    icon: Settings,
-    children: settingsNavChildren,
-  },
-]
+const OPERATIONS_LABEL_KEYS: Record<(typeof OPERATIONS_TOOL_NAV)[number]['to'], string> = {
+  '/monitor': 'nav.liveMonitor',
+  '/store': 'nav.appStore',
+  '/logs': 'nav.logs',
+  '/health': 'nav.health',
+  '/support': 'nav.support',
+}
 
-/** @deprecated use navEntries */
-export const navItems = navEntries
+export function buildNavEntries(t: TranslateFn): NavEntry[] {
+  const agentNavChildren: NavChildLink[] = AGENT_NAV.map((item) => {
+    const keys = AGENT_LABEL_KEYS[item.id]
+    return {
+      to: agentSectionPath(item.id),
+      label: t(keys.label),
+      description: t(keys.description),
+    }
+  })
+
+  const settingsNavChildren: NavChildLink[] = SETTINGS_NAV.map((item) => {
+    const keys = SETTINGS_LABEL_KEYS[item.id]
+    return {
+      to: settingsSectionPath(item.id),
+      label: t(keys.label),
+      description: t(keys.description),
+    }
+  })
+
+  const scrapeChildren: NavChildLink[] = SCRAPE_PANEL_ITEMS.map((item, index) => {
+    const key =
+      index === 0
+        ? SCRAPE_LABEL_KEYS.batchQueue
+        : index === 1
+          ? SCRAPE_LABEL_KEYS.productCatalog
+          : SCRAPE_LABEL_KEYS.exportFiles
+    return {
+      to: item.to,
+      label: t(key.label),
+      description: t(key.description),
+      badgeKey: item.badgeKey,
+      ...('end' in item ? { end: item.end } : {}),
+    }
+  })
+
+  const operationsChildren: NavChildLink[] = OPERATIONS_TOOL_NAV.map((item) => ({
+    to: item.to,
+    label: t(OPERATIONS_LABEL_KEYS[item.to]),
+  }))
+
+  return [
+    { kind: 'link', to: '/', label: t('nav.overview'), icon: Home, end: true },
+    { kind: 'section', id: 'scrape-panel', label: t('nav.scrapePanel') },
+    {
+      kind: 'group',
+      id: 'scrape',
+      label: t('nav.scrape'),
+      icon: Play,
+      description: t('nav.scrapeDesc'),
+      children: scrapeChildren,
+    },
+    { kind: 'section', id: 'panel-tools', label: t('nav.panel') },
+    {
+      kind: 'link',
+      to: '/databases',
+      label: t('nav.databases'),
+      icon: Database,
+    },
+    {
+      kind: 'group',
+      id: 'tools',
+      label: t('nav.tools'),
+      icon: Wrench,
+      children: operationsChildren,
+    },
+    {
+      kind: 'group',
+      id: 'agent',
+      label: t('nav.agent'),
+      icon: Bot,
+      children: agentNavChildren,
+    },
+    {
+      kind: 'group',
+      id: 'settings',
+      label: t('nav.settings'),
+      icon: Settings,
+      children: settingsNavChildren,
+    },
+  ]
+}
 
 export function isPathActive(pathname: string, to: string, end?: boolean): boolean {
   if (end || to === '/') {
