@@ -263,6 +263,57 @@ export function useUpdateTelegramChannelMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayTelegram })
       void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannels })
+    },
+  })
+}
+
+export function useIntegrateChannelQuery(channelId: string) {
+  return useQuery({
+    queryKey: queryKeys.gatewayChannel(channelId),
+    queryFn: () =>
+      api<import('../../lib/api').IntegrateChannelDetail>(`/gateway/channels/${channelId}`),
+    staleTime: 30_000,
+  })
+}
+
+export function useUpdateIntegrateChannelMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      channelId,
+      updates,
+    }: {
+      channelId: string
+      updates: Record<string, unknown>
+    }) =>
+      api<import('../../lib/api').IntegrateChannelDetail>(`/gateway/channels/${channelId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ updates }),
+      }),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannel(variables.channelId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannels })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
+      if (variables.channelId === 'telegram') {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayTelegram })
+      }
+    },
+  })
+}
+
+export function useReloadIntegrateChannelMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (channelId: string) =>
+      api<{ ok: boolean; channel_id: string; runtime_active: boolean; message?: string }>(
+        `/gateway/channels/${channelId}/reload`,
+        { method: 'POST' },
+      ),
+    onSuccess: (_data, channelId) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannel(channelId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannels })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
     },
   })
 }

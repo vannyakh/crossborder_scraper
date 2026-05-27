@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Navigate, useParams } from 'react-router-dom'
 import { AgentToolsPanel, AgentWorkflowsPanel } from '../components/agent/AgentAutomationPanels'
 import { AgentSkillsPanel } from '../components/agent/AgentSkillsPanel'
-import { AgentTelegramPanel } from '../components/agent/AgentTelegramPanel'
 import { AgentChatPanel } from '../components/agent/AgentChatPanel'
 import { AgentRunsPanel } from '../components/agent/AgentRunsPanel'
 import { AgentSchedulesPanel } from '../components/agent/AgentSchedulesPanel'
@@ -21,8 +20,6 @@ function AgentSectionContent({ section }: { section: AgentSectionId }) {
   switch (section) {
     case 'chat':
       return <AgentChatPanel />
-    case 'telegram':
-      return <AgentTelegramPanel />
     case 'schedules':
       return <AgentSchedulesPanel />
     case 'runs':

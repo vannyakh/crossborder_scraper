@@ -32,9 +32,11 @@ async def panel_lifespan(_app: FastAPI):
 
     ensure_schedules_file()
     get_scheduler().start()
-    from gateway.telegram.lifecycle import start_telegram_bot, stop_telegram_bot
+    from gateway.channels.lifecycle import start_all_channels, stop_all_channels
 
-    await start_telegram_bot()
+    await start_all_channels()
     yield
-    await stop_telegram_bot()
+    from gateway.channels.lifecycle import stop_all_channels
+
+    await stop_all_channels()
     await get_scheduler().stop()

@@ -186,14 +186,14 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           icon: 'agent',
           title: 'Telegram bot',
           description: 'Control chat channel wired to the Crossborder gateway agent.',
-          to: '/agent/telegram',
+          to: '/integrate/telegram',
           status: stats.gateway?.telegram?.enabled
             ? 'Live'
             : stats.gateway?.telegram?.configured
               ? 'Ready'
               : 'Setup',
           statusTone: stats.gateway?.telegram?.enabled ? 'success' : 'neutral',
-          primaryAction: { label: 'Telegram', to: '/agent/telegram' },
+          primaryAction: { label: 'Telegram', to: '/integrate/telegram' },
         }),
         card({
           id: 'agent',

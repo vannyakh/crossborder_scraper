@@ -25,6 +25,8 @@ export const queryKeys = {
   gatewayTools: ['gateway', 'tools'] as const,
   gatewayWorkflows: ['gateway', 'workflows'] as const,
   gatewayTelegram: ['gateway', 'telegram'] as const,
+  gatewayChannel: (channelId: string) => ['gateway', 'channels', channelId] as const,
+  gatewayChannels: ['gateway', 'channels'] as const,
   agentSchedules: ['gateway', 'schedules'] as const,
   agentRuns: ['gateway', 'runs'] as const,
   serviceOverview: ['service', 'overview'] as const,

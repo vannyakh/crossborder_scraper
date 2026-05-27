@@ -25,6 +25,15 @@ export const km: MessageTree = {
     agentChatDesc: 'សession gateway ផ្ទាល់សម្រាប់ការរហ័ស',
     telegram: 'Telegram',
     telegramDesc: 'ជជែកបញ្ជាបូត — agent gateway ដូចគ្នា',
+    integrate: 'Integrate',
+    integrateDesc: 'ភ្ជាប់ channel ទៅ gateway agent',
+    discord: 'Discord',
+    discordDesc: 'Bot guild — បញ្ជា gateway agent',
+    slack: 'Slack',
+    slackDesc: 'Workspace app — បញ្ជា gateway agent',
+    email: 'Email',
+    emailDesc: 'Mailbox inbound — trigger workflow agent',
+    comingSoon: 'ឆាប់ៗ',
     schedules: 'កាលវិភាគ',
     schedulesDesc: 'តារាង cron — បន្ថែម រត់រង្វង់ លើម៉ាស៊ីន',
     runHistory: 'ប្រវត្តិរត់',
@@ -163,5 +172,9 @@ export const km: MessageTree = {
       pathLabel: 'File path',
       hint: 'Scraper writes catalog and batch history here. Back up before major upgrades.',
     },
+  },
+  integrate: {
+    comingSoonBlurb:
+      'Channel integration នេះមិនទាន់មានទេ។ កំណត់ Telegram ឥឡូវ — channel ផ្សេងទៀតនឹងមកឆាប់ៗ។',
   },
 }

@@ -112,6 +112,49 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "list_integrate_channels",
+        "description": (
+            "List integrate messaging channels (Telegram, Discord, Slack, Email) "
+            "with configured/enabled/runtime status."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "configure_integrate_channel",
+        "description": (
+            "Update credentials or options for an integrate channel. "
+            "Use channel_id telegram, discord, slack, or email."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "string",
+                    "enum": ["telegram", "discord", "slack", "email"],
+                },
+                "updates": {
+                    "type": "object",
+                    "description": "Channel fields to merge (enabled, bot_token, control_chat_ids, …)",
+                },
+            },
+            "required": ["channel_id", "updates"],
+        },
+    },
+    {
+        "name": "reload_integrate_channel",
+        "description": "Restart the live runner for an integrate channel (Telegram when enabled).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "string",
+                    "enum": ["telegram", "discord", "slack", "email"],
+                },
+            },
+            "required": ["channel_id"],
+        },
+    },
 ]
 
 
@@ -127,6 +170,9 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "network_access_status": _network_access_status,
         "apply_panel_firewall": _apply_panel_firewall,
         "setup_network_access": _setup_network_access,
+        "list_integrate_channels": _list_integrate_channels,
+        "configure_integrate_channel": _configure_integrate_channel,
+        "reload_integrate_channel": _reload_integrate_channel,
     }
     handler = handlers.get(name)
     if not handler:
@@ -255,6 +301,34 @@ async def _setup_network_access(
         enable_ufw=enable_ufw,
         username="gateway-agent",
     )
+
+
+async def _list_integrate_channels(_manager: Any) -> dict[str, Any]:
+    from gateway.channels.setup import channel_status
+
+    return channel_status()
+
+
+async def _configure_integrate_channel(
+    _manager: Any,
+    *,
+    channel_id: str,
+    updates: dict[str, Any],
+) -> dict[str, Any]:
+    from gateway.channels.setup import configure_channel
+
+    detail = configure_channel(channel_id.strip(), updates or {})
+    if channel_id.strip() == "telegram":
+        from gateway.channels.lifecycle import reload_channel
+
+        await reload_channel("telegram")
+    return detail
+
+
+async def _reload_integrate_channel(_manager: Any, *, channel_id: str) -> dict[str, Any]:
+    from gateway.channels.lifecycle import reload_channel
+
+    return await reload_channel(channel_id.strip())
 
 
 def tools_for_llm(*, allow_names: set[str] | None = None) -> list[dict[str, Any]]:

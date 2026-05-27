@@ -4,7 +4,6 @@ import {
   History,
   Layers,
   MessageSquare,
-  Send,
   Sparkles,
   Wrench,
   type LucideIcon,
@@ -12,7 +11,6 @@ import {
 
 export type AgentSectionId =
   | 'chat'
-  | 'telegram'
   | 'schedules'
   | 'runs'
   | 'workflows'
@@ -41,13 +39,6 @@ export const AGENT_NAV: AgentNavItem[] = [
     label: 'Chat',
     description: 'Direct gateway chat session for quick interventions',
     icon: MessageSquare,
-    group: 'channel',
-  },
-  {
-    id: 'telegram',
-    label: 'Telegram',
-    description: 'Bot control chat — same gateway agent via Telegram',
-    icon: Send,
     group: 'channel',
   },
   {

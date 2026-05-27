@@ -1,10 +1,16 @@
-import { Bot, Database, Home, Play, Settings, Wrench, type LucideIcon } from 'lucide-react'
+import { Bot, Database, Home, Play, Plug, Settings, Wrench, type LucideIcon } from 'lucide-react'
 import {
   AGENT_NAV,
   agentSectionPath,
   isAgentSectionId,
   type AgentSectionId,
 } from '../components/agent/agent-sections'
+import {
+  INTEGRATE_CHANNELS,
+  integrateSectionPath,
+  isIntegrateChannelId,
+  type IntegrateChannelId,
+} from '../components/integrate/integrate-sections'
 import {
   isArtifactSectionId,
   type ArtifactSectionId,
@@ -30,12 +36,18 @@ export type BreadcrumbCrumb = {
 
 const AGENT_LABEL_KEYS: Record<AgentSectionId, string> = {
   chat: 'nav.agentChat',
-  telegram: 'nav.telegram',
   schedules: 'nav.schedules',
   runs: 'nav.runHistory',
   workflows: 'nav.workflows',
   tools: 'nav.toolCatalog',
   skills: 'nav.skills',
+}
+
+const INTEGRATE_LABEL_KEYS: Record<IntegrateChannelId, string> = {
+  telegram: 'nav.telegram',
+  discord: 'nav.discord',
+  slack: 'nav.slack',
+  email: 'nav.email',
 }
 
 const SETTINGS_LABEL_KEYS: Record<(typeof SETTINGS_NAV)[number]['id'], string> = {
@@ -100,6 +112,17 @@ export function buildBreadcrumbTrail(pathname: string, t: TranslateFn): Breadcru
     return crumbs
   }
 
+  if (pathname.startsWith('/integrate')) {
+    crumbs.push({ label: t('nav.integrate'), to: integrateSectionPath('telegram'), icon: Plug })
+    const channel = pathname.split('/')[2]
+    if (channel && isIntegrateChannelId(channel)) {
+      crumbs.push({ label: t(INTEGRATE_LABEL_KEYS[channel]) })
+    } else {
+      crumbs.push({ label: t(INTEGRATE_LABEL_KEYS.telegram) })
+    }
+    return crumbs
+  }
+
   if (pathname.startsWith('/agent')) {
     crumbs.push({ label: t('nav.agent'), to: agentSectionPath('chat'), icon: Bot })
     const section = pathname.split('/')[2]
@@ -147,6 +170,13 @@ export function buildBreadcrumbTrail(pathname: string, t: TranslateFn): Breadcru
   if (operationsKey) {
     crumbs.push({ label: t('nav.tools'), to: '/monitor', icon: Wrench })
     crumbs.push({ label: t(operationsKey) })
+    return crumbs
+  }
+
+  const integrateFallback = INTEGRATE_CHANNELS.find((item) => pathname === integrateSectionPath(item.id))
+  if (integrateFallback) {
+    crumbs.push({ label: t('nav.integrate'), icon: Plug })
+    crumbs.push({ label: t(INTEGRATE_LABEL_KEYS[integrateFallback.id]) })
     return crumbs
   }
 

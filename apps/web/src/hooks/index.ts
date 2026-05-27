@@ -37,6 +37,9 @@ export {
   useRunScheduleNowMutation,
   useRunWorkflowMutation,
   useTelegramChannelQuery,
+  useIntegrateChannelQuery,
+  useUpdateIntegrateChannelMutation,
+  useReloadIntegrateChannelMutation,
   useUpdateScheduleMutation,
   useUpdateTelegramChannelMutation,
 } from './queries/use-agent-query'

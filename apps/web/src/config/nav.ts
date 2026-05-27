@@ -1,5 +1,6 @@
-import { Bot, Database, Home, Play, Settings, Wrench, type LucideIcon } from 'lucide-react'
+import { Bot, Database, Home, Plug, Play, Settings, Wrench, type LucideIcon } from 'lucide-react'
 import { AGENT_NAV, agentSectionPath } from '../components/agent/agent-sections'
+import { INTEGRATE_CHANNELS, integrateSectionPath } from '../components/integrate/integrate-sections'
 import { SETTINGS_NAV, settingsSectionPath } from '../components/settings/settings-sections'
 import { SCRAPE_PANEL_ITEMS, type ScrapeNavBadgeKey } from './scrape-panel'
 import { OPERATIONS_TOOL_NAV } from './software-tools'
@@ -44,12 +45,18 @@ export type NavEntry = NavLinkItem | NavGroupItem | NavSectionItem
 
 const AGENT_LABEL_KEYS: Record<(typeof AGENT_NAV)[number]['id'], { label: string; description: string }> = {
   chat: { label: 'nav.agentChat', description: 'nav.agentChatDesc' },
-  telegram: { label: 'nav.telegram', description: 'nav.telegramDesc' },
   schedules: { label: 'nav.schedules', description: 'nav.schedulesDesc' },
   runs: { label: 'nav.runHistory', description: 'nav.runHistoryDesc' },
   workflows: { label: 'nav.workflows', description: 'nav.workflowsDesc' },
   tools: { label: 'nav.toolCatalog', description: 'nav.toolCatalogDesc' },
   skills: { label: 'nav.skills', description: 'nav.skillsDesc' },
+}
+
+const INTEGRATE_LABEL_KEYS: Record<(typeof INTEGRATE_CHANNELS)[number]['id'], { label: string; description: string }> = {
+  telegram: { label: 'nav.telegram', description: 'nav.telegramDesc' },
+  discord: { label: 'nav.discord', description: 'nav.discordDesc' },
+  slack: { label: 'nav.slack', description: 'nav.slackDesc' },
+  email: { label: 'nav.email', description: 'nav.emailDesc' },
 }
 
 const SETTINGS_LABEL_KEYS: Record<(typeof SETTINGS_NAV)[number]['id'], { label: string; description: string }> = {
@@ -113,6 +120,15 @@ export function buildNavEntries(t: TranslateFn): NavEntry[] {
     label: t(OPERATIONS_LABEL_KEYS[item.to]),
   }))
 
+  const integrateChildren: NavChildLink[] = INTEGRATE_CHANNELS.map((item) => {
+    const keys = INTEGRATE_LABEL_KEYS[item.id]
+    return {
+      to: integrateSectionPath(item.id),
+      label: t(keys.label),
+      description: t(keys.description),
+    }
+  })
+
   return [
     { kind: 'link', to: '/', label: t('nav.overview'), icon: Home, end: true },
     { kind: 'section', id: 'scrape-panel', label: t('nav.scrapePanel') },
@@ -144,6 +160,14 @@ export function buildNavEntries(t: TranslateFn): NavEntry[] {
       label: t('nav.agent'),
       icon: Bot,
       children: agentNavChildren,
+    },
+    {
+      kind: 'group',
+      id: 'integrate',
+      label: t('nav.integrate'),
+      icon: Plug,
+      description: t('nav.integrateDesc'),
+      children: integrateChildren,
     },
     {
       kind: 'group',

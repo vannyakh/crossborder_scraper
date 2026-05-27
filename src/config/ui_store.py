@@ -299,6 +299,7 @@ def save_panel_config(
     scalar_updates: dict[str, Any] | None = None,
     marketplace_updates: dict[str, Any] | None = None,
     telegram_updates: dict[str, Any] | None = None,
+    integrate_channel_updates: tuple[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     raw = load_panel_raw()
     if scalar_updates:
@@ -343,6 +344,17 @@ def save_panel_config(
         from config.telegram_store import merge_telegram_updates
 
         raw["telegram"] = merge_telegram_updates(raw.get("telegram") or {}, telegram_updates)
+    if integrate_channel_updates:
+        channel_id, updates = integrate_channel_updates
+        from config.integrate_channels_store import merge_channel_updates, normalize_channel
+
+        block = raw.get("integrate_channels")
+        if not isinstance(block, dict):
+            block = {}
+        current = block.get(channel_id) or {}
+        block[channel_id] = merge_channel_updates(channel_id, current, updates)
+        raw["integrate_channels"] = block
+        normalize_channel(channel_id, block[channel_id])
     _write_panel_raw(raw)
     return load_ui_config()
 

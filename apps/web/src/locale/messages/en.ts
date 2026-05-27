@@ -25,6 +25,15 @@ export const en: MessageTree = {
     agentChatDesc: 'Direct gateway chat session for quick interventions',
     telegram: 'Telegram',
     telegramDesc: 'Bot control chat — same gateway agent via Telegram',
+    integrate: 'Integrate',
+    integrateDesc: 'Connect messaging channels to the gateway agent',
+    discord: 'Discord',
+    discordDesc: 'Guild bot channel for gateway agent commands',
+    slack: 'Slack',
+    slackDesc: 'Workspace app channel for gateway agent commands',
+    email: 'Email',
+    emailDesc: 'Inbound mailbox triggers for gateway agent workflows',
+    comingSoon: 'Soon',
     schedules: 'Schedules',
     schedulesDesc: 'Cron job table — add tasks, execute cycle, run on server',
     runHistory: 'Run history',
@@ -163,5 +172,9 @@ export const en: MessageTree = {
       pathLabel: 'File path',
       hint: 'The scraper writes product catalog and batch history here. Back up this file before major upgrades.',
     },
+  },
+  integrate: {
+    comingSoonBlurb:
+      'This channel integration is not available yet. Configure Telegram today; more channels ship in upcoming releases.',
   },
 }

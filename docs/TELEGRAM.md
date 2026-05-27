@@ -47,7 +47,7 @@ The bot starts automatically when `telegram.enabled` is true and a token is set.
 
 ## Web UI
 
-Open **Gateway Agent → Telegram** (`/ui/agent/telegram`) to enable the bot, set the token, allowed chat IDs, prompt, and save. The dashboard **Automation** section also links here.
+Open **Integrate → Telegram** (`/ui/integrate/telegram`) to enable the bot, set the token, allowed chat IDs, prompt, and save. The dashboard **Automation** section also links here.
 
 ## API
 

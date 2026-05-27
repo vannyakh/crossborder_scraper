@@ -12,6 +12,10 @@ from server.schemas import (
     AgentScheduleUpdate,
     GatewayAgentRequest,
     GatewayAgentResponse,
+    IntegrateChannelDetailResponse,
+    IntegrateChannelListResponse,
+    IntegrateChannelReloadResponse,
+    IntegrateChannelUpdateRequest,
     GatewayPromptListResponse,
     GatewaySkillEnableRequest,
     GatewaySkillInfo,
@@ -78,10 +82,49 @@ async def update_telegram_channel(body: TelegramChannelUpdate) -> TelegramChanne
     svc = get_gateway_service()
     payload = body.model_dump(exclude_unset=True)
     data = svc.update_telegram_config(payload)
-    from gateway.telegram.lifecycle import reload_telegram_bot
-
-    await reload_telegram_bot()
+    await svc.reload_integrate_channel("telegram")
     return TelegramChannelConfig(**data)
+
+
+@router.get("/channels", response_model=IntegrateChannelListResponse)
+async def list_integrate_channels() -> IntegrateChannelListResponse:
+    data = get_gateway_service().list_integrate_channels()
+    return IntegrateChannelListResponse(**data)
+
+
+@router.get("/channels/{channel_id}", response_model=IntegrateChannelDetailResponse)
+async def get_integrate_channel(channel_id: str) -> IntegrateChannelDetailResponse:
+    svc = get_gateway_service()
+    try:
+        data = svc.get_integrate_channel(channel_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return IntegrateChannelDetailResponse(**data)
+
+
+@router.patch("/channels/{channel_id}", response_model=IntegrateChannelDetailResponse)
+async def update_integrate_channel(
+    channel_id: str,
+    body: IntegrateChannelUpdateRequest,
+) -> IntegrateChannelDetailResponse:
+    svc = get_gateway_service()
+    try:
+        data = svc.update_integrate_channel(channel_id, body.updates)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await svc.reload_integrate_channel(channel_id)
+    return IntegrateChannelDetailResponse(**data)
+
+
+@router.post("/channels/{channel_id}/reload", response_model=IntegrateChannelReloadResponse)
+async def reload_integrate_channel(channel_id: str) -> IntegrateChannelReloadResponse:
+    svc = get_gateway_service()
+    result = await svc.reload_integrate_channel(channel_id)
+    return IntegrateChannelReloadResponse(**result)
 
 
 @router.get("/tools", response_model=GatewayToolListResponse)

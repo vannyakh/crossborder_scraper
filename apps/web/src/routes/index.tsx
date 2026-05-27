@@ -6,6 +6,7 @@ import { ArtifactPage } from '../pages/ArtifactPage'
 import { DatabasesPage } from '../pages/DatabasesPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { HealthPage } from '../pages/HealthPage'
+import { IntegratePage } from '../pages/IntegratePage'
 import { MonitorPage } from '../pages/MonitorPage'
 import { LogsPage } from '../pages/LogsPage'
 import { LoginPage } from '../pages/LoginPage'
@@ -97,7 +98,9 @@ const router = createBrowserRouter(
             { path: 'health', element: <HealthPage /> },
             { path: 'support', element: <SupportPage /> },
             { path: 'roadmap/:feature', element: <RoadmapPage /> },
+            { path: 'agent/telegram', element: <Navigate to="/integrate/telegram" replace /> },
             { path: 'agent/:section?', element: <AgentPage /> },
+            { path: 'integrate/:section?', element: <IntegratePage /> },
             { path: 'service/:section', element: <ServiceSectionLegacyRedirect /> },
             { path: 'service', element: <Navigate to="/" replace /> },
             { path: 'settings/service', element: <Navigate to="/health" replace /> },

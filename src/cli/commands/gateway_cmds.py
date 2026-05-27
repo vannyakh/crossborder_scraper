@@ -15,6 +15,12 @@ prompts_app = typer.Typer(help="Gateway agent role prompts")
 channels_app = typer.Typer(help="Control-plane messaging channels (Telegram, …)")
 
 
+async def _reload_local_telegram() -> None:
+    from gateway.channels.lifecycle import reload_channel
+
+    await reload_channel("telegram")
+
+
 def register_gateway_commands(app: typer.Typer) -> None:
     app.add_typer(skills_app, name="skills")
     app.add_typer(prompts_app, name="prompts")
@@ -223,6 +229,122 @@ def register_gateway_commands(app: typer.Typer) -> None:
                 "yes" if row.get("recommended") else "",
             )
         console.print(table)
+
+    @channels_app.command("list")
+    def channels_list(
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Read config locally"),
+    ) -> None:
+        """List integrate channel status (Telegram, Discord, Slack, Email)."""
+        if local:
+            from gateway.channels.setup import list_channels
+
+            items = list_channels()
+        else:
+            try:
+                data = gateway_client(url)._request("GET", "/gateway/channels")
+                items = data.get("items") or []
+            except RuntimeError as exc:
+                exit_gateway_error(exc)
+
+        table = Table(title="Integrate channels")
+        table.add_column("ID")
+        table.add_column("Runner")
+        table.add_column("Configured")
+        table.add_column("Enabled")
+        table.add_column("Live")
+        for row in items:
+            table.add_row(
+                str(row.get("id")),
+                str(row.get("runner")),
+                "yes" if row.get("configured") else "no",
+                "yes" if row.get("enabled") else "no",
+                "yes" if row.get("runtime_active") else "no",
+            )
+        console.print(table)
+
+    @channels_app.command("show")
+    def channels_show(
+        channel_id: str = typer.Argument(..., help="telegram | discord | slack | email"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Read config locally"),
+    ) -> None:
+        """Show integrate channel setup detail."""
+        if local:
+            from gateway.channels.setup import get_channel
+
+            data = get_channel(channel_id)
+        else:
+            try:
+                data = gateway_client(url)._request("GET", f"/gateway/channels/{channel_id}")
+            except RuntimeError as exc:
+                exit_gateway_error(exc)
+        console.print(json.dumps(data, indent=2))
+
+    @channels_app.command("configure")
+    def channels_configure(
+        channel_id: str = typer.Argument(..., help="telegram | discord | slack | email"),
+        enable: bool | None = typer.Option(None, "--enable/--disable", help="Toggle enabled"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Write config/ui_config.json locally"),
+        updates_json: str | None = typer.Option(
+            None,
+            "--json",
+            help='JSON object of field updates, e.g. \'{"bot_token":"..."}\'',
+        ),
+    ) -> None:
+        """Configure integrate channel credentials and options."""
+        updates: dict[str, Any] = {}
+        if enable is not None:
+            updates["enabled"] = enable
+        if updates_json:
+            try:
+                parsed = json.loads(updates_json)
+            except json.JSONDecodeError as exc:
+                raise typer.BadParameter(str(exc)) from exc
+            if not isinstance(parsed, dict):
+                raise typer.BadParameter("--json must be an object")
+            updates.update(parsed)
+        if not updates:
+            raise typer.BadParameter("Pass --enable/--disable and/or --json with updates")
+
+        if local:
+            from gateway.channels.setup import configure_channel
+
+            detail = configure_channel(channel_id, updates)
+            console.print(json.dumps(detail, indent=2))
+            if channel_id == "telegram":
+                run_async(_reload_local_telegram())
+            return
+        try:
+            data = gateway_client(url)._request(
+                "PATCH",
+                f"/gateway/channels/{channel_id}",
+                body={"updates": updates},
+            )
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print(json.dumps(data, indent=2))
+
+    @channels_app.command("reload")
+    def channels_reload(
+        channel_id: str = typer.Argument(..., help="telegram | discord | slack | email"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Reload local Telegram runner"),
+    ) -> None:
+        """Reload an integrate channel runner."""
+        if local:
+            if channel_id != "telegram":
+                console.print("[yellow]Only Telegram has a local runner today.[/yellow]")
+                return
+            run_async(_reload_local_telegram())
+            console.print("[green]Telegram runner reloaded[/green]")
+            return
+        try:
+            data = gateway_client(url)._request("POST", f"/gateway/channels/{channel_id}/reload")
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print(json.dumps(data, indent=2))
 
     @channels_app.command("telegram")
     def channels_telegram(

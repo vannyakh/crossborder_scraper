@@ -429,6 +429,30 @@ export type TelegramChannelUpdate = {
   max_reply_chars?: number
 }
 
+export type IntegrateChannelField = {
+  key: string
+  type: string
+  label: string
+  placeholder?: string
+  helper?: string
+}
+
+export type IntegrateChannelSummary = {
+  id: string
+  label: string
+  description: string
+  runner: 'live' | 'stored'
+  configured: boolean
+  enabled: boolean
+  runtime_active: boolean
+}
+
+export type IntegrateChannelDetail = IntegrateChannelSummary & {
+  setup_steps: string[]
+  fields: IntegrateChannelField[]
+  config: Record<string, unknown>
+}
+
 export type GatewayStatus = {
   service: string
   version: string

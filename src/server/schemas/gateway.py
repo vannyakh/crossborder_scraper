@@ -231,6 +231,48 @@ class TelegramChannelUpdate(BaseModel):
     max_reply_chars: int | None = Field(default=None, ge=500, le=8000)
 
 
+class IntegrateChannelField(BaseModel):
+    key: str
+    type: str
+    label: str
+    placeholder: str = ""
+    helper: str = ""
+
+
+class IntegrateChannelSummary(BaseModel):
+    id: str
+    label: str
+    description: str = ""
+    runner: Literal["live", "stored"] = "stored"
+    configured: bool = False
+    enabled: bool = False
+    runtime_active: bool = False
+
+
+class IntegrateChannelListResponse(BaseModel):
+    items: list[IntegrateChannelSummary]
+    total: int
+
+
+class IntegrateChannelDetailResponse(IntegrateChannelSummary):
+    setup_steps: list[str] = Field(default_factory=list)
+    fields: list[IntegrateChannelField] = Field(default_factory=list)
+    config: dict[str, Any] = Field(default_factory=dict)
+
+
+class IntegrateChannelUpdateRequest(BaseModel):
+    updates: dict[str, Any] = Field(default_factory=dict)
+
+
+class IntegrateChannelReloadResponse(BaseModel):
+    ok: bool = True
+    channel_id: str
+    runtime_active: bool = False
+    message: str = ""
+    configured: bool = False
+    enabled: bool = False
+
+
 class GatewayStatusResponse(BaseModel):
     service: str
     version: str

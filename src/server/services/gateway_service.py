@@ -65,13 +65,39 @@ class GatewayService:
         return dict(panel_config_for_api(mask_secrets=True).get("telegram") or {})
 
     def update_telegram_config(self, updates: dict[str, Any]) -> dict[str, Any]:
-        from config.ui_store import save_panel_config
+        from gateway.channels.setup import configure_channel
 
-        save_panel_config(telegram_updates=updates)
+        configure_channel("telegram", updates)
         from server.services.context import get_context
 
         get_context().reload_settings()
         return self.get_telegram_config()
+
+    def list_integrate_channels(self) -> dict[str, Any]:
+        from gateway.channels.setup import list_channels
+
+        items = list_channels()
+        return {"items": items, "total": len(items)}
+
+    def get_integrate_channel(self, channel_id: str) -> dict[str, Any]:
+        from gateway.channels.setup import get_channel
+
+        return get_channel(channel_id)
+
+    def update_integrate_channel(self, channel_id: str, updates: dict[str, Any]) -> dict[str, Any]:
+        from gateway.channels.setup import configure_channel
+
+        detail = configure_channel(channel_id, updates)
+        if channel_id == "telegram":
+            from server.services.context import get_context
+
+            get_context().reload_settings()
+        return detail
+
+    async def reload_integrate_channel(self, channel_id: str) -> dict[str, Any]:
+        from gateway.channels.setup import reload_channel
+
+        return await reload_channel(channel_id)
 
     def list_tools(self) -> list[dict[str, Any]]:
         return TOOL_DEFINITIONS
