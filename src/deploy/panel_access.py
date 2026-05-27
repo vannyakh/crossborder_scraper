@@ -36,20 +36,28 @@ def _print_compact_urls(info: PanelAccessInfo) -> None:
 def _print_quick_start(info: PanelAccessInfo, *, mode: str) -> None:
     from core.paths import ui_is_built
 
-    serve = cmd("uv run crossborder serve --no-reload")
+    serve = cmd("crossborder serve --no-reload")
     login = link_markup(info.primary_login_url, info.primary_login_url)
-    lines = [
-        f"1. Start the panel (required):  {serve}",
-        f"2. Open login in browser:       {login}",
-        f"3. Sign in with username above  {user(info.username)}",
-    ]
-    if not ui_is_built():
-        lines.insert(
-            2,
-            hint("   Dev UI: run bash scripts/dev-ui.sh in a second terminal (Vite on :5173)"),
-        )
-    if mode in ("server", "install"):
-        lines.append(hint("   CLI: run from install folder — uv run crossborder --help"))
+    if mode == "install":
+        lines = [
+            f"1. Open login in browser:       {login}",
+            f"2. Sign in with username above  {user(info.username)}",
+            hint("   Panel runs in background after install.sh — use crossborder deploy status"),
+            hint("   CLI from any terminal:        crossborder --help"),
+        ]
+    else:
+        lines = [
+            f"1. Start the panel (required):  {serve}",
+            f"2. Open login in browser:       {login}",
+            f"3. Sign in with username above  {user(info.username)}",
+        ]
+        if not ui_is_built():
+            lines.insert(
+                2,
+                hint("   Dev UI: run bash scripts/dev-ui.sh in a second terminal (Vite on :5173)"),
+            )
+        if mode in ("server",):
+            lines.append(hint("   CLI: crossborder --help  (after install.sh)"))
     console.print(
         Panel(
             "\n".join(lines),
@@ -199,12 +207,12 @@ def print_panel_access_card(
     title = title_map.get(mode, "Panel ready")
 
     console.print()
-    if mode in ("server", "install"):
+    if mode == "server":
         console.print(
             Panel(
                 warn("URLs work only while the panel server is running")
                 + "\n"
-                + hint("Run: uv run crossborder serve --no-reload  (keep terminal open)"),
+                + hint("Run: crossborder serve --no-reload  (or re-run install.sh to auto-start)"),
                 border_style="yellow",
                 box=ROUNDED,
                 padding=(0, 1),
@@ -239,9 +247,11 @@ def print_panel_access_card(
 def default_next_commands(mode: str) -> list[str]:
     from cli.theme import cmd
 
-    serve = cmd("uv run crossborder serve --no-reload")
+    serve = cmd("crossborder serve --no-reload")
     if mode == "docker":
-        return [cmd("uv run crossborder deploy up"), cmd("uv run crossborder deploy status")]
-    if mode in ("server", "install"):
+        return [cmd("crossborder deploy up"), cmd("crossborder deploy status")]
+    if mode == "install":
+        return [cmd("crossborder --help"), cmd("crossborder deploy status")]
+    if mode == "server":
         return [serve]
-    return [serve, cmd("uv run crossborder --help")]
+    return [serve, cmd("crossborder --help")]

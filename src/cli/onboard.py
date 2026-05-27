@@ -71,9 +71,9 @@ def print_setup_progress(steps: list[str], *, warnings: list[str]) -> None:
 
 def print_mode_footer(mode: str) -> None:
     if mode == "panel":
-        console.print(hint("  Full install: ") + cmd("uv run crossborder install"))
-        console.print(hint("  Or:           ") + cmd("uv run crossborder setup --server"))
+        console.print(hint("  Full install: ") + cmd("curl -fsSL …/scripts/install.sh | bash"))
+        console.print(hint("  Or:           ") + cmd("crossborder setup --server"))
     elif mode == "docker":
-        console.print(hint("  Next: ") + cmd("uv run crossborder deploy up"))
+        console.print(hint("  Next: ") + cmd("crossborder deploy up"))
 
 

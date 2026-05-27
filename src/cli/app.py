@@ -19,9 +19,9 @@ def build_app() -> typer.Typer:
         help=(
             "[bold bright_blue]Crossborder Scraper[/] — scrape, export, "
             "self-host panel, gateway agent.\n\n"
-            "[bold]Onboard:[/]  [cyan]crossborder install[/]  ·  "
-            "[cyan]crossborder setup --server[/]\n"
-            "[bold]Run panel:[/] [cyan]crossborder serve --no-reload[/]"
+            "[bold]Install:[/]   curl …/scripts/install.sh | bash\n"
+            "[bold]Run panel:[/] [cyan]crossborder serve --no-reload[/]  "
+            "(auto-started by install.sh)"
         ),
         rich_markup_mode="rich",
         no_args_is_help=True,

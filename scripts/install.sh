@@ -120,18 +120,78 @@ detect_public_ip() {
     || true
 }
 
+env_val() {
+  local key="$1" file="$2"
+  [[ -f "${file}" ]] || return 0
+  grep -E "^${key}=" "${file}" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d ' "'"'"
+}
+
 read_env_port() {
   local root="$1"
   local env_file="${root}/.env"
-  if [[ -f "${env_file}" ]]; then
-    local line
-    line="$(grep -E '^PANEL_PORT=' "${env_file}" | tail -1 || true)"
-    if [[ -n "${line}" ]]; then
-      echo "${line#PANEL_PORT=}" | tr -d ' "'"'"
-      return 0
-    fi
+  local port
+  port="$(env_val PANEL_PORT "${env_file}")"
+  if [[ -n "${port}" ]]; then
+    echo "${port}"
+  else
+    echo "${PANEL_PORT}"
   fi
-  echo "${PANEL_PORT}"
+}
+
+crossborder_bin() {
+  local root="$1"
+  echo "${root}/.venv/bin/crossborder"
+}
+
+install_global_cli() {
+  local root="$1"
+  local bin_dir="${HOME}/.local/bin"
+  local wrapper_src="${root}/scripts/templates/crossborder-wrapper.sh"
+  local wrapper="${bin_dir}/crossborder"
+
+  mkdir -p "${bin_dir}" "${HOME}/.crossborder"
+  echo "CROSSBORDER_HOME=${root}" >"${HOME}/.crossborder/install.env"
+
+  if [[ -f "${wrapper_src}" ]]; then
+    cp "${wrapper_src}" "${wrapper}"
+  else
+    cat >"${wrapper}" <<'WRAPPER'
+#!/usr/bin/env bash
+set -euo pipefail
+_home="${HOME}"
+[[ -f "${_home}/.crossborder/install.env" ]] && source "${_home}/.crossborder/install.env"
+_root="${CROSSBORDER_HOME:-${_home}/crossborder-scraper}"
+cd "${_root}" || { echo "crossborder: install dir not found (${_root})" >&2; exit 1; }
+export PYTHONPATH="${_root}/src${PYTHONPATH:+:$PYTHONPATH}"
+exec "${_root}/.venv/bin/crossborder" "$@"
+WRAPPER
+  fi
+  chmod +x "${wrapper}"
+  ln -sf crossborder "${bin_dir}/scraper"
+  export PATH="${bin_dir}:${PATH}"
+  export CROSSBORDER_HOME="${root}"
+}
+
+ensure_shell_path() {
+  local root="$1"
+  local bin_dir="${HOME}/.local/bin"
+  local marker="# crossborder-scraper (install.sh)"
+  export PATH="${bin_dir}:${PATH}"
+  export CROSSBORDER_HOME="${root}"
+
+  for rc in "${HOME}/.zshrc" "${HOME}/.bashrc" "${HOME}/.profile"; do
+    [[ -f "${rc}" ]] || continue
+    if grep -qF "${marker}" "${rc}" 2>/dev/null; then
+      continue
+    fi
+    cat >>"${rc}" <<EOF
+
+${marker}
+export PATH="\${HOME}/.local/bin:\${PATH}"
+export CROSSBORDER_HOME="${root}"
+EOF
+    echo "==> added crossborder to PATH in ${rc} (open a new terminal or: source ${rc})"
+  done
 }
 
 run_bootstrap() {
@@ -150,7 +210,10 @@ run_bootstrap() {
     fi
   fi
 
-  local setup_args=(setup --server --port "${PANEL_PORT}" --external auto)
+  local setup_args=(install --port "${PANEL_PORT}" --external auto)
+  if ! "$(crossborder_bin "${root}")" install --help >/dev/null 2>&1; then
+    setup_args=(setup --server --port "${PANEL_PORT}" --external auto)
+  fi
   local public_ip
   public_ip="$(detect_public_ip)"
   if [[ -n "${public_ip}" ]]; then
@@ -158,7 +221,7 @@ run_bootstrap() {
   fi
 
   echo "==> panel setup (host, port ${PANEL_PORT}, credentials)"
-  uv run crossborder "${setup_args[@]}"
+  "$(crossborder_bin "${root}")" "${setup_args[@]}"
 }
 
 maybe_start_panel() {
@@ -178,7 +241,7 @@ maybe_start_panel() {
   fi
 
   echo "==> starting panel on port ${port} (log: ${log})"
-  nohup uv run crossborder serve --no-reload >>"${log}" 2>&1 &
+  nohup crossborder serve --no-reload >>"${log}" 2>&1 &
   local pid=$!
   echo "    PID ${pid}"
 
@@ -186,51 +249,75 @@ maybe_start_panel() {
   for i in 1 2 3 4 5 6 7 8 9 10; do
     sleep 1
     if curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
-      echo "==> panel is up — open in browser:"
-      echo "    http://127.0.0.1:${port}/ui/login"
+      echo "==> panel is running"
       return 0
     fi
   done
   echo "==> panel not responding yet — check: tail -f ${log}"
-  echo "    then start manually: cd ${root} && uv run crossborder serve --no-reload"
+  echo "    restart: crossborder serve --no-reload"
 }
 
-print_footer() {
+print_install_complete() {
   local root="$1"
-  local port
+  local env_file="${root}/.env"
+  local port username password ext_host lan_ip
   port="$(read_env_port "${root}")"
-  local login="http://127.0.0.1:${port}/ui/login"
-  local panel="http://127.0.0.1:${port}/ui/"
+  username="$(env_val PANEL_USERNAME "${env_file}")"
+  password="$(env_val PANEL_PASSWORD "${env_file}")"
+  ext_host="$(env_val PANEL_EXTERNAL_HOST "${env_file}")"
+  [[ -z "${ext_host}" ]] && ext_host="$(detect_public_ip)"
+  lan_ip=""
+  if [[ -x "${root}/.venv/bin/python" ]]; then
+    lan_ip="$(
+      cd "${root}" && PYTHONPATH="${root}/src" "${root}/.venv/bin/python" -c "
+from deploy.network import detect_lan_ips
+ips = detect_lan_ips()
+print(ips[0] if ips else '')
+" 2>/dev/null || true
+    )"
+  fi
+
+  local login_local="http://127.0.0.1:${port}/ui/login"
+  local login_lan=""
+  local login_public=""
+  [[ -n "${lan_ip}" ]] && login_lan="http://${lan_ip}:${port}/ui/login"
+  [[ -n "${ext_host}" ]] && login_public="http://${ext_host}:${port}/ui/login"
 
   echo ""
   echo "════════════════════════════════════════════════════════════════"
-  echo "  HOW TO USE (read this)"
+  echo "  INSTALL COMPLETE — panel ready"
   echo "════════════════════════════════════════════════════════════════"
   echo ""
-  echo "  1) Go to the install folder:"
-  echo "       cd ${root}"
-  echo ""
-  echo "  2) Start the panel (required — links do nothing until this runs):"
   if [[ "${CROSSBORDER_START}" == "1" ]]; then
-    echo "       Already started if you saw \"panel is up\" above."
-    echo "       If not, run:"
+    echo "  Panel:  running in background (port ${port})"
+    echo "  Logs:   ${root}/data/panel.log"
+  else
+    echo "  Panel:  not started (set CROSSBORDER_START=1 or run: crossborder serve --no-reload)"
   fi
-  echo "       uv run crossborder serve --no-reload"
-  echo "       (keep that terminal open)"
   echo ""
-  echo "  3) Open the panel in your browser:"
-  echo "       Login:  ${login}"
-  echo "       Panel:  ${panel}"
-  echo "       (username/password are in the access card above and in .env)"
+  echo "  Login URL (open in browser):"
+  echo "    ${login_local}"
+  [[ -n "${login_lan}" ]] && echo "    ${login_lan}  (LAN)"
+  [[ -n "${login_public}" ]] && echo "    ${login_public}  (public — open firewall port ${port})"
   echo ""
-  echo "  CLI note:  crossborder is NOT on your global PATH after install."
-  echo "       Always use:  cd ${root} && uv run crossborder --help"
-  echo "       Or:          ${root}/.venv/bin/crossborder --help"
+  if [[ -n "${username}" && -n "${password}" ]]; then
+    echo "  Username:  ${username}"
+    echo "  Password:  ${password}"
+  else
+    echo "  Credentials:  see access card above or ${env_file}"
+  fi
   echo ""
-  echo "  Change port:  uv run crossborder setup --port 9000 --server"
-  echo "                (or set CROSSBORDER_PORT=9000 before re-running install.sh)"
+  echo "  CLI (any terminal — no cd, no uv run):"
+  echo "    crossborder --help"
+  echo "    crossborder deploy status"
+  echo "    crossborder serve --no-reload    # foreground"
+  echo ""
+  echo "  Install dir:  ${root}"
+  echo "  Re-install:   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash"
   echo ""
   echo "  Stop panel:   kill \$(lsof -t -i:${port})   # macOS/Linux"
+  echo ""
+  echo "  New shell?     source ~/.zshrc   (or open a new terminal for crossborder on PATH)"
   echo ""
   echo "════════════════════════════════════════════════════════════════"
   echo ""
@@ -250,5 +337,7 @@ fi
 
 ensure_uv
 run_bootstrap "${ROOT}"
+install_global_cli "${ROOT}"
+ensure_shell_path "${ROOT}"
 maybe_start_panel "${ROOT}"
-print_footer "${ROOT}"
+print_install_complete "${ROOT}"

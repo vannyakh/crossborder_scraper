@@ -109,11 +109,12 @@ Shell helpers: see [scripts/README.md](scripts/README.md).
 
 ### Self-hosting (VPS / Docker / aaPanel)
 
-**One-liner** (clone, install deps, generate panel URL + login — like OpenClaw / aaPanel):
+**One-liner** — setup, start panel, print login URL + password, install global `crossborder` CLI:
 
 ```bash
-# macOS & Linux
+# macOS & Linux (no uv run, no cd required afterward)
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
+# then open the Login URL printed at the end; use: crossborder --help
 ```
 
 ```powershell
@@ -121,18 +122,11 @@ curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/s
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.ps1 | iex"
 ```
 
-From an existing clone:
+The installer adds `~/.local/bin/crossborder` to your PATH. Open a **new terminal** (or `source ~/.zshrc`) then run `crossborder` from anywhere.
 
-```bash
-bash scripts/install.sh
-# or: uv run scraper setup --server
-uv run scraper deploy up          # Docker
-# or: uv run scraper deploy systemd && uv run scraper deploy nginx
-```
+From an existing clone: `bash scripts/install.sh`
 
-Auto-start panel after install: `CROSSBORDER_START=1 curl ... | bash`
-
-**Maintain after install:** `crossborder tools update` (sync + restart) · `crossborder tools reset credentials`
+**Maintain:** `crossborder tools update` · `crossborder tools reset credentials` · `crossborder deploy status`
 
 See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) for aaPanel, nginx, Windows, and systemd.
 

@@ -111,10 +111,45 @@ function Get-PublicIp {
     }
 }
 
+function Get-CrossborderExe {
+    param([string]$Root)
+    return Join-Path $Root ".venv\Scripts\crossborder.exe"
+}
+
+function Install-GlobalCli {
+    param([string]$Root)
+    $binDir = Join-Path $env:USERPROFILE ".local\bin"
+    $configDir = Join-Path $env:USERPROFILE ".crossborder"
+    if (-not (Test-Path $binDir)) { New-Item -ItemType Directory -Path $binDir -Force | Out-Null }
+    if (-not (Test-Path $configDir)) { New-Item -ItemType Directory -Path $configDir -Force | Out-Null }
+    Set-Content -Path (Join-Path $configDir "install.env") -Value "CROSSBORDER_HOME=$Root" -Encoding UTF8
+
+    $cmdPath = Join-Path $binDir "crossborder.cmd"
+    @"
+@echo off
+setlocal
+if exist "%USERPROFILE%\.crossborder\install.env" for /f "usebackq tokens=1,* delims==" %%a in ("%USERPROFILE%\.crossborder\install.env") do set %%a
+if not defined CROSSBORDER_HOME set CROSSBORDER_HOME=$Root
+cd /d "%CROSSBORDER_HOME%" || exit /b 1
+set PYTHONPATH=%CROSSBORDER_HOME%\src
+"%CROSSBORDER_HOME%\.venv\Scripts\crossborder.exe" %*
+"@ | Set-Content -Path $cmdPath -Encoding ASCII
+
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if ($userPath -notlike "*$binDir*") {
+        [Environment]::SetEnvironmentVariable("Path", "$binDir;$userPath", "User")
+    }
+    [Environment]::SetEnvironmentVariable("CROSSBORDER_HOME", $Root, "User")
+    $env:Path = "$binDir;$env:Path"
+    $env:CROSSBORDER_HOME = $Root
+    Write-Host "==> global CLI: crossborder  (in $binDir)"
+}
+
 function Run-Bootstrap {
     param([string]$Root)
     Set-Location $Root
     $env:PYTHONPATH = Join-Path $Root "src"
+    $cli = Get-CrossborderExe -Root $Root
 
     Write-Host "==> sync Python dependencies"
     if (Get-Command uv -ErrorAction SilentlyContinue) {
@@ -132,14 +167,19 @@ function Run-Bootstrap {
         }
     }
 
-    $setupArgs = @("setup", "--server", "--port", $PanelPort, "--external", "auto")
+    $setupArgs = @("install", "--port", $PanelPort, "--external", "auto")
+    if (-not (Test-Path $cli)) {
+        $setupArgs = @("setup", "--server", "--port", $PanelPort, "--external", "auto")
+    }
     $publicIp = Get-PublicIp
     if ($publicIp) {
         Write-Host "==> detected public IP: $publicIp"
     }
 
     Write-Host "==> panel setup (host, port $PanelPort, credentials)"
-    if (Get-Command uv -ErrorAction SilentlyContinue) {
+    if (Test-Path $cli) {
+        & $cli @setupArgs
+    } elseif (Get-Command uv -ErrorAction SilentlyContinue) {
         uv run crossborder @setupArgs
     } else {
         python main.py @setupArgs
@@ -165,7 +205,10 @@ function Start-PanelBackground {
     if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
     $port = Get-EnvPanelPort -Root $Root
     Write-Host "==> starting panel on port $port (log: $log)"
-    if (Get-Command uv -ErrorAction SilentlyContinue) {
+    $cli = Get-CrossborderExe -Root $Root
+    if (Test-Path $cli) {
+        Start-Process -FilePath $cli -ArgumentList "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
+    } elseif (Get-Command uv -ErrorAction SilentlyContinue) {
         Start-Process -FilePath "uv" -ArgumentList "run", "crossborder", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
     } else {
         Start-Process -FilePath "python" -ArgumentList "main.py", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
@@ -182,21 +225,44 @@ function Start-PanelBackground {
     }
 }
 
-function Write-Footer {
+function Get-EnvVal {
+    param([string]$Key, [string]$EnvFile)
+    if (-not (Test-Path $EnvFile)) { return "" }
+    $line = Get-Content $EnvFile | Where-Object { $_ -match "^${Key}=" } | Select-Object -Last 1
+    if (-not $line) { return "" }
+    return ($line -replace "^${Key}=", "").Trim().Trim('"')
+}
+
+function Write-InstallComplete {
     param([string]$Root)
+    $envFile = Join-Path $Root ".env"
     $port = Get-EnvPanelPort -Root $Root
+    $user = Get-EnvVal -Key "PANEL_USERNAME" -EnvFile $envFile
+    $pass = Get-EnvVal -Key "PANEL_PASSWORD" -EnvFile $envFile
+    $ext = Get-EnvVal -Key "PANEL_EXTERNAL_HOST" -EnvFile $envFile
+    if (-not $ext) { $ext = Get-PublicIp }
     $login = "http://127.0.0.1:$port/ui/login"
     Write-Host ""
     Write-Host "================================================================"
-    Write-Host "  HOW TO USE (read this)"
+    Write-Host "  INSTALL COMPLETE — panel ready"
     Write-Host "================================================================"
     Write-Host ""
-    Write-Host "  1) cd $Root"
-    Write-Host "  2) Start panel (required):  uv run crossborder serve --no-reload"
-    Write-Host "  3) Open browser:            $login"
+    if ($env:CROSSBORDER_START -eq "1") {
+        Write-Host "  Panel:  running in background (port $port)"
+        Write-Host "  Logs:   $(Join-Path $Root 'data\panel.log')"
+    }
     Write-Host ""
-    Write-Host "  CLI: use  uv run crossborder --help  (not global crossborder)"
-    Write-Host "  Port: set CROSSBORDER_PORT or  uv run crossborder setup --port 9000 --server"
+    Write-Host "  Login URL:"
+    Write-Host "    $login"
+    if ($ext) { Write-Host "    http://${ext}:$port/ui/login  (public)" }
+    Write-Host ""
+    if ($user -and $pass) {
+        Write-Host "  Username:  $user"
+        Write-Host "  Password:  $pass"
+    }
+    Write-Host ""
+    Write-Host "  CLI (any terminal):  crossborder --help"
+    Write-Host "  Install dir:         $Root"
     Write-Host ""
 }
 
@@ -214,5 +280,6 @@ if ($root) {
 
 Ensure-Uv
 Run-Bootstrap -Root $root
+Install-GlobalCli -Root $root
 Start-PanelBackground -Root $root
-Write-Footer -Root $root
+Write-InstallComplete -Root $root

@@ -39,18 +39,21 @@ Environment (optional):
 | `CROSSBORDER_START=0` | Do not auto-start the panel |
 | `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright (Docker-only hosts) |
 
-### After install — links not opening?
+### After install
 
-1. **Start the server** (install only configures credentials; the panel must be running):
-   ```bash
-   cd ~/crossborder-scraper   # or your install path
-   uv run crossborder serve --no-reload
-   ```
-2. **Open the login URL** printed in the access card, e.g. `http://127.0.0.1:8787/ui/login` (use the port from your card or `.env` `PANEL_PORT`).
-3. **`crossborder: command not found`** — the CLI lives in the project venv, not globally. Always run:
-   ```bash
-   cd ~/crossborder-scraper && uv run crossborder --help
-   ```
+The one-liner **starts the panel in the background** and prints **Login URL**, **username**, and **password** at the end. Open that URL in your browser — no extra `uv run` step.
+
+Global CLI (any terminal):
+
+```bash
+crossborder --help
+crossborder deploy status
+crossborder serve --no-reload    # foreground, if you stopped the background panel
+```
+
+If `crossborder: command not found`, open a **new terminal** or run `source ~/.zshrc` (installer adds `~/.local/bin` to PATH).
+
+Install path: `~/crossborder-scraper` (or `CROSSBORDER_INSTALL_DIR`).
 
 ### From git clone
 
