@@ -104,6 +104,19 @@ export function useInstallSkillMutation() {
   })
 }
 
+export function useUninstallSkillMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (skillId: string) =>
+      api<{ ok: boolean; skill_id: string }>(`/gateway/skills/installed/${skillId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewaySkills })
+    },
+  })
+}
+
 export function useRunAgentMutation() {
   const queryClient = useQueryClient()
   return useMutation({

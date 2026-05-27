@@ -28,6 +28,7 @@ export {
   useGatewayToolsQuery,
   useGatewayWorkflowsQuery,
   useInstallSkillMutation,
+  useUninstallSkillMutation,
   useRunAgentMutation,
   useSetEnabledSkillsMutation,
   useRunScheduleNowMutation,

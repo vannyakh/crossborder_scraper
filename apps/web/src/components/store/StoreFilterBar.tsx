@@ -1,7 +1,9 @@
 import { Box, Button, ButtonGroup, HStack, IconButton, Input } from '@chakra-ui/react'
 import { LayoutGrid, List, Search } from 'lucide-react'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import { STORE_CATEGORY_FILTERS, type StoreCategoryFilter, type StoreViewMode } from './store-utils'
+import { STORE_CATEGORY_FILTERS, type StoreViewMode } from './store-utils'
+
+export type FilterBarCategoryOption = { id: string; label: string }
 
 export function StoreFilterBar({
   search,
@@ -12,23 +14,26 @@ export function StoreFilterBar({
   category,
   onCategoryChange,
   showCategoryFilters = false,
+  categoryFilters,
 }: {
   search: string
   onSearchChange: (value: string) => void
   searchPlaceholder: string
   viewMode: StoreViewMode
   onViewModeChange: (mode: StoreViewMode) => void
-  category?: StoreCategoryFilter
-  onCategoryChange?: (value: StoreCategoryFilter) => void
+  category?: string
+  onCategoryChange?: (value: string) => void
   showCategoryFilters?: boolean
+  categoryFilters?: readonly FilterBarCategoryOption[]
 }) {
   const accentPalette = useAccentPalette()
+  const filters = categoryFilters ?? STORE_CATEGORY_FILTERS
 
   return (
     <HStack gap={3} flexWrap="wrap" align="center" justify="space-between" w="full">
       {showCategoryFilters && category !== undefined && onCategoryChange ? (
         <ButtonGroup size="xs" variant="outline" attached flexWrap="wrap" flexShrink={0}>
-          {STORE_CATEGORY_FILTERS.map((f) => (
+          {filters.map((f) => (
             <Button
               key={f.id}
               borderColor="border.subtle"
