@@ -1,3 +1,0 @@
-# One product URL per line
-https://detail.1688.com/offer/0000000000.html
-https://www.aliexpress.com/item/0000000000.html

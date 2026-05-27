@@ -4,12 +4,20 @@ import {
   History,
   Layers,
   MessageSquare,
+  Send,
   Sparkles,
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
 
-export type AgentSectionId = 'chat' | 'schedules' | 'runs' | 'workflows' | 'tools' | 'skills'
+export type AgentSectionId =
+  | 'chat'
+  | 'telegram'
+  | 'schedules'
+  | 'runs'
+  | 'workflows'
+  | 'tools'
+  | 'skills'
 
 export type AgentNavGroup = 'channel' | 'data' | 'automation'
 
@@ -33,6 +41,13 @@ export const AGENT_NAV: AgentNavItem[] = [
     label: 'Chat',
     description: 'Direct gateway chat session for quick interventions',
     icon: MessageSquare,
+    group: 'channel',
+  },
+  {
+    id: 'telegram',
+    label: 'Telegram',
+    description: 'Bot control chat — same gateway agent via Telegram',
+    icon: Send,
     group: 'channel',
   },
   {

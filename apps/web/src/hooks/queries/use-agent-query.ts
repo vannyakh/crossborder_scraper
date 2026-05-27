@@ -168,3 +168,26 @@ export function useRunScheduleNowMutation() {
     },
   })
 }
+
+export function useTelegramChannelQuery() {
+  return useQuery({
+    queryKey: queryKeys.gatewayTelegram,
+    queryFn: () => api<import('../../lib/api').TelegramChannelConfig>('/gateway/telegram'),
+    staleTime: 30_000,
+  })
+}
+
+export function useUpdateTelegramChannelMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: import('../../lib/api').TelegramChannelUpdate) =>
+      api<import('../../lib/api').TelegramChannelConfig>('/gateway/telegram', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayTelegram })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
+    },
+  })
+}

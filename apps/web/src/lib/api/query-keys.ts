@@ -22,6 +22,7 @@ export const queryKeys = {
   gatewaySkills: ['gateway', 'skills'] as const,
   gatewayTools: ['gateway', 'tools'] as const,
   gatewayWorkflows: ['gateway', 'workflows'] as const,
+  gatewayTelegram: ['gateway', 'telegram'] as const,
   agentSchedules: ['gateway', 'schedules'] as const,
   agentRuns: ['gateway', 'runs'] as const,
   serviceOverview: ['service', 'overview'] as const,

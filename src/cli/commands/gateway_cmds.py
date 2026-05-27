@@ -12,11 +12,13 @@ from cli.helpers import console, exit_gateway_error, gateway_client, run_async
 
 skills_app = typer.Typer(help="Agent skills (OpenClaw-style SKILL.md packages)")
 prompts_app = typer.Typer(help="Gateway agent role prompts")
+channels_app = typer.Typer(help="Control-plane messaging channels (Telegram, …)")
 
 
 def register_gateway_commands(app: typer.Typer) -> None:
     app.add_typer(skills_app, name="skills")
     app.add_typer(prompts_app, name="prompts")
+    app.add_typer(channels_app, name="channels")
 
     @app.command("gateway")
     def gateway_status(
@@ -221,3 +223,24 @@ def register_gateway_commands(app: typer.Typer) -> None:
                 "yes" if row.get("recommended") else "",
             )
         console.print(table)
+
+    @channels_app.command("telegram")
+    def channels_telegram(
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Read config/ui_config.json locally"),
+    ) -> None:
+        """Show Telegram channel integration status."""
+        if local:
+            from config.telegram_store import load_telegram_config
+
+            tg = load_telegram_config()
+            console.print(
+                f"enabled={tg.get('enabled')}  token_set={bool(tg.get('bot_token'))}  "
+                f"chats={tg.get('control_chat_ids')}  allow_any={tg.get('allow_any_chat')}"
+            )
+            return
+        try:
+            tg = gateway_client(url).get_telegram()
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print(json.dumps(tg, indent=2))

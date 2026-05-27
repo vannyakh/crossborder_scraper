@@ -366,6 +366,33 @@ export type PanelUpdateApply = {
   update_available: boolean
 }
 
+export type GatewayTelegramSummary = {
+  enabled: boolean
+  configured: boolean
+  control_chats: number
+  allow_any_chat: boolean
+}
+
+export type TelegramChannelConfig = {
+  enabled: boolean
+  bot_token?: string | null
+  bot_token_set: boolean
+  bot_token_masked?: string | null
+  control_chat_ids: number[]
+  allow_any_chat: boolean
+  prompt_id: string
+  max_reply_chars: number
+}
+
+export type TelegramChannelUpdate = {
+  enabled?: boolean
+  bot_token?: string | null
+  control_chat_ids?: number[]
+  allow_any_chat?: boolean
+  prompt_id?: string
+  max_reply_chars?: number
+}
+
 export type GatewayStatus = {
   service: string
   version: string
@@ -381,6 +408,7 @@ export type GatewayStatus = {
   enabled_schedules_count?: number
   recent_failed_runs?: number
   runtime: RuntimeStatus
+  telegram?: GatewayTelegramSummary
 }
 
 export type GatewayTool = {
@@ -418,6 +446,7 @@ export type ServiceGatewaySummary = {
   schedules_count: number
   enabled_schedules_count: number
   recent_failed_runs: number
+  telegram?: GatewayTelegramSummary
 }
 
 export type ServiceOverview = {

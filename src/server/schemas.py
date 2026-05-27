@@ -347,6 +347,26 @@ class PanelUpdateApplyResponse(BaseModel):
     update_available: bool = False
 
 
+class TelegramChannelConfig(BaseModel):
+    enabled: bool = False
+    bot_token: str | None = None
+    bot_token_set: bool = False
+    bot_token_masked: str | None = None
+    control_chat_ids: list[int] = Field(default_factory=list)
+    allow_any_chat: bool = False
+    prompt_id: str = "gateway_agent"
+    max_reply_chars: int = Field(default=3500, ge=500, le=8000)
+
+
+class TelegramChannelUpdate(BaseModel):
+    enabled: bool | None = None
+    bot_token: str | None = None
+    control_chat_ids: list[int] | None = None
+    allow_any_chat: bool | None = None
+    prompt_id: str | None = None
+    max_reply_chars: int | None = Field(default=None, ge=500, le=8000)
+
+
 class GatewayStatusResponse(BaseModel):
     service: str
     version: str
@@ -362,6 +382,7 @@ class GatewayStatusResponse(BaseModel):
     enabled_schedules_count: int = 0
     recent_failed_runs: int = 0
     runtime: dict[str, Any]
+    telegram: dict[str, Any] = Field(default_factory=dict)
 
 
 class ServiceGatewaySummary(BaseModel):

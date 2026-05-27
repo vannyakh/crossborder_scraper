@@ -182,6 +182,20 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
       description: 'AI gateway, agent pipelines, and panel configuration',
       tools: [
         card({
+          id: 'telegram',
+          icon: 'agent',
+          title: 'Telegram bot',
+          description: 'Control chat channel wired to the gateway agent (Clawdbot-style).',
+          to: '/agent/telegram',
+          status: stats.gateway?.telegram?.enabled
+            ? 'Live'
+            : stats.gateway?.telegram?.configured
+              ? 'Ready'
+              : 'Setup',
+          statusTone: stats.gateway?.telegram?.enabled ? 'success' : 'neutral',
+          primaryAction: { label: 'Telegram', to: '/agent/telegram' },
+        }),
+        card({
           id: 'agent',
           icon: 'agent',
           title: 'Gateway agent',

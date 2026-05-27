@@ -317,3 +317,5 @@ Or from the repo root: `bash scripts/dev-ui.sh`
 Production UI is built into `apps/web/dist` and served by the API at `http://localhost:8000/ui/`.
 
 See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for the full folder map.
+
+Telegram control chat: [docs/TELEGRAM.md](docs/TELEGRAM.md)

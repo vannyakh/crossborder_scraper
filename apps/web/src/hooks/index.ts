@@ -32,7 +32,9 @@ export {
   useSetEnabledSkillsMutation,
   useRunScheduleNowMutation,
   useRunWorkflowMutation,
+  useTelegramChannelQuery,
   useUpdateScheduleMutation,
+  useUpdateTelegramChannelMutation,
 } from './queries/use-agent-query'
 export { useServiceOverviewQuery } from './queries/use-service-overview-query'
 export { useServiceSupportQuery } from './queries/use-service-support-query'

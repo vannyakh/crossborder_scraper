@@ -145,10 +145,11 @@ Marketplace config supports **any platform** via `marketplaces.{id}.credentials`
 - Visual workflow builder (n8n-like canvas)
 - Webhook triggers + scheduled cron workflows
 
-### Phase 4
+### Phase 4 (in progress)
 - Multi-tenant workspaces (OpenClaw-style routing)
 - Sandbox export dry-runs
-- Channel adapters (Telegram/Slack ops bot)
+- **Telegram** channel adapter (`gateway/telegram/`) — control chat → gateway agent
+- Slack / webhook channel adapters (planned)
 
 ## Design principles
 

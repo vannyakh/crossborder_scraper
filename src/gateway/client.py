@@ -67,6 +67,12 @@ class GatewayClient:
     def list_skills(self) -> dict[str, Any]:
         return self._request("GET", "/gateway/skills")
 
+    def get_telegram(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/telegram")
+
+    def update_telegram(self, updates: dict[str, Any]) -> dict[str, Any]:
+        return self._request("PATCH", "/gateway/telegram", body=updates)
+
     def set_enabled_skills(self, skill_ids: list[str]) -> dict[str, Any]:
         return self._request("PUT", "/gateway/skills/enabled", body={"enabled": skill_ids})
 

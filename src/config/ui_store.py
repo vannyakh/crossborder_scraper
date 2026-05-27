@@ -141,7 +141,14 @@ def _default_panel_raw() -> dict[str, Any]:
         "price_markup_percent": 35,
         "default_currency": "USD",
         "marketplaces": default_marketplaces(),
+        "telegram": _default_telegram_raw(),
     }
+
+
+def _default_telegram_raw() -> dict[str, Any]:
+    from config.telegram_store import default_telegram
+
+    return default_telegram()
 
 
 def _secure_file(path: Path) -> None:
@@ -183,6 +190,9 @@ def load_panel_raw() -> dict[str, Any]:
         raw["marketplaces"] = default_marketplaces()
     else:
         raw["marketplaces"] = normalize_marketplaces(raw["marketplaces"])
+    from config.telegram_store import normalize_telegram
+
+    raw["telegram"] = normalize_telegram(raw.get("telegram"))
     return raw
 
 
@@ -273,6 +283,7 @@ def save_panel_config(
     *,
     scalar_updates: dict[str, Any] | None = None,
     marketplace_updates: dict[str, Any] | None = None,
+    telegram_updates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     raw = load_panel_raw()
     if scalar_updates:
@@ -313,6 +324,10 @@ def save_panel_config(
                         current["credentials"][ck] = cv
             mp[platform_id] = current
         raw["marketplaces"] = mp
+    if telegram_updates:
+        from config.telegram_store import merge_telegram_updates
+
+        raw["telegram"] = merge_telegram_updates(raw.get("telegram") or {}, telegram_updates)
     _write_panel_raw(raw)
     return load_ui_config()
 
@@ -360,9 +375,22 @@ def panel_config_for_api(*, mask_secrets: bool = True) -> dict[str, Any]:
             scalars["proxy_server_masked"] = mask_api_key(str(scalars["proxy_server"]))
         scalars.pop("proxy_server", None)
         marketplaces = mask_marketplaces(marketplaces, mask_api_key)
+    from config.telegram_store import normalize_telegram
+
+    tg = normalize_telegram(raw.get("telegram"))
+    if mask_secrets and tg.get("bot_token"):
+        tg = {
+            **tg,
+            "bot_token_masked": mask_api_key(str(tg["bot_token"])),
+            "bot_token_set": True,
+        }
+        tg.pop("bot_token", None)
+    else:
+        tg["bot_token_set"] = bool(tg.get("bot_token"))
     return {
         **scalars,
         "marketplaces": marketplaces,
+        "telegram": tg,
         "ui_config_path": str(UI_CONFIG_PATH),
         "config_dir": str(UI_CONFIG_PATH.parent),
         "secrets_from_panel_config": True,

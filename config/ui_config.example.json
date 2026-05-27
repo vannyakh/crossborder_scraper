@@ -57,5 +57,13 @@
   "proxy_rotation_strategy": "round_robin",
   "proxy_server": "",
   "request_delay_seconds": 2,
-  "scrape_default_workers": 3
+  "scrape_default_workers": 3,
+  "telegram": {
+    "enabled": false,
+    "bot_token": "",
+    "control_chat_ids": [],
+    "allow_any_chat": false,
+    "prompt_id": "gateway_agent",
+    "max_reply_chars": 3500
+  }
 }

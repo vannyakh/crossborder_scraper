@@ -26,6 +26,8 @@ from server.schemas import (
     PanelUpdateStatusResponse,
     SkillInstallResponse,
     SkillUninstallResponse,
+    TelegramChannelConfig,
+    TelegramChannelUpdate,
 )
 from server.services.gateway_service import get_gateway_service
 from server.services.update_service import get_update_service
@@ -61,6 +63,22 @@ async def gateway_update_apply(
         branch=payload.branch,
     )
     return PanelUpdateApplyResponse(**result)
+
+
+@router.get("/telegram", response_model=TelegramChannelConfig)
+async def get_telegram_channel() -> TelegramChannelConfig:
+    return TelegramChannelConfig(**get_gateway_service().get_telegram_config())
+
+
+@router.patch("/telegram", response_model=TelegramChannelConfig)
+async def update_telegram_channel(body: TelegramChannelUpdate) -> TelegramChannelConfig:
+    svc = get_gateway_service()
+    payload = body.model_dump(exclude_unset=True)
+    data = svc.update_telegram_config(payload)
+    from gateway.telegram.lifecycle import reload_telegram_bot
+
+    await reload_telegram_bot()
+    return TelegramChannelConfig(**data)
 
 
 @router.get("/tools", response_model=GatewayToolListResponse)

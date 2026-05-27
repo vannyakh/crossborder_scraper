@@ -35,6 +35,7 @@ async def get_service_overview() -> dict[str, Any]:
             "schedules_count": gateway["schedules_count"],
             "enabled_schedules_count": gateway["enabled_schedules_count"],
             "recent_failed_runs": gateway["recent_failed_runs"],
+            "telegram": gateway.get("telegram"),
         },
         "llm": llm,
     }

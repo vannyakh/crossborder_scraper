@@ -33,13 +33,16 @@ class GatewayService:
 
         skill_mgr = get_skill_manager()
         update = get_update_service().get_status()
+        from config.telegram_store import load_telegram_config
+
+        tg = load_telegram_config()
         return {
             "service": "crossborder-scraper-gateway",
             "version": APP_VERSION,
             "update_available": update["update_available"],
             "latest_version": update.get("latest_version"),
             "control_plane": "fastapi",
-            "clients": ["web-ui", "cli", "agent", "cron"],
+            "clients": ["web-ui", "cli", "agent", "cron", "telegram"],
             "tools_count": len(TOOL_DEFINITIONS),
             "skills_count": len(skill_mgr.all_manifests()),
             "enabled_skills_count": len(skill_mgr.enabled_ids()),
@@ -48,7 +51,27 @@ class GatewayService:
             "enabled_schedules_count": enabled_schedules,
             "recent_failed_runs": failed_runs,
             "runtime": runtime,
+            "telegram": {
+                "enabled": bool(tg.get("enabled")),
+                "configured": bool(tg.get("bot_token")),
+                "control_chats": len(tg.get("control_chat_ids") or []),
+                "allow_any_chat": bool(tg.get("allow_any_chat")),
+            },
         }
+
+    def get_telegram_config(self) -> dict[str, Any]:
+        from config.ui_store import panel_config_for_api
+
+        return dict(panel_config_for_api(mask_secrets=True).get("telegram") or {})
+
+    def update_telegram_config(self, updates: dict[str, Any]) -> dict[str, Any]:
+        from config.ui_store import save_panel_config
+
+        save_panel_config(telegram_updates=updates)
+        from server.services.context import get_context
+
+        get_context().reload_settings()
+        return self.get_telegram_config()
 
     def list_tools(self) -> list[dict[str, Any]]:
         return TOOL_DEFINITIONS
