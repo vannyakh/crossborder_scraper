@@ -126,7 +126,7 @@ run_bootstrap() {
   fi
 
   echo "==> panel setup (host, port, credentials)"
-  uv run scraper "${setup_args[@]}"
+  uv run crossborder "${setup_args[@]}"
 }
 
 maybe_start_panel() {
@@ -138,7 +138,7 @@ maybe_start_panel() {
   mkdir -p "${root}/data"
   local log="${root}/data/panel.log"
   echo "==> starting panel in background (log: ${log})"
-  nohup uv run scraper serve --no-reload >>"${log}" 2>&1 &
+  nohup uv run crossborder serve --no-reload >>"${log}" 2>&1 &
   echo "    PID $! — open the Login URL from the card above"
 }
 
@@ -147,10 +147,10 @@ print_footer() {
   echo ""
   echo "==> You're set. Common next steps:"
   echo "    cd ${root}"
-  echo "    uv run scraper serve --no-reload     # run panel now"
-  echo "    uv run scraper deploy up             # Docker production"
-  echo "    uv run scraper tools update          # pull + sync + restart"
-  echo "    uv run scraper tools --help          # sync | restart | reset"
+  echo "    crossborder --help                   # all commands & options"
+  echo "    uv run crossborder serve --no-reload # run panel now"
+  echo "    uv run crossborder deploy up         # Docker production"
+  echo "    uv run crossborder tools update      # pull + sync + restart"
   echo ""
 }
 
@@ -168,5 +168,12 @@ fi
 
 ensure_uv
 run_bootstrap "${ROOT}"
+
+echo "==> CLI installed: crossborder (alias: scraper)"
+if [[ -x "${ROOT}/.venv/bin/crossborder" ]]; then
+  echo "    ${ROOT}/.venv/bin/crossborder --help"
+elif [[ -f "${ROOT}/.venv/Scripts/crossborder.exe" ]]; then
+  echo "    ${ROOT}/.venv/Scripts/crossborder.exe --help"
+fi
 maybe_start_panel "${ROOT}"
 print_footer "${ROOT}"

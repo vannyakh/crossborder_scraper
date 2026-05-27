@@ -35,7 +35,8 @@ uv run playwright install chromium
 ```bash
 cp .env.example .env
 cp config/ui_config.example.json config/ui_config.json
-scraper setup          # auto-generates PANEL_USERNAME + PANEL_PASSWORD in .env
+crossborder setup        # auto-generates PANEL_USERNAME + PANEL_PASSWORD in .env
+# (alias: scraper)
 # Configure AI, engine, and marketplace keys in the web UI (Settings) or ui_config.json
 ```
 
@@ -85,15 +86,13 @@ python main.py engine                       # show workers, proxies, cookies, AI
 ### Gateway + AI agent (control plane)
 
 ```bash
-uv run serve                                # API + panel UI (or: scraper serve)
+uv run serve                                # API + panel UI (or: crossborder serve)
 bash scripts/serve-api.sh                   # same, with reload
-scraper gateway                             # gateway status
-scraper skills list --local                 # OpenClaw-style SKILL.md skills
-scraper prompts list                        # agent role prompts
-scraper agent "list marketplaces and last 5 products"
-scraper agent "scrape this URL" -s scrape-assistant --local
-scraper workflow scrape_to_export --url "https://..." --marketplace shopify
-scraper plugins                             # source plugin catalog
+crossborder --help                          # all commands & options
+crossborder gateway                         # gateway status
+crossborder skills list --local             # OpenClaw-style SKILL.md skills
+crossborder agent "list marketplaces and last 5 products"
+crossborder plugins                         # source plugin catalog
 ```
 
 CLI uses the same HTTP API as the web panel (`/gateway/*`). Use `--local` on `scraper agent` / `scraper skills` to skip the HTTP server.
@@ -125,7 +124,7 @@ uv run scraper deploy up          # Docker
 
 Auto-start panel after install: `CROSSBORDER_START=1 curl ... | bash`
 
-**Maintain after install:** `uv run scraper tools update` (sync + restart) · `scraper tools reset credentials`
+**Maintain after install:** `crossborder tools update` (sync + restart) · `crossborder tools reset credentials`
 
 See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) for aaPanel, nginx, Windows, and systemd.
 

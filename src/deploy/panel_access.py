@@ -114,7 +114,7 @@ def print_panel_access_card(
 
 def default_next_commands(mode: str) -> list[str]:
     if mode == "docker":
-        return ["uv run scraper deploy up", "uv run scraper deploy status"]
+        return ["crossborder deploy up", "crossborder deploy status"]
     if mode in ("server", "install"):
-        return ["uv run scraper serve --no-reload", "uv run scraper gateway"]
-    return ["uv run scraper serve", "Open panel Login URL in your browser"]
+        return ["crossborder serve --no-reload", "crossborder gateway"]
+    return ["crossborder serve", "crossborder --help", "Open panel Login URL in your browser"]

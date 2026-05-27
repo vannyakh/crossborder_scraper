@@ -15,10 +15,10 @@ from cli.commands import (
 
 def build_app() -> typer.Typer:
     app = typer.Typer(
-        name="scraper",
+        name="crossborder",
         help=(
-            "Scrape 1688/Taobao/AliExpress · export to marketplaces · "
-            "gateway agent with OpenClaw-style skills"
+            "Crossborder Scraper — scrape 1688/Taobao/AliExpress, export to marketplaces, "
+            "self-host panel, gateway agent (OpenClaw-style skills)"
         ),
         no_args_is_help=True,
     )

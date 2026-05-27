@@ -126,7 +126,7 @@ function Run-Bootstrap {
 
     Write-Host "==> panel setup (host, port, credentials)"
     if (Get-Command uv -ErrorAction SilentlyContinue) {
-        uv run scraper @setupArgs
+        uv run crossborder @setupArgs
     } else {
         python main.py @setupArgs
     }
@@ -141,7 +141,7 @@ function Start-PanelBackground {
     if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
     Write-Host "==> starting panel in background (log: $log)"
     if (Get-Command uv -ErrorAction SilentlyContinue) {
-        Start-Process -FilePath "uv" -ArgumentList "run", "scraper", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
+        Start-Process -FilePath "uv" -ArgumentList "run", "crossborder", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
     } else {
         Start-Process -FilePath "python" -ArgumentList "main.py", "serve", "--no-reload" -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError $log
     }
@@ -153,8 +153,9 @@ function Write-Footer {
     Write-Host ""
     Write-Host "==> You're set. Common next steps:"
     Write-Host "    cd $Root"
-    Write-Host "    uv run scraper serve --no-reload"
-    Write-Host "    uv run scraper deploy up             # Docker (requires Docker Desktop)"
+    Write-Host "    crossborder --help"
+    Write-Host "    uv run crossborder serve --no-reload"
+    Write-Host "    uv run crossborder deploy up         # Docker (requires Docker Desktop)"
     Write-Host ""
 }
 

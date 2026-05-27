@@ -14,12 +14,19 @@ repo_python() {
   fi
 }
 
-repo_scraper() {
+repo_crossborder() {
   if command -v uv >/dev/null 2>&1; then
-    uv run scraper "$@"
+    uv run crossborder "$@"
+  elif command -v crossborder >/dev/null 2>&1; then
+    crossborder "$@"
   else
     repo_python -m cli.app "$@"
   fi
+}
+
+# Backward-compatible alias
+repo_scraper() {
+  repo_crossborder "$@"
 }
 
 need_pnpm() {

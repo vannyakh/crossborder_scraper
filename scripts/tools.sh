@@ -11,10 +11,10 @@ cmd="${1:-}"
 shift || true
 
 case "${cmd}" in
-  sync)    repo_scraper tools sync "$@" ;;
-  update)  repo_scraper tools update "$@" ;;
-  restart) repo_scraper tools restart "$@" ;;
-  reset)   repo_scraper tools reset "$@" ;;
+  sync)    repo_crossborder tools sync "$@" ;;
+  update)  repo_crossborder tools update "$@" ;;
+  restart) repo_crossborder tools restart "$@" ;;
+  reset)   repo_crossborder tools reset "$@" ;;
   *)
     echo "Usage: bash scripts/tools.sh {sync|update|restart|reset} [options]" >&2
     echo "" >&2

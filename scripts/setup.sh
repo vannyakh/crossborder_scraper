@@ -17,14 +17,15 @@ repo_python -m playwright install chromium
 MODE="${SETUP_MODE:-server}"
 echo "==> bootstrap (mode=$MODE)"
 if [[ "$MODE" == "panel" ]]; then
-  repo_scraper setup
+  repo_crossborder setup
 else
-  repo_scraper setup "--${MODE}"
+  repo_crossborder setup "--${MODE}"
 fi
 
 echo ""
 echo "Done. Self-host options:"
+echo "  crossborder --help"
 echo "  bash scripts/serve-api.sh       # dev API + reload"
-echo "  uv run scraper deploy up          # Docker production"
-echo "  uv run scraper deploy systemd     # Linux service unit"
+echo "  uv run crossborder deploy up      # Docker production"
+echo "  uv run crossborder deploy systemd # Linux service unit"
 echo "  bash scripts/dev-ui.sh            # frontend dev"

@@ -21,8 +21,9 @@ Environment:
 CLI equivalents:
 
 ```bash
-uv run scraper --help
-uv run scraper serve
-uv run scraper skills list --local
-uv run scraper gateway
+crossborder --help
+uv run crossborder serve
+uv run crossborder skills list --local
+uv run crossborder gateway
+# alias: scraper
 ```

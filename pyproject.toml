@@ -29,6 +29,7 @@ dependencies = [
 ]
 
 [project.scripts]
+crossborder = "cli:app"
 scraper = "cli:app"
 serve = "server.__main__:main"
 
