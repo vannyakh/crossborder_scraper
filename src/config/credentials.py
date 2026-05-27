@@ -154,12 +154,15 @@ def print_panel_credentials(
     env_path: Path | None = None,
     access: object | None = None,
     mode: str = "setup",
+    next_commands: list[str] | None = None,
 ) -> None:
     """Print aaPanel-style access card (prefer passing `access` from deploy.bootstrap)."""
     from deploy.panel_access import default_next_commands, print_panel_access_card
 
+    cmds = next_commands if next_commands is not None else default_next_commands(mode)
+
     if access is not None:
-        print_panel_access_card(access, mode=mode, next_commands=default_next_commands(mode))
+        print_panel_access_card(access, mode=mode, next_commands=cmds)
         return
 
     from deploy.network import build_panel_access_info
@@ -175,4 +178,4 @@ def print_panel_credentials(
         credentials_generated=False,
         env_path=str(path),
     )
-    print_panel_access_card(info, mode=mode, next_commands=default_next_commands(mode))
+    print_panel_access_card(info, mode=mode, next_commands=cmds)

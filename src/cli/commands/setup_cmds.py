@@ -1,4 +1,4 @@
-"""Setup, panel serve, and plugin catalog commands."""
+"""Setup, panel serve, install, and plugin catalog commands."""
 
 from __future__ import annotations
 
@@ -6,7 +6,52 @@ import typer
 from rich.table import Table
 
 from cli.helpers import console
+from cli.onboard import print_mode_footer, print_onboard_banner, print_setup_progress
+from cli.theme import hint, warn
 from config import get_settings
+
+
+def _run_setup_flow(
+    *,
+    mode: str,
+    regenerate: bool,
+    host: str,
+    port: int | None,
+    auto_port: bool,
+    external: str | None,
+    display_mode: str | None = None,
+) -> None:
+    from config.credentials import print_panel_credentials
+    from deploy.bootstrap import run_setup
+    from deploy.panel_access import default_next_commands
+
+    card_mode = display_mode or mode
+    print_onboard_banner(mode=card_mode)
+
+    result = run_setup(
+        mode=mode,
+        regenerate=regenerate,
+        bind_host=host,
+        port=port,
+        auto_port=auto_port,
+        external_host=external,
+    )
+
+    print_setup_progress(
+        list(result["steps"]),
+        warnings=list(result["warnings"]),
+    )
+
+    access = result["access"]
+    print_panel_credentials(
+        str(result["username"]),
+        str(result["password"]),
+        access=access,
+        mode=card_mode,
+        next_commands=default_next_commands(card_mode),
+    )
+
+    print_mode_footer(mode)
 
 
 def register_setup_commands(app: typer.Typer) -> None:
@@ -51,15 +96,12 @@ def register_setup_commands(app: typer.Typer) -> None:
         ),
     ) -> None:
         """
-        Initialize self-hosted panel — generates URL, IP, username, and password (aaPanel-style).
+        Initialize self-hosted panel — URL, credentials, and optional full bootstrap.
 
-        Production server: scraper setup --server
+        Quick: crossborder setup
 
-        Docker host: scraper setup --docker  then  scraper deploy up
+        Full install: crossborder setup --server  (or crossborder install)
         """
-        from config.credentials import print_panel_credentials
-        from deploy.bootstrap import run_setup
-
         if docker:
             mode = "docker"
         elif server:
@@ -67,44 +109,61 @@ def register_setup_commands(app: typer.Typer) -> None:
         else:
             mode = "panel"
 
-        result = run_setup(
+        _run_setup_flow(
             mode=mode,
             regenerate=regenerate,
-            bind_host=host,
+            host=host,
             port=port,
             auto_port=not no_auto_port,
-            external_host=external,
-        )
-        access = result["access"]
-        print_panel_credentials(
-            str(result["username"]),
-            str(result["password"]),
-            access=access,
-            mode=mode,
+            external=external,
         )
 
-        if result["warnings"]:
-            for w in result["warnings"]:
-                console.print(f"[yellow]{w}[/yellow]")
+    @app.command()
+    def install(
+        regenerate: bool = typer.Option(False, "--regenerate", help="New panel password"),
+        host: str = typer.Option("0.0.0.0", "--host", help="Bind address"),
+        port: int | None = typer.Option(None, "--port", "-p", help="Panel port (default 8787)"),
+        external: str | None = typer.Option(
+            None,
+            "--external",
+            "-e",
+            help="Public IP or domain for URLs in the access card",
+        ),
+        no_auto_port: bool = typer.Option(
+            False,
+            "--fixed-port",
+            help="Fail if default port is busy instead of picking the next free port",
+        ),
+    ) -> None:
+        """
+        One-shot self-host install (dirs, deps, Playwright, credentials).
 
-        if mode == "panel" and not regenerate:
-            console.print("[dim]Full VPS install: scraper setup --server[/dim]")
+        Same as: crossborder setup --server
+        """
+        _run_setup_flow(
+            mode="server",
+            regenerate=regenerate,
+            host=host,
+            port=port,
+            auto_port=not no_auto_port,
+            external=external,
+            display_mode="install",
+        )
 
     @app.command("env-clean")
     def env_clean() -> None:
         """Move UI prefs to config/ui_config.json and remove them from .env."""
         from config.credentials import clean_env_file
         from config.ui_store import UI_CONFIG_PATH, load_ui_config
+        from cli.theme import ok
 
         load_ui_config()
         removed = clean_env_file()
         if removed:
-            console.print(
-                f"[green]Removed {len(removed)} UI key(s) from .env[/green]: {', '.join(removed)}"
-            )
-            console.print(f"[dim]Preferences stored in {UI_CONFIG_PATH}[/dim]")
+            console.print(ok(f"Removed {len(removed)} UI key(s) from .env: {', '.join(removed)}"))
+            console.print(hint(f"Preferences stored in {UI_CONFIG_PATH}"))
         else:
-            console.print("[yellow].env already clean — no UI preference keys found[/yellow]")
+            console.print(warn(".env already clean — no UI preference keys found"))
 
     @app.command()
     def serve(
@@ -112,6 +171,18 @@ def register_setup_commands(app: typer.Typer) -> None:
     ) -> None:
         """Run the FastAPI panel API (same as `uv run serve`)."""
         import os
+
+        from cli.onboard import print_onboard_banner
+        from cli.theme import brand, hint, link_markup
+
+        settings = get_settings()
+        host = "127.0.0.1" if settings.panel_host in ("0.0.0.0", "::") else settings.panel_host
+        login = f"http://{host}:{settings.panel_port}/ui/login"
+
+        print_onboard_banner(mode="panel")
+        console.print(brand("Starting panel server…"))
+        console.print(hint(f"  Login: {link_markup(login)}"))
+        console.print()
 
         os.environ["UVICORN_RELOAD"] = "1" if reload else "0"
         from server.__main__ import main
@@ -125,8 +196,8 @@ def register_setup_commands(app: typer.Typer) -> None:
         """List built-in and installed scrape source plugins."""
         from core.plugins import list_source_catalog
 
-        table = Table(title="Source plugins")
-        table.add_column("ID")
+        table = Table(title="Source plugins", border_style="bright_blue")
+        table.add_column("ID", style="accent")
         table.add_column("Kind")
         table.add_column("Category")
         table.add_column("Status")

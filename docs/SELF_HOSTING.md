@@ -58,6 +58,7 @@ Environment (optional):
 git clone https://github.com/vannyakh/crossborder_scraper.git
 cd crossborder_scraper
 bash scripts/install.sh
+# or: uv run crossborder install
 ```
 
 Or with CLI only:

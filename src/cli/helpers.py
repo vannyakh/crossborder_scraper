@@ -5,10 +5,11 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Coroutine
 
-from rich.console import Console
 from rich.table import Table
 
-console = Console()
+from cli.theme import cmd, console, err, hint
+
+__all__ = ["console", "run_async", "print_product_table", "gateway_client", "exit_gateway_error"]
 
 
 def run_async(coro: Coroutine[Any, Any, Any]) -> Any:
@@ -16,9 +17,9 @@ def run_async(coro: Coroutine[Any, Any, Any]) -> Any:
 
 
 def print_product_table(product: Any) -> None:
-    table = Table(title="Scraped product")
-    table.add_column("Field")
-    table.add_column("Value")
+    table = Table(title="Scraped product", border_style="bright_blue")
+    table.add_column("Field", style="label")
+    table.add_column("Value", style="value")
     table.add_row("Source", product.source.value)
     table.add_row("ID", product.source_product_id)
     table.add_row("Title", product.title[:80])
@@ -37,6 +38,6 @@ def gateway_client(url: str | None = None):
 def exit_gateway_error(exc: Exception) -> None:
     import typer
 
-    console.print(f"[red]{exc}[/red]")
-    console.print("[dim]Start API: uv run serve  or  bash scripts/serve-api.sh[/dim]")
+    console.print(err(str(exc)))
+    console.print(hint("Start panel: ") + cmd("uv run crossborder serve --no-reload"))
     raise typer.Exit(1) from exc

@@ -135,7 +135,7 @@ run_bootstrap() {
     fi
   fi
 
-  local setup_args=(setup --server --port "${PANEL_PORT}")
+  local setup_args=(install --port "${PANEL_PORT}")
   local public_ip
   public_ip="$(detect_public_ip)"
   if [[ -n "${public_ip}" ]]; then

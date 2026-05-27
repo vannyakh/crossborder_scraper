@@ -1,4 +1,4 @@
-"""Self-hosting deploy commands (Docker, systemd, nginx — aaPanel / n8n style)."""
+"""Self-hosting deploy commands"""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from rich.panel import Panel
 from rich.table import Table
 
 from cli.helpers import console, gateway_client
+from cli.onboard import print_onboard_banner, print_setup_progress
+from cli.theme import err, hint, ok, warn
 from config import get_settings
 from core.paths import repo_root
 from deploy.bootstrap import run_setup
@@ -45,6 +47,10 @@ def deploy_setup(
     """
     if skip_browser and mode == "server":
         mode = "panel"
+
+    card_mode = "install" if mode == "server" else mode
+    print_onboard_banner(mode=card_mode)
+
     result = run_setup(
         mode=mode,
         regenerate=regenerate,
@@ -53,18 +59,18 @@ def deploy_setup(
         external_host=external,
     )
 
+    print_setup_progress(list(result["steps"]), warnings=list(result["warnings"]))
+
     from config.credentials import print_panel_credentials
+    from deploy.panel_access import default_next_commands
 
     print_panel_credentials(
         str(result["username"]),
         str(result["password"]),
         access=result["access"],
-        mode="install" if mode == "server" else mode,
+        mode=card_mode,
+        next_commands=default_next_commands(card_mode),
     )
-
-    if result["warnings"]:
-        for w in result["warnings"]:
-            console.print(f"[yellow]Warning:[/yellow] {w}")
 
 
 @deploy_app.command("status")
@@ -73,7 +79,7 @@ def deploy_status(
 ) -> None:
     """Show platform, Docker, and gateway health."""
     plat = detect_platform()
-    table = Table(title="Host")
+    table = Table(title="Host", border_style="bright_blue")
     table.add_column("Key")
     table.add_column("Value")
     table.add_row("OS", f"{plat.system} / {plat.machine}")
@@ -89,10 +95,10 @@ def deploy_status(
 
     try:
         health = gateway_client(url).health()
-        console.print(f"[green]API health:[/green] {health}")
+        console.print(ok(f"API health: {health}"))
     except Exception as exc:
-        console.print(f"[yellow]API not reachable:[/yellow] {exc}")
-        console.print("[dim]Start: scraper serve  or  scraper deploy up[/dim]")
+        console.print(warn(f"API not reachable: {exc}"))
+        console.print(hint("Start: uv run crossborder serve  or  uv run crossborder deploy up"))
 
 
 @deploy_app.command("up")
@@ -102,7 +108,7 @@ def deploy_up(
 ) -> None:
     """Start production stack with Docker Compose."""
     if not docker_ready():
-        console.print("[red]Docker Compose not available[/red]")
+        console.print(err("Docker Compose not available"))
         raise typer.Exit(1)
 
     if setup_first:

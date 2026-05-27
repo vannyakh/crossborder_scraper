@@ -6,6 +6,7 @@ import typer
 from rich.table import Table
 
 from cli.helpers import console
+from cli.theme import hint, warn
 from deploy.maintenance import (
     ResetScope,
     RuntimeKind,
@@ -29,16 +30,16 @@ def _print_result(title: str, result: object) -> None:
 
     assert isinstance(result, MaintenanceResult)
     if result.steps:
-        table = Table(title=title)
-        table.add_column("Step", style="green")
+        table = Table(title=title, border_style="bright_blue")
+        table.add_column("Step", style="ok")
         for step in result.steps:
             table.add_row(step)
         console.print(table)
     if result.warnings:
         for w in result.warnings:
-            console.print(f"[yellow]{w}[/yellow]")
+            console.print(warn(w))
     if result.runtime != RuntimeKind.NONE:
-        console.print(f"[dim]Runtime:[/dim] {result.runtime.value}")
+        console.print(hint(f"Runtime: {result.runtime.value}"))
 
 
 @tools_app.command("sync")

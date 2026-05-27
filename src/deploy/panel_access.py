@@ -4,14 +4,55 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rich.box import DOUBLE
-from rich.console import Console
+from rich.box import ROUNDED
+from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
 
-from deploy.network import PanelAccessInfo
+from cli.theme import (
+    brand,
+    cmd,
+    console,
+    hint,
+    link_markup,
+    panel_border_style,
+    secret,
+    user,
+    warn,
+)
+from deploy.network import DEFAULT_PANEL_PORT, PanelAccessInfo
 
-_console = Console()
+
+def _print_compact_urls(info: PanelAccessInfo) -> None:
+    parts = [
+        link_markup(info.primary_login_url, "Login"),
+        link_markup(info.local_url, "Local"),
+    ]
+    if info.external_url:
+        parts.append(link_markup(info.external_url, "Public"))
+    console.print(Columns(parts, padding=(1, 2)))
+
+
+def _print_quick_start(info: PanelAccessInfo, *, mode: str) -> None:
+    serve = cmd("uv run crossborder serve --no-reload")
+    login = link_markup(info.primary_login_url, info.primary_login_url)
+    lines = [
+        f"1. Start the panel (required):  {serve}",
+        f"2. Open login in browser:       {login}",
+        f"3. Sign in with username above  {user(info.username)}",
+    ]
+    if mode in ("server", "install"):
+        lines.append(hint("   CLI: run from install folder — uv run crossborder --help"))
+    console.print(
+        Panel(
+            "\n".join(lines),
+            title=brand("Quick start"),
+            border_style="green",
+            box=ROUNDED,
+            padding=(1, 2),
+        )
+    )
+    console.print()
 
 
 def configure_panel_bind(
@@ -28,7 +69,7 @@ def configure_panel_bind(
     """
     from config.credentials import upsert_env_file
     from core.paths import env_file_path
-    from deploy.network import DEFAULT_PANEL_PORT, normalize_bind_host, pick_panel_port
+    from deploy.network import normalize_bind_host, pick_panel_port
 
     path = env_path or env_file_path()
     bind = normalize_bind_host(host)
@@ -48,88 +89,105 @@ def configure_panel_bind(
     return bind, preferred, adjusted
 
 
+def _access_table(info: PanelAccessInfo) -> Table:
+    table = Table.grid(padding=(0, 2))
+    table.add_column(style="label", justify="right", min_width=12)
+    table.add_column(style="value")
+
+    table.add_row("Bind", f"{info.bind_host}:{info.port}")
+    table.add_row("Panel", link_markup(info.primary_access_url))
+    table.add_row("Login", link_markup(info.primary_login_url))
+    table.add_row("Local", link_markup(info.local_url))
+
+    if info.lan_ips:
+        for i, ip in enumerate(info.lan_ips):
+            label = "LAN" if i == 0 else ""
+            url = f"http://{ip}:{info.port}/ui/"
+            table.add_row(label, link_markup(url))
+
+    if info.external_url:
+        table.add_row("Public", link_markup(info.external_url))
+
+    table.add_row("", "")
+    table.add_row("Username", user(info.username))
+    table.add_row("Password", secret(info.password))
+    table.add_row(".env", hint(info.env_path))
+
+    if info.port_auto_adjusted:
+        table.add_row(
+            "",
+            warn(f"Port {DEFAULT_PANEL_PORT} was busy — using {info.port}"),
+        )
+
+    if info.credentials_generated:
+        table.add_row("", hint("Save password now — not shown again on later runs"))
+    else:
+        table.add_row("", hint("Using existing credentials from .env"))
+
+    return table
+
+
 def print_panel_access_card(
     info: PanelAccessInfo,
     *,
     mode: str = "setup",
     next_commands: list[str] | None = None,
+    show_quick_start: bool = True,
 ) -> None:
     """Print install summary with URLs, IP, username, and password."""
-    table = Table.grid(padding=(0, 2))
-    table.add_column(style="bold cyan", justify="right")
-    table.add_column(style="white")
+    title_map = {
+        "setup": "Panel ready",
+        "install": "Installation complete",
+        "server": "Self-host ready",
+        "docker": "Docker setup complete",
+        "panel": "Panel credentials",
+    }
+    title = title_map.get(mode, "Panel ready")
 
-    table.add_row("Bind address", f"{info.bind_host}:{info.port}")
-    table.add_row("Panel URL", f"[link={info.primary_access_url}]{info.primary_access_url}[/link]")
-    table.add_row("Login URL", f"[link={info.primary_login_url}]{info.primary_login_url}[/link]")
-    table.add_row("Local URL", info.local_url)
-
-    if info.lan_ips:
-        for i, ip in enumerate(info.lan_ips):
-            label = "Server IP" if i == 0 else ""
-            url = f"http://{ip}:{info.port}/ui/"
-            table.add_row(label, f"[link={url}]{url}[/link]")
-    else:
-        table.add_row("Server IP", "[dim]Could not detect — use Local URL or set --external[/dim]")
-
-    if info.external_url:
-        table.add_row("Public URL", f"[link={info.external_url}]{info.external_url}[/link]")
-
-    table.add_row("", "")
-    table.add_row("Username", f"[bold green]{info.username}[/bold green]")
-    table.add_row("Password", f"[bold yellow]{info.password}[/bold yellow]")
-    table.add_row("Saved in", info.env_path)
-
-    if info.port_auto_adjusted:
-        from deploy.network import DEFAULT_PANEL_PORT
-
-        table.add_row(
-            "",
-            f"[yellow]Port {DEFAULT_PANEL_PORT} was busy — using {info.port}[/yellow]",
-        )
-
-    if info.credentials_generated:
-        table.add_row("", "[dim]Save these credentials — they are not shown again.[/dim]")
-    else:
-        table.add_row("", "[dim]Using existing credentials from .env[/dim]")
-
-    title = "Crossborder Scraper — Panel ready"
-    if mode == "install":
-        title = "Installation complete — Panel access"
-    elif mode == "docker":
-        title = "Docker setup complete — Panel access"
-
-    _console.print()
+    console.print()
     if mode in ("server", "install"):
-        _console.print(
-            "[bold yellow]▸ Panel URLs work only while the server is running.[/bold yellow]\n"
-            "[dim]After install, run `uv run crossborder serve --no-reload` (or use CROSSBORDER_START=1).[/dim]\n"
+        console.print(
+            Panel(
+                warn("URLs work only while the panel server is running")
+                + "\n"
+                + hint("Run: uv run crossborder serve --no-reload  (keep terminal open)"),
+                border_style="yellow",
+                box=ROUNDED,
+                padding=(0, 1),
+            )
         )
-    _console.print(
+        console.print()
+
+    console.print(
         Panel(
-            table,
-            title=f"[bold green]{title}[/bold green]",
-            border_style="green",
-            box=DOUBLE,
+            _access_table(info),
+            title=brand(title),
+            border_style=panel_border_style(),
+            box=ROUNDED,
             padding=(1, 2),
         )
     )
 
+    _print_compact_urls(info)
+
     if next_commands:
-        _console.print("[bold]Next steps:[/bold]")
-        for cmd in next_commands:
-            _console.print(f"  [cyan]{cmd}[/cyan]")
-    _console.print()
+        console.print()
+        console.print(brand("Commands"))
+        for line in next_commands:
+            console.print(f"  {line}")
+
+    if show_quick_start and mode in ("server", "install", "setup", "panel"):
+        _print_quick_start(info, mode=mode)
+
+    console.print()
 
 
 def default_next_commands(mode: str) -> list[str]:
-    serve = "uv run crossborder serve --no-reload  # keep this terminal open"
+    from cli.theme import cmd
+
+    serve = cmd("uv run crossborder serve --no-reload")
     if mode == "docker":
-        return ["uv run crossborder deploy up", "uv run crossborder deploy status"]
+        return [cmd("uv run crossborder deploy up"), cmd("uv run crossborder deploy status")]
     if mode in ("server", "install"):
-        return [
-            "[bold]1.[/bold] " + serve,
-            "[bold]2.[/bold] Open [bold]Login URL[/bold] above in your browser (Cmd/Ctrl+click in most terminals)",
-            "[dim]Tip: `crossborder` is only on PATH inside the project venv — use `uv run crossborder` from the install folder[/dim]",
-        ]
-    return [serve, "uv run crossborder --help", "Open Login URL in your browser"]
+        return [serve]
+    return [serve, cmd("uv run crossborder --help")]

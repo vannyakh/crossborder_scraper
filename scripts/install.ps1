@@ -122,7 +122,7 @@ function Run-Bootstrap {
         }
     }
 
-    $setupArgs = @("setup", "--server", "--port", $PanelPort)
+    $setupArgs = @("install", "--port", $PanelPort)
     $publicIp = Get-PublicIp
     if ($publicIp) {
         Write-Host "==> detected public IP: $publicIp"
