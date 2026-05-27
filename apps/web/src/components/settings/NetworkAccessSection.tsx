@@ -37,7 +37,7 @@ function AccessCheckRow({ check }: { check: NetworkAccessCheck }) {
           {check.detail}
         </Text>
       </Box>
-      <StatusBadge tone={checkTone(check.ok)} label={check.ok === true ? 'OK' : check.ok === false ? 'Fix' : 'Manual'} />
+      <StatusBadge status={checkTone(check.ok)} label={check.ok === true ? 'OK' : check.ok === false ? 'Fix' : 'Manual'} />
     </HStack>
   )
 }
@@ -104,7 +104,7 @@ export function NetworkAccessSection() {
             </Text>
             {data ? (
               <StatusBadge
-                tone={data.local_health && data.public_bind ? 'success' : 'running'}
+                status={data.local_health && data.public_bind ? 'success' : 'running'}
                 label={`:${data.port}`}
               />
             ) : null}
