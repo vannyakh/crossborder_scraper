@@ -1,10 +1,11 @@
-import { Box, Grid, HStack, Skeleton, Text } from '@chakra-ui/react'
+import { Box, Grid, HStack, Text } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { EChart } from '../charts/EChart'
 import { multiLineOption } from '../charts/chart-options'
 import { Section, SectionCard } from '../ui/Section'
 import { ChartPanelSkeleton } from './DashboardSkeleton'
+import { ShimmerBar } from '../ui/Shimmer'
 import {
   formatChartTime,
   formatPercent,
@@ -102,7 +103,7 @@ function TrendChartCard({
           {range} · {ready ? 'Live' : 'Collecting…'}
         </Text>
         {!option ? (
-          <Skeleton flex={1} minH={CHART_HEIGHT} borderRadius="var(--radius-card)" />
+          <ShimmerBar h={CHART_HEIGHT} radius="var(--radius-card)" />
         ) : (
           <EChart option={option} height={CHART_HEIGHT} className="chart-trend-panel" />
         )}

@@ -1,88 +1,74 @@
-import { Box, Grid, HStack, Skeleton, SkeletonText, VStack } from '@chakra-ui/react'
+import { Box, Grid, HStack, VStack } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
-import { Section, SectionCard, SectionDivider } from '../ui/Section'
+import { Section, SectionCard } from '../ui/Section'
+import { ShimmerBar, ShimmerBlock, ShimmerSurface, ShimmerWrap } from '../ui/Shimmer'
 
-/** Pulsing rectangular block — wraps Chakra Skeleton with sensible defaults */
-export function Bone({
-  w = 'full',
-  h = '14px',
-  radius = 'var(--radius-card)',
-}: {
-  w?: string | number
-  h?: string | number
-  radius?: string
-}) {
-  return <Skeleton width={w} height={h} borderRadius={radius} />
-}
+const GAUGE_TILE = {
+  p: 3,
+  minH: '120px',
+  borderRadius: 'var(--radius-card)',
+  borderWidth: '1px',
+  borderColor: 'border.subtle',
+  bg: 'bg.elevated',
+} as const
 
-/** Section header placeholder: divider line + subtitle line */
-export function SectionHeadingSkeleton() {
-  return (
-    <Box>
-      <HStack gap={2} align="center">
-        <Box w={6} minW={6} borderTopWidth="1px" borderColor="border.subtle" />
-        <Bone w="120px" h="16px" />
-        <Box flex={1} borderTopWidth="1px" borderColor="border.subtle" />
-      </HStack>
-      <Bone w="200px" h="12px" radius="sm" />
-    </Box>
-  )
-}
-
-/** Single gauge tile skeleton matching ServiceGaugeTile / HardwareGaugeHoverCard */
+/** Single gauge tile — matches ServiceGaugeTile / HardwareGaugeHoverCard layout */
 export function GaugeTileSkeleton() {
   return (
-    <Box
-      p={3}
-      borderRadius="var(--radius-card)"
-      borderWidth="1px"
-      borderColor="border.subtle"
-      bg="bg.elevated"
-      minH="120px"
-    >
-      <Bone w="60px" h="14px" />
-      <Bone w="110px" h="11px" radius="sm" />
-      {/* gauge circle placeholder */}
-      <Box mt={3} display="flex" justifyContent="center">
-        <Bone w="80px" h="80px" radius="full" />
+    <ShimmerSurface {...GAUGE_TILE} display="flex" flexDirection="column">
+      <ShimmerBlock w="52px" h="14px" />
+      <ShimmerBlock w="72px" h="11px" radius="sm" mt={0.5} />
+      <Box
+        flex={1}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        minH="88px"
+        mt={0}
+      >
+        <ShimmerBlock w="72px" h="72px" radius="full" />
       </Box>
-    </Box>
+    </ShimmerSurface>
   )
 }
 
-/** 4-column gauge row (hardware / service) */
-export function GaugeRowSkeleton({ title, subtitle }: { title: string; subtitle?: string }) {
+/** 4-column gauge row — title only */
+export function GaugeRowSkeleton({
+  title,
+  footer,
+}: {
+  title: string
+  footer?: boolean
+}) {
   return (
-    <Box mt={0}>
-      <SectionDivider title={title} />
-      {subtitle ? <Bone w="180px" h="12px" radius="sm" /> : null}
-      <Box pt={subtitle ? 3 : 2.5}>
-        <Grid
-          templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
-          gap={3}
-        >
-          {Array.from({ length: 4 }).map((_, i) => (
-            <GaugeTileSkeleton key={i} />
-          ))}
-        </Grid>
-      </Box>
-    </Box>
+    <Section title={title} mt={0}>
+      <Grid
+        templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
+        gap={3}
+      >
+        {Array.from({ length: 4 }).map((_, i) => (
+          <GaugeTileSkeleton key={i} />
+        ))}
+      </Grid>
+      {footer ? (
+        <ShimmerBar w="min(280px, 65%)" h="11px" radius="sm" mt={2.5} />
+      ) : null}
+    </Section>
   )
 }
 
-/** Overview column skeleton */
 function OverviewColSkeleton() {
   return (
-    <Box px={{ base: 3, md: 4 }} py={4}>
+    <Box px={{ base: 3, md: 4 }} py={3.5}>
       <HStack gap={2} mb={2}>
-        <Bone w="28px" h="28px" radius="var(--radius-card)" />
-        <Bone w="80px" h="14px" />
+        <ShimmerBlock w="28px" h="28px" radius="var(--radius-card)" />
+        <ShimmerBlock w="72px" h="14px" />
       </HStack>
-      <VStack align="stretch" gap={2.5}>
+      <VStack align="stretch" gap={2}>
         {Array.from({ length: 4 }).map((_, i) => (
           <HStack key={i} justify="space-between">
-            <Bone w="55px" h="11px" radius="sm" />
-            <Bone w="36px" h="11px" radius="sm" />
+            <ShimmerBlock w="52px" h="11px" radius="sm" />
+            <ShimmerBlock w="32px" h="11px" radius="sm" />
           </HStack>
         ))}
       </VStack>
@@ -90,11 +76,16 @@ function OverviewColSkeleton() {
   )
 }
 
-/** 5-column overview grid skeleton */
 export function OverviewSkeleton() {
   return (
     <Section title="Overview" description="Runtime snapshot across scrape, AI, and data" mt={5}>
-      <SectionCard p={0}>
+      <ShimmerSurface
+        borderWidth="1px"
+        borderColor="border.subtle"
+        borderRadius="var(--radius-panel)"
+        bg="bg.elevated"
+        overflow="hidden"
+      >
         <Grid
           templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }}
           gap={0}
@@ -103,49 +94,43 @@ export function OverviewSkeleton() {
             <OverviewColSkeleton key={i} />
           ))}
         </Grid>
-      </SectionCard>
+      </ShimmerSurface>
     </Section>
   )
 }
 
-/** Tool card skeleton */
 export function ToolCardSkeleton() {
   return (
-    <Box
-      p={3}
-      borderRadius="var(--radius-card)"
-      borderWidth="1px"
-      borderColor="border.subtle"
-      bg="bg.elevated"
-      h="full"
-    >
-      <HStack gap={2} mb={2}>
-        <Bone w="30px" h="30px" radius="var(--radius-card)" />
-        <Bone w="90px" h="14px" />
+    <ShimmerSurface {...GAUGE_TILE} h="full" display="flex" flexDirection="column">
+      <HStack gap={2}>
+        <ShimmerBlock w="30px" h="30px" radius="var(--radius-card)" />
+        <ShimmerBlock w="84px" h="14px" />
       </HStack>
-      <SkeletonText noOfLines={2} gap={1.5} mt={2} />
-      <Bone w="60px" h="20px" radius="sm" />
-      <Grid templateColumns="1fr 1fr" gap={2} mt={3}>
-        <Bone h="28px" radius="var(--radius-input)" />
-        <Bone h="28px" radius="var(--radius-input)" />
+      <VStack align="stretch" gap={1.5} mt={2} flex={1}>
+        <ShimmerBlock w="full" h="11px" radius="sm" />
+        <ShimmerBlock w="85%" h="11px" radius="sm" />
+      </VStack>
+      <ShimmerBlock w="56px" h="20px" radius="sm" mt={2} />
+      <Grid templateColumns="1fr 1fr" gap={2} mt={2.5}>
+        <ShimmerBlock h="28px" radius="var(--radius-input)" />
+        <ShimmerBlock h="28px" radius="var(--radius-input)" />
       </Grid>
-    </Box>
+    </ShimmerSurface>
   )
 }
 
-/** Full tools panel skeleton — 3 sections × 3 cards */
 export function ToolsPanelSkeleton() {
   return (
-    <Section title="Software tools" description="Loading panels…" mt={0}>
-      <VStack align="stretch" gap={6}>
+    <Section title="Software tools" mt={0}>
+      <VStack align="stretch" gap={5}>
         {Array.from({ length: 2 }).map((_, si) => (
           <Box key={si}>
-            <Bone w="140px" h="14px" />
-            <Bone w="220px" h="11px" radius="sm" />
+            <ShimmerBar w="128px" h="14px" radius="sm" />
+            <ShimmerBar w="200px" h="11px" radius="sm" mt={1.5} />
             <Grid
               templateColumns={{ base: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }}
               gap={3}
-              mt={3}
+              mt={2.5}
             >
               {Array.from({ length: 3 }).map((_, ci) => (
                 <ToolCardSkeleton key={ci} />
@@ -158,50 +143,47 @@ export function ToolsPanelSkeleton() {
   )
 }
 
-/** Chart panel skeleton */
 export function ChartPanelSkeleton({ title }: { title: string }) {
   return (
     <Section title={title} mt={0}>
-      <SectionCard>
-        <Grid
-          templateColumns={{ base: '1fr 1fr', md: 'repeat(4, 1fr)' }}
-          gap={0}
-          mb={4}
+      <SectionCard p={{ base: 3, md: 4 }}>
+        <ShimmerSurface
           borderWidth="1px"
           borderColor="border.subtle"
           borderRadius="var(--radius-card)"
           overflow="hidden"
+          mb={3}
         >
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Box key={i} p={3} borderRightWidth={i < 3 ? '1px' : 0} borderColor="border.subtle">
-              <Bone w="50px" h="11px" radius="sm" />
-              <Bone w="70px" h="20px" radius="sm" />
-            </Box>
-          ))}
-        </Grid>
-        <Bone h="min(360px, 42vh)" radius="var(--radius-card)" />
+          <Grid templateColumns={{ base: '1fr 1fr', md: 'repeat(4, 1fr)' }} gap={0}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Box
+                key={i}
+                px={3}
+                py={2.5}
+                borderRightWidth={i < 3 ? '1px' : 0}
+                borderColor="border.subtle"
+              >
+                <ShimmerBlock w="48px" h="11px" radius="sm" />
+                <ShimmerBlock w="64px" h="18px" radius="sm" mt={1.5} />
+              </Box>
+            ))}
+          </Grid>
+        </ShimmerSurface>
+        <ShimmerBar h="min(360px, 42vh)" radius="var(--radius-card)" />
       </SectionCard>
     </Section>
   )
 }
 
-/** Stats bar skeleton (LiveStatsBar) */
 export function StatsBarSkeleton() {
   return (
     <Grid templateColumns={{ base: '1fr 1fr', md: 'repeat(4, 1fr)' }} gap={3}>
       {Array.from({ length: 4 }).map((_, i) => (
-        <Box
-          key={i}
-          p={3}
-          borderRadius="var(--radius-card)"
-          borderWidth="1px"
-          borderColor="border.subtle"
-          bg="bg.elevated"
-        >
-          <Bone w="70px" h="11px" radius="sm" />
-          <Bone w="50px" h="22px" radius="sm" />
-          <Bone w="90px" h="10px" radius="sm" />
-        </Box>
+        <ShimmerSurface key={i} {...GAUGE_TILE} minH="auto">
+          <ShimmerBlock w="64px" h="11px" radius="sm" />
+          <ShimmerBlock w="44px" h="22px" radius="sm" mt={1.5} />
+          <ShimmerBlock w="80px" h="10px" radius="sm" mt={1} />
+        </ShimmerSurface>
       ))}
     </Grid>
   )
@@ -216,5 +198,5 @@ export function CardShell({
   loading: boolean
   skeleton: ReactNode
 }) {
-  return <>{loading ? skeleton : children}</>
+  return <ShimmerWrap loading={loading} skeleton={skeleton}>{children}</ShimmerWrap>
 }

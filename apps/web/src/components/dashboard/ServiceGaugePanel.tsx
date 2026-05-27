@@ -56,11 +56,11 @@ export function ServiceGaugePanel({
   const theme = useChartTheme()
 
   if (loading) {
-    return <GaugeRowSkeleton title="Service workload" subtitle="Scraper engine and catalog utilization" />
+    return <GaugeRowSkeleton title="Service workload" />
   }
 
   return (
-    <Section title="Service workload" description="Scraper engine and catalog utilization">
+    <Section title="Service workload" mt={0}>
       <Grid
         templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
         gap={3}

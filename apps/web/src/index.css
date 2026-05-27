@@ -923,3 +923,49 @@ button:focus-visible {
 .agent-chat__tool-toggle:hover {
   text-decoration: underline;
 }
+
+/* —— Skeleton shimmer (dashboard & panels) —— */
+:root {
+  --skeleton-line: color-mix(in srgb, var(--app-border) 72%, transparent);
+  --skeleton-shine: color-mix(in srgb, var(--app-fg) 6%, transparent);
+}
+
+.dark {
+  --skeleton-line: color-mix(in srgb, var(--app-border) 55%, #21262d);
+  --skeleton-shine: color-mix(in srgb, white 10%, transparent);
+}
+
+.skeleton-block {
+  background: var(--skeleton-line);
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    var(--skeleton-shine) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: skeleton-shimmer-sweep 1.35s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer-sweep {
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
