@@ -60,12 +60,12 @@ def print_setup_progress(steps: list[str], *, warnings: list[str]) -> None:
     table.add_column("Step", style="white")
     for key in steps:
         label = STEP_LABELS.get(key, key.replace("_", " ").title())
-        table.add_row("✓", label)
+        table.add_row("[ok]+[/ok]", label)
     console.print(table)
     if warnings:
         console.print()
         for w in warnings:
-            console.print(warn(f"  ⚠ {w}"))
+            console.print(warn(f"  ! {w}"))
     console.print()
 
 

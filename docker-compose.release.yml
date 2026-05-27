@@ -1,6 +1,13 @@
-# Production overlay — use: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Production deploy from GHCR image (no local build).
+# Usage:
+#   export CROSSBORDER_IMAGE=ghcr.io/OWNER/crossborder_scraper:0.1.0
+#   docker compose -f docker-compose.release.yml up -d
 services:
   scraper-api:
+    image: ${CROSSBORDER_IMAGE:?Set CROSSBORDER_IMAGE e.g. ghcr.io/owner/crossborder_scraper:0.1.0}
+    pull_policy: always
+    ports:
+      - "${PANEL_PORT:-8787}:8787"
     env_file:
       - .env
     volumes:
@@ -10,6 +17,8 @@ services:
       - ./installed_skills:/app/installed_skills
       - ./skills:/app/skills:ro
     environment:
+      PANEL_HOST: "0.0.0.0"
+      PANEL_PORT: "8787"
       UVICORN_RELOAD: "0"
       HEADLESS: "true"
     healthcheck:
@@ -17,7 +26,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 90s
+    restart: unless-stopped
     logging:
       driver: json-file
       options:

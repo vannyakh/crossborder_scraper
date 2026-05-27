@@ -4,6 +4,14 @@ Scrape wholesale/retail listings from **1688**, **Taobao**, and **AliExpress**, 
 
 Built with **Python 3.12+**, **Playwright** (browser automation), **Pydantic** (data models), and official marketplace APIs for export.
 
+## CI / releases
+
+- **CI** runs on every push/PR to `main` (lint, web build, Docker smoke test).
+- **Release** runs when you push a version tag `v*` (e.g. `v0.1.0`) — builds the GHCR image and creates a GitHub Release.
+- **Deploy** can be triggered manually from Actions (optional SSH to your VPS).
+
+See [.github/RELEASE.md](.github/RELEASE.md) for the full release and deploy checklist.
+
 ## Why Playwright?
 
 | Tool | Best for |

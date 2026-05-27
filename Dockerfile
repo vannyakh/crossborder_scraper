@@ -32,8 +32,11 @@ RUN mkdir -p /app/data /app/installed_skills /app/config
 RUN pip install --no-cache-dir -e . \
     && python -m playwright install --with-deps chromium
 
-EXPOSE 8000
+ENV PANEL_HOST=0.0.0.0 \
+    PANEL_PORT=8787
+
+EXPOSE 8787
 
 # API server
-CMD ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8787"]
 

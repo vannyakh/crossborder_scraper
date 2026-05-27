@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Crossborder Scraper — self-host one-liner (OpenClaw / aaPanel style)
+# Crossborder Scraper — self-host one-liner
 #
 # Linux / macOS (from repo):
 #   bash scripts/install.sh
