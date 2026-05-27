@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass, field
@@ -163,6 +164,19 @@ def bootstrap_server(
     root = repo_root()
     plat = detect_platform()
     boot = ServerBootstrap(root=root, platform=plat)
+
+    if os.environ.get("CROSSBORDER_VPS", "").lower() in ("1", "true", "yes") or os.environ.get(
+        "CROSSBORDER_WWWROOT", ""
+    ).lower() in ("1", "true", "yes") or os.environ.get("CROSSBORDER_AAPANEL", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        from deploy.vps_layout import prepare_wwwroot_site, resolve_install_dir
+
+        vps_steps, vps_warns = prepare_wwwroot_site(resolve_install_dir())
+        boot.steps_done.extend(vps_steps)
+        boot.warnings.extend(vps_warns)
 
     boot.ensure_directories()
     boot.seed_config_files()

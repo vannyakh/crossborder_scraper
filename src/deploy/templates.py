@@ -1,4 +1,4 @@
-"""Deployment templates (systemd, nginx) — aaPanel / VPS style."""
+"""Deployment templates (systemd, nginx) for self-hosted VPS."""
 
 from __future__ import annotations
 

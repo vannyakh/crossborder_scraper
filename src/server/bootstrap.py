@@ -1,4 +1,4 @@
-"""Application startup and shutdown (aaPanel-style bootstrap)."""
+"""Application startup and shutdown (panel service bootstrap)."""
 
 from __future__ import annotations
 

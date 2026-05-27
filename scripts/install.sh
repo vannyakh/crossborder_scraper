@@ -17,10 +17,26 @@
 #   CROSSBORDER_SKIP_BROWSER=1  skip Playwright (Docker-only hosts)
 #   CROSSBORDER_SKIP_UI_BUILD=1 skip apps/web build (use dev-ui.sh on :5173 instead)
 #   CROSSBORDER_KEEP_LOCAL=1    keep local git commits (fail instead of reset)
+#   CROSSBORDER_VPS=1           Linux VPS: /www/wwwroot/crossborder_scraper + open firewall
+#   CROSSBORDER_WWWROOT=1       same as CROSSBORDER_VPS (wwwroot site layout)
+#   CROSSBORDER_SITE_NAME       site folder under /www/wwwroot (default: crossborder_scraper)
 #
 set -euo pipefail
 
-INSTALL_DIR="${CROSSBORDER_INSTALL_DIR:-${HOME}/crossborder-scraper}"
+resolve_install_dir() {
+  if [[ -n "${CROSSBORDER_INSTALL_DIR:-}" ]]; then
+    echo "${CROSSBORDER_INSTALL_DIR}"
+    return
+  fi
+  if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" || "${CROSSBORDER_AAPANEL:-}" == "1" ]]; then
+    local site="${CROSSBORDER_SITE_NAME:-crossborder_scraper}"
+    echo "/www/wwwroot/${site}"
+    return
+  fi
+  echo "${HOME}/crossborder-scraper"
+}
+
+INSTALL_DIR="$(resolve_install_dir)"
 REPO_URL="${CROSSBORDER_REPO:-https://github.com/vannyakh/crossborder_scraper.git}"
 BRANCH="${CROSSBORDER_BRANCH:-main}"
 PANEL_PORT="${CROSSBORDER_PORT:-8787}"
@@ -82,6 +98,77 @@ ensure_apt_basics() {
   echo "==> optional apt packages"
   sudo apt-get update -qq || true
   sudo apt-get install -y -qq curl ca-certificates git build-essential || true
+}
+
+prepare_vps_layout() {
+  local dir="$1"
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  if [[ "${CROSSBORDER_VPS:-}" != "1" && "${CROSSBORDER_WWWROOT:-}" != "1" && "${CROSSBORDER_AAPANEL:-}" != "1" ]]; then
+    return 0
+  fi
+  echo "==> VPS wwwroot layout: ${dir}"
+  local run_root=0
+  [[ "$(id -u)" -eq 0 ]] && run_root=1
+
+  if [[ "${run_root}" -eq 1 ]]; then
+    mkdir -p "${dir}" /www/wwwroot
+    if ! id crossborder >/dev/null 2>&1; then
+      useradd -r -s /bin/bash -d "${dir}" crossborder 2>/dev/null || true
+    fi
+    if id crossborder >/dev/null 2>&1; then
+      chown -R crossborder:crossborder "${dir}" 2>/dev/null || true
+      echo "==> service user: crossborder (home ${dir})"
+    elif [[ -n "${SUDO_USER:-}" ]]; then
+      chown -R "${SUDO_USER}:${SUDO_USER}" "${dir}" 2>/dev/null || true
+    fi
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo mkdir -p "${dir}"
+    sudo chown -R "$(whoami):$(whoami)" "${dir}" 2>/dev/null || true
+  else
+    mkdir -p "${dir}"
+  fi
+  mkdir -p "${dir}/data" "${dir}/config" "${dir}/logs"
+}
+
+ensure_panel_bind_all_interfaces() {
+  local root="$1"
+  local env_file="${root}/.env"
+  [[ -f "${env_file}" ]] || return 0
+  if grep -qE '^PANEL_HOST=' "${env_file}" 2>/dev/null; then
+    sed -i.bak 's/^PANEL_HOST=.*/PANEL_HOST=0.0.0.0/' "${env_file}" 2>/dev/null \
+      || sed -i '' 's/^PANEL_HOST=.*/PANEL_HOST=0.0.0.0/' "${env_file}" 2>/dev/null \
+      || true
+  else
+    echo "PANEL_HOST=0.0.0.0" >>"${env_file}"
+  fi
+  rm -f "${env_file}.bak" 2>/dev/null || true
+}
+
+configure_linux_firewall() {
+  local port="$1"
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  if [[ "${CROSSBORDER_VPS:-}" != "1" && "${CROSSBORDER_WWWROOT:-}" != "1" && "${CROSSBORDER_AAPANEL:-}" != "1" && "${CROSSBORDER_OPEN_FIREWALL:-}" != "1" ]]; then
+    return 0
+  fi
+  echo "==> opening host firewall for TCP ${port} (if ufw/firewalld active)"
+  if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then
+    (sudo ufw allow "${port}/tcp" && sudo ufw reload) 2>/dev/null \
+      && echo "    ufw: allowed ${port}/tcp" \
+      || echo "    ufw: skipped (run: sudo ufw allow ${port}/tcp)"
+  fi
+  if command -v firewall-cmd >/dev/null 2>&1; then
+    (sudo firewall-cmd --permanent --add-port="${port}/tcp" && sudo firewall-cmd --reload) 2>/dev/null \
+      && echo "    firewalld: allowed ${port}/tcp" \
+      || true
+  fi
+}
+
+verify_panel_listen() {
+  local port="$1"
+  if command -v ss >/dev/null 2>&1; then
+    echo "==> listening sockets on :${port}"
+    ss -tln 2>/dev/null | grep ":${port}" || echo "    (none — panel may still be starting)"
+  fi
 }
 
 sync_to_origin() {
@@ -260,6 +347,7 @@ run_bootstrap() {
 
   echo "==> panel setup (host, port ${PANEL_PORT}, credentials)"
   "$(crossborder_bin "${root}")" "${setup_args[@]}"
+  ensure_panel_bind_all_interfaces "${root}"
 }
 
 maybe_start_panel() {
@@ -279,15 +367,20 @@ maybe_start_panel() {
   fi
 
   echo "==> starting panel on port ${port} (log: ${log})"
-  nohup crossborder serve --no-reload >>"${log}" 2>&1 &
+  local cb
+  cb="$(crossborder_bin "${root}")"
+  export PATH="${HOME}/.local/bin:${PATH}"
+  nohup "${cb}" serve --no-reload >>"${log}" 2>&1 &
   local pid=$!
   echo "    PID ${pid}"
+  configure_linux_firewall "${port}"
 
   local i
   for i in 1 2 3 4 5 6 7 8 9 10; do
     sleep 1
     if curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
       echo "==> panel is running"
+      verify_panel_listen "${port}"
       return 0
     fi
   done
@@ -336,8 +429,17 @@ print(ips[0] if ips else '')
   echo "  Login URL (open in browser — use port ${port}, NOT :5173):"
   echo "    ${login_local}"
   [[ -n "${login_lan}" ]] && echo "    ${login_lan}  (LAN)"
-  [[ -n "${login_public}" ]] && echo "    ${login_public}  (public — open firewall port ${port})"
+  [[ -n "${login_public}" ]] && echo "    ${login_public}  (public)"
   echo ""
+  if [[ -n "${login_public}" ]]; then
+    echo "  VPS public access (if browser cannot connect):"
+    echo "    1. Cloud security group: allow inbound TCP ${port} to this server"
+    echo "    2. Host firewall: sudo ufw allow ${port}/tcp  (or: crossborder deploy firewall)"
+    echo "    3. Panel binds 0.0.0.0 — check: ss -tln | grep ${port}"
+    echo "    4. Test: curl -sI http://127.0.0.1:${port}/health"
+    [[ -n "${ext_host}" ]] && echo "    5. From your PC: curl -sI http://${ext_host}:${port}/health"
+    echo ""
+  fi
   if [[ -n "${username}" && -n "${password}" ]]; then
     echo "  Username:  ${username}"
     echo "  Password:  ${password}"
@@ -369,6 +471,7 @@ if ROOT="$(detect_local_root)"; then
   echo "==> using existing repo: ${ROOT}"
 else
   ensure_apt_basics
+  prepare_vps_layout "${INSTALL_DIR}"
   clone_or_update
   ROOT="${INSTALL_DIR}"
 fi

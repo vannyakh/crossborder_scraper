@@ -1,0 +1,33 @@
+---
+description: Crossborder product naming — avoid third-party control-panel and cloud vendor branding in code and user-facing text
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Crossborder product language
+
+This repository is **Crossborder Scraper** — use our own product terms in implementation, CLI messages, and docs.
+
+## Do not add to code or user-facing strings
+
+- Other hosting panels (aaPanel, cPanel, Plesk, etc.)
+- Workflow product names used as analogies (n8n, OpenClaw, etc.)
+- Cloud vendor names in generic deploy/firewall hints (Tencent, Alibaba Cloud, AWS, GCP, …)
+
+## Use instead
+
+- **panel** / **install card** / **access card** — setup summary with URL and credentials
+- **VPS** / **self-host** / **wwwroot layout** — `/www/wwwroot/<site>` on Linux servers
+- **cloud security group** / **host firewall** — public access troubleshooting
+- **workflow** / **pipeline** / **tool steps** — gateway automation
+
+## OK to name (product integrations)
+
+- Source sites and marketplaces the scraper supports (1688, Taobao, Shopee, …)
+- LLM provider IDs users select in Settings (OpenAI, Claude, Qwen, …)
+
+## Env vars
+
+- Prefer `CROSSBORDER_VPS`, `CROSSBORDER_WWWROOT`, `CROSSBORDER_INSTALL_DIR`
+- Do not introduce new `*_AAPANEL*` or vendor-specific env names

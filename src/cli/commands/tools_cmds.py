@@ -17,7 +17,7 @@ from deploy.maintenance import (
 )
 
 tools_app = typer.Typer(
-    help="Sync, update, restart, and reset the self-hosted panel (aaPanel-style tooling)",
+    help="Sync, update, restart, and reset the self-hosted panel",
 )
 
 

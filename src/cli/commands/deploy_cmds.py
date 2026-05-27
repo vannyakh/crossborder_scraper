@@ -166,7 +166,10 @@ def deploy_run(
 def deploy_status(
     url: str | None = typer.Option(None, "--url", help="Panel URL for health check"),
 ) -> None:
-    """Show platform, Docker, and gateway health."""
+    """Show platform, Docker, gateway health, and panel TCP bind (VPS debugging)."""
+    from deploy.firewall import firewall_status_dict
+    from deploy.network import detect_public_ip
+
     plat = detect_platform()
     table = Table(title="Host", border_style="bright_blue")
     table.add_column("Key")
@@ -180,14 +183,55 @@ def deploy_status(
     console.print(table)
 
     settings = get_settings()
-    console.print(f"\n[bold]Configured panel:[/bold] {settings.panel_host}:{settings.panel_port}")
+    port = settings.panel_port
+    console.print(f"\n[bold]Configured panel:[/bold] {settings.panel_host}:{port}")
+
+    fw = firewall_status_dict(port)
+    listen = fw.get("listening") or []
+    console.print(f"[bold]TCP listen:[/bold] {', '.join(listen) if listen else '(not listening)'}")
+    if listen and not fw.get("public_bind"):
+        console.print(warn("Not bound to 0.0.0.0 — set PANEL_HOST=0.0.0.0 in .env and restart"))
+    elif fw.get("public_bind"):
+        console.print(ok("Bound on all interfaces (0.0.0.0)"))
+
+    ext = settings.panel_external_host or detect_public_ip()
+    if ext:
+        console.print(f"[bold]Public URL:[/bold] http://{ext}:{port}/ui/login")
 
     try:
         health = gateway_client(url).health()
         console.print(ok(f"API health: {health}"))
     except Exception as exc:
         console.print(warn(f"API not reachable: {exc}"))
-        console.print(hint("Start: uv run crossborder serve  or  uv run crossborder deploy up"))
+        console.print(hint("Start: crossborder serve --no-reload"))
+
+    if ext and not fw.get("local_health"):
+        console.print()
+        console.print(warn("If public IP fails in browser but local works:"))
+        from deploy.firewall import vps_access_checklist
+
+        for line in vps_access_checklist(port=port, public_ip=ext):
+            console.print(hint(f"  {line}"))
+
+
+@deploy_app.command("firewall")
+def deploy_firewall(
+    port: int | None = typer.Option(None, "--port", "-p", help="Panel port (default from .env)"),
+) -> None:
+    """Open panel TCP port in ufw / firewalld (Linux VPS)."""
+    settings = get_settings()
+    chosen = port or settings.panel_port
+    from deploy.firewall import try_open_tcp_port
+
+    lines = try_open_tcp_port(chosen)
+    if lines:
+        for line in lines:
+            console.print(ok(line))
+    else:
+        console.print(
+            warn(f"No active ufw/firewalld — open TCP {chosen} in your cloud security group")
+        )
+    console.print(hint(f"Cloud console: security group → inbound → TCP {chosen}"))
 
 
 @deploy_app.command("up")
@@ -252,7 +296,7 @@ def deploy_systemd(
         help="Copy to /etc/systemd/system (requires root)",
     ),
 ) -> None:
-    """Generate systemd unit for always-on panel (like aaPanel service)."""
+    """Generate systemd unit for always-on panel service."""
     settings = get_settings()
     port = port or settings.panel_port
     out = output or (repo_root() / "deploy" / "crossborder-scraper.service")
@@ -295,7 +339,7 @@ def deploy_nginx(
     content = nginx_site(server_name=server_name, upstream_port=port, ssl=ssl)
     write_template(out, content)
     console.print(f"[green]Wrote[/green] {out}")
-    console.print("[dim]Include in aaPanel / nginx sites-enabled, then nginx -t && reload[/dim]")
+    console.print("[dim]Include in nginx sites-enabled, then nginx -t && reload[/dim]")
 
 
 def plat_writeable(path: Path) -> bool:

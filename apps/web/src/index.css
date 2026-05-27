@@ -213,7 +213,7 @@ button:focus-visible {
   opacity: var(--panel-content-opacity, 1);
 }
 
-/* —— Settings: panel theme (aaPanel-style) —— */
+/* —— Settings: panel theme —— */
 .theme-pick-group {
   display: flex;
   flex-wrap: wrap;

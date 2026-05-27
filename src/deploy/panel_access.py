@@ -1,4 +1,4 @@
-"""aaPanel-style terminal summary after setup/install."""
+"""Panel install card — terminal summary after setup/install."""
 
 from __future__ import annotations
 

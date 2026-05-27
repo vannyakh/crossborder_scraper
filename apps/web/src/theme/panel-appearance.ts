@@ -27,7 +27,7 @@ export type ThemeColorPreset = {
   hex: string
 }
 
-/** aaPanel-style preset swatches */
+/** Panel theme preset swatches */
 export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
   { id: 'default', label: 'Default', hex: '#20a53a' },
   { id: 'mint', label: 'Mint', hex: '#1abc9c' },

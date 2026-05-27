@@ -39,7 +39,7 @@ crossborder_scraper/
 ├── data/                      # Cookies, scrape output, SQLite (gitignored)
 ├── installed_plugins/         # ZIP-installed sandboxed plugins
 ├── deploy/                    # Generated systemd/nginx examples
-├── docs/SELF_HOSTING.md       # VPS, Docker, aaPanel deploy guide
+├── docs/SELF_HOSTING.md       # VPS, Docker, self-host deploy guide
 ├── libs/prompts/              # Gateway agent role prompts (*.md)
 ├── skills/                    # Built-in agent skills (SKILL.md)
 ├── installed_skills/          # ZIP-installed custom agent skills

@@ -107,7 +107,7 @@ CLI uses the same HTTP API as the web panel (`/gateway/*`). Use `--local` on `sc
 
 Shell helpers: see [scripts/README.md](scripts/README.md).
 
-### Self-hosting (VPS / Docker / aaPanel)
+### Self-hosting (VPS / Docker)
 
 **One-liner** — setup, start panel, print login URL + password, install global `crossborder` CLI:
 
@@ -128,7 +128,7 @@ From an existing clone: `bash scripts/install.sh`
 
 **Maintain:** `crossborder tools update` · `crossborder tools reset credentials` · `crossborder deploy status`
 
-See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) for aaPanel, nginx, Windows, and systemd.
+See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) for VPS, nginx, Windows, and systemd.
 
 ### Agent page + cron schedules
 

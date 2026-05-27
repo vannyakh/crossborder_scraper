@@ -1,4 +1,4 @@
-"""Workflow templates — n8n-style pipelines as declarative step lists."""
+"""Workflow templates — declarative multi-step pipelines (gateway tools)."""
 
 from __future__ import annotations
 

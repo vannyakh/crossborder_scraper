@@ -1,4 +1,4 @@
-"""Self-host maintenance — sync/update, restart, reset (aaPanel-style tooling)."""
+"""Self-host maintenance — sync/update, restart, reset for the panel."""
 
 from __future__ import annotations
 

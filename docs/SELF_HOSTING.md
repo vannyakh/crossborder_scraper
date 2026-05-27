@@ -14,7 +14,7 @@ Deploy Crossborder Scraper on your own VPS, Docker host, or Windows server.
 
 ## Quick install (one-liner)
 
-Works on **macOS, Linux, and Windows**. Installs Python (via [uv](https://docs.astral.sh/uv/)), Playwright, and prints **panel URL, server IP, username, and password** in the terminal (aaPanel-style).
+Works on **macOS, Linux, and Windows**. Installs Python (via [uv](https://docs.astral.sh/uv/)), Playwright, and prints the **panel access card** (URL, server IP, username, password).
 
 ### macOS & Linux
 
@@ -38,6 +38,41 @@ Environment (optional):
 | `CROSSBORDER_START=1` | Start panel after install (default **on**) |
 | `CROSSBORDER_START=0` | Do not auto-start the panel |
 | `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright (Docker-only hosts) |
+| `CROSSBORDER_VPS=1` | Install under `/www/wwwroot/crossborder_scraper` |
+| `CROSSBORDER_WWWROOT=1` | Same as `CROSSBORDER_VPS=1` |
+| `CROSSBORDER_SITE_NAME` | Folder name under `/www/wwwroot` (default `crossborder_scraper`) |
+| `CROSSBORDER_OPEN_FIREWALL=1` | Run `ufw` / `firewalld` allow for panel port |
+
+### VPS / public IP
+
+Use the **VPS installer** (creates `/www/wwwroot/crossborder_scraper`, binds `0.0.0.0`, opens host firewall when possible):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | sudo bash
+```
+
+Or:
+
+```bash
+sudo CROSSBORDER_VPS=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh)"
+```
+
+After install, open **TCP 8787** in your cloud **security group** (inbound rule). Local `curl http://127.0.0.1:8787/health` can work while the public IP fails if the security group blocks the port.
+
+```bash
+crossborder deploy status      # listen addresses + public URL
+crossborder deploy firewall    # ufw / firewalld allow 8787
+```
+
+**wwwroot layout**
+
+| Path | Purpose |
+|------|---------|
+| `/www/wwwroot/crossborder_scraper/` | App root (git clone, `.venv`, `apps/web`) |
+| `/www/wwwroot/crossborder_scraper/data/` | Cookies, SQLite, panel log |
+| User `crossborder` | Optional service user when install runs as `root` |
+
+Put **nginx** in front for HTTPS: `crossborder deploy nginx -n your.domain.com`
 
 ### After install
 
@@ -71,7 +106,7 @@ uv sync
 uv run scraper setup --server
 ```
 
-Setup prints an **aaPanel-style access card**: panel URL, server IP(s), username, and password (also saved to `.env`).
+Setup prints the **panel access card**: panel URL, server IP(s), username, and password (also saved to `.env`).
 
 ```bash
 uv run crossborder setup --server --external auto        # auto-detect public IP in access card
@@ -110,7 +145,7 @@ Same as `uv run crossborder serve --no-reload` after setup; `deploy run` also wr
 
 ## Software tools (`scraper tools`)
 
-Maintain the installed panel after setup (like aaPanel app update / restart):
+Maintain the installed panel after setup (update / restart):
 
 ```bash
 uv run scraper tools sync              # git pull + uv sync
@@ -173,16 +208,16 @@ sudo cp /tmp/crossborder-scraper.service /etc/systemd/system/
 sudo systemctl enable --now crossborder-scraper
 ```
 
-### aaPanel / nginx reverse proxy
+### nginx reverse proxy (HTTPS)
 
 1. Run the panel on `127.0.0.1:8787` (Docker or systemd).
 2. Generate nginx config:
 
 ```bash
-uv run scraper deploy nginx -n scraper.yourdomain.com -o /www/server/panel/vhost/nginx/scraper.conf
+uv run scraper deploy nginx -n scraper.yourdomain.com -o /etc/nginx/sites-available/crossborder-scraper.conf
 ```
 
-3. Add SSL in aaPanel → paste config → reload nginx.
+3. Enable the site, add TLS (certbot or your host panel), then `nginx -t && reload`.
 
 WebSocket paths (`/jobs/.../ws`) are proxied for the live monitor.
 
@@ -216,5 +251,5 @@ uv run scraper deploy up --build    # Docker
 ## Security checklist
 
 - Change default panel password after first login (`scraper setup --regenerate`).
-- Put nginx/aaPanel TLS in front; do not expose the panel port publicly without auth.
+- Put nginx TLS in front; do not expose the panel port publicly without auth.
 - Keep `.env` out of git.

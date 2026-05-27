@@ -16,7 +16,7 @@ core/               # Cross-cutting (no HTTP)
   deps.py           # protected_router dependency
   constants.py      # APP_VERSION, SERVICE_STARTED_AT
   events.py         # Batch SSE / WebSocket bus
-  panel_bind.py     # Bind host/port for aaPanel
+  panel_bind.py     # Bind host/port for panel access URLs
 
 routers/            # Thin HTTP handlers → services
 services/           # Domain logic + singleton getters

@@ -36,21 +36,21 @@ flowchart LR
   J --> K[Shopee / Lazada / TikTok / Shopify / custom]
 ```
 
-| Stage | n8n analogy | OpenClaw analogy | Implementation |
-|-------|-------------|------------------|----------------|
-| Trigger | Webhook / manual | User message | URL submit, CLI, agent tool |
-| Scrape | HTTP + browser node | Tool call | `run_scrape_pipeline` → `ScrapeEngine`, `scrape_product` tool |
-| AI enrich | AI node | Agent skill | `AIExtractor` (fallback), `ScrapeAgent` (enrich), gateway LLM agent |
-| Store | Database node | Workspace | `ProductStore` (SQLite + JSON) |
-| Export | Integration node | Tool | Marketplace exporters, `export_listing` tool |
-| Monitor | Execution log | Gateway status | SSE batches, `/gateway/status` |
+| Stage | Role | Implementation |
+|-------|------|----------------|
+| Trigger | Start a run | URL submit, CLI, agent tool |
+| Scrape | Fetch + parse product | `run_scrape_pipeline` → `ScrapeEngine`, `scrape_product` tool |
+| AI enrich | Optional extract + listing copy | `AIExtractor` (fallback), `ScrapeAgent` (enrich), gateway LLM agent |
+| Store | Persist catalog | `ProductStore` (SQLite + JSON) |
+| Export | Publish listing | Marketplace exporters, `export_listing` tool |
+| Monitor | Live status | SSE batches, `/gateway/status` |
 
 ## Layer structure
 
 ```
 src/
 ├── gateway/              # Control plane (NEW)
-│   ├── tools.py          # Agent-callable tools (= n8n nodes)
+│   ├── tools.py          # Agent-callable tools
 │   ├── workflows.py      # Declarative pipelines
 │   ├── agent_runtime.py  # LLM + tool loop
 │   └── client.py         # HTTP client for CLI
@@ -101,7 +101,7 @@ scraper agent "..." --local               # in-process agent (no HTTP)
 scraper workflow scrape_to_export --url "..." --marketplace shopify
 ```
 
-## Workflows (n8n-style)
+## Workflows
 
 Built-in templates in `src/gateway/workflows.py`:
 
@@ -109,7 +109,7 @@ Built-in templates in `src/gateway/workflows.py`:
 - **batch_scrape** — concurrent multi-URL batch
 - **catalog_snapshot** — products + marketplace readiness
 
-Future: visual workflow editor in web UI, user-defined JSON/YAML workflows, webhook triggers.
+Future: visual workflow editor in the panel, user-defined JSON/YAML workflows, webhook triggers.
 
 ## Agent tools
 
@@ -142,7 +142,7 @@ Marketplace config supports **any platform** via `marketplaces.{id}.credentials`
 ### Phase 3 (next)
 - Durable job queue (Redis) for multi-worker gateway
 - MCP server exposing gateway tools
-- Visual workflow builder (n8n-like canvas)
+- Visual workflow builder in the panel
 - Webhook triggers + scheduled cron workflows
 
 ### Phase 4 (in progress)

@@ -75,7 +75,7 @@ def register_setup_commands(app: typer.Typer) -> None:
         host: str = typer.Option(
             "0.0.0.0",
             "--host",
-            help="Panel bind address (0.0.0.0 = all interfaces, like aaPanel)",
+            help="Panel bind address (0.0.0.0 = all interfaces)",
         ),
         port: int | None = typer.Option(
             None,

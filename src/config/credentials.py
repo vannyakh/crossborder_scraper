@@ -159,7 +159,7 @@ def print_panel_credentials(
     mode: str = "setup",
     next_commands: list[str] | None = None,
 ) -> None:
-    """Print aaPanel-style access card (prefer passing `access` from deploy.bootstrap)."""
+    """Print panel access card (prefer passing `access` from deploy.bootstrap)."""
     from deploy.panel_access import default_next_commands, print_panel_access_card
 
     cmds = next_commands if next_commands is not None else default_next_commands(mode)
