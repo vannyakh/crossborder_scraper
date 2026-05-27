@@ -1,8 +1,18 @@
 FROM node:20-slim AS ui-build
 
 WORKDIR /ui
-COPY apps/web/package.json apps/web/pnpm-lock.yaml* apps/web/ /ui/
-RUN corepack enable && pnpm install
+
+# Lockfile v9 requires pnpm 9+; pin to match CI and packageManager in package.json
+RUN npm install -g corepack@latest \
+    && corepack enable \
+    && corepack prepare pnpm@9.15.9 --activate
+
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+COPY apps/web/package.json apps/web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY apps/web .
 RUN pnpm build
 
 FROM python:3.12-slim
@@ -39,4 +49,3 @@ EXPOSE 8787
 
 # API server
 CMD ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8787"]
-
