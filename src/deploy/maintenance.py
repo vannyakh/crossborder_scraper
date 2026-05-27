@@ -70,7 +70,14 @@ def _process_on_panel_port() -> bool:
     from config import get_settings
 
     port = get_settings().panel_port
-    for conn in psutil.net_connections(kind="inet"):
+    try:
+        # On macOS, psutil may raise AccessDenied for some processes.
+        # Treat that as "can't determine", rather than crashing update/apply.
+        conns = psutil.net_connections(kind="inet")
+    except Exception:
+        return False
+
+    for conn in conns:
         if conn.laddr and conn.laddr.port == port and conn.status == "LISTEN":
             return True
     return False
