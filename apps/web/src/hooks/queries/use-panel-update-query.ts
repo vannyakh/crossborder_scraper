@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, queryKeys, type PanelUpdateApply, type PanelUpdateStatus } from '../../lib/api'
+
+export type { PanelUpdateApply, PanelUpdateStatus }
 import { useAuthStore } from '../../stores/auth-store'
 
 export function usePanelUpdateStatusQuery() {

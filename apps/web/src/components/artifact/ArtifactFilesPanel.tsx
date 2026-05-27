@@ -23,7 +23,7 @@ export function ArtifactFilesPanel() {
 
   const items = data?.items ?? []
   const filtered = useMemo(() => searchFiles(items, list.search), [items, list.search])
-  const paged = usePagedList(filtered, list)
+  const paged = usePagedList(filtered, list.page, list.pageSize, list.search, list.setPage)
 
   async function remove(path: string) {
     if (!confirm(`Delete ${path}?`)) return

@@ -29,21 +29,27 @@ export function useListPageState(defaultPageSize = 20) {
   return { search, setSearch, page, setPage, pageSize, setPageSize }
 }
 
-export function usePagedList<T>(items: T[], state: ReturnType<typeof useListPageState>) {
+export function usePagedList<T>(
+  items: T[],
+  page: number,
+  pageSize: number,
+  search: string,
+  setPage: (n: number) => void,
+) {
   const pagination = useMemo(
-    () => paginateItems(items, state.page, state.pageSize),
-    [items, state.page, state.pageSize],
+    () => paginateItems(items, page, pageSize),
+    [items, page, pageSize],
   )
 
   useEffect(() => {
-    state.setPage(1)
-  }, [state.search, state.pageSize, items.length, state.setPage])
+    setPage(1)
+  }, [search, pageSize, items.length, setPage])
 
   useEffect(() => {
-    if (state.page > pagination.totalPages) {
-      state.setPage(pagination.totalPages)
+    if (page > pagination.totalPages) {
+      setPage(pagination.totalPages)
     }
-  }, [state.page, pagination.totalPages, state.setPage])
+  }, [page, pagination.totalPages, setPage])
 
   return pagination
 }

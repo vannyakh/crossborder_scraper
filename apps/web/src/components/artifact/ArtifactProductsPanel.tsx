@@ -37,7 +37,7 @@ export function ArtifactProductsPanel() {
 
   const items = data?.items ?? []
   const filtered = useMemo(() => searchProducts(items, list.search), [items, list.search])
-  const clientPaged = usePagedList(filtered, list)
+  const clientPaged = usePagedList(filtered, list.page, list.pageSize, list.search, list.setPage)
   const catalogTotal = data?.total ?? 0
   const displayItems = searchActive ? clientPaged.items : items
   const displayTotal = searchActive ? clientPaged.total : catalogTotal

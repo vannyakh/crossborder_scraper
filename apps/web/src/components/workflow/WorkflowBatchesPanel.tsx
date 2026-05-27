@@ -40,7 +40,7 @@ export function WorkflowBatchesPanel() {
     return items.filter((b) => b.batch_id.toLowerCase().includes(q) || b.status.toLowerCase().includes(q))
   }, [items, list.search])
 
-  const paged = usePagedList(filtered, list)
+  const paged = usePagedList(filtered, list.page, list.pageSize, list.search, list.setPage)
   const running = runtime.data?.running_batches ?? []
 
   const liveProgress = selected.status

@@ -54,7 +54,14 @@ export function PanelUpdateButton() {
           />
         ) : null}
       </Box>
-      <PanelUpdateDialog open={open} onClose={() => setOpen(false)} />
+      {open ? (
+        <PanelUpdateDialog
+          open
+          onClose={() => setOpen(false)}
+          status={updateStatus.data}
+          statusLoading={updateStatus.isLoading}
+        />
+      ) : null}
     </>
   )
 }

@@ -9,31 +9,32 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
-import { useApplyPanelUpdateMutation, usePanelUpdateStatusQuery } from '../../hooks/queries/use-panel-update-query'
+import { useState } from 'react'
+import {
+  useApplyPanelUpdateMutation,
+  type PanelUpdateStatus,
+} from '../../hooks/queries/use-panel-update-query'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { AgentModalPanel } from '../agent/AgentModalPanel'
 
 type PanelUpdateDialogProps = {
   open: boolean
   onClose: () => void
+  status?: PanelUpdateStatus
+  statusLoading?: boolean
 }
 
-export function PanelUpdateDialog({ open, onClose }: PanelUpdateDialogProps) {
+export function PanelUpdateDialog({
+  open,
+  onClose,
+  status,
+  statusLoading = false,
+}: PanelUpdateDialogProps) {
   const accentPalette = useAccentPalette()
-  const statusQuery = usePanelUpdateStatusQuery()
   const applyMutation = useApplyPanelUpdateMutation()
   const [restarting, setRestarting] = useState(false)
 
-  const status = statusQuery.data
   const applying = applyMutation.isPending
-
-  useEffect(() => {
-    if (!open) {
-      setRestarting(false)
-      applyMutation.reset()
-    }
-  }, [open, applyMutation])
 
   const handleApply = async () => {
     try {
@@ -55,7 +56,7 @@ export function PanelUpdateDialog({ open, onClose }: PanelUpdateDialogProps) {
       title={restarting ? 'Restarting panel…' : 'Update panel software'}
       maxW="480px"
     >
-      {statusQuery.isLoading && !status ? (
+      {statusLoading && !status ? (
         <HStack justify="center" py={8}>
           <Spinner size="sm" />
           <Text fontSize="sm" color="fg.muted">

@@ -9,7 +9,7 @@ export function useGatewayStatusQuery() {
     queryKey: queryKeys.gatewayStatus,
     queryFn: () => api<GatewayStatus>('/gateway/status'),
     enabled: isAuthenticated,
-    refetchInterval: 5_000,
+    refetchInterval: 30_000,
   })
 }
 
