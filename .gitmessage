@@ -1,0 +1,10 @@
+# Crossborder Scraper — commit message (first line = summary, blank line, then body)
+#
+# Summary: imperative mood, ~72 chars, e.g. "Add Debug nav group for logs and tool catalog"
+#
+# Body (optional): why the change matters, not a file list.
+#
+# Hooks run on commit: trailing whitespace, ruff (Python), prettier (apps/web).
+# If prettier fails: run "make fmt" or task "Git: format all (before commit)", then git add and commit again.
+#
+# --- commit message above this line ---

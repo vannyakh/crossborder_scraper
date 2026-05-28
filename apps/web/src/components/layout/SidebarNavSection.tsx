@@ -1,7 +1,11 @@
-import { Text } from '@chakra-ui/react'
+import { Box, Text } from '@chakra-ui/react'
 
 export function SidebarNavSection({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return null
+  if (collapsed) {
+    return (
+      <Box role="separator" aria-hidden h="1px" mx={1.5} my={2} bg="border.subtle" opacity={0.65} />
+    )
+  }
 
   return (
     <Text

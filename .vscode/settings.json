@@ -100,5 +100,13 @@
   "terminal.integrated.defaultProfile.osx": "zsh",
   "terminal.integrated.cursorBlinking": true,
   "editor.semanticHighlighting.enabled": true,
-  "editor.bracketPairColorization.enabled": true
+  "editor.bracketPairColorization.enabled": true,
+  "git.enableSmartCommit": true,
+  "git.suggestSmartCommit": true,
+  "git.confirmSync": false,
+  "git.showCommitInput": true,
+  "git.postCommitCommand": "none",
+  "git.untrackedChanges": "separate",
+  "scm.inputFontFamily": "MesloLGM NF, Menlo, Monaco, monospace",
+  "scm.inputFontSize": 13
 }

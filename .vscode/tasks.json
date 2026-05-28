@@ -66,6 +66,27 @@
       "type": "shell",
       "command": "make test",
       "problemMatcher": []
+    },
+    {
+      "label": "Git: pre-commit (staged files)",
+      "type": "shell",
+      "command": "uv run pre-commit run --files $(git diff --cached --name-only --diff-filter=ACM | tr '\\n' ' ')",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    },
+    {
+      "label": "Git: format all (before commit)",
+      "type": "shell",
+      "command": "make fmt",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

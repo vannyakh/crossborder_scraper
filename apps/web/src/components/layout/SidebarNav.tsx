@@ -4,6 +4,7 @@ import { isPathActive } from '../../config/nav'
 import { useNavEntries } from '../../hooks/use-nav-entries'
 import { formatScrapeBadge } from '../../config/scrape-panel'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
+import { SidebarCollapsedHover, SidebarCollapsedLabelTip } from './SidebarCollapsedHover'
 import { SidebarNavGroup } from './SidebarNavGroup'
 import { SidebarNavItem } from './SidebarNavItem'
 import { SidebarNavSection } from './SidebarNavSection'
@@ -49,6 +50,40 @@ export function SidebarNav({ collapsed, onNavigate }: SidebarNavProps) {
         }
 
         const active = isPathActive(location.pathname, entry.to, entry.end)
+        const badge = resolveBadge(entry.badgeKey, stats)
+
+        if (collapsed) {
+          return (
+            <SidebarCollapsedHover
+              key={entry.to}
+              label={entry.label}
+              active={active}
+              variant="tip"
+              content={<SidebarCollapsedLabelTip label={entry.label} />}
+            >
+              <NavLink
+                to={entry.to}
+                end={entry.end}
+                style={{
+                  textDecoration: 'none',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  width: '100%',
+                }}
+                onClick={onNavigate}
+              >
+                <SidebarNavItem
+                  active={active}
+                  collapsed
+                  label={entry.label}
+                  icon={entry.icon}
+                  badge={badge}
+                />
+              </NavLink>
+            </SidebarCollapsedHover>
+          )
+        }
+
         return (
           <NavLink
             key={entry.to}
@@ -68,7 +103,7 @@ export function SidebarNav({ collapsed, onNavigate }: SidebarNavProps) {
               collapsed={collapsed}
               label={entry.label}
               icon={entry.icon}
-              badge={resolveBadge(entry.badgeKey, stats)}
+              badge={badge}
             />
           </NavLink>
         )
