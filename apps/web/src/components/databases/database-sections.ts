@@ -1,18 +1,19 @@
-import {
-  DEFAULT_DATABASE_ENGINE,
-  DATABASE_ENGINE_TABS,
-  databaseEnginePath,
-  isDatabaseEngineId,
-  type DatabaseEngineId,
-} from '../../config/databases'
-
 export {
+  DATABASE_ENGINE_REGISTRY,
   DATABASE_ENGINE_TABS,
   DEFAULT_DATABASE_ENGINE,
   databaseEnginePath,
+  enginePluginId,
+  getEngineRegistryEntry,
+  isDatabaseCatalogItem,
   isDatabaseEngineId,
+  isDatabasePluginId,
   type DatabaseEngineId,
-}
+  type DatabaseEnginePluginId,
+  type DatabaseEngineRegistryEntry,
+} from '../../lib/databases/registry'
+
+import { isDatabaseEngineId, type DatabaseEngineId } from '../../lib/databases/registry'
 
 /** Legacy section routes → engine tabs */
 const LEGACY_SECTION_MAP: Record<string, DatabaseEngineId> = {

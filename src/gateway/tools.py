@@ -125,6 +125,103 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "parameters": {"type": "object", "properties": {}},
     },
     {
+        "name": "list_database_providers",
+        "description": (
+            "List panel database engine providers (MySQL, PostgreSQL, MongoDB, Redis) "
+            "with install status and logical-database support."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_managed_database",
+        "description": (
+            "Get the panel-managed database for an installed engine "
+            "(connection endpoint, credentials summary, extra logical DB count)."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "engine_id": {
+                    "type": "string",
+                    "description": "Engine plugin id: mysql, postgresql, mongodb, or redis",
+                },
+            },
+            "required": ["engine_id"],
+        },
+    },
+    {
+        "name": "get_database_install_options",
+        "description": (
+            "List official MySQL, PostgreSQL, MongoDB, or Redis versions the host can install "
+            "(native packages and Docker images) before setup."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "engine_id": {
+                    "type": "string",
+                    "description": "Engine plugin id: mysql, postgresql, mongodb, or redis",
+                },
+            },
+            "required": ["engine_id"],
+        },
+    },
+    {
+        "name": "list_database_tables",
+        "description": (
+            "List tables in a panel-managed logical database with size/row estimates "
+            "and suggested read-only SQL snippets."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "engine_id": {
+                    "type": "string",
+                    "description": "Engine plugin id: mysql or postgresql",
+                },
+                "database_name": {
+                    "type": "string",
+                    "description": "Logical database name",
+                },
+            },
+            "required": ["engine_id", "database_name"],
+        },
+    },
+    {
+        "name": "run_database_query",
+        "description": (
+            "Run SQL against a logical database (SELECT, INSERT, UPDATE, DDL). "
+            "Dangerous statements (GRANT, OUTFILE, etc.) are blocked. Returns rows or status."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "engine_id": {"type": "string"},
+                "database_name": {"type": "string"},
+                "sql": {"type": "string"},
+                "limit": {
+                    "type": "integer",
+                    "description": "Max rows (1-500, default 100)",
+                },
+            },
+            "required": ["engine_id", "database_name", "sql"],
+        },
+    },
+    {
+        "name": "optimize_database",
+        "description": (
+            "Optimize tables in a logical database (mysqlcheck for MySQL, VACUUM for PostgreSQL)."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "engine_id": {"type": "string"},
+                "database_name": {"type": "string"},
+            },
+            "required": ["engine_id", "database_name"],
+        },
+    },
+    {
         "name": "list_integrate_channels",
         "description": (
             "List integrate messaging channels (Telegram, Discord, Slack, Email) "
@@ -265,6 +362,12 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "setup_network_access": _setup_network_access,
         "list_agent_rules": _list_agent_rules,
         "list_firewall_rules": _list_firewall_rules,
+        "list_database_providers": _list_database_providers,
+        "get_managed_database": _get_managed_database,
+        "get_database_install_options": _get_database_install_options,
+        "list_database_tables": _list_database_tables,
+        "run_database_query": _run_database_query,
+        "optimize_database": _optimize_database,
         "list_integrate_channels": _list_integrate_channels,
         "configure_integrate_channel": _configure_integrate_channel,
         "reload_integrate_channel": _reload_integrate_channel,
@@ -423,6 +526,96 @@ async def _list_firewall_rules(_manager: Any) -> dict[str, Any]:
         "rules": svc.list_rules(),
         "groups": svc.list_groups(),
     }
+
+
+async def _list_database_providers(_manager: Any) -> dict[str, Any]:
+    from server.services.database_engine import list_database_providers
+
+    items = list_database_providers()
+    return {"items": items, "total": len(items)}
+
+
+async def _get_database_install_options(_manager: Any, *, engine_id: str) -> dict[str, Any]:
+    from server.services.database_engine import get_database_install_options
+
+    try:
+        return get_database_install_options(engine_id.strip().lower())
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+async def _get_managed_database(_manager: Any, *, engine_id: str) -> dict[str, Any]:
+    from server.app_store import state
+    from server.services.database_engine import get_database_engine_service
+
+    plugin_id = engine_id.strip().lower()
+    if not state.get_installed(plugin_id):
+        return {
+            "engine_id": plugin_id,
+            "installed": False,
+            "message": f"{plugin_id} is not installed on this panel",
+        }
+    view = get_database_engine_service().get_managed_view(plugin_id)
+    return {"installed": True, **view}
+
+
+async def _list_database_tables(
+    _manager: Any,
+    *,
+    engine_id: str,
+    database_name: str,
+) -> dict[str, Any]:
+    from server.app_store import state
+    from server.services.database_engine import get_database_engine_service
+
+    plugin_id = engine_id.strip().lower()
+    if not state.get_installed(plugin_id):
+        return {"ok": False, "error": f"{plugin_id} is not installed"}
+    return await get_database_engine_service().list_database_tables(
+        plugin_id,
+        database_name.strip(),
+    )
+
+
+async def _run_database_query(
+    _manager: Any,
+    *,
+    engine_id: str,
+    database_name: str,
+    sql: str,
+    limit: int = 100,
+) -> dict[str, Any]:
+    from server.app_store import state
+    from server.services.database_engine import get_database_engine_service
+
+    plugin_id = engine_id.strip().lower()
+    if not state.get_installed(plugin_id):
+        return {"ok": False, "error": f"{plugin_id} is not installed"}
+    cap = max(1, min(int(limit or 100), 500))
+    return await get_database_engine_service().run_database_query(
+        plugin_id,
+        database_name.strip(),
+        sql=sql,
+        limit=cap,
+    )
+
+
+async def _optimize_database(
+    _manager: Any,
+    *,
+    engine_id: str,
+    database_name: str,
+) -> dict[str, Any]:
+    from server.app_store import state
+    from server.services.database_engine import get_database_engine_service
+
+    plugin_id = engine_id.strip().lower()
+    if not state.get_installed(plugin_id):
+        return {"ok": False, "error": f"{plugin_id} is not installed"}
+    return await get_database_engine_service().optimize_logical_database(
+        plugin_id,
+        database_name.strip(),
+    )
 
 
 async def _list_integrate_channels(_manager: Any) -> dict[str, Any]:

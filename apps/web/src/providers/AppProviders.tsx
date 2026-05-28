@@ -2,6 +2,7 @@ import { ChakraProvider, LocaleProvider } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { AppToaster } from '../components/ui/AppToaster'
 import { LocaleSync } from '../components/locale/LocaleSync'
 import { ThemeSettingsDrawer } from '../components/theme/ThemeSettingsDrawer'
 import { ThemeSync } from '../components/theme/ThemeSync'
@@ -47,6 +48,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <LocaleBridge>
           <ThemeSync />
           <ThemeSettingsDrawer />
+          <AppToaster />
           {children}
         </LocaleBridge>
       </ChakraProvider>

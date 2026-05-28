@@ -7,12 +7,11 @@ import {
   type StoreEnvironment,
   type StoreInstalled,
   type StoreInstallRequest,
-  type StoreCreateDatabasesRequest,
-  type StoreDatabaseListResponse,
   type StorePluginCredentials,
   type StorePluginDetail,
   type StoreUpdateConfigRequest,
 } from '../../lib/api'
+import { managedDatabaseQueryKey } from '../../lib/databases/registry'
 
 export function useStoreEnvironmentQuery() {
   return useQuery({
@@ -139,36 +138,25 @@ export function useStoreCredentialsQuery(pluginId: string | null, enabled = fals
   })
 }
 
-export function useStoreDatabasesQuery(pluginId: string | null, enabled = true) {
-  return useQuery({
-    queryKey: [...queryKeys.storePlugin(pluginId ?? ''), 'databases'] as const,
-    queryFn: () => api<StoreDatabaseListResponse>(`/store/plugins/${pluginId}/databases`),
-    enabled: Boolean(pluginId) && enabled,
-    refetchInterval: 15_000,
-  })
-}
+/** @deprecated Use useManagedDatabaseQuery from use-database-engine-query */
+export { useManagedDatabaseQuery as useStoreDatabasesQuery } from './use-database-engine-query'
 
-export function useStoreCreateDatabasesMutation() {
+/** @deprecated Use useCreateLogicalDatabaseMutation from use-database-engine-query */
+export { useCreateLogicalDatabaseMutation as useStoreCreateDatabasesMutation } from './use-database-engine-query'
+
+export function useStoreDropDatabaseMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      pluginId,
-      databases,
-    }: {
-      pluginId: string
-      databases: StoreCreateDatabasesRequest['databases']
-    }) =>
-      api<StoreDatabaseListResponse>(`/store/plugins/${pluginId}/databases`, {
-        method: 'POST',
-        body: JSON.stringify({ databases }),
-      }),
+    mutationFn: ({ pluginId, databaseName }: { pluginId: string; databaseName: string }) =>
+      api<{ plugin_id: string; name: string; dropped: boolean }>(
+        `/store/plugins/${pluginId}/databases/${encodeURIComponent(databaseName)}`,
+        { method: 'DELETE' },
+      ),
     onSuccess: (_data, { pluginId }) => {
       void qc.invalidateQueries({ queryKey: queryKeys.storeInstalled })
       void qc.invalidateQueries({ queryKey: queryKeys.storeCatalog })
       void qc.invalidateQueries({ queryKey: queryKeys.storePlugin(pluginId) })
-      void qc.invalidateQueries({
-        queryKey: [...queryKeys.storePlugin(pluginId), 'databases'],
-      })
+      void qc.invalidateQueries({ queryKey: managedDatabaseQueryKey(pluginId) })
     },
   })
 }
@@ -187,6 +175,9 @@ export function useStoreUpdateConfigMutation() {
       void qc.invalidateQueries({ queryKey: queryKeys.storePlugin(pluginId) })
       void qc.invalidateQueries({
         queryKey: [...queryKeys.storePlugin(pluginId), 'credentials'],
+      })
+      void qc.invalidateQueries({
+        queryKey: ['store', 'plugin', pluginId, 'managed-database'],
       })
     },
   })

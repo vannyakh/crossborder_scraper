@@ -1,20 +1,18 @@
 import { Box, Button, Tabs } from '@chakra-ui/react'
 import { RefreshCw } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   DATABASE_ENGINE_TABS,
   DEFAULT_DATABASE_ENGINE,
   databaseEnginePath,
   type DatabaseEngineId,
-} from '../../config/databases'
+} from '../../lib/databases/registry'
 import {
-  useStoreCatalogQuery,
   useStoreEnvironmentQuery,
   useStoreInstalledQuery,
 } from '../../hooks/queries/use-store-query'
 import { useLocale } from '../../hooks/use-locale'
-import { StorePluginSettingsDrawer } from '../store/StorePluginSettingsDrawer'
 import { resolveDatabaseEngine } from './database-sections'
 import { DatabaseEnginePanel } from './DatabaseEnginePanel'
 import { DatabaseSqlitePanel } from './DatabaseSqlitePanel'
@@ -26,14 +24,7 @@ export function DatabasePanels() {
   const engine = resolveDatabaseEngine(sectionParam)
 
   const env = useStoreEnvironmentQuery()
-  const catalog = useStoreCatalogQuery()
   const installed = useStoreInstalledQuery()
-  const [settingsPluginId, setSettingsPluginId] = useState<string | null>(null)
-
-  const settingsCatalogItem = useMemo(
-    () => catalog.data?.find((item) => item.id === settingsPluginId),
-    [catalog.data, settingsPluginId],
-  )
 
   const tabItems = useMemo(
     () =>
@@ -81,9 +72,8 @@ export function DatabasePanels() {
           borderColor="border.subtle"
           borderRadius="input"
           flexShrink={0}
-          loading={catalog.isFetching || installed.isFetching || env.isFetching}
+          loading={installed.isFetching || env.isFetching}
           onClick={() => {
-            void catalog.refetch()
             void installed.refetch()
             void env.refetch()
           }}
@@ -112,14 +102,8 @@ export function DatabasePanels() {
       {engine === 'sqlite' || !activeTab?.pluginId ? (
         <DatabaseSqlitePanel />
       ) : (
-        <DatabaseEnginePanel pluginId={activeTab.pluginId} onSettings={setSettingsPluginId} />
+        <DatabaseEnginePanel pluginId={activeTab.pluginId} />
       )}
-
-      <StorePluginSettingsDrawer
-        pluginId={settingsPluginId}
-        catalogItem={settingsCatalogItem}
-        onClose={() => setSettingsPluginId(null)}
-      />
     </>
   )
 }

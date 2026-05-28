@@ -6,6 +6,7 @@ import {
   usePanelConfigQuery,
   useUpdatePanelConfigMutation,
 } from '../../hooks'
+import { notifyError, notifySuccess } from '../../lib/toast'
 import { buildProxyLine, emptyParsedProxy, type ParsedProxy, type ProxyScheme } from './proxy-url'
 
 export type VpnMode = 'local_socks' | 'wireguard'
@@ -103,9 +104,13 @@ export function usePanelSettingsForm() {
     try {
       await updateMutation.mutateAsync(buildAgentLlmPayload())
       setAiApiKey('')
-      setMessage(`Agent LLM saved to ${panel?.ui_config_path ?? 'config/ui_config.json'}`)
+      const msg = `Agent LLM saved to ${panel?.ui_config_path ?? 'config/ui_config.json'}`
+      setMessage(msg)
+      notifySuccess(msg)
     } catch (err) {
-      setMessage(String((err as Error).message || err))
+      const msg = String((err as Error).message || err)
+      setMessage(msg)
+      notifyError(msg)
     }
   }
 
@@ -116,9 +121,13 @@ export function usePanelSettingsForm() {
       setAiApiKey('')
       setProxyParts(emptyParsedProxy())
       setVpnLocalEndpoint('')
-      setMessage(`Saved to ${panel?.ui_config_path ?? 'config/ui_config.json'}`)
+      const msg = `Saved to ${panel?.ui_config_path ?? 'config/ui_config.json'}`
+      setMessage(msg)
+      notifySuccess(msg)
     } catch (err) {
-      setMessage(String((err as Error).message || err))
+      const msg = String((err as Error).message || err)
+      setMessage(msg)
+      notifyError(msg)
     }
   }
 
@@ -133,8 +142,12 @@ export function usePanelSettingsForm() {
       }
       const result = await checkMutation.mutateAsync(probe)
       setMessage(result.message)
+      if (result.ok) notifySuccess(result.message)
+      else notifyError(result.message)
     } catch (err) {
-      setMessage(String((err as Error).message || err))
+      const msg = String((err as Error).message || err)
+      setMessage(msg)
+      notifyError(msg)
     }
   }
 

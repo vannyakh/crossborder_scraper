@@ -953,6 +953,173 @@ export type StoreDatabaseEntry = {
   legacy?: boolean
 }
 
+export type DatabaseProviderInfo = {
+  id: string
+  label: string
+  category: string
+  default_port: number
+  supports_docker: boolean
+  supports_external: boolean
+  supports_native?: boolean
+  supports_logical_create: boolean
+  supports_managed_connection: boolean
+  installed: boolean
+  status: string
+  mode?: string | null
+  default_version?: string | null
+  available_versions?: string[]
+  host_detected_version?: string | null
+}
+
+export type DatabaseInstallVersionOption = {
+  id: string
+  label: string
+  docker_image?: string | null
+  native_supported: boolean
+  recommended: boolean
+}
+
+export type DatabaseInstallOptionsResponse = {
+  plugin_id: string
+  product: string
+  label: string
+  description: string
+  platform: string
+  default_port: number
+  default_version: string
+  supports_docker: boolean
+  supports_native: boolean
+  supports_external: boolean
+  docker_available: boolean
+  native_available: boolean
+  host_detected_version?: string | null
+  docker_versions: DatabaseInstallVersionOption[]
+  native_versions: DatabaseInstallVersionOption[]
+}
+
+export type StoreDatabaseConnectionView = {
+  host: string
+  port?: number | null
+  username?: string | null
+  database?: string | null
+  password_set: boolean
+  mode?: string | null
+  container_name?: string | null
+  status?: string | null
+}
+
+export type StoreDatabasePatchRequest = {
+  password?: string
+  access?: 'local' | 'remote'
+  regenerate_password?: boolean
+}
+
+export type StoreManagedDatabaseResponse = {
+  plugin_id: string
+  managed: StoreDatabaseEntry | null
+  items: StoreDatabaseEntry[]
+  total: number
+  connection: StoreDatabaseConnectionView
+  supports_create: boolean
+  extra_logical_count: number
+  supports_optimize: boolean
+  supports_permission: boolean
+  supports_inspect: boolean
+}
+
+export type DatabaseTableInfo = {
+  name: string
+  engine?: string | null
+  row_type: string
+  rows?: number | null
+  size_bytes?: number | null
+  collation?: string | null
+}
+
+export type DatabaseQuerySuggestion = {
+  label: string
+  sql: string
+}
+
+export type DatabaseTablesResponse = {
+  plugin_id: string
+  database: string
+  items: DatabaseTableInfo[]
+  total: number
+  suggestions: DatabaseQuerySuggestion[]
+  syntax_hints: string[]
+}
+
+export type DatabaseQueryRequest = {
+  sql: string
+  limit?: number
+}
+
+export type DatabaseQueryResponse = {
+  ok: boolean
+  error?: string | null
+  columns: string[]
+  rows: string[][]
+  row_count: number
+  rows_affected?: number | null
+  elapsed_ms?: number | null
+  message?: string | null
+  sql_executed?: string | null
+}
+
+export type DatabaseSqlCompleteResponse = {
+  keywords: string[]
+  types: string[]
+  identifiers: string[]
+}
+
+export type DatabaseColumnInfo = {
+  name: string
+  data_type: string
+  nullable: boolean
+  default?: string | null
+  primary?: boolean
+}
+
+export type DatabaseColumnsResponse = {
+  plugin_id: string
+  database: string
+  table: string
+  items: DatabaseColumnInfo[]
+}
+
+export type DatabaseCreateTableColumn = {
+  name: string
+  type: string
+  nullable?: boolean
+  primary?: boolean
+  auto_increment?: boolean
+  default?: string | null
+}
+
+export type DatabaseCreateTableRequest = {
+  table_name: string
+  columns: DatabaseCreateTableColumn[]
+}
+
+export type DatabaseAddColumnRequest = {
+  column_name: string
+  column_type: string
+  nullable?: boolean
+  default?: string | null
+}
+
+export type DatabaseInsertRowRequest = {
+  values: Record<string, string | number | boolean | null>
+}
+
+export type DatabaseActionResponse = {
+  ok: boolean
+  message?: string | null
+  table?: string | null
+}
+
+/** @deprecated Prefer StoreManagedDatabaseResponse */
 export type StoreDatabaseListResponse = {
   plugin_id: string
   items: StoreDatabaseEntry[]

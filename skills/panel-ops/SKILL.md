@@ -12,6 +12,12 @@ metadata:
       - setup_network_access
       - apply_panel_firewall
       - list_firewall_rules
+      - list_database_providers
+      - get_managed_database
+      - get_database_install_options
+      - list_database_tables
+      - run_database_query
+      - optimize_database
       - list_agent_rules
 ---
 
@@ -32,6 +38,16 @@ Use when the operator asks about **panel access**, **VPS firewall**, **health ch
 3. If the host firewall blocks the panel port, ask before mutating:
    - `apply_panel_firewall` — open panel TCP port only (needs root/sudo on VPS).
    - `setup_network_access` — bind `0.0.0.0`, open firewall, detect public IP in `.env` (full setup).
+
+## Database engines
+
+1. `list_database_providers` — MySQL, PostgreSQL, MongoDB, Redis install status and capabilities.
+2. `get_database_install_options` with `engine_id` — official versions available on the host (native apt + Docker).
+3. `get_managed_database` with `engine_id` — panel-managed DB name, endpoint, user (not full password in summary).
+4. `list_database_tables` — table cards data plus suggested SQL (`suggestions`, `syntax_hints`).
+5. `run_database_query` — SELECT/INSERT/UPDATE/DDL (blocked: GRANT, OUTFILE, multi-statement); report `ok`, `message`, `row_count`, or `rows_affected`.
+6. `optimize_database` — table maintenance when the operator asks to optimize a logical database.
+7. Do not create or drop logical databases unless the operator explicitly asks and confirms.
 
 ## Health workflow
 

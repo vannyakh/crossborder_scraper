@@ -19,7 +19,7 @@ from core.plugins import (
 )
 from deploy.drivers import install as driver_install
 from deploy.drivers.registry import docker_image_for, get_driver_spec
-from server.app_store import catalog, db_provision, docker, probes, state
+from server.app_store import catalog, docker, probes, state
 from server.app_store.catalog import StorePluginDefinition, get_plugin, list_catalog
 
 
@@ -315,100 +315,6 @@ class StoreManager:
             state.save_installed(plugin_id, record)
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    def list_plugin_databases(self, plugin_id: str) -> dict[str, Any]:
-        record = self._require_installed(plugin_id)
-        plugin = get_plugin(plugin_id)
-        config = dict(record.get("config") or {})
-        if not isinstance(config.get("databases"), list) and config.get("database"):
-            record = state.touch_record(record, config=_seed_default_database(config))
-            state.save_installed(plugin_id, record)
-        items = db_provision.list_databases_from_record(record)
-        public = [
-            {
-                "name": str(row.get("name") or ""),
-                "username": str(row.get("username") or ""),
-                "password": str(row.get("password") or ""),
-                "charset": str(row.get("charset") or "utf8mb4"),
-                "access": str(row.get("access") or "local"),
-                "created_at": row.get("created_at"),
-                "legacy": bool(row.get("legacy")),
-            }
-            for row in items
-            if row.get("name")
-        ]
-        return {
-            "plugin_id": plugin_id,
-            "items": public,
-            "total": len(public),
-            "supports_create": bool(plugin and db_provision.supports_multiple_databases(plugin.id)),
-        }
-
-    async def create_plugin_databases(
-        self, plugin_id: str, items: list[dict[str, Any]]
-    ) -> dict[str, Any]:
-        record = self._require_installed(plugin_id)
-        plugin = self._require_plugin(plugin_id)
-        config = dict(record.get("config") or {})
-        databases = list(db_provision.list_databases_from_record(record))
-        if not isinstance(config.get("databases"), list):
-            config["databases"] = [
-                {
-                    "name": str(row["name"]),
-                    "username": row.get("username"),
-                    "password": row.get("password"),
-                    "charset": row.get("charset") or "utf8mb4",
-                    "created_at": row.get("created_at"),
-                }
-                for row in databases
-            ]
-            databases = list(config["databases"])
-
-        existing = {str(row.get("name")) for row in databases}
-        created: list[dict[str, Any]] = []
-
-        for raw in items:
-            name = db_provision.validate_db_name(str(raw.get("name") or ""))
-            if name in existing:
-                raise HTTPException(status_code=409, detail=f"database {name} already exists")
-            username = str(raw.get("username") or "").strip() or db_provision.generate_db_username()
-            password = str(raw.get("password") or "").strip() or db_provision.generate_db_password()
-            charset = str(raw.get("charset") or "utf8mb4")
-            access = str(raw.get("access") or "local").strip().lower()
-            if access not in ("local", "remote"):
-                raise HTTPException(status_code=400, detail="access must be local or remote")
-
-            await asyncio.to_thread(
-                db_provision.provision_database,
-                plugin,
-                record,
-                db_name=name,
-                username=username,
-                password=password,
-                charset=charset,
-                access=access,
-            )
-            entry = {
-                "name": name,
-                "username": username,
-                "password": password,
-                "charset": charset,
-                "access": access,
-                "created_at": datetime.now(UTC).isoformat(),
-            }
-            databases.append(entry)
-            existing.add(name)
-            created.append(entry)
-
-        config["databases"] = databases
-        record = state.touch_record(record, config=config)
-        state.save_installed(plugin_id, record)
-        return {
-            "plugin_id": plugin_id,
-            "items": created,
-            "total": len(created),
-            "supports_create": True,
-        }
-
     async def connect_external(self, plugin_id: str, config: dict[str, Any]) -> dict[str, Any]:
         plugin = self._require_plugin(plugin_id)
         if not plugin.supports_external:
@@ -472,90 +378,9 @@ class StoreManager:
         }
 
     async def update_config(self, plugin_id: str, patch: dict[str, Any]) -> dict[str, Any]:
-        record = self._require_installed(plugin_id)
-        mode = record.get("mode")
-        if mode == "source":
-            raise HTTPException(status_code=400, detail="source plugins have no connection config")
+        from server.services.database_engine import get_database_engine_service
 
-        plugin = self._require_plugin(plugin_id)
-        current = dict(record.get("config") or {})
-        old_port = int(current.get("port") or plugin.default_port)
-
-        if patch.get("regenerate_password"):
-            patch = {**patch, "password": _generate_password() if plugin.id != "memcached" else ""}
-
-        for key in ("host", "port", "username", "password", "database", "management_port"):
-            if key not in patch:
-                continue
-            value = patch[key]
-            if value is None:
-                continue
-            if key == "password" and value == "":
-                continue
-            current[key] = value
-
-        new_port = int(current.get("port") or plugin.default_port)
-        if new_port != old_port and not _port_free(new_port):
-            raise HTTPException(status_code=409, detail=f"port {new_port} is already in use")
-
-        if mode == "native" and new_port != old_port:
-            raise HTTPException(
-                status_code=400,
-                detail="native port changes require uninstall and reinstall",
-            )
-
-        redeploy_docker = False
-        if mode == "docker":
-            redeploy_docker = (
-                new_port != old_port or "password" in patch or patch.get("regenerate_password")
-            )
-            if redeploy_docker:
-                pdir = state.plugin_dir(plugin_id)
-                await asyncio.to_thread(docker.compose_down, pdir, volumes=False)
-                image = str(current.get("docker_image") or plugin.docker_image)
-                password = str(current.get("password") or "")
-                await asyncio.to_thread(
-                    self._write_compose_and_up,
-                    plugin,
-                    new_port,
-                    password,
-                    image,
-                )
-
-        probe = probes.probe_plugin(plugin, current)
-        if not probe.get("ok"):
-            raise HTTPException(status_code=400, detail=probe.get("message") or "connection failed")
-
-        status = record.get("status") or "installed"
-        if mode == "docker":
-            container = str(current.get("container_name") or plugin.container_name)
-            running = docker.container_running(container)
-            if not running:
-                status = "stopped"
-            elif probe.get("ok"):
-                status = "running"
-            else:
-                status = "error"
-        elif mode == "native":
-            running = driver_install.native_service_running(plugin_id)
-            if not running:
-                status = "stopped"
-            elif probe.get("ok"):
-                status = "running"
-            else:
-                status = "error"
-        elif mode == "external":
-            status = "external" if probe.get("ok") else "error"
-
-        record = state.touch_record(
-            record,
-            config=current,
-            status=status,
-            probe=probe,
-            error=None if probe.get("ok") else probe.get("message"),
-        )
-        state.save_installed(plugin_id, record)
-        return self._public_installed(plugin_id, record)
+        return await get_database_engine_service().update_connection_config(plugin_id, patch)
 
     async def start(self, plugin_id: str) -> dict[str, Any]:
         record = self._require_installed(plugin_id)

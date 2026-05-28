@@ -1,10 +1,6 @@
 import { Box, Button, Grid, Separator, Tabs, Text } from '@chakra-ui/react'
 import { RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Toolbar } from '../layout/Toolbar'
-import { DataListEmpty } from '../ui/DataList'
-import { CardGridSkeleton, ListCardRowsSkeleton } from '../ui/PanelSkeleton'
-import { SectionCard } from '../ui/Section'
 import {
   useStoreCatalogQuery,
   useStoreEnvironmentQuery,
@@ -12,13 +8,17 @@ import {
   useStoreInstalledQuery,
 } from '../../hooks/queries/use-store-query'
 import type { StoreCatalogItem, StoreEnvironment, StoreInstalled } from '../../lib/api'
+import { Toolbar } from '../layout/Toolbar'
+import { DataListEmpty } from '../ui/DataList'
+import { CardGridSkeleton, ListCardRowsSkeleton } from '../ui/PanelSkeleton'
+import { SectionCard } from '../ui/Section'
 import { StoreCatalogCard } from './StoreCatalogCard'
 import { StoreCatalogListRow } from './StoreCatalogListRow'
-import { StoreInstallDialog, type StoreInstallOptions } from './StoreInstallDialog'
-import { StorePluginSettingsDrawer } from './StorePluginSettingsDrawer'
 import { StoreFilterBar } from './StoreFilterBar'
+import { StoreInstallDialog, type StoreInstallOptions } from './StoreInstallDialog'
 import { StoreInstalledList } from './StoreInstalledList'
 import { StorePagination } from './StorePagination'
+import { StorePluginSettingsDrawer } from './StorePluginSettingsDrawer'
 import {
   filterCatalog,
   searchCatalog,
@@ -222,7 +222,7 @@ function CatalogTabContent({
       <StoreFilterBar
         showCategoryFilters
         category={category}
-        onCategoryChange={onCategoryChange}
+        onCategoryChange={(value) => onCategoryChange(value as StoreCategoryFilter)}
         search={list.search}
         onSearchChange={list.setSearch}
         searchPlaceholder="Search apps…"

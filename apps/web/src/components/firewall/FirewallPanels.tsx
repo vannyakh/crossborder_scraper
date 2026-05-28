@@ -12,7 +12,6 @@ import {
   Switch,
   Tabs,
   Text,
-  Textarea,
 } from '@chakra-ui/react'
 import { Download, Plus, RefreshCw, Shield, Upload } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'

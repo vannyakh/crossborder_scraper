@@ -1,12 +1,13 @@
 import { Box, Button, Field, Grid, HStack, Input, Text, VStack } from '@chakra-ui/react'
 import { KeyRound, RefreshCw, Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useUpdateDatabaseConfigMutation } from '../../hooks/queries/use-database-engine-query'
 import {
   useStoreCredentialsQuery,
   useStoreRefreshMutation,
-  useStoreUpdateConfigMutation,
 } from '../../hooks/queries/use-store-query'
 import { useLocale } from '../../hooks/use-locale'
+import { notifyError, notifySuccess } from '../../lib/toast'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem, StoreInstalled, StoreUpdateConfigRequest } from '../../lib/api'
 import { SectionCard } from '../ui/Section'
@@ -43,7 +44,7 @@ export function DatabaseConnectionManage({
 }) {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
-  const updateMutation = useStoreUpdateConfigMutation()
+  const updateMutation = useUpdateDatabaseConfigMutation()
   const refreshMutation = useStoreRefreshMutation()
   const [fetchCreds, setFetchCreds] = useState(false)
   const credentials = useStoreCredentialsQuery(pluginId, fetchCreds)
@@ -79,24 +80,41 @@ export function DatabaseConnectionManage({
   }
 
   async function handleSave() {
-    await updateMutation.mutateAsync({ pluginId, body: patchBody() })
-    setPasswordDirty(false)
-    setFetchCreds(true)
-    await credentials.refetch()
+    try {
+      await updateMutation.mutateAsync({ pluginId, body: patchBody() })
+      setPasswordDirty(false)
+      setFetchCreds(true)
+      await credentials.refetch()
+      notifySuccess(t('db.manage.save'))
+    } catch (err) {
+      notifyError(err)
+    }
   }
 
   async function handleRegeneratePassword() {
-    await updateMutation.mutateAsync({ pluginId, body: { regenerate_password: true } })
-    setFetchCreds(true)
-    const next = await credentials.refetch()
-    if (next.data?.password) {
-      setForm((prev) => ({ ...prev, password: next.data.password ?? '' }))
-      setPasswordDirty(false)
+    try {
+      await updateMutation.mutateAsync({ pluginId, body: { regenerate_password: true } })
+      setFetchCreds(true)
+      const next = await credentials.refetch()
+      if (next.data?.password) {
+        setForm((prev) => ({ ...prev, password: next.data.password ?? '' }))
+        setPasswordDirty(false)
+      }
+      notifySuccess(t('db.manage.regeneratePassword'))
+    } catch (err) {
+      notifyError(err)
     }
   }
 
   async function handleTest() {
-    await refreshMutation.mutateAsync(pluginId)
+    try {
+      const result = await refreshMutation.mutateAsync(pluginId)
+      const msg = result.probe?.message ?? t('db.manage.testConnection')
+      if (result.status === 'running') notifySuccess(msg)
+      else notifyError(msg)
+    } catch (err) {
+      notifyError(err)
+    }
   }
 
   return (
@@ -194,6 +212,9 @@ export function DatabaseConnectionManage({
         ) : null}
 
         <Text mt={3} fontSize="xs" color="fg.muted" lineHeight="tall">
+          {t('db.manage.primaryDbHint')}
+        </Text>
+        <Text mt={1} fontSize="xs" color="fg.subtle" lineHeight="tall">
           {isManaged ? t('db.manage.managedHint') : t('db.manage.externalHint')}
         </Text>
       </SectionCard>

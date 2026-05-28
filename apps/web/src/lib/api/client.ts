@@ -1,6 +1,27 @@
 import { getBasicAuthHeader, useAuthStore } from '../../stores/auth-store'
 import { withPanelPrefix } from './panel-prefix'
 
+export function formatApiDetail(detail: unknown): string {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail
+      .map((entry) => {
+        const row = entry as { loc?: (string | number)[]; msg?: string }
+        const field = row.loc?.length ? String(row.loc[row.loc.length - 1]) : 'field'
+        return `${row.msg ?? 'invalid'} (${field})`
+      })
+      .join('; ')
+  }
+  if (detail && typeof detail === 'object') {
+    try {
+      return JSON.stringify(detail)
+    } catch {
+      return 'Request failed'
+    }
+  }
+  return 'Request failed'
+}
+
 export type AuthStatus = {
   auth_enabled: boolean
   auth_configured: boolean
@@ -30,11 +51,12 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const detail =
+    const detail = formatApiDetail(
       typeof data === 'object' && data !== null && 'detail' in data
-        ? JSON.stringify((data as { detail: unknown }).detail)
-        : JSON.stringify(data)
-    throw new Error(`HTTP ${res.status} ${res.statusText}: ${detail}`)
+        ? (data as { detail: unknown }).detail
+        : data,
+    )
+    throw new Error(detail || `${res.status} ${res.statusText}`)
   }
   return data as T
 }

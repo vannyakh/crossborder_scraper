@@ -222,7 +222,182 @@ class StoreCreateDatabasesRequest(BaseModel):
     databases: list[StoreDatabaseCreateItem] = Field(min_length=1, max_length=20)
 
 
+class StoreDatabasePatchRequest(BaseModel):
+    password: str | None = Field(default=None, max_length=128)
+    access: str | None = Field(default=None, pattern="^(local|remote)$")
+    regenerate_password: bool = False
+
+
+class DatabaseTableInfo(BaseModel):
+    name: str
+    engine: str | None = None
+    row_type: str = "BASE TABLE"
+    rows: int | None = None
+    size_bytes: int | None = None
+    collation: str | None = None
+
+
+class DatabaseQuerySuggestion(BaseModel):
+    label: str
+    sql: str
+
+
+class DatabaseTablesResponse(BaseModel):
+    plugin_id: str
+    database: str
+    items: list[DatabaseTableInfo]
+    total: int
+    suggestions: list[DatabaseQuerySuggestion] = Field(default_factory=list)
+    syntax_hints: list[str] = Field(default_factory=list)
+
+
+class DatabaseQueryRequest(BaseModel):
+    sql: str = Field(min_length=1, max_length=8000)
+    limit: int = Field(default=100, ge=1, le=500)
+
+
+class DatabaseQueryResponse(BaseModel):
+    ok: bool = True
+    error: str | None = None
+    columns: list[str] = Field(default_factory=list)
+    rows: list[list[str]] = Field(default_factory=list)
+    row_count: int = 0
+    rows_affected: int | None = None
+    elapsed_ms: float | None = None
+    message: str | None = None
+    sql_executed: str | None = None
+
+
+class DatabaseSqlCompleteResponse(BaseModel):
+    keywords: list[str] = Field(default_factory=list)
+    types: list[str] = Field(default_factory=list)
+    identifiers: list[str] = Field(default_factory=list)
+
+
+class DatabaseColumnInfo(BaseModel):
+    name: str
+    data_type: str
+    nullable: bool = True
+    default: str | None = None
+    primary: bool = False
+
+
+class DatabaseColumnsResponse(BaseModel):
+    plugin_id: str
+    database: str
+    table: str
+    items: list[DatabaseColumnInfo]
+
+
+class DatabaseCreateTableColumn(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+    type: str = Field(min_length=1, max_length=64)
+    nullable: bool = True
+    primary: bool = False
+    auto_increment: bool = False
+    default: str | None = Field(default=None, max_length=128)
+
+
+class DatabaseCreateTableRequest(BaseModel):
+    table_name: str = Field(min_length=1, max_length=64)
+    columns: list[DatabaseCreateTableColumn] = Field(min_length=1, max_length=32)
+
+
+class DatabaseAddColumnRequest(BaseModel):
+    column_name: str = Field(min_length=1, max_length=64)
+    column_type: str = Field(min_length=1, max_length=64)
+    nullable: bool = True
+    default: str | None = Field(default=None, max_length=128)
+
+
+class DatabaseInsertRowRequest(BaseModel):
+    values: dict[str, Any] = Field(min_length=1)
+
+
+class DatabaseActionResponse(BaseModel):
+    ok: bool = True
+    message: str | None = None
+    table: str | None = None
+
+
+class StoreDatabaseConnectionView(BaseModel):
+    host: str = "127.0.0.1"
+    port: int | None = None
+    username: str | None = None
+    database: str | None = None
+    password_set: bool = False
+    mode: str | None = None
+    container_name: str | None = None
+    status: str | None = None
+
+
+class DatabaseProviderInfo(BaseModel):
+    id: str
+    label: str
+    category: str
+    default_port: int = 0
+    supports_docker: bool = False
+    supports_external: bool = False
+    supports_native: bool = False
+    supports_logical_create: bool = False
+    supports_managed_connection: bool = True
+    installed: bool = False
+    status: str = "not_installed"
+    mode: str | None = None
+    default_version: str | None = None
+    available_versions: list[str] = Field(default_factory=list)
+    host_detected_version: str | None = None
+
+
+class DatabaseProvidersResponse(BaseModel):
+    items: list[DatabaseProviderInfo]
+    total: int
+
+
+class DatabaseInstallVersionOption(BaseModel):
+    id: str
+    label: str
+    docker_image: str | None = None
+    native_supported: bool = False
+    recommended: bool = False
+
+
+class DatabaseInstallOptionsResponse(BaseModel):
+    plugin_id: str
+    product: str
+    label: str
+    description: str = ""
+    platform: str = "unknown"
+    default_port: int = 0
+    default_version: str = ""
+    supports_docker: bool = False
+    supports_native: bool = False
+    supports_external: bool = False
+    docker_available: bool = False
+    native_available: bool = False
+    host_detected_version: str | None = None
+    docker_versions: list[DatabaseInstallVersionOption] = Field(default_factory=list)
+    native_versions: list[DatabaseInstallVersionOption] = Field(default_factory=list)
+
+
+class StoreManagedDatabaseResponse(BaseModel):
+    """Panel-managed database view — logical DB rows plus connection summary."""
+
+    plugin_id: str
+    managed: StoreDatabaseEntry | None = None
+    items: list[StoreDatabaseEntry] = Field(default_factory=list)
+    total: int = 0
+    connection: StoreDatabaseConnectionView
+    supports_create: bool = False
+    extra_logical_count: int = 0
+    supports_optimize: bool = False
+    supports_permission: bool = False
+    supports_inspect: bool = False
+
+
 class StoreDatabaseListResponse(BaseModel):
+    """@deprecated Use StoreManagedDatabaseResponse; kept for OpenAPI compatibility."""
+
     plugin_id: str
     items: list[StoreDatabaseEntry]
     total: int

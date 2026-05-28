@@ -1,6 +1,6 @@
 import { Button, HStack, Menu, Portal, Text } from '@chakra-ui/react'
 import { Check, ChevronDown } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 export type PanelSelectOption = {
   label: string
@@ -45,9 +45,19 @@ export function PanelSelect({
     [options, selectedValue, placeholder],
   )
   const isDisabled = disabled || options.length === 0
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (isDisabled) setMenuOpen(false)
+  }, [isDisabled])
 
   return (
-    <Menu.Root positioning={{ sameWidth: true }} closeOnSelect>
+    <Menu.Root
+      open={menuOpen}
+      onOpenChange={(details) => setMenuOpen(details.open)}
+      positioning={{ sameWidth: true }}
+      closeOnSelect
+    >
       <Menu.Trigger asChild disabled={isDisabled}>
         <Button
           variant="outline"

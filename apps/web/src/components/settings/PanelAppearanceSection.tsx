@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react'
 import { Image, Monitor, Moon, Sun, X } from 'lucide-react'
 import { useRef } from 'react'
+import { notifyError } from '../../lib/toast'
 import { useThemeActions } from '../../hooks/use-theme-actions'
 import { useUiConfig } from '../../hooks/use-ui-config'
 import {
@@ -320,13 +321,13 @@ function ImageUploadField({
     try {
       onUpload(await readImageFile(file, PANEL_IMAGE_MAX_BYTES))
     } catch (err) {
-      window.alert(String((err as Error).message || err))
+      notifyError(err)
     }
   }
 
   function onFileReject(details: FileUpload.FileRejectDetails) {
     const message = details.files.flatMap((f) => f.errors).join(', ')
-    window.alert(message || 'File type not accepted')
+    notifyError(message || 'File type not accepted')
   }
 
   return (

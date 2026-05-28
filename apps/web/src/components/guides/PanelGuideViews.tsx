@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, HStack, IconButton, Portal, Text } from '@chakra-ui/react'
+import { Box, Button, Dialog, HStack, IconButton, Portal, Text, VStack } from '@chakra-ui/react'
 import { BookOpen, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
@@ -102,23 +102,42 @@ export function PanelGuideDialog({
               borderColor="border.subtle"
               flexShrink={0}
               py={4}
+              pl={{ base: 4, md: 5 }}
               pr={12}
             >
-              <Dialog.Title fontWeight="semibold" lineClamp={2}>
-                {guide?.title ?? 'Setup guide'}
-              </Dialog.Title>
-              {guide ? (
-                <HStack mt={1.5} gap={2} flexWrap="wrap">
-                  <StatusBadge
-                    status={CATEGORY_TONE[guide.category]}
-                    label={guide.category_label}
-                  />
-                  <HStack gap={1.5} color="fg.muted">
-                    <BookOpen size={14} />
-                    <Text fontSize="xs">{guide.summary}</Text>
-                  </HStack>
+              <VStack align="stretch" gap={2} minW={0}>
+                <HStack gap={2} align="center" maxW="full">
+                  <Dialog.Title
+                    fontWeight="semibold"
+                    fontSize="lg"
+                    lineHeight="short"
+                    lineClamp={1}
+                    flexShrink={1}
+                    minW={0}
+                    m={0}
+                  >
+                    {guide?.title ?? 'Setup guide'}
+                  </Dialog.Title>
+                  {guide ? (
+                    <Box flexShrink={0}>
+                      <StatusBadge
+                        status={CATEGORY_TONE[guide.category]}
+                        label={guide.category_label}
+                      />
+                    </Box>
+                  ) : null}
                 </HStack>
-              ) : null}
+                {guide?.summary ? (
+                  <HStack gap={2} align="flex-start" color="fg.muted" minW={0}>
+                    <Box flexShrink={0} pt={0.5} aria-hidden>
+                      <BookOpen size={14} />
+                    </Box>
+                    <Text fontSize="sm" lineHeight="1.5" color="fg.muted">
+                      {guide.summary}
+                    </Text>
+                  </HStack>
+                ) : null}
+              </VStack>
               <Dialog.CloseTrigger asChild position="absolute" top={3} right={3}>
                 <IconButton size="sm" variant="ghost" aria-label="Close guide">
                   <X size={16} />

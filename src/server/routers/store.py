@@ -7,20 +7,37 @@ from server.app_store import get_store_manager
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
+    DatabaseActionResponse,
+    DatabaseAddColumnRequest,
+    DatabaseColumnsResponse,
+    DatabaseCreateTableRequest,
+    DatabaseInsertRowRequest,
+    DatabaseInstallOptionsResponse,
+    DatabaseProvidersResponse,
+    DatabaseQueryRequest,
+    DatabaseQueryResponse,
+    DatabaseSqlCompleteResponse,
+    DatabaseTablesResponse,
     MessageResponse,
     StoreCatalogResponse,
     StoreConnectRequest,
     StoreCreateDatabasesRequest,
-    StoreDatabaseListResponse,
+    StoreDatabasePatchRequest,
     StoreEnvironmentResponse,
     StoreInstalledListResponse,
     StoreInstalledResponse,
     StoreInstallRequest,
+    StoreManagedDatabaseResponse,
     StorePluginCredentialsResponse,
     StorePluginDetailResponse,
     StoreUpdateConfigRequest,
 )
 from server.services.audit import log_operation
+from server.services.database_engine import (
+    get_database_engine_service,
+    get_database_install_options,
+    list_database_providers,
+)
 
 router = protected_router(prefix="/store", tags=["store"])
 
@@ -132,30 +149,271 @@ async def store_plugin_credentials(
     return StorePluginCredentialsResponse(**get_store_manager().get_credentials(plugin_id))
 
 
-@router.get("/plugins/{plugin_id}/databases", response_model=StoreDatabaseListResponse)
-async def store_list_databases(
+@router.get("/database-providers", response_model=DatabaseProvidersResponse)
+async def store_database_providers(
+    _username: str = Depends(require_panel_auth),
+) -> DatabaseProvidersResponse:
+    items = list_database_providers()
+    return DatabaseProvidersResponse(items=items, total=len(items))
+
+
+@router.get(
+    "/database-providers/{plugin_id}/install-options",
+    response_model=DatabaseInstallOptionsResponse,
+)
+async def store_database_install_options(
     plugin_id: str,
     _username: str = Depends(require_panel_auth),
-) -> StoreDatabaseListResponse:
-    return StoreDatabaseListResponse(**get_store_manager().list_plugin_databases(plugin_id))
+) -> DatabaseInstallOptionsResponse:
+    try:
+        return DatabaseInstallOptionsResponse(**get_database_install_options(plugin_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@router.post("/plugins/{plugin_id}/databases", response_model=StoreDatabaseListResponse)
+@router.get("/plugins/{plugin_id}/databases", response_model=StoreManagedDatabaseResponse)
+async def store_managed_database(
+    plugin_id: str,
+    _username: str = Depends(require_panel_auth),
+) -> StoreManagedDatabaseResponse:
+    return StoreManagedDatabaseResponse(**get_database_engine_service().get_managed_view(plugin_id))
+
+
+@router.post("/plugins/{plugin_id}/databases", response_model=StoreManagedDatabaseResponse)
 async def store_create_databases(
     plugin_id: str,
     body: StoreCreateDatabasesRequest,
     username: str = Depends(require_panel_auth),
-) -> StoreDatabaseListResponse:
+) -> StoreManagedDatabaseResponse:
     payload = [item.model_dump() for item in body.databases]
-    result = await get_store_manager().create_plugin_databases(plugin_id, payload)
-    names = ", ".join(row["name"] for row in result["items"])
+    names = ", ".join(str(item.get("name") or "") for item in payload)
+    await get_database_engine_service().create_logical_databases(plugin_id, payload)
     log_operation(
         user=username,
         operation_type="Store create databases",
-        details=f"Created {len(result['items'])} database(s) on {plugin_id}: {names}",
-        meta={"plugin_id": plugin_id, "count": len(result["items"])},
+        details=f"Created database(s) on {plugin_id}: {names}",
+        meta={"plugin_id": plugin_id, "count": len(payload)},
     )
-    return StoreDatabaseListResponse(**get_store_manager().list_plugin_databases(plugin_id))
+    return StoreManagedDatabaseResponse(**get_database_engine_service().get_managed_view(plugin_id))
+
+
+@router.delete("/plugins/{plugin_id}/databases/{database_name}")
+async def store_drop_database(
+    plugin_id: str,
+    database_name: str,
+    username: str = Depends(require_panel_auth),
+) -> dict[str, Any]:
+    result = await get_database_engine_service().drop_logical_database(plugin_id, database_name)
+    log_operation(
+        user=username,
+        operation_type="Store drop database",
+        details=f"Dropped database {database_name} on {plugin_id}",
+        meta={"plugin_id": plugin_id, "database": database_name},
+    )
+    return result
+
+
+@router.post("/plugins/{plugin_id}/databases/{database_name}/optimize")
+async def store_optimize_database(
+    plugin_id: str,
+    database_name: str,
+    username: str = Depends(require_panel_auth),
+) -> dict[str, Any]:
+    result = await get_database_engine_service().optimize_logical_database(plugin_id, database_name)
+    log_operation(
+        user=username,
+        operation_type="Store optimize database",
+        details=f"Optimized database {database_name} on {plugin_id}",
+        meta={"plugin_id": plugin_id, "database": database_name},
+    )
+    return result
+
+
+@router.get(
+    "/plugins/{plugin_id}/databases/{database_name}/tables",
+    response_model=DatabaseTablesResponse,
+)
+async def store_database_tables(
+    plugin_id: str,
+    database_name: str,
+    _username: str = Depends(require_panel_auth),
+) -> DatabaseTablesResponse:
+    payload = await get_database_engine_service().list_database_tables(plugin_id, database_name)
+    return DatabaseTablesResponse(**payload)
+
+
+@router.post(
+    "/plugins/{plugin_id}/databases/{database_name}/query",
+    response_model=DatabaseQueryResponse,
+)
+async def store_database_query(
+    plugin_id: str,
+    database_name: str,
+    body: DatabaseQueryRequest,
+    username: str = Depends(require_panel_auth),
+) -> DatabaseQueryResponse:
+    result = await get_database_engine_service().run_database_query(
+        plugin_id,
+        database_name,
+        sql=body.sql,
+        limit=body.limit,
+    )
+    log_operation(
+        user=username,
+        operation_type="Store database query",
+        details=result.get("message") or f"SQL on {database_name} ({plugin_id})",
+        meta={
+            "plugin_id": plugin_id,
+            "database": database_name,
+            "ok": result.get("ok"),
+            "row_count": result.get("row_count"),
+            "error": result.get("error"),
+        },
+    )
+    return DatabaseQueryResponse(**result)
+
+
+@router.get(
+    "/plugins/{plugin_id}/databases/{database_name}/sql-complete",
+    response_model=DatabaseSqlCompleteResponse,
+)
+async def store_database_sql_complete(
+    plugin_id: str,
+    database_name: str,
+    prefix: str = "",
+    table: str | None = None,
+    _username: str = Depends(require_panel_auth),
+) -> DatabaseSqlCompleteResponse:
+    payload = await get_database_engine_service().sql_complete(
+        plugin_id,
+        database_name,
+        prefix=prefix,
+        table_name=table,
+    )
+    return DatabaseSqlCompleteResponse(**payload)
+
+
+@router.get(
+    "/plugins/{plugin_id}/databases/{database_name}/tables/{table_name}/columns",
+    response_model=DatabaseColumnsResponse,
+)
+async def store_database_table_columns(
+    plugin_id: str,
+    database_name: str,
+    table_name: str,
+    _username: str = Depends(require_panel_auth),
+) -> DatabaseColumnsResponse:
+    payload = await get_database_engine_service().list_table_columns(
+        plugin_id, database_name, table_name
+    )
+    return DatabaseColumnsResponse(**payload)
+
+
+@router.post(
+    "/plugins/{plugin_id}/databases/{database_name}/tables",
+    response_model=DatabaseActionResponse,
+)
+async def store_create_database_table(
+    plugin_id: str,
+    database_name: str,
+    body: DatabaseCreateTableRequest,
+    username: str = Depends(require_panel_auth),
+) -> DatabaseActionResponse:
+    result = await get_database_engine_service().create_database_table(
+        plugin_id,
+        database_name,
+        table_name=body.table_name,
+        columns=[c.model_dump() for c in body.columns],
+    )
+    log_operation(
+        user=username,
+        operation_type="Store create database table",
+        details=result.get("message") or f"Created table {body.table_name}",
+        meta={"plugin_id": plugin_id, "database": database_name, "table": body.table_name},
+    )
+    return DatabaseActionResponse(**result)
+
+
+@router.post(
+    "/plugins/{plugin_id}/databases/{database_name}/tables/{table_name}/columns",
+    response_model=DatabaseActionResponse,
+)
+async def store_add_database_column(
+    plugin_id: str,
+    database_name: str,
+    table_name: str,
+    body: DatabaseAddColumnRequest,
+    username: str = Depends(require_panel_auth),
+) -> DatabaseActionResponse:
+    result = await get_database_engine_service().add_table_column(
+        plugin_id,
+        database_name,
+        table_name,
+        column_name=body.column_name,
+        column_type=body.column_type,
+        nullable=body.nullable,
+        default=body.default,
+    )
+    log_operation(
+        user=username,
+        operation_type="Store add database column",
+        details=result.get("message") or f"Added column {body.column_name}",
+        meta={
+            "plugin_id": plugin_id,
+            "database": database_name,
+            "table": table_name,
+            "column": body.column_name,
+        },
+    )
+    return DatabaseActionResponse(**result)
+
+
+@router.post(
+    "/plugins/{plugin_id}/databases/{database_name}/tables/{table_name}/rows",
+    response_model=DatabaseActionResponse,
+)
+async def store_insert_database_row(
+    plugin_id: str,
+    database_name: str,
+    table_name: str,
+    body: DatabaseInsertRowRequest,
+    username: str = Depends(require_panel_auth),
+) -> DatabaseActionResponse:
+    result = await get_database_engine_service().insert_table_row(
+        plugin_id,
+        database_name,
+        table_name,
+        values=body.values,
+    )
+    log_operation(
+        user=username,
+        operation_type="Store insert database row",
+        details=result.get("message") or f"Inserted row into {table_name}",
+        meta={"plugin_id": plugin_id, "database": database_name, "table": table_name},
+    )
+    return DatabaseActionResponse(**result)
+
+
+@router.patch(
+    "/plugins/{plugin_id}/databases/{database_name}", response_model=StoreManagedDatabaseResponse
+)
+async def store_patch_database(
+    plugin_id: str,
+    database_name: str,
+    body: StoreDatabasePatchRequest,
+    username: str = Depends(require_panel_auth),
+) -> StoreManagedDatabaseResponse:
+    patch = body.model_dump(exclude_unset=True)
+    view = await get_database_engine_service().patch_logical_database(
+        plugin_id, database_name, patch
+    )
+    log_operation(
+        user=username,
+        operation_type="Store update database",
+        details=f"Updated database {database_name} on {plugin_id}",
+        meta={"plugin_id": plugin_id, "database": database_name, "fields": list(patch.keys())},
+    )
+    return StoreManagedDatabaseResponse(**view)
 
 
 @router.patch("/plugins/{plugin_id}/config", response_model=StoreInstalledResponse)
@@ -165,7 +423,7 @@ async def store_update_config(
     username: str = Depends(require_panel_auth),
 ) -> StoreInstalledResponse:
     patch: dict[str, Any] = body.model_dump(exclude_unset=True)
-    result = await get_store_manager().update_config(plugin_id, patch)
+    result = await get_database_engine_service().update_connection_config(plugin_id, patch)
     cfg = result["config"]
     endpoint = f"{cfg.get('host')}:{cfg.get('port')}"
     log_operation(

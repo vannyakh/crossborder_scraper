@@ -1016,3 +1016,13 @@ button:focus-visible {
     opacity: 0;
   }
 }
+
+/* react-hot-toast — above dialogs (z-index 50) and drawers */
+.app-toast-host {
+  z-index: 1600;
+}
+
+/* react-hot-toast — above panel dialogs (z-index 50) */
+.app-toast-host {
+  z-index: 1600;
+}

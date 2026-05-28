@@ -49,8 +49,20 @@ run_dev_pytest() {
   done
 
   case "$mode" in
-    quiet) pytest_args=("-q" "${pytest_args[@]}") ;;
-    verbose) pytest_args=("-v" "${pytest_args[@]}") ;;
+    quiet)
+      if [[ ${#pytest_args[@]} -gt 0 ]]; then
+        pytest_args=("-q" "${pytest_args[@]}")
+      else
+        pytest_args=("-q")
+      fi
+      ;;
+    verbose)
+      if [[ ${#pytest_args[@]} -gt 0 ]]; then
+        pytest_args=("-v" "${pytest_args[@]}")
+      else
+        pytest_args=("-v")
+      fi
+      ;;
   esac
 
   uv run pytest tests/ "${pytest_args[@]}"

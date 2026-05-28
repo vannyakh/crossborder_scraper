@@ -13,23 +13,24 @@ import {
 } from '@chakra-ui/react'
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { DataListEmpty } from '../ui/DataList'
-import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
-import { SectionCard } from '../ui/Section'
-import { StatusBadge } from '../ui/StatusBadge'
+import { useManagedDatabaseQuery } from '../../hooks/queries/use-database-engine-query'
 import {
   useStoreLifecycleMutation,
   useStorePluginDetailQuery,
   useStoreRefreshMutation,
-  useStoreUninstallMutation,
 } from '../../hooks/queries/use-store-query'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem } from '../../lib/api'
-import { isDatabaseCatalogItem } from '../../config/databases'
+import { isDatabaseCatalogItem } from '../../lib/databases/registry'
 import { DatabaseConnectionManage } from '../databases/DatabaseConnectionManage'
+import { DatabaseDangerZone } from '../databases/DatabaseDangerZone'
+import { DataListEmpty } from '../ui/DataList'
+import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
+import { SectionCard } from '../ui/Section'
+import { StatusBadge } from '../ui/StatusBadge'
 import { PluginScrapeSpecPanel } from './PluginScrapeSpecPanel'
-import { pluginIcon, statusTone } from './store-utils'
 import { sectionsForPlugin, type StorePluginSectionId } from './store-plugin-sections'
+import { pluginIcon, statusTone } from './store-utils'
 
 function isDatabaseService(item?: StoreCatalogItem | null): boolean {
   if (!item) return false
@@ -101,8 +102,6 @@ export function StorePluginSettingsDrawer({
   const detail = useStorePluginDetailQuery(pluginId)
   const refreshMutation = useStoreRefreshMutation()
   const lifecycleMutation = useStoreLifecycleMutation()
-  const uninstallMutation = useStoreUninstallMutation()
-
   const merged: StoreCatalogItem | undefined = useMemo(() => {
     if (!pluginId) return catalogItem
     if (detail.data) return { ...catalogItem, ...detail.data, id: pluginId }
@@ -111,7 +110,9 @@ export function StorePluginSettingsDrawer({
 
   const kind = merged?.kind
   const scrapePlugin = isScrapePlugin(merged)
-  const navSections = sectionsForPlugin(kind)
+  const isDbService = isDatabaseService(merged)
+  const navSections = sectionsForPlugin(kind, { isDatabase: isDbService })
+  const managedQuery = useManagedDatabaseQuery(pluginId, open && isDbService)
   const defaultSection: StorePluginSectionId = scrapePlugin ? 'specification' : 'service'
   const [section, setSection] = useState<StorePluginSectionId>(defaultSection)
   const [watchDaemon, setWatchDaemon] = useState(true)
@@ -119,8 +120,7 @@ export function StorePluginSettingsDrawer({
   const installation = detail.data?.installation
   const name = merged?.name ?? installation?.name ?? pluginId ?? 'Plugin'
   const Icon = pluginIcon(pluginId ?? '')
-  const busy =
-    lifecycleMutation.isPending || uninstallMutation.isPending || refreshMutation.isPending
+  const busy = lifecycleMutation.isPending || refreshMutation.isPending
   const isManaged = installation?.mode === 'docker' || installation?.mode === 'native'
   const status = installation?.status ?? merged?.status ?? 'unknown'
   const scrapeSpec = merged?.scrape_spec
@@ -143,12 +143,6 @@ export function StorePluginSettingsDrawer({
     if (!pluginId) return
     await lifecycleMutation.mutateAsync({ pluginId, action })
     await refreshMutation.mutateAsync(pluginId)
-  }
-
-  async function handleUninstall() {
-    if (!pluginId || !confirm(`Uninstall ${name}?`)) return
-    await uninstallMutation.mutateAsync(pluginId)
-    onClose()
   }
 
   function renderSection() {
@@ -307,28 +301,31 @@ export function StorePluginSettingsDrawer({
                 </Text>
               </>
             ) : null}
-
-            {installation && !scrapePlugin ? (
-              <>
-                <Separator borderColor="border.subtle" />
-                <Button
-                  size="sm"
-                  colorPalette="red"
-                  variant="outline"
-                  width="full"
-                  disabled={busy}
-                  onClick={() => void handleUninstall()}
-                >
-                  Uninstall
-                </Button>
-              </>
-            ) : null}
           </VStack>
+        )
+
+      case 'danger':
+        if (!installation || !pluginId) {
+          return <DataListEmpty>Plugin is not installed.</DataListEmpty>
+        }
+        const items = managedQuery.data?.items ?? []
+        return (
+          <DatabaseDangerZone
+            pluginId={pluginId}
+            serviceName={name}
+            installation={installation}
+            databases={items}
+            onClose={onClose}
+            onDropped={() => {
+              void managedQuery.refetch()
+              if (pluginId) void refreshMutation.mutateAsync(pluginId)
+            }}
+          />
         )
 
       case 'port':
       case 'connection':
-        if (isDatabaseService(merged) && installation && pluginId) {
+        if (merged && isDatabaseService(merged) && installation && pluginId) {
           return (
             <DatabaseConnectionManage
               pluginId={pluginId}
@@ -382,7 +379,16 @@ export function StorePluginSettingsDrawer({
   }
 
   return (
-    <Drawer.Root open={open} onOpenChange={(e) => !e.open && onClose()} placement="end" size="lg">
+    <Drawer.Root
+      open={open}
+      onOpenChange={(e) => {
+        if (!e.open) onClose()
+      }}
+      placement="end"
+      size="lg"
+      lazyMount
+      unmountOnExit
+    >
       <Portal>
         <Drawer.Backdrop />
         <Drawer.Positioner>
