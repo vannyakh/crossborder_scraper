@@ -11,6 +11,12 @@ _COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("start", "Welcome and setup summary.", setup.cmd_start, requires_auth=False),
     CommandSpec("help", "Show welcome and setup summary.", setup.cmd_help, requires_auth=False),
     CommandSpec(
+        "about",
+        "Capabilities, skills, and session summary.",
+        setup.cmd_about,
+        requires_auth=True,
+    ),
+    CommandSpec(
         "commands",
         "List all slash commands.",
         setup.cmd_commands,

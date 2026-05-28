@@ -19,6 +19,7 @@ _TELEGRAM_KEYS = frozenset(
         "agent_wake_names",
         "confirm_before_agent",
         "confirm_before_agent_groups_only",
+        "confirm_before_agent_always",
     }
 )
 
@@ -37,6 +38,7 @@ def default_telegram() -> dict[str, Any]:
         "agent_wake_names": ["agent"],
         "confirm_before_agent": True,
         "confirm_before_agent_groups_only": False,
+        "confirm_before_agent_always": False,
     }
 
 
@@ -87,6 +89,9 @@ def normalize_telegram(raw: Any) -> dict[str, Any]:
     )
     merged["confirm_before_agent_groups_only"] = bool(
         merged.get("confirm_before_agent_groups_only", base["confirm_before_agent_groups_only"])
+    )
+    merged["confirm_before_agent_always"] = bool(
+        merged.get("confirm_before_agent_always", base["confirm_before_agent_always"])
     )
     try:
         merged["max_reply_chars"] = max(500, min(8000, int(merged.get("max_reply_chars") or 3500)))

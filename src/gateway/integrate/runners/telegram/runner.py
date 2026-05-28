@@ -27,8 +27,9 @@ from gateway.integrate.runners.telegram.messages import (
     format_getid_reply,
     format_setup_reply,
 )
-from gateway.integrate.runners.telegram.pending import confirm_before_agent, pending_agent
+from gateway.integrate.runners.telegram.pending import pending_agent
 from gateway.integrate.runners.telegram.reply import send_text
+from gateway.integrate.runners.telegram.request_risk import needs_agent_confirmation
 from gateway.integrate.runners.telegram.runs import chat_runs
 
 # Re-export for tests and callers
@@ -106,7 +107,10 @@ class TelegramGatewayRunner:
             return
 
         prompt_id = str(cfg.get("prompt_id") or "telegram_agent")
-        if confirm_before_agent(cfg, is_group=is_group_chat(update)):
+        need_confirm, risk_reason = needs_agent_confirmation(
+            cfg, text, is_group=is_group_chat(update)
+        )
+        if need_confirm:
             pending = pending_agent.put(
                 chat_id=chat.id,
                 user_id=user.id,
@@ -118,7 +122,7 @@ class TelegramGatewayRunner:
             if message is None:
                 return
             await message.reply_text(
-                format_agent_confirm_preview(text),
+                format_agent_confirm_preview(text, reason=risk_reason),
                 reply_markup=agent_confirm_keyboard(pending.token),
             )
             return

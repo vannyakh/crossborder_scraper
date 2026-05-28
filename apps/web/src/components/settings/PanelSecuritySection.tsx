@@ -8,12 +8,13 @@ import {
   HStack,
   Input,
   List,
+  NativeSelect,
   SimpleGrid,
   Text,
   VStack,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Copy, Eye, EyeOff, Globe, Lock, RefreshCw, Shield } from 'lucide-react'
+import { Clock, Copy, Eye, EyeOff, Globe, Lock, RefreshCw, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   applyHostFirewall,
@@ -98,6 +99,7 @@ export function PanelSecuritySection() {
   const [entryDraft, setEntryDraft] = useState('')
   const [userDraft, setUserDraft] = useState('')
   const [passDraft, setPassDraft] = useState('')
+  const [timezoneDraft, setTimezoneDraft] = useState('UTC')
   const [entryDialogOpen, setEntryDialogOpen] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
 
@@ -163,6 +165,12 @@ export function PanelSecuritySection() {
   useEffect(() => {
     if (data) setDomainDraft(data.external_host ?? '')
   }, [data?.external_host])
+
+  useEffect(() => {
+    if (data?.server_timezone?.timezone) {
+      setTimezoneDraft(data.server_timezone.timezone)
+    }
+  }, [data?.server_timezone?.timezone])
 
   const ruleText = network?.cloud_rule
     ? `${network.cloud_rule.protocol} ${network.cloud_rule.port} · ${network.cloud_rule.source} · ${network.cloud_rule.action}`
@@ -349,6 +357,41 @@ export function PanelSecuritySection() {
                 For HTTPS in production, put a reverse proxy in front of the panel. CLI:{' '}
                 <Code fontSize="xs">crossborder deploy nginx -n your.domain.com</Code>
               </SettingNotice>
+            </SettingsCard>
+
+            <SettingsCard icon={Clock} title="Server time">
+              <SettingRow
+                label="Timezone"
+                hint="Cron schedules run in this timezone. Stored in panel config."
+              >
+                <HStack gap={2} flexWrap="wrap" align="flex-start">
+                  <NativeSelect.Root {...fieldStyles} flex={1} minW="12rem">
+                    <NativeSelect.Field
+                      value={timezoneDraft}
+                      onChange={(e) => setTimezoneDraft(e.target.value)}
+                    >
+                      {data.timezone_options.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label} ({opt.id})
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                  </NativeSelect.Root>
+                  <Button
+                    size="sm"
+                    colorPalette={accentPalette}
+                    loading={updateMutation.isPending}
+                    onClick={() => void updateMutation.mutate({ timezone: timezoneDraft })}
+                  >
+                    Save
+                  </Button>
+                </HStack>
+              </SettingRow>
+              <SettingRow label="Local time" hint={`UTC offset ${data.server_timezone.utc_offset}`}>
+                <Text fontSize="sm" fontFamily="mono">
+                  {data.server_timezone.local_time || '—'}
+                </Text>
+              </SettingRow>
             </SettingsCard>
 
             <Grid gridColumn={{ xl: '1 / -1' }}>

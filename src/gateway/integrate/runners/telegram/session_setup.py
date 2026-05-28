@@ -84,6 +84,11 @@ def channel_context_for_session(session: dict[str, Any]) -> str | None:
     if bot:
         lines.append(f"Assistant persona: {bot}")
     lines.append("Keep replies professional, concise, and tool-grounded.")
+    lines.append(
+        "Start each reply with an intent line: "
+        "🛒 Scrape · 📊 Catalog · 🚀 Export · ⏰ Schedule · 💬 Integrate · "
+        "📡 Status · 🛡 Ops · ⚙️ Setup · 🤖 Agent"
+    )
     return "\n".join(lines)
 
 

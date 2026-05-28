@@ -90,14 +90,20 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
             _field(
                 "confirm_before_agent",
                 type="boolean",
-                label="Confirm before agent run",
-                helper="Show Run agent / Cancel buttons before processing free-text messages.",
+                label="Confirm high-risk agent actions",
+                helper="Run/Cancel only for sensitive requests (publish, delete, firewall).",
+            ),
+            _field(
+                "confirm_before_agent_always",
+                type="boolean",
+                label="Confirm every agent message",
+                helper="Legacy: confirm all free-text messages, not just high-risk.",
             ),
             _field(
                 "confirm_before_agent_groups_only",
                 type="boolean",
                 label="Confirm in groups only",
-                helper="When on, direct chats run immediately; groups still need confirmation.",
+                helper="When on, direct chats run immediately unless high-risk.",
             ),
         ],
     },

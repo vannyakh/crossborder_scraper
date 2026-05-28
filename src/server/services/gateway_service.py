@@ -38,6 +38,8 @@ class GatewayService:
         from config.telegram_store import load_telegram_config
 
         tg = load_telegram_config()
+        from core.timezone import build_timezone_info
+
         return {
             "service": "crossborder-scraper-gateway",
             "version": APP_VERSION,
@@ -55,6 +57,7 @@ class GatewayService:
             "enabled_schedules_count": enabled_schedules,
             "recent_failed_runs": failed_runs,
             "runtime": runtime,
+            "server_timezone": build_timezone_info(),
             "telegram": {
                 "enabled": bool(tg.get("enabled")),
                 "configured": bool(tg.get("bot_token")),

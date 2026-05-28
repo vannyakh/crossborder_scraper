@@ -21,12 +21,12 @@ def test_welcome_reply_authorized() -> None:
         "bot_tagline": "Your gateway agent for cross-border operations",
     }
     text = format_welcome_reply(123456789, user_name="Alice", cfg=cfg, first_visit=True)
-    assert "Hello, Alice!" in text
+    assert "👋 About me" in text
     assert "Cross-Border Assistant" in text
     assert "cross-border operations" in text
     assert "123456789" in text
     assert "Authorized" in text
-    assert "/status" in text
+    assert "Active skills" in text
 
 
 def test_welcome_reply_returning_user() -> None:
@@ -36,8 +36,8 @@ def test_welcome_reply_returning_user() -> None:
 
 def test_setup_reply_authorized_delegates_to_welcome() -> None:
     text = format_setup_reply(123456789, authorized=True)
-    assert "Hello!" in text
-    assert "/commands" in text
+    assert "👋 About me" in text
+    assert "/commands" in text or "Quick:" in text
 
 
 def test_getid_reply_unauthorized() -> None:
@@ -51,6 +51,7 @@ def test_command_registry_includes_core_commands() -> None:
     assert names >= {
         "start",
         "help",
+        "about",
         "commands",
         "whoami",
         "status",

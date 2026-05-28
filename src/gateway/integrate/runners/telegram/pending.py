@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass(frozen=True)
@@ -60,11 +59,3 @@ class PendingAgentStore:
 
 
 pending_agent = PendingAgentStore()
-
-
-def confirm_before_agent(cfg: dict[str, Any], *, is_group: bool) -> bool:
-    if not cfg.get("confirm_before_agent", True):
-        return False
-    if cfg.get("confirm_before_agent_groups_only", False) and not is_group:
-        return False
-    return True

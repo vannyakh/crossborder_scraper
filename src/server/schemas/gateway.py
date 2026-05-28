@@ -403,6 +403,7 @@ class GatewayStatusResponse(BaseModel):
     recent_failed_runs: int = 0
     runtime: dict[str, Any]
     telegram: dict[str, Any] = Field(default_factory=dict)
+    server_timezone: dict[str, Any] = Field(default_factory=dict)
 
 
 class ServiceGatewaySummary(BaseModel):

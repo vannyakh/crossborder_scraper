@@ -81,6 +81,8 @@ class AgentScheduler:
         ]
         enabled = sum(1 for t in tasks if t["enabled"])
         failed = sum(1 for t in tasks if t.get("last_status") == "failed")
+        from core.timezone import build_timezone_info
+
         return {
             "running": self.is_active(),
             "tick_seconds": self._tick_seconds,
@@ -89,6 +91,7 @@ class AgentScheduler:
             "enabled": enabled,
             "failed_last_run": failed,
             "tasks": tasks,
+            "server_timezone": build_timezone_info(),
         }
 
     async def _loop(self) -> None:
@@ -100,7 +103,9 @@ class AgentScheduler:
             await asyncio.sleep(self._tick_seconds)
 
     async def _tick(self) -> None:
-        now = datetime.utcnow()
+        from core.timezone import utc_now_naive
+
+        now = utc_now_naive()
         schedules = load_schedules()
         changed = False
         for schedule in schedules:

@@ -157,7 +157,14 @@ def _default_panel_raw() -> dict[str, Any]:
         "default_currency": "USD",
         "marketplaces": default_marketplaces(),
         "telegram": _default_telegram_raw(),
+        "server": _default_server_raw(),
     }
+
+
+def _default_server_raw() -> dict[str, Any]:
+    from config.server_store import default_server
+
+    return default_server()
 
 
 def _default_telegram_raw() -> dict[str, Any]:
@@ -208,6 +215,9 @@ def load_panel_raw() -> dict[str, Any]:
     from config.telegram_store import normalize_telegram
 
     raw["telegram"] = normalize_telegram(raw.get("telegram"))
+    from config.server_store import normalize_server
+
+    raw["server"] = normalize_server(raw.get("server"))
     return raw
 
 
@@ -299,6 +309,7 @@ def save_panel_config(
     scalar_updates: dict[str, Any] | None = None,
     marketplace_updates: dict[str, Any] | None = None,
     telegram_updates: dict[str, Any] | None = None,
+    server_updates: dict[str, Any] | None = None,
     integrate_channel_updates: tuple[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     raw = load_panel_raw()
@@ -344,6 +355,10 @@ def save_panel_config(
         from config.telegram_store import merge_telegram_updates
 
         raw["telegram"] = merge_telegram_updates(raw.get("telegram") or {}, telegram_updates)
+    if server_updates:
+        from config.server_store import merge_server_updates
+
+        raw["server"] = merge_server_updates(raw.get("server"), server_updates)
     if integrate_channel_updates:
         channel_id, updates = integrate_channel_updates
         from config.integrate_channels_store import merge_channel_updates, normalize_channel

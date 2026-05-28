@@ -2,30 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from loguru import logger
 from telegram import Update
 from telegram.error import BadRequest
 
+from gateway.integrate.runners.telegram.telegram_response import format_agent_reply
 
-def format_agent_reply(result: dict[str, Any], max_chars: int) -> str:
-    if not result.get("ok"):
-        msg = result.get("message") or "Agent run failed."
-        return msg[:max_chars]
-    parts: list[str] = []
-    if result.get("message"):
-        parts.append(str(result["message"]))
-    tools = result.get("tool_calls") or []
-    if tools:
-        lines = []
-        for t in tools[:12]:
-            name = t.get("name", "?")
-            outcome = t.get("outcome") or t.get("result") or ""
-            lines.append(f"- {name}: {outcome}")
-        parts.append("Tools:\n" + "\n".join(lines))
-    text = "\n\n".join(parts).strip() or "(no text reply)"
-    return text[:max_chars]
+__all__ = ["format_agent_reply", "send_text", "split_telegram_chunks"]
 
 
 def split_telegram_chunks(text: str, limit: int = 4000) -> list[str]:
