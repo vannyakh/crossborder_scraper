@@ -21,9 +21,13 @@ export const OPERATIONS_TOOL_NAV = [
   { to: '/store', label: 'App Store' },
   { to: '/docker', label: 'Docker' },
   { to: '/firewall', label: 'Firewall' },
-  { to: '/logs', label: 'Logs' },
   { to: '/health', label: 'Health' },
   { to: '/support', label: 'Support' },
+] as const
+
+export const DEBUG_TOOL_NAV = [
+  { to: '/debug/logs', label: 'Logs' },
+  { to: '/debug/tools', label: 'Tool catalog' },
 ] as const
 
 export const SOFTWARE_TOOL_ICONS = {
@@ -54,7 +58,7 @@ export type SoftwareToolCard = {
 }
 
 export type SoftwareToolSection = {
-  id: 'scrape' | 'operations' | 'automation'
+  id: 'scrape' | 'operations' | 'debug' | 'automation'
   title: string
   description: string
   tools: SoftwareToolCard[]
@@ -146,15 +150,6 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           statusTone: 'neutral',
         }),
         card({
-          id: 'logs',
-          icon: 'logs',
-          title: 'Logs',
-          description: 'Operation, scrape run, and cron agent events.',
-          to: '/logs',
-          status: 'Audit trail',
-          statusTone: 'neutral',
-        }),
-        card({
           id: 'health',
           icon: 'health',
           title: 'Health',
@@ -170,6 +165,31 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           description: 'Documentation links, build info, quick navigation.',
           to: '/support',
           status: runtime ? `v${runtime.version}` : 'Panel',
+          statusTone: 'neutral',
+        }),
+      ],
+    },
+    {
+      id: 'debug',
+      title: 'Debug',
+      description: 'Audit logs and gateway tool catalog for troubleshooting',
+      tools: [
+        card({
+          id: 'logs',
+          icon: 'logs',
+          title: 'Logs',
+          description: 'Operation, scrape run, and cron agent events.',
+          to: '/debug/logs',
+          status: 'Audit trail',
+          statusTone: 'neutral',
+        }),
+        card({
+          id: 'tool-catalog',
+          icon: 'tools',
+          title: 'Tool catalog',
+          description: 'Gateway tools, parameters, and JSON schemas.',
+          to: '/debug/tools',
+          status: stats.gateway ? `${stats.gateway.tools_count ?? '—'} tools` : 'Gateway',
           statusTone: 'neutral',
         }),
       ],
@@ -197,7 +217,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'agent',
           icon: 'agent',
           title: 'Gateway agent',
-          description: 'Chat, cron schedules, skills, and tool catalog.',
+          description: 'Chat, cron schedules, skills, and workflows.',
           to: '/agent/chat',
           status:
             aiAgentOn && enabledSchedules > 0

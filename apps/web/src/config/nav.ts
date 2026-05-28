@@ -1,10 +1,22 @@
-import { Bot, Database, Home, Play, Plug, Settings, Wrench, type LucideIcon } from 'lucide-react'
+import {
+  Bot,
+  Bug,
+  Database,
+  Home,
+  Play,
+  Plug,
+  Settings,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react'
 import { AGENT_NAV } from '../components/agent/agent-sections'
+import { DEBUG_NAV } from '../components/debug/debug-sections'
 import { INTEGRATE_CHANNELS } from '../components/integrate/integrate-sections'
 import { SETTINGS_NAV } from '../components/settings/settings-sections'
 import type { TranslateFn } from '../locale/types'
 import {
   AGENT_SECTION_I18N,
+  DEBUG_SECTION_I18N,
   INTEGRATE_SECTION_I18N,
   OPERATIONS_ROUTE_I18N,
   OPERATIONS_ROUTES,
@@ -12,6 +24,7 @@ import {
   SCRAPE_NAV_ITEMS,
   SETTINGS_SECTION_I18N,
   agentPath,
+  debugPath,
   integratePath,
   settingsPath,
   type NavChildDef,
@@ -112,6 +125,15 @@ function getNavLayout(): NavLayoutEntry[] {
     labelKey: OPERATIONS_ROUTE_I18N[path] ?? 'nav.tools',
   }))
 
+  const debugChildren: NavChildDef[] = DEBUG_NAV.map((item) => {
+    const i18n = DEBUG_SECTION_I18N[item.id]
+    return {
+      path: debugPath(item.id),
+      labelKey: i18n?.labelKey ?? 'nav.debug',
+      descriptionKey: i18n?.descriptionKey,
+    }
+  })
+
   return [
     { kind: 'link', path: ROUTE_PATHS.home, labelKey: 'nav.overview', icon: Home, end: true },
     { kind: 'section', id: 'scrape-panel', labelKey: 'nav.scrapePanel' },
@@ -136,6 +158,14 @@ function getNavLayout(): NavLayoutEntry[] {
       labelKey: 'nav.tools',
       icon: Wrench,
       children: operationsChildren,
+    },
+    {
+      kind: 'group',
+      id: 'debug',
+      labelKey: 'nav.debug',
+      descriptionKey: 'nav.debugDesc',
+      icon: Bug,
+      children: debugChildren,
     },
     {
       kind: 'group',

@@ -12,68 +12,12 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { useState } from 'react'
-import { useGatewayToolsQuery, useGatewayWorkflowsQuery, useRunWorkflowMutation } from '../../hooks'
+import { useGatewayWorkflowsQuery, useRunWorkflowMutation } from '../../hooks'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { fieldStyles } from '../ui/field-styles'
 import { Section, SectionCard } from '../ui/Section'
 import { ListCardRowsSkeleton, FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
-
-export function AgentToolsPanel() {
-  const { data, isLoading, error } = useGatewayToolsQuery()
-
-  return (
-    <Section
-      title="Tool catalog"
-      description="Tools the gateway agent can call during chat and cron runs"
-      mt={0}
-    >
-      <SectionCard>
-        {error ? (
-          <Text fontSize="sm" color="red.500">
-            {String((error as Error).message || error)}
-          </Text>
-        ) : isLoading ? (
-          <ListCardRowsSkeleton rows={4} />
-        ) : (
-          <VStack align="stretch" gap={3}>
-            {(data?.items ?? []).map((tool) => (
-              <Box
-                key={tool.name}
-                p={3}
-                borderWidth="1px"
-                borderColor="border.subtle"
-                borderRadius="var(--radius-card)"
-                bg="bg.panel"
-              >
-                <HStack gap={2} mb={1}>
-                  <StatusBadge status="brand" label={tool.name} />
-                </HStack>
-                <Text fontSize="sm" color="fg.muted" mb={2}>
-                  {tool.description}
-                </Text>
-                <Text fontSize="xs" color="fg.subtle" mb={1}>
-                  Parameters
-                </Text>
-                <Code
-                  display="block"
-                  whiteSpace="pre-wrap"
-                  p={2}
-                  borderRadius="sm"
-                  fontSize="xs"
-                  maxH="200px"
-                  overflowY="auto"
-                >
-                  {JSON.stringify(tool.parameters, null, 2)}
-                </Code>
-              </Box>
-            ))}
-          </VStack>
-        )}
-      </SectionCard>
-    </Section>
-  )
-}
 
 export function AgentWorkflowsPanel() {
   const accentPalette = useAccentPalette()

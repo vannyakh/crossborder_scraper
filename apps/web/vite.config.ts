@@ -76,18 +76,21 @@ async function probeApiPort(port: number): Promise<boolean> {
 }
 
 /** Pick API port: explicit VITE_API_PORT, else first live /health among common dev ports. */
-async function resolveApiPort(): Promise<number> {
+async function resolveApiPort(): Promise<{ port: number; live: boolean }> {
   const explicit = Number(process.env.VITE_API_PORT)
-  if (Number.isFinite(explicit) && explicit > 0) return explicit
+  if (Number.isFinite(explicit) && explicit > 0) {
+    const live = await probeApiPort(explicit)
+    return { port: explicit, live }
+  }
 
   const fromEnv = panelPortFromRootEnv()
   const candidates = [...new Set([8000, fromEnv, 8787].filter((p): p is number => !!p && p > 0))]
 
   for (const port of candidates) {
-    if (await probeApiPort(port)) return port
+    if (await probeApiPort(port)) return { port, live: true }
   }
 
-  return fromEnv ?? 8000
+  return { port: fromEnv ?? 8000, live: false }
 }
 
 function buildApiProxy(target: string, entryPath?: string) {
@@ -103,7 +106,7 @@ function buildApiProxy(target: string, entryPath?: string) {
 }
 
 export default defineConfig(async () => {
-  const panelPort = await resolveApiPort()
+  const { port: panelPort, live: apiLive } = await resolveApiPort()
   const apiTarget = `http://127.0.0.1:${panelPort}`
   const panelEntry = panelEntryFromRootEnv()
   const apiProxy = buildApiProxy(apiTarget, panelEntry)
@@ -115,6 +118,13 @@ export default defineConfig(async () => {
       explicit ? ' (VITE_API_PORT)' : ' (auto-detected)'
     }`,
   )
+  if (!apiLive) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[vite] WARNING: no live API at ${apiTarget}/health — /health and other API calls will 502 until you start the backend:\n` +
+        `       bash scripts/serve-api.sh   (or: make dev-api)`,
+    )
+  }
 
   return {
     plugins: [react(), tailwindcss()],

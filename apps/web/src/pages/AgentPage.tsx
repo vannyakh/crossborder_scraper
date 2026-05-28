@@ -1,7 +1,7 @@
 import { Box } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Navigate, useParams } from 'react-router-dom'
-import { AgentToolsPanel, AgentWorkflowsPanel } from '../components/agent/AgentAutomationPanels'
+import { AgentWorkflowsPanel } from '../components/agent/AgentAutomationPanels'
 import { AgentRulesPanel } from '../components/agent/AgentRulesPanel'
 import { AgentSkillsPanel } from '../components/agent/AgentSkillsPanel'
 import { AgentChatPanel } from '../components/agent/AgentChatPanel'
@@ -27,8 +27,6 @@ function AgentSectionContent({ section }: { section: AgentSectionId }) {
       return <AgentRunsPanel />
     case 'workflows':
       return <AgentWorkflowsPanel />
-    case 'tools':
-      return <AgentToolsPanel />
     case 'skills':
       return <AgentSkillsPanel />
     case 'rules':

@@ -1,6 +1,18 @@
-import { Bot, Database, Home, Play, Plug, Settings, Wrench, type LucideIcon } from 'lucide-react'
+import {
+  Bot,
+  Bug,
+  Database,
+  Home,
+  Play,
+  Plug,
+  Settings,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react'
 import type { AgentSectionId } from '../components/agent/agent-sections'
 import type { ArtifactSectionId } from '../components/artifact/artifact-sections'
+import type { DebugSectionId } from '../components/debug/debug-sections'
+import { DEFAULT_DEBUG_SECTION as DEBUG_DEFAULT_SECTION } from '../components/debug/debug-sections'
 import type { IntegrateChannelId } from '../components/integrate/integrate-sections'
 import {
   isRoadmapFeatureId,
@@ -17,6 +29,7 @@ import type { ScrapeNavBadgeKey } from '../config/scrape-panel'
 
 /** Default section ids — kept here so router redirects do not import page modules. */
 export const DEFAULT_AGENT_SECTION: AgentSectionId = 'chat'
+export const DEFAULT_DEBUG_SECTION: DebugSectionId = DEBUG_DEFAULT_SECTION
 export const DEFAULT_INTEGRATE_CHANNEL: IntegrateChannelId = 'telegram'
 export const DEFAULT_SETTINGS_SECTION: SettingsSectionId = 'ai'
 
@@ -56,7 +69,12 @@ export const ROUTE_PATHS = {
   store: '/store',
   docker: '/docker',
   firewall: '/firewall',
-  logs: '/logs',
+  debug: {
+    base: '/debug',
+    section: (section: DebugSectionId = DEFAULT_DEBUG_SECTION) => `/debug/${section}`,
+  },
+  /** @deprecated use debug.section('logs') — legacy redirect at router */
+  logs: '/debug/logs',
   health: '/health',
   support: '/support',
   login: '/login',
@@ -72,15 +90,26 @@ export const OPERATIONS_ROUTES = [
   ROUTE_PATHS.store,
   ROUTE_PATHS.docker,
   ROUTE_PATHS.firewall,
-  ROUTE_PATHS.logs,
   ROUTE_PATHS.health,
   ROUTE_PATHS.support,
 ] as const
+
+/** Debug sidebar routes — logs and gateway tool catalog. */
+export const DEBUG_ROUTES = [
+  ROUTE_PATHS.debug.section('logs'),
+  ROUTE_PATHS.debug.section('tools'),
+] as const
+
+export type DebugRoute = (typeof DEBUG_ROUTES)[number]
 
 export type OperationsRoute = (typeof OPERATIONS_ROUTES)[number]
 
 export function agentPath(section: AgentSectionId = DEFAULT_AGENT_SECTION): string {
   return ROUTE_PATHS.agent.section(section)
+}
+
+export function debugPath(section: DebugSectionId = DEFAULT_DEBUG_SECTION): string {
+  return ROUTE_PATHS.debug.section(section)
 }
 
 export function integratePath(channel: IntegrateChannelId = DEFAULT_INTEGRATE_CHANNEL): string {
@@ -112,9 +141,16 @@ export const AGENT_SECTION_I18N: Record<
   schedules: { labelKey: 'nav.schedules', descriptionKey: 'nav.schedulesDesc' },
   runs: { labelKey: 'nav.runHistory', descriptionKey: 'nav.runHistoryDesc' },
   workflows: { labelKey: 'nav.workflows', descriptionKey: 'nav.workflowsDesc' },
-  tools: { labelKey: 'nav.toolCatalog', descriptionKey: 'nav.toolCatalogDesc' },
   skills: { labelKey: 'nav.skills', descriptionKey: 'nav.skillsDesc' },
   rules: { labelKey: 'nav.rules', descriptionKey: 'nav.rulesDesc' },
+}
+
+export const DEBUG_SECTION_I18N: Record<
+  DebugSectionId,
+  { labelKey: string; descriptionKey: string }
+> = {
+  logs: { labelKey: 'nav.logs', descriptionKey: 'nav.logsDesc' },
+  tools: { labelKey: 'nav.toolCatalog', descriptionKey: 'nav.toolCatalogDesc' },
 }
 
 export const INTEGRATE_SECTION_I18N: Record<
@@ -147,9 +183,13 @@ export const OPERATIONS_ROUTE_I18N: Record<OperationsRoute, string> = {
   '/store': 'nav.appStore',
   '/docker': 'nav.docker',
   '/firewall': 'nav.firewall',
-  '/logs': 'nav.logs',
   '/health': 'nav.health',
   '/support': 'nav.support',
+}
+
+export const DEBUG_ROUTE_I18N: Record<DebugRoute, string> = {
+  '/debug/logs': 'nav.logs',
+  '/debug/tools': 'nav.toolCatalog',
 }
 
 export const SCRAPE_NAV_ITEMS = [
@@ -252,6 +292,22 @@ const ROUTE_PATTERNS: RoutePattern[] = [
       return [
         overviewCrumb(),
         { labelKey: 'nav.integrate', path: integratePath(), icon: Plug },
+        { labelKey: leafKey },
+      ]
+    },
+  },
+  {
+    priority: 80,
+    match: (p) => p.startsWith('/debug'),
+    segments: (p) => {
+      const section = p.split('/')[2] as DebugSectionId | undefined
+      const leafKey =
+        section && section in DEBUG_SECTION_I18N
+          ? DEBUG_SECTION_I18N[section].labelKey
+          : DEBUG_SECTION_I18N.logs.labelKey
+      return [
+        overviewCrumb(),
+        { labelKey: 'nav.debug', path: debugPath(), icon: Bug },
         { labelKey: leafKey },
       ]
     },

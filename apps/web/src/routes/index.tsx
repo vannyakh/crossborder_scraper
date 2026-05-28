@@ -11,12 +11,12 @@ import { AgentPage } from '../pages/AgentPage'
 import { ArtifactPage } from '../pages/ArtifactPage'
 import { DatabasesPage } from '../pages/DatabasesPage'
 import { DashboardPage } from '../pages/DashboardPage'
+import { DebugPage } from '../pages/DebugPage'
 import { DockerPage } from '../pages/DockerPage'
 import { FirewallPage } from '../pages/FirewallPage'
 import { HealthPage } from '../pages/HealthPage'
 import { IntegratePage } from '../pages/IntegratePage'
 import { MonitorPage } from '../pages/MonitorPage'
-import { LogsPage } from '../pages/LogsPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
@@ -25,7 +25,7 @@ import { SettingsPage } from '../pages/SettingsPage'
 import { StorePage } from '../pages/StorePage'
 import { SupportPage } from '../pages/SupportPage'
 import { WorkflowPage } from '../pages/WorkflowPage'
-import { ROUTE_PATHS, integratePath, roadmapPath, settingsPath } from './route-config'
+import { ROUTE_PATHS, debugPath, integratePath, roadmapPath, settingsPath } from './route-config'
 import { AuthGuard } from './guards/AuthGuard'
 import { GuestGuard } from './guards/GuestGuard'
 
@@ -114,13 +114,25 @@ const router = createBrowserRouter(
               element: <Navigate to={ROUTE_PATHS.databases.engine()} replace />,
             },
             { path: 'databases/:section', element: <DatabasesPage /> },
-            { path: 'logs', element: <LogsPage /> },
+            {
+              path: 'logs',
+              element: <RedirectPreserveSearch to={ROUTE_PATHS.debug.section('logs')} />,
+            },
+            {
+              path: 'debug',
+              element: <Navigate to={debugPath('logs')} replace />,
+            },
+            { path: 'debug/:section?', element: <DebugPage /> },
             { path: 'health', element: <HealthPage /> },
             { path: 'support', element: <SupportPage /> },
             { path: 'roadmap/:feature', element: <RoadmapPage /> },
             {
               path: 'agent/telegram',
               element: <Navigate to={integratePath('telegram')} replace />,
+            },
+            {
+              path: 'agent/tools',
+              element: <Navigate to={debugPath('tools')} replace />,
             },
             { path: 'agent/:section?', element: <AgentPage /> },
             { path: 'integrate/:section?', element: <IntegratePage /> },
@@ -142,4 +154,11 @@ export function AppRouter() {
   return <RouterProvider router={router} />
 }
 
-export { ROUTE_PATHS, agentPath, integratePath, settingsPath, roadmapPath } from './route-config'
+export {
+  ROUTE_PATHS,
+  agentPath,
+  debugPath,
+  integratePath,
+  settingsPath,
+  roadmapPath,
+} from './route-config'

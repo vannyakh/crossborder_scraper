@@ -1,7 +1,7 @@
-import { Card, type CardBodyProps, type CardRootProps } from '@chakra-ui/react'
-import type { ReactNode } from 'react'
+import { Card } from '@chakra-ui/react'
+import type { ComponentProps, ReactNode } from 'react'
 
-type PanelProps = CardRootProps & {
+type PanelProps = ComponentProps<typeof Card.Root> & {
   children: ReactNode
 }
 
@@ -23,7 +23,7 @@ export function Panel({ children, ...props }: PanelProps) {
   )
 }
 
-export function PanelBody({ children, ...props }: CardBodyProps & { children: ReactNode }) {
+export function PanelBody({ children, ...props }: ComponentProps<typeof Card.Body>) {
   return (
     <Card.Body p="calc(var(--shell-padding) * 0.85)" {...props}>
       {children}
