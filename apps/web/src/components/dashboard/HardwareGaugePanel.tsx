@@ -22,10 +22,7 @@ export function HardwareGaugePanel({ hardware }: { hardware?: HardwareMonitor })
 
   return (
     <Section title="Server hardware" mt={0}>
-      <Grid
-        templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
-        gap={3}
-      >
+      <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }} gap={3}>
         <HardwareGaugeHoverCard
           label="CPU"
           detail={`${hardware.cpu.count_logical} cores`}

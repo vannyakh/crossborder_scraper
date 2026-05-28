@@ -1,4 +1,14 @@
-import { Box, Button, HStack, Input, NativeSelect, SimpleGrid, Tabs, Text, VStack } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  HStack,
+  Input,
+  NativeSelect,
+  SimpleGrid,
+  Tabs,
+  Text,
+  VStack,
+} from '@chakra-ui/react'
 import { Globe, List, RefreshCw, Shield, Waypoints } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAccentPalette } from '../../hooks/use-ui-config'
@@ -77,7 +87,11 @@ export function ProxySettingsPanel({ form }: { form: PanelSettingsForm }) {
 
   if (form.isLoading) {
     return (
-      <Section title="Proxy & egress" description="Route scrape traffic through HTTP/SOCKS proxies, rotating pools, or a VPN tunnel" mt={0}>
+      <Section
+        title="Proxy & egress"
+        description="Route scrape traffic through HTTP/SOCKS proxies, rotating pools, or a VPN tunnel"
+        mt={0}
+      >
         <StatusStripSkeleton items={3} />
         <SectionCard>
           <FormFieldsSkeleton fields={4} />
@@ -87,11 +101,7 @@ export function ProxySettingsPanel({ form }: { form: PanelSettingsForm }) {
   }
 
   const defaultTab: ProxyTab =
-    status?.mode === 'pool'
-      ? 'pool'
-      : status?.mode === 'vpn' || form.vpnEnabled
-        ? 'vpn'
-        : 'single'
+    status?.mode === 'pool' ? 'pool' : status?.mode === 'vpn' || form.vpnEnabled ? 'vpn' : 'single'
 
   return (
     <Section
@@ -99,7 +109,12 @@ export function ProxySettingsPanel({ form }: { form: PanelSettingsForm }) {
       description="Route scrape traffic through HTTP/SOCKS proxies, rotating pools, or a VPN tunnel"
       mt={0}
     >
-      <ProxyStatusStrip mode={status?.mode} poolSize={status?.pool_size} vpnEnabled={form.vpnEnabled} loading={statusQuery.isLoading} />
+      <ProxyStatusStrip
+        mode={status?.mode}
+        poolSize={status?.pool_size}
+        vpnEnabled={form.vpnEnabled}
+        loading={statusQuery.isLoading}
+      />
 
       <Tabs.Root defaultValue={defaultTab} variant="line" size="sm" mb={4}>
         <Tabs.List borderColor="border.subtle" flexWrap="wrap" gap={1}>
@@ -118,7 +133,9 @@ export function ProxySettingsPanel({ form }: { form: PanelSettingsForm }) {
                 <NativeSelect.Field
                   {...fieldStyles}
                   value={form.proxyParts.scheme}
-                  onChange={(e) => form.setProxyScheme(e.target.value as 'http' | 'https' | 'socks5')}
+                  onChange={(e) =>
+                    form.setProxyScheme(e.target.value as 'http' | 'https' | 'socks5')
+                  }
                 >
                   <option value="http">HTTP</option>
                   <option value="https">HTTPS</option>

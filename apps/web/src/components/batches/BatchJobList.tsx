@@ -33,7 +33,9 @@ export function BatchJobList({
           _last={{ borderBottomWidth: 0 }}
         >
           <StatusBadge
-            status={r.status === 'success' ? 'success' : r.status === 'running' ? 'running' : 'danger'}
+            status={
+              r.status === 'success' ? 'success' : r.status === 'running' ? 'running' : 'danger'
+            }
             label={r.status}
           />
           <Box flex={1} minW={0}>

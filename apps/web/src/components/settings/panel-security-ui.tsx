@@ -138,13 +138,7 @@ export function InputWithAction({
   )
 }
 
-export function LinkCopyBlock({
-  label,
-  url,
-}: {
-  label: string
-  url: string | null
-}) {
+export function LinkCopyBlock({ label, url }: { label: string; url: string | null }) {
   if (!url) return null
 
   return (

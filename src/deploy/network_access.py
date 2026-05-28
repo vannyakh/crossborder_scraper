@@ -128,7 +128,7 @@ def cloud_console_steps(*, port: int) -> list[str]:
         "Add an inbound rule: protocol TCP, port "
         f"{port}, source 0.0.0.0/0 (or your IP only for tighter access).",
         "Save the rule and wait ~1 minute for it to apply.",
-        f"Test from your PC: use the entrance URL from the install card (bare IP:port returns 404)",
+        "Test from your PC: use the entrance URL from the install card (bare IP:port returns 404)",
     ]
 
 
@@ -303,9 +303,7 @@ def run_full_access_setup(
     if ensure_bind:
         messages.extend(ensure_panel_bind_env(host="0.0.0.0"))
     if open_firewall:
-        messages.extend(
-            run_host_firewall_setup(port, enable_ufw=enable_ufw, allow_ssh=True)
-        )
+        messages.extend(run_host_firewall_setup(port, enable_ufw=enable_ufw, allow_ssh=True))
     if persist_external:
         from deploy.panel_access import persist_external_host
 

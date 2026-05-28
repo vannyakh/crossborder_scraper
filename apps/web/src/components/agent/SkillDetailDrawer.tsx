@@ -76,12 +76,7 @@ export function SkillDetailDrawer({
                     </Text>
                   </Box>
                 </HStack>
-                <IconButton
-                  aria-label="Close"
-                  size="sm"
-                  variant="ghost"
-                  onClick={onClose}
-                >
+                <IconButton aria-label="Close" size="sm" variant="ghost" onClick={onClose}>
                   <X size={16} />
                 </IconButton>
               </HStack>

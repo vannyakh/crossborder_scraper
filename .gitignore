@@ -36,4 +36,7 @@ config/agent_schedules.json
 playwright-report/
 test-results/
 
+.ruff_cache/
+.pytest_cache/
+
 .pnpm-store

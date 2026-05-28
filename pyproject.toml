@@ -51,9 +51,31 @@ packages = [
   "src/deploy",
 ]
 
+[dependency-groups]
+dev = [
+  "ruff>=0.9.0",
+  "pre-commit>=4.0.0",
+  "pytest>=8.0.0",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = [
+  ".venv",
+  "apps/web/dist",
+  "apps/web/node_modules",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["cli", "config", "core", "deploy", "export", "gateway", "pipeline", "plugins", "server"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

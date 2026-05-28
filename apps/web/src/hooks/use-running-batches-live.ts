@@ -9,7 +9,11 @@ import {
   type JobResult,
 } from '../lib/api'
 import { isTerminalBatchEvent, jobResultFromStream, statusFromStream } from '../lib/batch-live'
-import { createMonitorEvent, MONITOR_EVENT_SKIP, type LiveMonitorEvent } from '../lib/monitor-events'
+import {
+  createMonitorEvent,
+  MONITOR_EVENT_SKIP,
+  type LiveMonitorEvent,
+} from '../lib/monitor-events'
 import { useAuthStore } from '../stores/auth-store'
 
 export type BatchLiveSnapshot = {

@@ -6,7 +6,11 @@ import {
   type LoginPageBackgroundConfig,
 } from './panel-appearance'
 
-export type { LoginBackgroundConfig, LoginPageBackgroundConfig, LoginPathBackgroundConfig } from './panel-appearance'
+export type {
+  LoginBackgroundConfig,
+  LoginPageBackgroundConfig,
+  LoginPathBackgroundConfig,
+} from './panel-appearance'
 
 export type ColorMode = 'light' | 'dark' | 'system'
 
@@ -162,8 +166,7 @@ function migrateLoginBackgroundConfig(partial: Partial<ThemeConfig>): LoginBackg
   let lightUrl = legacy.lightUrl ?? null
   let darkUrl = legacy.darkUrl ?? null
 
-  const useMainWallpaper =
-    lp?.customWallpaperEnabled ?? partial.loginBackgroundEnabled ?? false
+  const useMainWallpaper = lp?.customWallpaperEnabled ?? partial.loginBackgroundEnabled ?? false
   if (useMainWallpaper && partial.mainBackground?.enabled) {
     if (!lightUrl) lightUrl = partial.mainBackground.lightUrl
     if (!darkUrl) darkUrl = partial.mainBackground.darkUrl
@@ -215,10 +218,7 @@ export function mergeThemeConfig(partial?: Partial<ThemeConfig> | null): ThemeCo
   }
 }
 
-export function resolveThemeAccentHex(
-  config: ThemeConfig,
-  resolved: 'light' | 'dark',
-): string {
+export function resolveThemeAccentHex(config: ThemeConfig, resolved: 'light' | 'dark'): string {
   if (config.customAccentHex?.trim()) {
     return config.customAccentHex.trim()
   }

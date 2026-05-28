@@ -1,4 +1,10 @@
-import { createBrowserRouter, Navigate, RouterProvider, useLocation, useParams } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+  useLocation,
+  useParams,
+} from 'react-router-dom'
 import { isRoadmapFeatureId } from '../components/roadmap/roadmap-sections'
 import { AppShell } from '../components/layout/AppShell'
 import { AgentPage } from '../pages/AgentPage'
@@ -19,12 +25,7 @@ import { SettingsPage } from '../pages/SettingsPage'
 import { StorePage } from '../pages/StorePage'
 import { SupportPage } from '../pages/SupportPage'
 import { WorkflowPage } from '../pages/WorkflowPage'
-import {
-  ROUTE_PATHS,
-  integratePath,
-  roadmapPath,
-  settingsPath,
-} from './route-config'
+import { ROUTE_PATHS, integratePath, roadmapPath, settingsPath } from './route-config'
 import { AuthGuard } from './guards/AuthGuard'
 import { GuestGuard } from './guards/GuestGuard'
 
@@ -94,15 +95,24 @@ const router = createBrowserRouter(
             { path: 'artifact/:section', element: <ArtifactPage /> },
             { path: 'inventory/*', element: <InventoryDataLegacyRedirect /> },
             { path: 'data/*', element: <InventoryDataLegacyRedirect /> },
-            { path: 'batches', element: <RedirectPreserveSearch to={ROUTE_PATHS.workflow.batches} /> },
+            {
+              path: 'batches',
+              element: <RedirectPreserveSearch to={ROUTE_PATHS.workflow.batches} />,
+            },
             { path: 'products/:id', element: <ProductIdLegacyRedirect /> },
-            { path: 'products', element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.products} /> },
+            {
+              path: 'products',
+              element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.products} />,
+            },
             { path: 'files', element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.files} /> },
             { path: 'monitor', element: <MonitorPage /> },
             { path: 'store', element: <StorePage /> },
             { path: 'docker', element: <DockerPage /> },
             { path: 'firewall', element: <FirewallPage /> },
-            { path: 'databases', element: <Navigate to={ROUTE_PATHS.databases.engine()} replace /> },
+            {
+              path: 'databases',
+              element: <Navigate to={ROUTE_PATHS.databases.engine()} replace />,
+            },
             { path: 'databases/:section', element: <DatabasesPage /> },
             { path: 'logs', element: <LogsPage /> },
             { path: 'health', element: <HealthPage /> },

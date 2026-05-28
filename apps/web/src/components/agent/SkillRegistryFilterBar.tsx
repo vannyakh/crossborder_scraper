@@ -74,8 +74,6 @@ export function SkillRegistryFilterBar({
         flex={{ base: '1 1 100%', md: '0 0 auto' }}
         ml={{ base: 0, md: 'auto' }}
       >
-     
-
         <SkillPanelSelect
           label="Catalog"
           value={registryKind}
@@ -93,7 +91,7 @@ export function SkillRegistryFilterBar({
             onChange={(value) => onSortChange(value as RegistrySort)}
           />
         ) : null}
-           <HStack gap={1} flexShrink={0}>
+        <HStack gap={1} flexShrink={0}>
           <IconButton
             aria-label="Grid view"
             size="sm"

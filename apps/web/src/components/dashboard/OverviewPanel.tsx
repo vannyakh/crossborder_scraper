@@ -1,12 +1,5 @@
 import { Box, Grid, HStack, Text } from '@chakra-ui/react'
-import {
-  Bot,
-  Cpu,
-  Database,
-  Globe,
-  Shield,
-  type LucideIcon,
-} from 'lucide-react'
+import { Bot, Cpu, Database, Globe, Shield, type LucideIcon } from 'lucide-react'
 import type { HardwareMonitor, LLMHealth, RuntimeStatus, Stats } from '../../lib/api'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { Section, SectionCard } from '../ui/Section'
@@ -106,10 +99,7 @@ export function OverviewPanel({
   return (
     <Section title="Overview" description="Runtime snapshot across scrape, AI, and data">
       <SectionCard p={0}>
-        <Grid
-          templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }}
-          gap={0}
-        >
+        <Grid templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }} gap={0}>
           <OverviewColumn
             accentPalette={accentPalette}
             icon={Cpu}

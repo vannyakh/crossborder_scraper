@@ -19,7 +19,10 @@ export const RULE_CATEGORY_FILTERS = [
 
 export type RuleCategoryFilter = (typeof RULE_CATEGORY_FILTERS)[number]['id']
 
-export function filterRulesByCategory(items: AgentRule[], category: RuleCategoryFilter): AgentRule[] {
+export function filterRulesByCategory(
+  items: AgentRule[],
+  category: RuleCategoryFilter,
+): AgentRule[] {
   if (category === 'all') return items
   return items.filter((r) => r.category === category)
 }

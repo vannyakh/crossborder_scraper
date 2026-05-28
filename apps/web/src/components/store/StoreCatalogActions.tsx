@@ -69,7 +69,13 @@ export function StoreCatalogActions({
         </Text>
       ) : null}
       {isSource && item.domains?.length ? (
-        <Text fontSize="xs" color="fg.subtle" textAlign="center" lineClamp={2} title={item.domains.join(', ')}>
+        <Text
+          fontSize="xs"
+          color="fg.subtle"
+          textAlign="center"
+          lineClamp={2}
+          title={item.domains.join(', ')}
+        >
           {item.domains.join(' · ')}
         </Text>
       ) : null}

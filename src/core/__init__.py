@@ -16,6 +16,7 @@ __all__ = [
     "ProductVariant",
     "ProxyConfig",
     "ProxyPool",
+    "proxy_pool_for_settings",
     "ScrapeEngine",
     "ScrapeJob",
     "ScrapedProduct",

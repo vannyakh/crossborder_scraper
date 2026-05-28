@@ -38,7 +38,9 @@ export function WorkflowBatchesPanel() {
   const filtered = useMemo(() => {
     const q = list.search.trim().toLowerCase()
     if (!q) return items
-    return items.filter((b) => b.batch_id.toLowerCase().includes(q) || b.status.toLowerCase().includes(q))
+    return items.filter(
+      (b) => b.batch_id.toLowerCase().includes(q) || b.status.toLowerCase().includes(q),
+    )
   }, [items, list.search])
 
   const paged = usePagedList(filtered, list.page, list.pageSize, list.search, list.setPage)
@@ -150,25 +152,27 @@ export function WorkflowBatchesPanel() {
                     <InlineShimmer w="72px" h="12px" />
                   </HStack>
                 ) : (
-                <HStack gap={2} fontSize="sm">
-                  <StatusBadge
-                    status={statusTone(selected.status?.status ?? selected.summary?.status ?? 'neutral')}
-                    label={selected.status?.status ?? selected.summary?.status ?? 'unknown'}
-                  />
-                  <Text color="fg.muted">{liveProgress}</Text>
-                </HStack>
+                  <HStack gap={2} fontSize="sm">
+                    <StatusBadge
+                      status={statusTone(
+                        selected.status?.status ?? selected.summary?.status ?? 'neutral',
+                      )}
+                      label={selected.status?.status ?? selected.summary?.status ?? 'unknown'}
+                    />
+                    <Text color="fg.muted">{liveProgress}</Text>
+                  </HStack>
                 )}
               </Box>
               {selected.isLoading ? (
                 <BatchJobsSkeleton rows={6} />
               ) : (
-              <BatchJobList
-                results={selected.results}
-                maxH="400px"
-                emptyLabel={
-                  selected.isRunning ? 'Waiting for job results…' : 'No job results recorded.'
-                }
-              />
+                <BatchJobList
+                  results={selected.results}
+                  maxH="400px"
+                  emptyLabel={
+                    selected.isRunning ? 'Waiting for job results…' : 'No job results recorded.'
+                  }
+                />
               )}
             </PanelBody>
           </Panel>

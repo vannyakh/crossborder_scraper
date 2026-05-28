@@ -1,9 +1,6 @@
 import { Box, Grid, Text, VStack } from '@chakra-ui/react'
 import { HardwareGaugePanel } from '../components/dashboard/HardwareGaugePanel'
-import {
-  HardwareTrendChart,
-  WorkloadChart,
-} from '../components/dashboard/MonitorChartsPanel'
+import { HardwareTrendChart, WorkloadChart } from '../components/dashboard/MonitorChartsPanel'
 import { useActivitySamples } from '../components/dashboard/use-activity-samples'
 import { useHardwareSamples } from '../components/dashboard/use-hardware-samples'
 import { LiveBatchesPanel } from '../components/monitor/LiveBatchesPanel'
@@ -72,10 +69,10 @@ export function MonitorPage() {
             {monitorLoading ? (
               <MonitorPanelsSkeleton />
             ) : (
-            <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6} alignItems="start">
-              <LiveBatchesPanel batches={runningBatches} liveByBatch={live.byBatch} />
-              <LiveEventFeed events={live.events} />
-            </Grid>
+              <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6} alignItems="start">
+                <LiveBatchesPanel batches={runningBatches} liveByBatch={live.byBatch} />
+                <LiveEventFeed events={live.events} />
+              </Grid>
             )}
           </Box>
         </StaggerItem>

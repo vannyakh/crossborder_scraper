@@ -62,13 +62,7 @@ function AccessCheckRow({ check }: { check: NetworkAccessCheck }) {
   )
 }
 
-function StatusStrip({
-  data,
-  networkReady,
-}: {
-  data: PanelSecurityStatus
-  networkReady: boolean
-}) {
+function StatusStrip({ data, networkReady }: { data: PanelSecurityStatus; networkReady: boolean }) {
   return (
     <HStack
       gap={2}
@@ -223,7 +217,10 @@ export function PanelSecuritySection() {
                 />
               </SettingRow>
 
-              <SettingRow label="Panel port" hint={`Listening on ${data.panel_host}. Change in .env, then restart.`}>
+              <SettingRow
+                label="Panel port"
+                hint={`Listening on ${data.panel_host}. Change in .env, then restart.`}
+              >
                 <InputWithAction
                   value={String(data.panel_port)}
                   readOnly
@@ -308,7 +305,14 @@ export function PanelSecuritySection() {
 
               {(data.urls.entrance || data.urls.login) && (
                 <Box pt={1}>
-                  <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={2.5} textTransform="uppercase" letterSpacing="0.04em">
+                  <Text
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="fg.muted"
+                    mb={2.5}
+                    textTransform="uppercase"
+                    letterSpacing="0.04em"
+                  >
                     Your links
                   </Text>
                   <VStack align="stretch" gap={2.5}>

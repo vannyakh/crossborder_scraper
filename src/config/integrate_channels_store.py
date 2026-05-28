@@ -92,9 +92,9 @@ def normalize_channel(channel_id: str, raw: Any) -> dict[str, Any]:
         return base
     merged = {**base, **raw}
     merged["enabled"] = bool(merged.get("enabled"))
-    merged["prompt_id"] = str(merged.get("prompt_id") or base["prompt_id"]).strip() or base[
-        "prompt_id"
-    ]
+    merged["prompt_id"] = (
+        str(merged.get("prompt_id") or base["prompt_id"]).strip() or base["prompt_id"]
+    )
     try:
         merged["max_reply_chars"] = max(500, min(8000, int(merged.get("max_reply_chars") or 3500)))
     except (TypeError, ValueError):

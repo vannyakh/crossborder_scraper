@@ -50,10 +50,7 @@ function applyScrollbarVars(resolved: 'light' | 'dark', accent: string) {
   )
 }
 
-export function applyThemeConfigToDocument(
-  config: ThemeConfig,
-  resolved: 'light' | 'dark',
-) {
+export function applyThemeConfigToDocument(config: ThemeConfig, resolved: 'light' | 'dark') {
   const root = document.documentElement
   const merged = mergeThemeConfig(config)
   const isDark = resolved === 'dark'

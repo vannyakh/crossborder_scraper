@@ -160,7 +160,9 @@ class StoreManager:
         plugin = self._require_plugin(plugin_id)
         driver = get_driver_spec(plugin_id)
         if not driver:
-            raise HTTPException(status_code=400, detail="plugin does not support native driver install")
+            raise HTTPException(
+                status_code=400, detail="plugin does not support native driver install"
+            )
         if state.get_installed(plugin_id):
             raise HTTPException(status_code=409, detail="plugin already installed")
         if not driver_install.environment_info().get("native_driver_available"):
@@ -183,9 +185,7 @@ class StoreManager:
             "port": bind_port,
             "password": password or None,
             "username": (
-                "panel"
-                if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"}
-                else None
+                "panel" if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"} else None
             ),
             "database": "panel" if plugin.id in {"postgresql", "mysql", "mongodb"} else None,
             "driver_version": resolved.id,
@@ -257,9 +257,7 @@ class StoreManager:
             "port": bind_port,
             "password": password or None,
             "username": (
-                "panel"
-                if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"}
-                else None
+                "panel" if plugin.id in {"postgresql", "mysql", "mongodb", "rabbitmq"} else None
             ),
             "database": "panel" if plugin.id in {"postgresql", "mysql", "mongodb"} else None,
             "container_name": plugin.container_name,
@@ -484,13 +482,7 @@ class StoreManager:
             safe_config["password_set"] = True
             safe_config.pop("password", None)
         name = plugin.name if plugin else source.manifest.name if source else plugin_id
-        category = (
-            plugin.category
-            if plugin
-            else source.manifest.category
-            if source
-            else "database"
-        )
+        category = plugin.category if plugin else source.manifest.category if source else "database"
         return {
             "plugin_id": plugin_id,
             "name": name,

@@ -28,10 +28,7 @@ export function AgentToolTrace({ toolCalls }: Props) {
           fontSize="xs"
         >
           <Box display="flex" alignItems="center" gap={2} mb={2}>
-            <StatusBadge
-              status={call.outcome?.ok ? 'success' : 'danger'}
-              label={call.name}
-            />
+            <StatusBadge status={call.outcome?.ok ? 'success' : 'danger'} label={call.name} />
           </Box>
           <Text color="fg.muted" mb={1}>
             Args
@@ -42,7 +39,15 @@ export function AgentToolTrace({ toolCalls }: Props) {
           <Text color="fg.muted" mt={2} mb={1}>
             Result
           </Text>
-          <Code display="block" whiteSpace="pre-wrap" p={2} borderRadius="sm" fontSize="xs" maxH="160px" overflowY="auto">
+          <Code
+            display="block"
+            whiteSpace="pre-wrap"
+            p={2}
+            borderRadius="sm"
+            fontSize="xs"
+            maxH="160px"
+            overflowY="auto"
+          >
             {JSON.stringify(call.outcome, null, 2)}
           </Code>
         </Box>

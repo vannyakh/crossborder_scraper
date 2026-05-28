@@ -31,8 +31,7 @@ class LazadaExporter(BaseExporter):
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
             raise ValueError(
-                "Lazada API credentials missing. "
-                "Configure Lazada in Settings → Marketplaces."
+                "Lazada API credentials missing. Configure Lazada in Settings → Marketplaces."
             )
 
         # Full Lazada integration requires signed requests — stub for structure

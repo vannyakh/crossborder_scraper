@@ -6,11 +6,7 @@ import { useGatewayStatusQuery } from '../../hooks/queries/use-gateway-query'
 import { usePanelAccessQuery } from '../../hooks/queries/use-panel-access-query'
 import { useStatsQuery } from '../../hooks/queries/use-stats-query'
 import { fallbackPanelAccess } from '../../lib/panel-access'
-import {
-  SIDEBAR_WIDTH_COLLAPSED,
-  SIDEBAR_WIDTH_EXPANDED,
-  useUiStore,
-} from '../../stores/ui-store'
+import { SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED, useUiStore } from '../../stores/ui-store'
 import { PageTransition } from '../motion/PageTransition'
 import { AppNavbar } from './AppNavbar'
 import {
@@ -50,11 +46,7 @@ function SidebarHeader({
       gap={collapsed ? 1 : 2}
       py={collapsed ? 1.5 : undefined}
     >
-      <ShellLogoMark
-        collapsed={collapsed}
-        label="Crossborder"
-        onClick={onCopyCollapsed}
-      />
+      <ShellLogoMark collapsed={collapsed} label="Crossborder" onClick={onCopyCollapsed} />
       {collapsed ? (
         <BrandVersionBadge version={version} updateAvailable={updateAvailable} />
       ) : (
@@ -132,9 +124,7 @@ export function AppShell() {
           collapsed={navCollapsed}
           version={gateway.data?.version}
           updateAvailable={gateway.data?.update_available}
-          onCopyCollapsed={
-            navCollapsed ? () => void copyPanelAccess(access) : undefined
-          }
+          onCopyCollapsed={navCollapsed ? () => void copyPanelAccess(access) : undefined}
         />
 
         <ShellScrollArea flex={1} px={navCollapsed ? 1 : 2} py={2}>

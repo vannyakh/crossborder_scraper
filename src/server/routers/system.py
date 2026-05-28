@@ -83,6 +83,7 @@ async def post_proxy_test() -> ProxyTestResponse:
 async def stats() -> StatsResponse:
     return StatsResponse(**get_stats())
 
+
 # Combined for app.include_router
 router = APIRouter()
 router.include_router(public_router)

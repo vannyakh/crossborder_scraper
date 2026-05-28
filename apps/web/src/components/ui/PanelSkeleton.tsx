@@ -63,7 +63,11 @@ export function PanelShell({
   loading: boolean
   skeleton: ReactNode
 }) {
-  return <ShimmerWrap loading={loading} skeleton={skeleton}>{children}</ShimmerWrap>
+  return (
+    <ShimmerWrap loading={loading} skeleton={skeleton}>
+      {children}
+    </ShimmerWrap>
+  )
 }
 
 /** Unified entry — pick a layout variant used across the panel. */
@@ -235,7 +239,11 @@ export function DataTableSkeleton({
             <Table.Row key={ri}>
               {Array.from({ length: columns }).map((_, ci) => (
                 <Table.Cell key={ci} py={3.5}>
-                  <ShimmerBlock w={ci === 0 ? '78%' : `${45 + (ci % 2) * 15}%`} h="12px" radius="sm" />
+                  <ShimmerBlock
+                    w={ci === 0 ? '78%' : `${45 + (ci % 2) * 15}%`}
+                    h="12px"
+                    radius="sm"
+                  />
                   {ci === 0 ? <ShimmerBlock w="55%" h="10px" radius="sm" mt={1.5} /> : null}
                 </Table.Cell>
               ))}
@@ -280,7 +288,14 @@ export function CardGridSkeleton({
   return (
     <Grid templateColumns={templateColumns} gap={3}>
       {Array.from({ length: count }).map((_, i) => (
-        <ShimmerSurface key={i} {...CARD_SHELL} h="full" minH="140px" display="flex" flexDirection="column">
+        <ShimmerSurface
+          key={i}
+          {...CARD_SHELL}
+          h="full"
+          minH="140px"
+          display="flex"
+          flexDirection="column"
+        >
           <HStack gap={2}>
             <ShimmerBlock w="30px" h="30px" radius="var(--radius-card)" />
             <ShimmerBlock w={`${84 + (i % 2) * 20}px`} h="14px" />
@@ -328,7 +343,12 @@ export function LogStreamSkeleton({ minH = '280px' }: { minH?: string }) {
     >
       <VStack align="stretch" gap={1.5}>
         {Array.from({ length: 12 }).map((_, i) => (
-          <ShimmerBlock key={i} w={i % 4 === 0 ? '92%' : i % 4 === 1 ? '76%' : '64%'} h="10px" radius="sm" />
+          <ShimmerBlock
+            key={i}
+            w={i % 4 === 0 ? '92%' : i % 4 === 1 ? '76%' : '64%'}
+            h="10px"
+            radius="sm"
+          />
         ))}
       </VStack>
     </ShimmerSurface>
@@ -337,7 +357,13 @@ export function LogStreamSkeleton({ minH = '280px' }: { minH?: string }) {
 
 export function BatchJobsSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <Box borderWidth="1px" borderColor="border.subtle" borderRadius="var(--radius-card)" overflow="hidden" bg="bg.panel">
+    <Box
+      borderWidth="1px"
+      borderColor="border.subtle"
+      borderRadius="var(--radius-card)"
+      overflow="hidden"
+      bg="bg.panel"
+    >
       {Array.from({ length: rows }).map((_, i) => (
         <HStack
           key={i}
@@ -462,7 +488,14 @@ export function ChecklistGridSkeleton({ count = 6 }: { count?: number }) {
   return (
     <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }} gap={2}>
       {Array.from({ length: count }).map((_, i) => (
-        <ShimmerSurface key={i} p={3} borderRadius="var(--radius-card)" borderWidth="1px" borderColor="border.subtle" bg="bg.panel">
+        <ShimmerSurface
+          key={i}
+          p={3}
+          borderRadius="var(--radius-card)"
+          borderWidth="1px"
+          borderColor="border.subtle"
+          bg="bg.panel"
+        >
           <HStack justify="space-between" mb={2}>
             <ShimmerBlock w={`${88 + (i % 3) * 16}px`} h="13px" />
             <ShimmerBlock w="40px" h="20px" radius="full" />

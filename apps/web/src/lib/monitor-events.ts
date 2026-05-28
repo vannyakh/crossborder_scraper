@@ -8,10 +8,7 @@ export type LiveMonitorEvent = {
 
 let eventSeq = 0
 
-export function summarizeMonitorEvent(
-  type: string,
-  data: Record<string, unknown>,
-): string {
+export function summarizeMonitorEvent(type: string, data: Record<string, unknown>): string {
   switch (type) {
     case 'heartbeat':
       return 'Connection alive'

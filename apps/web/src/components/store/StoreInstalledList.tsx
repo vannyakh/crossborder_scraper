@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  HStack,
-  SimpleGrid,
-  Table,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+import { Box, Button, HStack, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react'
 import { Settings } from 'lucide-react'
 import { ListCardRowsSkeleton } from '../ui/PanelSkeleton'
 import { DataList, DataListEmpty } from '../ui/DataList'
@@ -107,11 +99,7 @@ export function StoreInstalledList({
     return (
       <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap={3}>
         {items.map((row) => (
-          <InstalledGridCard
-            key={row.plugin_id}
-            row={row}
-            onSettings={onSettings}
-          />
+          <InstalledGridCard key={row.plugin_id} row={row} onSettings={onSettings} />
         ))}
       </SimpleGrid>
     )
@@ -161,14 +149,20 @@ export function StoreInstalledList({
                 <Table.Cell>
                   <StatusBadge status={statusTone(row.status)} label={row.status} />
                   {row.probe?.message ? (
-                    <Text fontSize="xs" color="fg.muted" lineClamp={1} truncate title={row.probe.message}>
+                    <Text
+                      fontSize="xs"
+                      color="fg.muted"
+                      lineClamp={1}
+                      truncate
+                      title={row.probe.message}
+                    >
                       {row.probe.message}
                     </Text>
                   ) : null}
                 </Table.Cell>
-                  <Table.Cell>
-                    <InstalledActions onSettings={() => onSettings(row.plugin_id)} />
-                  </Table.Cell>
+                <Table.Cell>
+                  <InstalledActions onSettings={() => onSettings(row.plugin_id)} />
+                </Table.Cell>
               </Table.Row>
             )
           })}

@@ -50,7 +50,9 @@ class SkillManager:
 
     def set_enabled(self, skill_ids: list[str]) -> list[str]:
         known = set(self.all_manifests())
-        ids = sorted({str(s).strip() for s in skill_ids if str(s).strip() and str(s).strip() in known})
+        ids = sorted(
+            {str(s).strip() for s in skill_ids if str(s).strip() and str(s).strip() in known}
+        )
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         data = self.load_config()
         data["enabled"] = ids

@@ -31,8 +31,7 @@ class BaseScraper(ABC):
         return any(domain in host for domain in self.base_domains)
 
     @abstractmethod
-    async def scrape_product(self, url: str) -> ScrapedProduct:
-        ...
+    async def scrape_product(self, url: str) -> ScrapedProduct: ...
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def fetch_page(self, page: Page, url: str) -> str:
@@ -59,8 +58,7 @@ class BaseScraper(ABC):
             return product
 
     @abstractmethod
-    async def parse_html(self, url: str, html: str) -> ScrapedProduct:
-        ...
+    async def parse_html(self, url: str, html: str) -> ScrapedProduct: ...
 
     def _save_raw_html(self, url: str, html: str) -> Path:
         product_id = self.extract_product_id(url) or "unknown"
@@ -69,8 +67,7 @@ class BaseScraper(ABC):
         return path
 
     @abstractmethod
-    def extract_product_id(self, url: str) -> str | None:
-        ...
+    def extract_product_id(self, url: str) -> str | None: ...
 
     @staticmethod
     def parse_price(text: str | None) -> Decimal | None:

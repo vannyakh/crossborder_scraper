@@ -29,9 +29,7 @@ export function fallbackPanelAccess(): PanelAccess {
     panel_url: `${window.location.protocol}//${window.location.host}${prefix}/ui/`,
     copy_text: entry ? `${ip}:${port}/${entry}` : `${ip}:${port}`,
     entry_path: entry,
-    entrance_url: entry
-      ? `${window.location.protocol}//${window.location.host}${prefix}/`
-      : null,
+    entrance_url: entry ? `${window.location.protocol}//${window.location.host}${prefix}/` : null,
   }
 }
 

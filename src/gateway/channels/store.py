@@ -9,7 +9,7 @@ from config.integrate_channels_store import (
     channel_is_configured,
     normalize_channel,
 )
-from config.telegram_store import load_telegram_config, merge_telegram_updates, normalize_telegram
+from config.telegram_store import load_telegram_config, normalize_telegram
 from gateway.channels.catalog import ALL_CHANNEL_IDS, CHANNEL_CATALOG, get_catalog_entry
 from gateway.channels.guides import load_setup_guide, setup_guide_path
 
@@ -25,7 +25,7 @@ def _mask_secret_fields(cfg: dict[str, Any], secret_keys: set[str]) -> dict[str,
         value = out.pop(key, None)
         if value:
             out[f"{key}{_SET_SUFFIX}"] = True
-            out[f"{key}{_MASK_SUFFIX}"] = mask_api_key(str(value))
+            out[f"{key}{_SECRET_SUFFIX}"] = mask_api_key(str(value))
         else:
             out[f"{key}{_SET_SUFFIX}"] = False
     return out

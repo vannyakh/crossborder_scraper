@@ -111,7 +111,7 @@ def ensure_panel_credentials(
     Ensure PANEL_USERNAME and PANEL_PASSWORD exist in .env.
 
     Returns (username, password, was_generated).
-  """
+    """
     env_path = env_path or _repo_env_path()
 
     from config.settings import Settings
@@ -192,7 +192,6 @@ def print_panel_credentials(
 
     from config import get_settings
     from deploy.network import build_panel_access_info
-
     from deploy.panel_security import normalize_entry_path
 
     settings = get_settings()

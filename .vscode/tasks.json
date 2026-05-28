@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Check: lint (CI parity)",
+      "type": "shell",
+      "command": "make check",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Check: format + lint (full)",
+      "type": "shell",
+      "command": "make check-all",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format: Python + Web",
+      "type": "shell",
+      "command": "make fmt",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: Python (ruff)",
+      "type": "shell",
+      "command": "make lint-py",
+      "problemMatcher": ["$eslint-compact"]
+    },
+    {
+      "label": "Lint: Web (eslint)",
+      "type": "shell",
+      "command": "make lint-web",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Dev: API server",
+      "type": "shell",
+      "command": "bash scripts/serve-api.sh",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Dev: Vite panel",
+      "type": "shell",
+      "command": "bash scripts/dev-ui.sh",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Test: pytest",
+      "type": "shell",
+      "command": "make test",
+      "problemMatcher": []
+    }
+  ]
+}

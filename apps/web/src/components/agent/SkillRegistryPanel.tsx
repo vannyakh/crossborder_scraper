@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Grid,
-  HStack,
-  Separator,
-} from '@chakra-ui/react'
+import { Box, Button, ButtonGroup, Grid, HStack, Separator } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { DataListEmpty } from '../ui/DataList'
 import { CardGridSkeleton, ListCardRowsSkeleton } from '../ui/PanelSkeleton'
@@ -167,7 +160,11 @@ export function SkillRegistryPanel({
       <Separator my={4} borderColor="border.subtle" />
 
       {registryQuery.isLoading ? (
-        viewMode === 'grid' ? <CardGridSkeleton count={6} /> : <ListCardRowsSkeleton rows={5} />
+        viewMode === 'grid' ? (
+          <CardGridSkeleton count={6} />
+        ) : (
+          <ListCardRowsSkeleton rows={5} />
+        )
       ) : registryQuery.isError ? (
         <SectionCard p={4} borderColor="red.500">
           <SubtitleText color="red.500">
@@ -209,7 +206,13 @@ export function SkillRegistryPanel({
       )}
 
       {!searchQuery && (cursorStack.length > 1 || nextCursor) ? (
-        <HStack mt={4} pt={4} borderTopWidth="1px" borderColor="border.subtle" justify="space-between">
+        <HStack
+          mt={4}
+          pt={4}
+          borderTopWidth="1px"
+          borderColor="border.subtle"
+          justify="space-between"
+        >
           <SubtitleText>
             Page {cursorStack.length}
             {registryKind === 'skill'

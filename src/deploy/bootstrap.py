@@ -182,12 +182,15 @@ def bootstrap_server(
     plat = detect_platform()
     boot = ServerBootstrap(root=root, platform=plat)
 
-    if os.environ.get("CROSSBORDER_VPS", "").lower() in ("1", "true", "yes") or os.environ.get(
-        "CROSSBORDER_WWWROOT", ""
-    ).lower() in ("1", "true", "yes") or os.environ.get("CROSSBORDER_AAPANEL", "").lower() in (
-        "1",
-        "true",
-        "yes",
+    if (
+        os.environ.get("CROSSBORDER_VPS", "").lower() in ("1", "true", "yes")
+        or os.environ.get("CROSSBORDER_WWWROOT", "").lower() in ("1", "true", "yes")
+        or os.environ.get("CROSSBORDER_AAPANEL", "").lower()
+        in (
+            "1",
+            "true",
+            "yes",
+        )
     ):
         from deploy.vps_layout import prepare_wwwroot_site, resolve_install_dir
 

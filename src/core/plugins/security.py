@@ -72,9 +72,18 @@ _BLOCKED_CALLS = frozenset({"eval", "exec", "compile", "__import__", "open", "in
 # Playwright/browser stack is provided by the host engine — plugins use BaseScraper helpers.
 _BROWSER_IMPORTS = frozenset({"playwright", "selenium", "pyppeteer"})
 
-_NETWORK_IMPORTS = frozenset({
-    "socket", "ssl", "http", "urllib", "requests", "httpx", "aiohttp", "websockets",
-})
+_NETWORK_IMPORTS = frozenset(
+    {
+        "socket",
+        "ssl",
+        "http",
+        "urllib",
+        "requests",
+        "httpx",
+        "aiohttp",
+        "websockets",
+    }
+)
 
 
 @dataclass(frozen=True)

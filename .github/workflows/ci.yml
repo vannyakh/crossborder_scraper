@@ -22,10 +22,7 @@ jobs:
           enable-cache: true
 
       - name: Sync dependencies
-        run: uv sync
-
-      - name: Install ruff
-        run: uv pip install ruff
+        run: uv sync --all-groups
 
       - name: Ruff
         run: uv run ruff check src main.py

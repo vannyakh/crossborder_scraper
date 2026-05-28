@@ -4,7 +4,10 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { SkillRegistryItem } from '../../lib/api'
 
-function registryStatus(item: SkillRegistryItem): { tone: 'success' | 'neutral' | 'running'; label: string } {
+function registryStatus(item: SkillRegistryItem): {
+  tone: 'success' | 'neutral' | 'running'
+  label: string
+} {
   if (item.enabled) return { tone: 'success', label: 'enabled' }
   if (item.installed) return { tone: 'running', label: 'installed' }
   if (item.kind === 'plugin') return { tone: 'neutral', label: 'plugin' }

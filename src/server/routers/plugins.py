@@ -8,6 +8,7 @@ from core.plugins import (
     list_source_catalog,
     supported_source_labels,
 )
+from server.app_store import state
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
@@ -17,7 +18,6 @@ from server.schemas import (
     PluginUninstallResponse,
 )
 from server.services.audit import log_operation
-from server.app_store import state
 
 router = protected_router(prefix="/plugins", tags=["plugins"])
 

@@ -27,9 +27,7 @@ export function AppBreadcrumb() {
             <Fragment key={`${item.label}-${index}`}>
               <Breadcrumb.Item minW={0}>
                 {last || !item.to ? (
-                  <Breadcrumb.CurrentLink minW={0}>
-                    {label}
-                  </Breadcrumb.CurrentLink>
+                  <Breadcrumb.CurrentLink minW={0}>{label}</Breadcrumb.CurrentLink>
                 ) : (
                   <Breadcrumb.Link asChild minW={0}>
                     <Link to={item.to}>{label}</Link>

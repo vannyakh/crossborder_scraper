@@ -67,7 +67,9 @@ def _icmp_blocked(status_text: str) -> bool:
 
 def _run_ufw(args: list[str], *, timeout: int = 30) -> subprocess.CompletedProcess[str]:
     if not ufw_installed():
-        empty = subprocess.CompletedProcess(args=["ufw", *args], returncode=127, stdout="", stderr="ufw not installed")
+        empty = subprocess.CompletedProcess(
+            args=["ufw", *args], returncode=127, stdout="", stderr="ufw not installed"
+        )
         return empty
     return _exec_firewall(["ufw", *args])
 
@@ -258,7 +260,9 @@ def install_ufw_package() -> tuple[bool, list[str]]:
     if os.geteuid() != 0:
         if not _can_sudo(["apt-get", "update"]):
             return False, ["needs root or sudo to install ufw"]
-        proc = subprocess.run(["sudo", "-n", *cmd], capture_output=True, text=True, timeout=300, check=False)
+        proc = subprocess.run(
+            ["sudo", "-n", *cmd], capture_output=True, text=True, timeout=300, check=False
+        )
     else:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300, check=False)
     out = (proc.stdout or proc.stderr or "").strip()

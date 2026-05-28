@@ -2,10 +2,7 @@ import { Box } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import {
-  getMotionDurationSeconds,
-  type PageTransitionStyle,
-} from '../../theme/config'
+import { getMotionDurationSeconds, type PageTransitionStyle } from '../../theme/config'
 import { useThemeConfig } from '../../hooks/use-ui-config'
 
 const MotionBox = motion.create(Box)
@@ -45,9 +42,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   const config = useThemeConfig()
 
   const disabled =
-    config.reducedMotion ||
-    !config.pageTransitions ||
-    config.pageTransition === 'none'
+    config.reducedMotion || !config.pageTransitions || config.pageTransition === 'none'
 
   if (disabled) {
     return (

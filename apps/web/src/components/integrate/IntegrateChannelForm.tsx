@@ -247,9 +247,7 @@ export function IntegrateChannelForm({
     try {
       await updateMutation.mutateAsync({ channelId: channel.id, updates })
       setMessage(
-        channel.runner === 'live'
-          ? 'Saved — channel runner reloaded.'
-          : 'Credentials saved.',
+        channel.runner === 'live' ? 'Saved — channel runner reloaded.' : 'Credentials saved.',
       )
       for (const field of channel.fields) {
         if (field.type === 'secret') {
@@ -277,7 +275,15 @@ export function IntegrateChannelForm({
         ))}
       </VStack>
 
-      <HStack mt={6} pt={4} borderTopWidth="1px" borderColor="border.subtle" justify="space-between" flexWrap="wrap" gap={3}>
+      <HStack
+        mt={6}
+        pt={4}
+        borderTopWidth="1px"
+        borderColor="border.subtle"
+        justify="space-between"
+        flexWrap="wrap"
+        gap={3}
+      >
         <Text fontSize="sm" color={message?.includes('failed') ? 'red.500' : 'fg.muted'}>
           {message ?? 'Changes apply after save.'}
         </Text>

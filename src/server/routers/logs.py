@@ -2,13 +2,13 @@ from typing import Literal
 
 from fastapi import HTTPException, Query
 
-from server.deps import protected_router
-from server.schemas import MessageResponse, ServiceLogListResponse
 from server.audit.service_logs import (
     clear_service_logs,
     import_agent_runs_to_cron_logs,
     list_service_logs,
 )
+from server.deps import protected_router
+from server.schemas import MessageResponse, ServiceLogListResponse
 
 router = protected_router(prefix="/logs", tags=["logs"])
 

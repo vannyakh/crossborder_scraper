@@ -7,13 +7,7 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem, StoreConnectRequest } from '../../lib/api'
 import { pluginIcon } from './store-utils'
 
-function ConnectField({
-  label,
-  children,
-}: {
-  label: string
-  children: ReactNode
-}) {
+function ConnectField({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Field.Root>
       <Field.Label fontSize="xs" color="fg.muted">

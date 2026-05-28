@@ -81,9 +81,7 @@ export function connectBatchWebSocket(
         finish(() => resolve())
         return
       }
-      finish(() =>
-        reject(new Error(`WebSocket closed (${ev.code}): ${ev.reason || 'unknown'}`)),
-      )
+      finish(() => reject(new Error(`WebSocket closed (${ev.code}): ${ev.reason || 'unknown'}`)))
     }
   })
 }

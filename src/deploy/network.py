@@ -174,9 +174,7 @@ def build_panel_access_info(
         credentials_generated=credentials_generated,
         env_path=env_path,
         local_url=_url(local_host, port, ui_path),
-        login_local_url=build_login_url(
-            local_host, port, entry_path, access_key=login_key
-        ),
+        login_local_url=build_login_url(local_host, port, entry_path, access_key=login_key),
         lan_ips=lan_ips,
         external_url=ext_url,
         login_external_url=login_ext,

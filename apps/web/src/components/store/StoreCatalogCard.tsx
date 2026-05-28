@@ -95,11 +95,24 @@ export function StoreCatalogCard({
               : ''}
           </Text>
         ) : item.docker_image ? (
-          <Text mt={2} fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={1} title={item.docker_image}>
+          <Text
+            mt={2}
+            fontSize="xs"
+            color="fg.subtle"
+            fontFamily="mono"
+            lineClamp={1}
+            title={item.docker_image}
+          >
             {item.docker_image}
           </Text>
         ) : item.domains?.length ? (
-          <Text mt={2} fontSize="xs" color="fg.subtle" lineClamp={1} title={item.domains.join(', ')}>
+          <Text
+            mt={2}
+            fontSize="xs"
+            color="fg.subtle"
+            lineClamp={1}
+            title={item.domains.join(', ')}
+          >
             {item.domains.join(' · ')}
           </Text>
         ) : null}

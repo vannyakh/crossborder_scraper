@@ -1,9 +1,6 @@
 import { Box, Grid, Text, VStack } from '@chakra-ui/react'
 import { HardwareGaugePanel } from '../components/dashboard/HardwareGaugePanel'
-import {
-  HardwareTrendChart,
-  WorkloadChart,
-} from '../components/dashboard/MonitorChartsPanel'
+import { HardwareTrendChart, WorkloadChart } from '../components/dashboard/MonitorChartsPanel'
 import { OverviewPanel } from '../components/dashboard/OverviewPanel'
 import { RunningBatchesPanel } from '../components/dashboard/RunningBatchesPanel'
 import { ServiceGaugePanel } from '../components/dashboard/ServiceGaugePanel'
@@ -49,8 +46,7 @@ export function DashboardPage() {
   const files = runtime?.storage.output_files ?? stats.data?.output_files ?? 0
   const proxies = runtime?.engine.proxy_count ?? 0
 
-  const marketplaceConfigured =
-    marketplaces.data?.items.filter((m) => m.configured).length ?? 0
+  const marketplaceConfigured = marketplaces.data?.items.filter((m) => m.configured).length ?? 0
 
   const enabledSchedules = schedules.data?.items.filter((s) => s.enabled).length ?? 0
   const gatewaySummary = serviceOverview.data?.gateway

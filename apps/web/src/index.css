@@ -530,7 +530,11 @@ button:focus-visible {
 /* —— Agent chat —— */
 .agent-chat {
   --chat-user-avatar: color-mix(in srgb, var(--app-accent) 55%, #3d1515);
-  --chat-user-bubble: color-mix(in srgb, var(--app-accent) 22%, var(--chakra-colors-bg-panel, #161b22));
+  --chat-user-bubble: color-mix(
+    in srgb,
+    var(--app-accent) 22%,
+    var(--chakra-colors-bg-panel, #161b22)
+  );
   --chat-assistant-avatar: var(--chakra-colors-bg-muted, #30363d);
   --chat-assistant-bubble: var(--chakra-colors-bg-subtle, #21262d);
   --chat-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -864,7 +868,11 @@ button:focus-visible {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 50% at 15% 10%, color-mix(in srgb, var(--app-accent) 10%, transparent), transparent),
+    radial-gradient(
+      ellipse 70% 50% at 15% 10%,
+      color-mix(in srgb, var(--app-accent) 10%, transparent),
+      transparent
+    ),
     var(--app-canvas);
   pointer-events: none;
 }

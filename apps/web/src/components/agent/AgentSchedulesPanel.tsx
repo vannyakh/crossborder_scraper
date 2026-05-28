@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  HStack,
-  IconButton,
-  Input,
-  Table,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Button, HStack, IconButton, Input, Table, Text } from '@chakra-ui/react'
 import { Play, Plus, RefreshCw, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { DataList, DataListEmpty } from '../ui/DataList'
@@ -25,17 +17,12 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { AgentSchedule } from '../../lib/api'
 import { AgentScheduleDeleteDialog } from './AgentScheduleDeleteDialog'
 import { AgentScheduleLogDialog } from './AgentScheduleLogDialog'
-import {
-  AgentScheduleTaskDrawer,
-  type ScheduleTaskFormValues,
-} from './AgentScheduleTaskDrawer'
+import { AgentScheduleTaskDrawer, type ScheduleTaskFormValues } from './AgentScheduleTaskDrawer'
 import { describeCronExpression, formatScheduleTime } from './schedule-cron-utils'
 
 type StatusFilter = 'all' | 'enabled' | 'disabled'
 
-function scheduleStatusTone(
-  s: AgentSchedule,
-): 'running' | 'success' | 'danger' | 'neutral' {
+function scheduleStatusTone(s: AgentSchedule): 'running' | 'success' | 'danger' | 'neutral' {
   if (!s.enabled) return 'neutral'
   if (s.last_status === 'success') return 'success'
   if (s.last_status === 'failed') return 'danger'
@@ -76,10 +63,7 @@ export function AgentSchedulesPanel() {
       if (statusFilter === 'enabled' && !s.enabled) return false
       if (statusFilter === 'disabled' && s.enabled) return false
       if (!q) return true
-      return [s.name, s.cron, s.prompt_id, s.message, s.id]
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
+      return [s.name, s.cron, s.prompt_id, s.message, s.id].join(' ').toLowerCase().includes(q)
     })
   }, [schedules, search, statusFilter])
 
@@ -169,7 +153,13 @@ export function AgentSchedulesPanel() {
           Add task
         </Button>
 
-        <HStack gap={2} flex="1" justify="flex-end" flexWrap="wrap" minW={{ base: 'full', md: 'auto' }}>
+        <HStack
+          gap={2}
+          flex="1"
+          justify="flex-end"
+          flexWrap="wrap"
+          minW={{ base: 'full', md: 'auto' }}
+        >
           <HStack
             flex="1"
             minW={{ base: 'full', sm: '220px' }}
@@ -295,7 +285,12 @@ export function AgentSchedulesPanel() {
                     <Button size="xs" variant="ghost" onClick={() => openEdit(s)}>
                       Edit
                     </Button>
-                    <Button size="xs" variant="ghost" colorPalette="blue" onClick={() => openLog(s)}>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorPalette="blue"
+                      onClick={() => openLog(s)}
+                    >
                       Log
                     </Button>
                     <Button

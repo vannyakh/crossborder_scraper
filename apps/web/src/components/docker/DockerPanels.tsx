@@ -1,4 +1,15 @@
-import { Box, Button, Grid, HStack, Input, Separator, SimpleGrid, Switch, Tabs, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  Grid,
+  HStack,
+  Input,
+  Separator,
+  SimpleGrid,
+  Switch,
+  Tabs,
+  Text,
+} from '@chakra-ui/react'
 import { ExternalLink, Play, RefreshCw, Wrench } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -23,7 +34,13 @@ import { StatusBadge } from '../ui/StatusBadge'
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <HStack justify="space-between" py={2} borderBottomWidth="1px" borderColor="border.subtle" fontSize="sm">
+    <HStack
+      justify="space-between"
+      py={2}
+      borderBottomWidth="1px"
+      borderColor="border.subtle"
+      fontSize="sm"
+    >
       <Text color="fg.muted">{label}</Text>
       <Text fontWeight="medium" fontFamily="mono" fontSize="xs" textAlign="right" lineClamp={2}>
         {value || '—'}
@@ -62,8 +79,7 @@ function DockerServerTab() {
     }
   }, [config])
 
-  const busy =
-    installMutation.isPending || serviceMutation.isPending || configMutation.isPending
+  const busy = installMutation.isPending || serviceMutation.isPending || configMutation.isPending
 
   return (
     <Box>
@@ -71,7 +87,8 @@ function DockerServerTab() {
         <SectionCard mb={4} p={4} borderColor="orange.500">
           <HStack justify="space-between" flexWrap="wrap" gap={3}>
             <Text fontSize="sm">
-              Docker is not installed on this host. Install Docker Engine to run containers and use the App Store one-click services.
+              Docker is not installed on this host. Install Docker Engine to run containers and use
+              the App Store one-click services.
             </Text>
             <Button
               size="sm"
@@ -143,7 +160,10 @@ function DockerServerTab() {
           <Box>
             <InfoRow label="Docker version" value={status?.docker_version ?? ''} />
             <InfoRow label="Compose version" value={status?.compose_version ?? ''} />
-            <InfoRow label="Daemon" value={status?.daemon_running ? 'reachable' : 'not reachable'} />
+            <InfoRow
+              label="Daemon"
+              value={status?.daemon_running ? 'reachable' : 'not reachable'}
+            />
             <InfoRow label="Unix socket" value={status?.unix_socket ?? ''} />
           </Box>
           <Box>
@@ -179,9 +199,7 @@ function DockerServerTab() {
                 size="sm"
                 colorPalette={accentPalette}
                 loading={configMutation.isPending}
-                onClick={() =>
-                  void configMutation.mutateAsync({ registry_mirror: mirror })
-                }
+                onClick={() => void configMutation.mutateAsync({ registry_mirror: mirror })}
               >
                 Save
               </Button>
@@ -192,7 +210,11 @@ function DockerServerTab() {
               Compose project path
             </Text>
             <HStack>
-              <Input size="sm" value={composePath} onChange={(e) => setComposePath(e.target.value)} />
+              <Input
+                size="sm"
+                value={composePath}
+                onChange={(e) => setComposePath(e.target.value)}
+              />
               <Button
                 size="sm"
                 variant="outline"
@@ -275,7 +297,8 @@ function DockerServerTab() {
         </SimpleGrid>
 
         <Text mt={3} fontSize="xs" color="fg.muted">
-          Panel settings are stored in {status?.config_path || 'config/docker.yaml'}. Host daemon.json changes require root on the VPS.
+          Panel settings are stored in {status?.config_path || 'config/docker.yaml'}. Host
+          daemon.json changes require root on the VPS.
         </Text>
       </SectionCard>
 
@@ -290,7 +313,8 @@ function DockerServerTab() {
           </Button>
         </HStack>
         <Text fontSize="sm" color="fg.muted">
-          Redis, PostgreSQL, MySQL, and other infra plugins install as Docker Compose stacks under the install directory above.
+          Redis, PostgreSQL, MySQL, and other infra plugins install as Docker Compose stacks under
+          the install directory above.
         </Text>
       </SectionCard>
     </Box>
@@ -312,7 +336,9 @@ function DockerContainersTab({ enabled }: { enabled: boolean }) {
       ) : null}
 
       {items.length === 0 ? (
-        <DataListEmpty>No containers found. Pull an image from the Hub tab or install from App Store.</DataListEmpty>
+        <DataListEmpty>
+          No containers found. Pull an image from the Hub tab or install from App Store.
+        </DataListEmpty>
       ) : (
         <SectionCard p={0} overflow="hidden">
           {items.map((c) => (
@@ -323,7 +349,10 @@ function DockerContainersTab({ enabled }: { enabled: boolean }) {
                     <Text fontWeight="semibold" lineClamp={1}>
                       {c.name || c.id.slice(0, 12)}
                     </Text>
-                    <StatusBadge status={c.running ? 'success' : 'neutral'} label={c.running ? 'running' : 'stopped'} />
+                    <StatusBadge
+                      status={c.running ? 'success' : 'neutral'}
+                      label={c.running ? 'running' : 'stopped'}
+                    />
                   </HStack>
                   <Text fontSize="sm" color="fg.muted" lineClamp={1}>
                     {c.image}
@@ -438,7 +467,9 @@ function DockerHubTab({ dockerReady }: { dockerReady: boolean }) {
     <Box>
       {!dockerReady ? (
         <SectionCard mb={4} p={3} borderColor="orange.500">
-          <Text fontSize="sm">Install and start Docker on the Server tab before pulling or running images.</Text>
+          <Text fontSize="sm">
+            Install and start Docker on the Server tab before pulling or running images.
+          </Text>
         </SectionCard>
       ) : null}
 
@@ -450,7 +481,12 @@ function DockerHubTab({ dockerReady }: { dockerReady: boolean }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button size="sm" variant="outline" borderColor="border.subtle" onClick={() => void hubQuery.refetch()}>
+        <Button
+          size="sm"
+          variant="outline"
+          borderColor="border.subtle"
+          onClick={() => void hubQuery.refetch()}
+        >
           <RefreshCw size={14} />
           Search
         </Button>
@@ -489,7 +525,11 @@ function DockerHubTab({ dockerReady }: { dockerReady: boolean }) {
         <Text fontWeight="semibold" mb={2}>
           Custom image
         </Text>
-        <CustomRunForm busy={runMutation.isPending || !dockerReady} onRun={(payload) => void runMutation.mutateAsync(payload)} accentPalette={accentPalette} />
+        <CustomRunForm
+          busy={runMutation.isPending || !dockerReady}
+          onRun={(payload) => void runMutation.mutateAsync(payload)}
+          accentPalette={accentPalette}
+        />
       </SectionCard>
     </Box>
   )
@@ -510,8 +550,18 @@ function CustomRunForm({
 
   return (
     <Grid templateColumns={{ base: '1fr', md: '2fr 1fr 1fr auto' }} gap={2}>
-      <Input size="sm" placeholder="image:tag" value={image} onChange={(e) => setImage(e.target.value)} />
-      <Input size="sm" placeholder="name (optional)" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input
+        size="sm"
+        placeholder="image:tag"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+      />
+      <Input
+        size="sm"
+        placeholder="name (optional)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       <Input
         size="sm"
         placeholder="host port"

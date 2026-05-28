@@ -36,10 +36,7 @@ export function usePagedList<T>(
   search: string,
   setPage: (n: number) => void,
 ) {
-  const pagination = useMemo(
-    () => paginateItems(items, page, pageSize),
-    [items, page, pageSize],
-  )
+  const pagination = useMemo(() => paginateItems(items, page, pageSize), [items, page, pageSize])
 
   useEffect(() => {
     setPage(1)

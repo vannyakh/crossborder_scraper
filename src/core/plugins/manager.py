@@ -27,6 +27,7 @@ from core.plugins.security import (
 if TYPE_CHECKING:
     from core.base_scraper import BaseScraper
 
+
 @lru_cache(maxsize=1)
 def _load_plugins_config(path: Path) -> dict[str, Any]:
     if not path.is_file():
@@ -154,9 +155,7 @@ class PluginManager:
                 loader = SandboxedPluginLoader(child, manifest)
                 adapter = SandboxedScraperAdapter(manifest, self.security_policy, loader)
                 specs.append(
-                    InstalledPluginSpec(
-                        manifest=manifest, adapter=adapter, workspace=child
-                    )
+                    InstalledPluginSpec(manifest=manifest, adapter=adapter, workspace=child)
                 )
             except Exception:
                 continue
@@ -320,9 +319,7 @@ class PluginManager:
     def supported_labels(self) -> list[str]:
         labels = [spec.manifest.name for spec in self.list_specs() if self.is_enabled(spec.id)]
         labels.extend(
-            spec.manifest.name
-            for spec in self.list_installed_specs()
-            if self.is_enabled(spec.id)
+            spec.manifest.name for spec in self.list_installed_specs() if self.is_enabled(spec.id)
         )
         return labels
 

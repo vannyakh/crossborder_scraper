@@ -65,9 +65,7 @@ export function SidebarNavItem({
         color={active ? 'var(--app-accent)' : 'fg.muted'}
         bg={active ? 'var(--nav-active-bg)' : 'transparent'}
         boxShadow={
-          active
-            ? 'inset 0 0 0 1px color-mix(in srgb, var(--app-accent) 40%, transparent)'
-            : 'none'
+          active ? 'inset 0 0 0 1px color-mix(in srgb, var(--app-accent) 40%, transparent)' : 'none'
         }
         flexShrink={0}
         initial={false}

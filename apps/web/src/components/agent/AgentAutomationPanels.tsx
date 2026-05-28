@@ -12,11 +12,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { useState } from 'react'
-import {
-  useGatewayToolsQuery,
-  useGatewayWorkflowsQuery,
-  useRunWorkflowMutation,
-} from '../../hooks'
+import { useGatewayToolsQuery, useGatewayWorkflowsQuery, useRunWorkflowMutation } from '../../hooks'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { fieldStyles } from '../ui/field-styles'
 import { Section, SectionCard } from '../ui/Section'
@@ -110,7 +106,10 @@ export function AgentWorkflowsPanel() {
       const raw = inputs[key]?.trim()
       if (!raw) continue
       if (key === 'urls') {
-        payload[key] = raw.split('\n').map((s) => s.trim()).filter(Boolean)
+        payload[key] = raw
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean)
       } else if (key === 'use_ai') {
         payload[key] = raw === 'true'
       } else {
@@ -137,110 +136,121 @@ export function AgentWorkflowsPanel() {
           </>
         ) : (
           <>
-        <VStack align="stretch" gap={2}>
-          {workflows.map((wf) => (
-            <button
-              key={wf.id}
-              type="button"
-              style={{
-                textAlign: 'left',
-                padding: '0.75rem',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor:
-                  selected?.id === wf.id
-                    ? 'color-mix(in srgb, var(--app-accent) 40%, transparent)'
-                    : 'var(--chakra-colors-border-subtle)',
-                borderRadius: 'var(--radius-card)',
-                background:
-                  selected?.id === wf.id
-                    ? 'var(--nav-active-bg)'
-                    : 'var(--chakra-colors-bg-panel)',
-                cursor: 'pointer',
-                width: '100%',
-              }}
-              onClick={() => handleSelect(wf.id)}
-            >
-              <Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
-                {wf.label}
-              </Text>
-              <Text mt={0.5} fontSize="xs" color="fg.muted" lineClamp={2}>
-                {wf.description}
-              </Text>
-              <HStack mt={2} gap={1} flexWrap="wrap">
-                {wf.steps.map((step) => (
-                  <StatusBadge key={step} status="neutral" label={step} />
-                ))}
-              </HStack>
-            </button>
-          ))}
-        </VStack>
-
-        <SectionCard>
-          {!selected ? (
-            <Text fontSize="sm" color="fg.muted">
-              No workflows available.
-            </Text>
-          ) : (
-            <VStack align="stretch" gap={3}>
-              <Text fontSize="sm" fontWeight="semibold">
-                {selected.label}
-              </Text>
-              <Text fontSize="sm" color="fg.muted">
-                {selected.description}
-              </Text>
-              {selected.inputs.length ? (
-                <SimpleGrid columns={1} gap={3}>
-                  {selected.inputs.map((key) => (
-                    <Field.Root key={key}>
-                      <Field.Label fontSize="xs" color="fg.muted">
-                        {key}
-                      </Field.Label>
-                      {key === 'urls' ? (
-                        <Textarea
-                          {...fieldStyles}
-                          rows={3}
-                          value={inputs[key] ?? ''}
-                          placeholder="One URL per line"
-                          onChange={(e) => setInputs((prev) => ({ ...prev, [key]: e.target.value }))}
-                        />
-                      ) : (
-                        <Input
-                          {...fieldStyles}
-                          value={inputs[key] ?? ''}
-                          placeholder={key === 'use_ai' ? 'true or false' : key}
-                          onChange={(e) => setInputs((prev) => ({ ...prev, [key]: e.target.value }))}
-                        />
-                      )}
-                    </Field.Root>
-                  ))}
-                </SimpleGrid>
-              ) : (
-                <Text fontSize="sm" color="fg.muted">
-                  No inputs required — runs catalog snapshot tools.
-                </Text>
-              )}
-              <Button
-                size="sm"
-                colorPalette={accentPalette}
-                loading={runMutation.isPending}
-                onClick={() => void handleRun()}
-              >
-                Run workflow
-              </Button>
-              {lastResult ? (
-                <Box>
-                  <Text fontSize="xs" color="fg.muted" mb={1}>
-                    Last result
+            <VStack align="stretch" gap={2}>
+              {workflows.map((wf) => (
+                <button
+                  key={wf.id}
+                  type="button"
+                  style={{
+                    textAlign: 'left',
+                    padding: '0.75rem',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor:
+                      selected?.id === wf.id
+                        ? 'color-mix(in srgb, var(--app-accent) 40%, transparent)'
+                        : 'var(--chakra-colors-border-subtle)',
+                    borderRadius: 'var(--radius-card)',
+                    background:
+                      selected?.id === wf.id
+                        ? 'var(--nav-active-bg)'
+                        : 'var(--chakra-colors-bg-panel)',
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}
+                  onClick={() => handleSelect(wf.id)}
+                >
+                  <Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
+                    {wf.label}
                   </Text>
-                  <Code display="block" whiteSpace="pre-wrap" p={2} fontSize="xs" maxH="320px" overflowY="auto">
-                    {lastResult}
-                  </Code>
-                </Box>
-              ) : null}
+                  <Text mt={0.5} fontSize="xs" color="fg.muted" lineClamp={2}>
+                    {wf.description}
+                  </Text>
+                  <HStack mt={2} gap={1} flexWrap="wrap">
+                    {wf.steps.map((step) => (
+                      <StatusBadge key={step} status="neutral" label={step} />
+                    ))}
+                  </HStack>
+                </button>
+              ))}
             </VStack>
-          )}
-        </SectionCard>
+
+            <SectionCard>
+              {!selected ? (
+                <Text fontSize="sm" color="fg.muted">
+                  No workflows available.
+                </Text>
+              ) : (
+                <VStack align="stretch" gap={3}>
+                  <Text fontSize="sm" fontWeight="semibold">
+                    {selected.label}
+                  </Text>
+                  <Text fontSize="sm" color="fg.muted">
+                    {selected.description}
+                  </Text>
+                  {selected.inputs.length ? (
+                    <SimpleGrid columns={1} gap={3}>
+                      {selected.inputs.map((key) => (
+                        <Field.Root key={key}>
+                          <Field.Label fontSize="xs" color="fg.muted">
+                            {key}
+                          </Field.Label>
+                          {key === 'urls' ? (
+                            <Textarea
+                              {...fieldStyles}
+                              rows={3}
+                              value={inputs[key] ?? ''}
+                              placeholder="One URL per line"
+                              onChange={(e) =>
+                                setInputs((prev) => ({ ...prev, [key]: e.target.value }))
+                              }
+                            />
+                          ) : (
+                            <Input
+                              {...fieldStyles}
+                              value={inputs[key] ?? ''}
+                              placeholder={key === 'use_ai' ? 'true or false' : key}
+                              onChange={(e) =>
+                                setInputs((prev) => ({ ...prev, [key]: e.target.value }))
+                              }
+                            />
+                          )}
+                        </Field.Root>
+                      ))}
+                    </SimpleGrid>
+                  ) : (
+                    <Text fontSize="sm" color="fg.muted">
+                      No inputs required — runs catalog snapshot tools.
+                    </Text>
+                  )}
+                  <Button
+                    size="sm"
+                    colorPalette={accentPalette}
+                    loading={runMutation.isPending}
+                    onClick={() => void handleRun()}
+                  >
+                    Run workflow
+                  </Button>
+                  {lastResult ? (
+                    <Box>
+                      <Text fontSize="xs" color="fg.muted" mb={1}>
+                        Last result
+                      </Text>
+                      <Code
+                        display="block"
+                        whiteSpace="pre-wrap"
+                        p={2}
+                        fontSize="xs"
+                        maxH="320px"
+                        overflowY="auto"
+                      >
+                        {lastResult}
+                      </Code>
+                    </Box>
+                  ) : null}
+                </VStack>
+              )}
+            </SectionCard>
           </>
         )}
       </Grid>

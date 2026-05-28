@@ -1,0 +1,41 @@
+---
+description: Checklist for adding scalable full-stack features without breaking nav, proxy, or gateway
+alwaysApply: true
+---
+
+# Scalable feature development
+
+Before implementing, identify the **vertical slice**: schema → service → router → (optional gateway tool) → hooks → page → route-config.
+
+## Backend (required for new API)
+
+1. `src/server/schemas/<domain>.py` — request/response models
+2. Add exports to `schemas/__init__.py` **`__all__`** (ruff F401 otherwise)
+3. `src/server/services/<domain>.py` — logic; expose `get_*_service()` singleton
+4. `src/server/routers/<domain>.py` — `protected_router(prefix="/foo")`, thin handlers
+5. `register_routes()` in `src/server/api/registry.py`
+6. Optional: `src/gateway/tools.py` entry if the **panel agent** should call it
+7. Optional: `log_operation()` on mutating routes (see existing routers)
+
+## Frontend (required for new panel page)
+
+1. `apps/web/src/lib/api/types.ts` + `use-*-query.ts` hooks
+2. Page under `pages/`, components under `components/<feature>/`
+3. **`route-config.ts`**: `ROUTE_PATHS`, i18n maps, `OPERATIONS_ROUTES` if Tools item
+4. **`routes/index.tsx`**: route element
+5. **`locale/messages/`** en/zh/km — every `labelKey` must exist (nav crashes if missing)
+6. **`vite.config.ts`**: add new API prefix to `API_PROXY_PATHS` for local dev
+7. Nav builds from `route-config` via `config/nav.ts` — never orphan paths
+
+## Quality bar
+
+- Smallest diff that works; no unrelated refactors
+- Line length 100; run `make fmt` before PR
+- Match existing Chakra patterns and `useAccentPalette()`
+- Use product terms from `crossborder-product.mdc`
+
+## Reference implementations
+
+Firewall: `deploy/ufw_manager.py`, `services/firewall_service.py`, `routers/firewall.py`, `components/firewall/`.
+
+Store drivers: `deploy/drivers/`, `server/app_store/`, `components/store/`.

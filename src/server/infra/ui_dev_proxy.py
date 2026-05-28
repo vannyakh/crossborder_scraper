@@ -9,16 +9,18 @@ from fastapi import APIRouter, Request, Response
 from fastapi.responses import HTMLResponse
 
 _DEFAULT_VITE_PORT = 5173
-_HOP_BY_HOP = frozenset({
-    "connection",
-    "keep-alive",
-    "proxy-authenticate",
-    "proxy-authorization",
-    "te",
-    "trailers",
-    "transfer-encoding",
-    "upgrade",
-})
+_HOP_BY_HOP = frozenset(
+    {
+        "connection",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailers",
+        "transfer-encoding",
+        "upgrade",
+    }
+)
 
 
 def vite_dev_base_url() -> str:
@@ -65,9 +67,7 @@ async def _proxy_to_vite(request: Request, path: str) -> Response:
         return _vite_not_running_response()
 
     resp_headers = {
-        key: value
-        for key, value in upstream.headers.items()
-        if key.lower() not in _HOP_BY_HOP
+        key: value for key, value in upstream.headers.items() if key.lower() not in _HOP_BY_HOP
     }
     return Response(
         content=upstream.content,

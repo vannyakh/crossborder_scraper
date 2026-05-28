@@ -23,13 +23,7 @@ export function StatCard({
           : 'fg'
 
   return (
-    <Box
-      p={3}
-      borderRadius="card"
-      borderWidth="1px"
-      borderColor="border.subtle"
-      bg="bg.elevated"
-    >
+    <Box p={3} borderRadius="card" borderWidth="1px" borderColor="border.subtle" bg="bg.elevated">
       <Text fontSize="xs" color="fg.muted">
         {label}
       </Text>

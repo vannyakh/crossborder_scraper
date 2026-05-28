@@ -1,0 +1,36 @@
+# Install: make hooks   (uv sync + pnpm install + pre-commit install)
+# Run all: uv run pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^apps/web/pnpm-lock\.yaml$
+      - id: end-of-file-fixer
+        exclude: ^apps/web/pnpm-lock\.yaml$
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=2048]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.2
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(src/|tests/|main\.py)
+      - id: ruff-format
+        files: ^(src/|tests/|main\.py)
+
+  - repo: local
+    hooks:
+      - id: web-prettier
+        name: prettier (apps/web)
+        language: node
+        entry: prettier --write --log-level warn
+        files: ^apps/web/.*\.(ts|tsx|js|jsx|json|css|md|html|yaml|yml)$
+        exclude: ^apps/web/(dist|node_modules)/
+        additional_dependencies:
+          - prettier@3.8.3

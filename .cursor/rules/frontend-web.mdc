@@ -1,0 +1,39 @@
+---
+description: React panel conventions — routes, hooks, API, i18n
+globs:
+  - "apps/web/**"
+alwaysApply: false
+---
+
+# Frontend conventions
+
+## Single source for navigation
+
+All paths and sidebar labels flow from **`apps/web/src/routes/route-config.ts`**:
+
+- `ROUTE_PATHS` — canonical paths
+- `OPERATIONS_ROUTES` + `OPERATIONS_ROUTE_I18N` — Tools menu
+- `AGENT_SECTION_I18N`, `SETTINGS_SECTION_I18N`, etc.
+- `matchBreadcrumbSegments()` — breadcrumbs
+
+`config/nav.ts` and `config/breadcrumb.ts` consume route-config; do not duplicate path strings.
+
+## Data fetching
+
+- `apps/web/src/lib/api/client.ts` — `api()`, `withPanelPrefix()`
+- React Query hooks in `hooks/queries/`; keys in `lib/api/query-keys.ts`
+- Mutations invalidate related query keys on success
+
+## New API prefix in dev
+
+If backend adds `/something`, add `'/something'` to `API_PROXY_PATHS` in `vite.config.ts` or Vite returns 404 locally.
+
+## UI
+
+- Chakra UI v3 components; `SectionCard`, `Toolbar`, `StatusBadge` from `components/ui/`
+- i18n: `useLocale()` → `t('nav.foo')`; update **en, zh, km**
+- Every nav child needs a non-empty `labelKey` (translator crashes on `undefined`)
+
+## Types
+
+Mirror backend schemas in `lib/api/types.ts`; keep `StoreInstallRequest`-style bodies aligned with Pydantic models.

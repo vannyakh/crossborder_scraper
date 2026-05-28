@@ -32,13 +32,25 @@ _DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 _HUB_FEATURED = [
-    {"name": "redis", "image": "redis:7-alpine", "description": "In-memory cache and message broker"},
+    {
+        "name": "redis",
+        "image": "redis:7-alpine",
+        "description": "In-memory cache and message broker",
+    },
     {"name": "postgres", "image": "postgres:16-alpine", "description": "Relational database"},
     {"name": "mysql", "image": "mysql:8", "description": "MySQL database server"},
     {"name": "mongo", "image": "mongo:7", "description": "Document database"},
     {"name": "nginx", "image": "nginx:alpine", "description": "Web server and reverse proxy"},
-    {"name": "rabbitmq", "image": "rabbitmq:3-management-alpine", "description": "Message queue with management UI"},
-    {"name": "memcached", "image": "memcached:1.6-alpine", "description": "Distributed memory cache"},
+    {
+        "name": "rabbitmq",
+        "image": "rabbitmq:3-management-alpine",
+        "description": "Message queue with management UI",
+    },
+    {
+        "name": "memcached",
+        "image": "memcached:1.6-alpine",
+        "description": "Distributed memory cache",
+    },
     {"name": "minio", "image": "minio/minio:latest", "description": "S3-compatible object storage"},
 ]
 
@@ -277,7 +289,9 @@ class DockerHostService:
                 {
                     "name": name,
                     "image": name if ":" in name else f"{name}:latest",
-                    "description": str(row.get("short_description") or row.get("description") or ""),
+                    "description": str(
+                        row.get("short_description") or row.get("description") or ""
+                    ),
                     "stars": int(row.get("star_count") or 0),
                     "pulls": int(row.get("pull_count") or 0),
                     "official": bool(row.get("is_official")),

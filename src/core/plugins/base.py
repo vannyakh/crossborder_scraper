@@ -54,9 +54,7 @@ class SourcePluginManifest:
             "enabled": enabled,
             "status": st,
             "mode": (
-                "source"
-                if installed and kind == "source"
-                else ("site" if kind == "site" else None)
+                "source" if installed and kind == "source" else ("site" if kind == "site" else None)
             ),
             "trusted": kind in ("source", "site"),
             "sandboxed": False,

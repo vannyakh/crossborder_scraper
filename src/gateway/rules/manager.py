@@ -47,7 +47,9 @@ class RuleManager:
 
     def set_enabled(self, rule_ids: list[str]) -> list[str]:
         known = set(self.all_manifests())
-        ids = sorted({str(r).strip() for r in rule_ids if str(r).strip() and str(r).strip() in known})
+        ids = sorted(
+            {str(r).strip() for r in rule_ids if str(r).strip() and str(r).strip() in known}
+        )
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         data = self.load_config()
         data["enabled"] = ids
@@ -83,11 +85,11 @@ class RuleManager:
 
     def list_catalog(self) -> list[dict[str, Any]]:
         enabled = self.enabled_ids()
-        items = [
-            m.to_catalog_dict(enabled=m.id in enabled)
-            for m in self.all_manifests().values()
-        ]
-        return sorted(items, key=lambda r: (r.get("kind") != "builtin", r.get("priority", 50), r.get("name") or ""))
+        items = [m.to_catalog_dict(enabled=m.id in enabled) for m in self.all_manifests().values()]
+        return sorted(
+            items,
+            key=lambda r: (r.get("kind") != "builtin", r.get("priority", 50), r.get("name") or ""),
+        )
 
     def get_manifest(self, rule_id: str) -> RuleManifest | None:
         return self.all_manifests().get(rule_id)

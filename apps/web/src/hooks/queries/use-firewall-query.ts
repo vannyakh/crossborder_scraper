@@ -45,9 +45,12 @@ export function useDeleteFirewallRuleMutation() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (ruleId: string) =>
-      api<import('../../lib/api').FirewallActionResult>(`/firewall/rules/${encodeURIComponent(ruleId)}`, {
-        method: 'DELETE',
-      }),
+      api<import('../../lib/api').FirewallActionResult>(
+        `/firewall/rules/${encodeURIComponent(ruleId)}`,
+        {
+          method: 'DELETE',
+        },
+      ),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.firewallRules })
       void qc.invalidateQueries({ queryKey: queryKeys.firewallStatus })

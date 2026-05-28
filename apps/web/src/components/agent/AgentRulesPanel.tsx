@@ -191,7 +191,8 @@ function AgentRuleCreateDialog({
             <Dialog.Header borderBottomWidth="1px" borderColor="border.subtle">
               <Dialog.Title fontWeight="semibold">Create custom rule</Dialog.Title>
               <Dialog.Description fontSize="sm" color="fg.muted" mt={1}>
-                Custom rules are saved under data/agent_rules and injected into the agent system prompt when enabled.
+                Custom rules are saved under data/agent_rules and injected into the agent system
+                prompt when enabled.
               </Dialog.Description>
             </Dialog.Header>
 
@@ -205,7 +206,9 @@ function AgentRuleCreateDialog({
                     fontFamily="mono"
                     onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
                   />
-                  <Field.HelperText>Lowercase letters, numbers, hyphens, underscores.</Field.HelperText>
+                  <Field.HelperText>
+                    Lowercase letters, numbers, hyphens, underscores.
+                  </Field.HelperText>
                 </Field.Root>
 
                 <Field.Root required>
@@ -322,10 +325,7 @@ export function AgentRulesPanel() {
   const customCount = items.filter((r) => r.kind === 'custom').length
 
   const list = useStoreListState(9)
-  const filtered = useMemo(
-    () => filterRulesByCategory(items, category),
-    [items, category],
-  )
+  const filtered = useMemo(() => filterRulesByCategory(items, category), [items, category])
   const searched = useMemo(() => searchRules(filtered, list.search), [filtered, list.search])
   const paged = useStorePagedList(searched, list)
 

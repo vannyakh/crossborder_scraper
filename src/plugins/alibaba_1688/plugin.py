@@ -35,15 +35,18 @@ class Alibaba1688Scraper(BaseScraper):
         soup = self.soup(html)
         product_id = self.extract_product_id(url) or "unknown"
 
-        title = self.first_text(
-            soup,
-            [
-                "h1.d-title",
-                "h1[class*='title']",
-                ".mod-detail-title h1",
-                "h1",
-            ],
-        ) or f"1688 Product {product_id}"
+        title = (
+            self.first_text(
+                soup,
+                [
+                    "h1.d-title",
+                    "h1[class*='title']",
+                    ".mod-detail-title h1",
+                    "h1",
+                ],
+            )
+            or f"1688 Product {product_id}"
+        )
 
         price_text = self.first_text(
             soup,
@@ -71,9 +74,7 @@ class Alibaba1688Scraper(BaseScraper):
             [".mod-detail-desc", "#desc-lazyload-container", "[class*='description']"],
         )
 
-        seller = self.first_text(
-            soup, [".company-name", "[class*='seller']", ".shop-company-name"]
-        )
+        seller = self.first_text(soup, [".company-name", "[class*='seller']", ".shop-company-name"])
 
         return ScrapedProduct(
             source=self.platform,

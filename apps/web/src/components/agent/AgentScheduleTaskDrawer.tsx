@@ -310,7 +310,10 @@ export function AgentScheduleTaskDrawer({
                   Prompt template
                 </Field.Label>
                 <NativeSelect.Root {...fieldStyles} size="sm">
-                  <NativeSelect.Field value={promptId} onChange={(e) => setPromptId(e.target.value)}>
+                  <NativeSelect.Field
+                    value={promptId}
+                    onChange={(e) => setPromptId(e.target.value)}
+                  >
                     {prompts.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label}
@@ -340,18 +343,29 @@ export function AgentScheduleTaskDrawer({
               >
                 <Checkbox.HiddenInput />
                 <Checkbox.Control />
-                <Checkbox.Label fontSize="sm">Enable schedule (running on server cron)</Checkbox.Label>
+                <Checkbox.Label fontSize="sm">
+                  Enable schedule (running on server cron)
+                </Checkbox.Label>
               </Checkbox.Root>
 
               <Text fontSize="xs" color="fg.subtle" lineHeight="short">
-                Stored in <Text as="span" fontFamily="mono">config/agent_schedules.json</Text>. The
-                server scheduler runs enabled tasks each minute; use Execute for an immediate run.
+                Stored in{' '}
+                <Text as="span" fontFamily="mono">
+                  config/agent_schedules.json
+                </Text>
+                . The server scheduler runs enabled tasks each minute; use Execute for an immediate
+                run.
               </Text>
             </VStack>
           </Drawer.Body>
 
           <Drawer.Footer borderTopWidth="1px" borderColor="border.subtle" gap={2}>
-            <Button variant="outline" borderColor="border.subtle" borderRadius="input" onClick={onClose}>
+            <Button
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              onClick={onClose}
+            >
               Cancel
             </Button>
             <Button

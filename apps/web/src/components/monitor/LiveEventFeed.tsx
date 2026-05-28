@@ -22,10 +22,7 @@ function formatTime(ts: number): string {
 
 export function LiveEventFeed({ events }: { events: LiveMonitorEvent[] }) {
   return (
-    <Section
-      title="Live event stream"
-      description="WebSocket updates from running scrape batches"
-    >
+    <Section title="Live event stream" description="WebSocket updates from running scrape batches">
       <Box
         borderWidth="1px"
         borderColor="border.subtle"

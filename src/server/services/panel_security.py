@@ -35,7 +35,9 @@ def build_panel_security_status(*, port: int | None = None) -> dict[str, Any]:
 
     urls = {
         "entrance": build_entrance_url(host, chosen_port, entry) if entry else None,
-        "login": build_login_url(host, chosen_port, entry) if entry else f"http://{host}:{chosen_port}/ui/login",
+        "login": build_login_url(host, chosen_port, entry)
+        if entry
+        else f"http://{host}:{chosen_port}/ui/login",
         "local_login": build_login_url("127.0.0.1", chosen_port, entry),
         "bare_host_note": (
             f"http://{host}:{chosen_port} returns 404 when security entrance is enabled"
@@ -127,9 +129,7 @@ class PanelSecurityService:
                 updates["PANEL_SECURITY_ENTRANCE"] = "true"
                 messages.append(f"Entrance path set to /{normalized}/")
             else:
-                raise ValueError(
-                    "Entrance path must be 8 lowercase hex characters (e.g. a1b2c3d4)"
-                )
+                raise ValueError("Entrance path must be 8 lowercase hex characters (e.g. a1b2c3d4)")
             restart_required = True
 
         if regenerate_access_key:

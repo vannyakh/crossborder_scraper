@@ -123,9 +123,7 @@ def import_agent_runs_to_cron_logs() -> int:
     from gateway.schedules_store import load_runs
 
     existing = {
-        (e.get("meta") or {}).get("run_id")
-        for e in _read_logs()
-        if e.get("category") == "cron"
+        (e.get("meta") or {}).get("run_id") for e in _read_logs() if e.get("category") == "cron"
     }
     added = 0
     for run in load_runs(100):

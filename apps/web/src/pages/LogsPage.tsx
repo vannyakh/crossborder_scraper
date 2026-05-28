@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  HStack,
-  Separator,
-  Table,
-  Tabs,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Button, HStack, Separator, Table, Tabs, Text } from '@chakra-ui/react'
 import { RefreshCw, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -178,18 +170,9 @@ export function LogsPage() {
               applySearch()
             }}
           >
-            <ListSearchBar
-              value={q}
-              onChange={setQ}
-              placeholder="Search user, type, or details…"
-            />
+            <ListSearchBar value={q} onChange={setQ} placeholder="Search user, type, or details…" />
           </Box>
-          <Button
-            size="sm"
-            colorPalette={accentPalette}
-            borderRadius="input"
-            onClick={applySearch}
-          >
+          <Button size="sm" colorPalette={accentPalette} borderRadius="input" onClick={applySearch}>
             Search
           </Button>
         </HStack>
@@ -211,12 +194,7 @@ export function LogsPage() {
         ) : items.length === 0 ? (
           <DataListEmpty>No log entries in this category.</DataListEmpty>
         ) : (
-          <DataList
-            borderWidth={0}
-            borderRadius={0}
-            borderTopWidth="1px"
-            maxH="min(62vh, 600px)"
-          >
+          <DataList borderWidth={0} borderRadius={0} borderTopWidth="1px" maxH="min(62vh, 600px)">
             <Table.Header bg="bg.panelHover" position="sticky" top={0} zIndex={1}>
               <Table.Row>
                 <Table.ColumnHeader w="100px">User</Table.ColumnHeader>

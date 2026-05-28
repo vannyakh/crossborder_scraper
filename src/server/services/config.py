@@ -69,7 +69,11 @@ class ConfigService:
             return scalar
         from config.llm_providers import apply_provider_defaults, get_provider, parse_model_ref
 
-        if "ai_model" in scalar and isinstance(scalar["ai_model"], str) and "/" in scalar["ai_model"]:
+        if (
+            "ai_model" in scalar
+            and isinstance(scalar["ai_model"], str)
+            and "/" in scalar["ai_model"]
+        ):
             parsed_provider, parsed_model = parse_model_ref(scalar["ai_model"])
             scalar = dict(scalar)
             scalar.setdefault("ai_provider", parsed_provider)

@@ -47,11 +47,7 @@ export function useDashboard() {
     submitMutation.reset()
   }
 
-  const error =
-    submitMutation.error ??
-    activeBatch.error ??
-    configQuery.error ??
-    null
+  const error = submitMutation.error ?? activeBatch.error ?? configQuery.error ?? null
 
   return {
     urlsText,

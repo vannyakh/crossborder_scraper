@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -62,9 +63,7 @@ class PanelEntranceMiddleware:
             await self.app(scope, receive, send)
             return
 
-        if path in ("", "/") or (
-            not path.startswith(self._prefix + "/") and path != self._prefix
-        ):
+        if path in ("", "/") or (not path.startswith(self._prefix + "/") and path != self._prefix):
             await _not_found()(scope, receive, send)
             return
 
@@ -117,8 +116,10 @@ class PanelEntranceMiddleware:
         if query_key and secrets.compare_digest(query_key, self.access_key):
             return True
         cookie = request.cookies.get(COOKIE_NAME, "")
-        if cookie and self._cookie_expected and secrets.compare_digest(
-            cookie, self._cookie_expected
+        if (
+            cookie
+            and self._cookie_expected
+            and secrets.compare_digest(cookie, self._cookie_expected)
         ):
             return True
         auth = request.headers.get("authorization", "")

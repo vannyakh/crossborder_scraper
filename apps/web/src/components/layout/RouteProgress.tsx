@@ -17,8 +17,7 @@ export function RouteProgress() {
   const locationKeyRef = useRef(`${location.pathname}${location.search}`)
 
   useEffect(() => {
-    const pending =
-      navigation.state === 'loading' || navigation.state === 'submitting'
+    const pending = navigation.state === 'loading' || navigation.state === 'submitting'
 
     if (pending) {
       NProgress.start()

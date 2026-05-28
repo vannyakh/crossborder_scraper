@@ -44,8 +44,7 @@ class ShopeeExporter(BaseExporter):
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
             raise ValueError(
-                "Shopee API credentials missing. "
-                "Configure Shopee in Settings → Marketplaces."
+                "Shopee API credentials missing. Configure Shopee in Settings → Marketplaces."
             )
 
         path = "/api/v2/product/add_item"

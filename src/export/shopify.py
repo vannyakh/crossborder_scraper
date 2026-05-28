@@ -29,8 +29,7 @@ class ShopifyExporter(BaseExporter):
     async def publish(self, listing: ExportListing) -> dict:
         if not self.validate_credentials():
             raise ValueError(
-                "Shopify credentials missing. "
-                "Configure Shopify in Settings → Marketplaces."
+                "Shopify credentials missing. Configure Shopify in Settings → Marketplaces."
             )
 
         product_payload = {

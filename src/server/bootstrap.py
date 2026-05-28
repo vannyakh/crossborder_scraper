@@ -9,10 +9,10 @@ from fastapi import FastAPI
 from config.credentials import ensure_panel_credentials, print_panel_credentials
 from gateway.scheduler import get_scheduler
 from gateway.schedules_store import ensure_schedules_file
-from server.core.panel_bind import configure_panel_bind
-from server.services.audit import log_operation
 from server.app_store.state import ensure_store_state
 from server.audit.service_logs import ensure_logs_file
+from server.core.panel_bind import configure_panel_bind
+from server.services.audit import log_operation
 
 
 @asynccontextmanager
@@ -36,7 +36,6 @@ async def panel_lifespan(_app: FastAPI):
 
     await start_all_channels()
     yield
-    from gateway.channels.lifecycle import stop_all_channels
 
     await stop_all_channels()
     await get_scheduler().stop()

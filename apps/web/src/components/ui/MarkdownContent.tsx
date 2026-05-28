@@ -142,7 +142,13 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
       if (linkMatch) {
         parts.push(
-          <Link key={key} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" color="blue.500">
+          <Link
+            key={key}
+            href={linkMatch[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            color="blue.500"
+          >
             {linkMatch[1]}
           </Link>,
         )
@@ -199,7 +205,9 @@ export function MarkdownContent({ source }: { source: string }) {
           return (
             <List.Root key={key} as="ul" ps={5} mb={3} gap={1.5}>
               {block.items.map((item, itemIndex) => (
-                <List.Item key={`${key}-${itemIndex}`}>{renderInline(item, `${key}-${itemIndex}`)}</List.Item>
+                <List.Item key={`${key}-${itemIndex}`}>
+                  {renderInline(item, `${key}-${itemIndex}`)}
+                </List.Item>
               ))}
             </List.Root>
           )
@@ -208,7 +216,9 @@ export function MarkdownContent({ source }: { source: string }) {
           return (
             <List.Root key={key} as="ol" ps={5} mb={3} gap={1.5}>
               {block.items.map((item, itemIndex) => (
-                <List.Item key={`${key}-${itemIndex}`}>{renderInline(item, `${key}-${itemIndex}`)}</List.Item>
+                <List.Item key={`${key}-${itemIndex}`}>
+                  {renderInline(item, `${key}-${itemIndex}`)}
+                </List.Item>
               ))}
             </List.Root>
           )

@@ -37,7 +37,7 @@ Full walkthrough: **[docs/QUICK_START.md](docs/QUICK_START.md)**
 | VPS / Docker deploy | [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) |
 | **All docs** | **[docs/README.md](docs/README.md)** |
 
-Architecture: [ARCHITECTURE.md](ARCHITECTURE.md) · Releases: [.github/RELEASE.md](.github/RELEASE.md)
+Architecture: [ARCHITECTURE.md](ARCHITECTURE.md) · Releases: [.github/RELEASE.md](.github/RELEASE.md) · **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Cursor agents:** [AGENTS.md](AGENTS.md)
 
 ## Repo layout (short)
 

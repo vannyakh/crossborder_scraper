@@ -1,12 +1,4 @@
-import {
-  Button,
-  Dialog,
-  HStack,
-  Input,
-  NativeSelect,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+import { Button, Dialog, HStack, Input, NativeSelect, Text, VStack } from '@chakra-ui/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem, StoreEnvironment } from '../../lib/api'

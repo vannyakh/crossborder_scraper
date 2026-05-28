@@ -133,9 +133,11 @@ async def docker_run_container(
         port=body.port,
         host_port=body.host_port,
     )
+    message = result.get("message", "")[:200]
+    container = result.get("container_name", "")
     log_operation(
         user=username,
         operation_type="Docker run",
-        details=f"{body.image} -> {result.get('container_name', '')}: {result.get('message', '')[:200]}",
+        details=f"{body.image} -> {container}: {message}",
     )
     return DockerRunResponse(**result)

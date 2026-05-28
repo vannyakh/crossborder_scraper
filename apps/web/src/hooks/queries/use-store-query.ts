@@ -79,8 +79,13 @@ export function useStoreConnectMutation() {
 export function useStoreLifecycleMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ pluginId, action }: { pluginId: string; action: 'start' | 'stop' | 'restart' }) =>
-      api<StoreInstalled>(`/store/plugins/${pluginId}/${action}`, { method: 'POST' }),
+    mutationFn: ({
+      pluginId,
+      action,
+    }: {
+      pluginId: string
+      action: 'start' | 'stop' | 'restart'
+    }) => api<StoreInstalled>(`/store/plugins/${pluginId}/${action}`, { method: 'POST' }),
     onSuccess: (_data, { pluginId }) => {
       void qc.invalidateQueries({ queryKey: queryKeys.storeInstalled })
       void qc.invalidateQueries({ queryKey: queryKeys.storeCatalog })

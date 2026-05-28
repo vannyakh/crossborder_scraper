@@ -49,26 +49,35 @@ function useDrawerTabItems() {
   ]
 }
 
-function keepPickerOpenInsideThemeDrawer(event: { preventDefault: () => void; target?: EventTarget | null }) {
+function keepPickerOpenInsideThemeDrawer(event: {
+  preventDefault: () => void
+  target?: EventTarget | null
+}) {
   const target = event.target
   if (target instanceof Element && target.closest(`[${THEME_DRAWER_ATTR}]`)) {
     event.preventDefault()
   }
 }
 
-const radiusOptions = (t: ReturnType<typeof useLocale>['t']): { value: RadiusScale; label: string }[] => [
+const radiusOptions = (
+  t: ReturnType<typeof useLocale>['t'],
+): { value: RadiusScale; label: string }[] => [
   { value: 'sm', label: t('theme.layout.small') },
   { value: 'md', label: t('theme.layout.medium') },
   { value: 'lg', label: t('theme.layout.large') },
 ]
 
-const fontOptions = (t: ReturnType<typeof useLocale>['t']): { value: FontScale; label: string }[] => [
+const fontOptions = (
+  t: ReturnType<typeof useLocale>['t'],
+): { value: FontScale; label: string }[] => [
   { value: 'sm', label: t('theme.layout.small') },
   { value: 'md', label: t('theme.layout.medium') },
   { value: 'lg', label: t('theme.layout.large') },
 ]
 
-const densityOptions = (t: ReturnType<typeof useLocale>['t']): { value: Density; label: string }[] => [
+const densityOptions = (
+  t: ReturnType<typeof useLocale>['t'],
+): { value: Density; label: string }[] => [
   { value: 'compact', label: t('theme.layout.compact') },
   { value: 'comfortable', label: t('theme.layout.comfortable') },
 ]
@@ -233,7 +242,11 @@ function DrawerCustomColorPicker({
           >
             <ColorPicker.Area />
             <HStack mt={3} gap={2} align="center">
-              <ColorPicker.EyeDropper size="xs" variant="outline" aria-label={t('theme.color.pickScreenAria')} />
+              <ColorPicker.EyeDropper
+                size="xs"
+                variant="outline"
+                aria-label={t('theme.color.pickScreenAria')}
+              />
               <ColorPicker.Sliders flex="1" />
             </HStack>
           </ColorPicker.Content>
@@ -246,13 +259,8 @@ function DrawerCustomColorPicker({
 function DrawerThemeTab() {
   const { t } = useLocale()
   const { mode, setMode } = useUiConfig()
-  const {
-    activeAccentHex,
-    activePreset,
-    isCustomAccentColor,
-    setAccentHex,
-    resetAccentColor,
-  } = useThemeActions()
+  const { activeAccentHex, activePreset, isCustomAccentColor, setAccentHex, resetAccentColor } =
+    useThemeActions()
 
   const themeStyleOptions = [
     { value: 'system' as const, label: t('theme.style.system') },
@@ -368,7 +376,10 @@ function DrawerMotionTab() {
 
   return (
     <VStack align="stretch" gap={4}>
-      <DrawerField label={t('theme.motion.pageTransitions')} hint={t('theme.motion.pageTransitionsHint')}>
+      <DrawerField
+        label={t('theme.motion.pageTransitions')}
+        hint={t('theme.motion.pageTransitionsHint')}
+      >
         <HStack justify="space-between" py={0.5}>
           <Text fontSize="sm" color="fg.muted">
             {config.pageTransitions ? t('theme.motion.on') : t('theme.motion.off')}
@@ -404,7 +415,10 @@ function DrawerMotionTab() {
         onChange={(motionSpeed) => setConfig({ motionSpeed: motionSpeed as MotionSpeed })}
       />
 
-      <DrawerField label={t('theme.motion.reducedMotion')} hint={t('theme.motion.reducedMotionHint')}>
+      <DrawerField
+        label={t('theme.motion.reducedMotion')}
+        hint={t('theme.motion.reducedMotionHint')}
+      >
         <HStack justify="space-between" py={0.5}>
           <Text fontSize="sm" color="fg.muted">
             {config.reducedMotion ? t('theme.motion.on') : t('theme.motion.off')}
@@ -454,7 +468,12 @@ function DrawerPanel() {
           flexShrink={0}
         >
           <Drawer.CloseTrigger asChild position="absolute" top={3} right={3} zIndex={1}>
-            <IconButton aria-label={t('theme.closeAria')} size="sm" variant="ghost" borderRadius="var(--radius-input)">
+            <IconButton
+              aria-label={t('theme.closeAria')}
+              size="sm"
+              variant="ghost"
+              borderRadius="var(--radius-input)"
+            >
               <X size={18} />
             </IconButton>
           </Drawer.CloseTrigger>
@@ -486,41 +505,41 @@ function DrawerPanel() {
           {tab === 'layout' ? <DrawerLayoutTab /> : null}
           {tab === 'motion' ? <DrawerMotionTab /> : null}
 
-        <Separator borderColor="border.subtle" my={5} />
+          <Separator borderColor="border.subtle" my={5} />
 
-        <DrawerField label={t('locale.label')} hint={t('locale.hint')}>
-          <LocaleSelector />
-        </DrawerField>
+          <DrawerField label={t('locale.label')} hint={t('locale.hint')}>
+            <LocaleSelector />
+          </DrawerField>
 
-        <Separator borderColor="border.subtle" my={5} />
+          <Separator borderColor="border.subtle" my={5} />
 
-        <Text fontSize="xs" color="fg.subtle" mb={2}>
-          {t('theme.current')}
-        </Text>
-        <Box
-          p={2.5}
-          borderRadius="var(--radius-input)"
-          bg="bg.input"
-          fontSize="xs"
-          color="fg.muted"
-          fontFamily="mono"
-          lineHeight="tall"
-        >
-          {activeAccentHex} · {mode} ·{' '}
-          {config.pageTransitions ? config.pageTransition : 'no transitions'}
-        </Box>
+          <Text fontSize="xs" color="fg.subtle" mb={2}>
+            {t('theme.current')}
+          </Text>
+          <Box
+            p={2.5}
+            borderRadius="var(--radius-input)"
+            bg="bg.input"
+            fontSize="xs"
+            color="fg.muted"
+            fontFamily="mono"
+            lineHeight="tall"
+          >
+            {activeAccentHex} · {mode} ·{' '}
+            {config.pageTransitions ? config.pageTransition : 'no transitions'}
+          </Box>
 
-        <Button
-          size="sm"
-          variant="outline"
-          borderColor="border.subtle"
-          borderRadius="var(--radius-input)"
-          w="full"
-          mt={3}
-          onClick={resetConfig}
-        >
-          {t('theme.resetDefaults')}
-        </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            borderColor="border.subtle"
+            borderRadius="var(--radius-input)"
+            w="full"
+            mt={3}
+            onClick={resetConfig}
+          >
+            {t('theme.resetDefaults')}
+          </Button>
         </Drawer.Body>
       </Box>
 

@@ -1,0 +1,24 @@
+---
+description: Crossborder repo map — gateway, panel, and where code lives (always read for new work)
+alwaysApply: true
+---
+
+# Project overview
+
+**Crossborder Scraper** monorepo:
+
+| Area | Path | Role |
+|------|------|------|
+| Panel UI | `apps/web/` | React + Vite, base `/ui/` |
+| API | `src/server/` | FastAPI; register routers in `api/registry.py` |
+| Gateway | `src/gateway/` | Agent tools, workflows, schedules, integrate channels |
+| Scrape | `src/core/`, `src/pipeline/` | Engine, plugins, product store |
+| Deploy | `src/deploy/`, `libs/store_drivers/` | VPS scripts, drivers, firewall |
+| Runtime config | `config/` (root) | YAML/JSON on disk |
+| Settings code | `src/config/` | Python `Settings`, `.env` |
+
+**Orchestration boundary:** FastAPI gateway only. Web and CLI are clients.
+
+**Docs:** `AGENTS.md`, `ARCHITECTURE.md`, `docs/PROJECT_STRUCTURE.md`.
+
+**Do not confuse:** `libs/agent_rules/` = runtime panel AI policies. `.cursor/rules/` = IDE agent guidance.

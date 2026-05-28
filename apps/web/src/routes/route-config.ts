@@ -1,13 +1,4 @@
-import {
-  Bot,
-  Database,
-  Home,
-  Play,
-  Plug,
-  Settings,
-  Wrench,
-  type LucideIcon,
-} from 'lucide-react'
+import { Bot, Database, Home, Play, Plug, Settings, Wrench, type LucideIcon } from 'lucide-react'
 import type { AgentSectionId } from '../components/agent/agent-sections'
 import type { ArtifactSectionId } from '../components/artifact/artifact-sections'
 import type { IntegrateChannelId } from '../components/integrate/integrate-sections'
@@ -50,8 +41,7 @@ export const ROUTE_PATHS = {
   },
   integrate: {
     base: '/integrate',
-    channel: (channel: IntegrateChannelId = DEFAULT_INTEGRATE_CHANNEL) =>
-      `/integrate/${channel}`,
+    channel: (channel: IntegrateChannelId = DEFAULT_INTEGRATE_CHANNEL) => `/integrate/${channel}`,
   },
   settings: {
     base: '/settings',
@@ -343,9 +333,9 @@ const ROUTE_PATTERNS: RoutePattern[] = [
 /** Resolve breadcrumb segment definitions for a pathname (labels not yet translated). */
 export function matchBreadcrumbSegments(pathname: string): BreadcrumbSegmentDef[] {
   const normalized = pathname.replace(/\/$/, '') || '/'
-  const pattern = [...ROUTE_PATTERNS].sort((a, b) => b.priority - a.priority).find((p) =>
-    p.match(normalized),
-  )
+  const pattern = [...ROUTE_PATTERNS]
+    .sort((a, b) => b.priority - a.priority)
+    .find((p) => p.match(normalized))
   if (pattern) {
     return pattern.segments(normalized)
   }

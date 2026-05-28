@@ -8,15 +8,16 @@ export function useActiveBatchQuery() {
   return {
     batchId: activeBatchId,
     status: live.status,
-    result: live.results.length > 0 || live.status
-      ? {
-          batch_id: activeBatchId,
-          total: live.status?.total ?? live.results.length,
-          success: live.status?.success ?? 0,
-          failed: live.status?.failed ?? 0,
-          results: live.results,
-        }
-      : undefined,
+    result:
+      live.results.length > 0 || live.status
+        ? {
+            batch_id: activeBatchId,
+            total: live.status?.total ?? live.results.length,
+            success: live.status?.success ?? 0,
+            failed: live.status?.failed ?? 0,
+            results: live.results,
+          }
+        : undefined,
     isLoading: Boolean(activeBatchId) && !live.status && !live.error,
     error: live.error,
     isRunning: live.isRunning,

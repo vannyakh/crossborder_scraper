@@ -99,7 +99,14 @@ function TrendChartCard({
     >
       <SectionCard p={{ base: 3, md: 4 }} h="full" display="flex" flexDirection="column">
         <ChartStatsBar items={stats} />
-        <Text mb={2} fontSize="xs" color="fg.muted" lineClamp={1} truncate title={`${range} · ${ready ? 'Live' : 'Collecting…'}`}>
+        <Text
+          mb={2}
+          fontSize="xs"
+          color="fg.muted"
+          lineClamp={1}
+          truncate
+          title={`${range} · ${ready ? 'Live' : 'Collecting…'}`}
+        >
           {range} · {ready ? 'Live' : 'Collecting…'}
         </Text>
         {!option ? (

@@ -1,19 +1,5 @@
-import {
-  Box,
-  Button,
-  HStack,
-  SimpleGrid,
-  Table,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
-import {
-  BookOpen,
-  CalendarClock,
-  ExternalLink,
-  MessageCircle,
-  RefreshCw,
-} from 'lucide-react'
+import { Box, Button, HStack, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react'
+import { BookOpen, CalendarClock, ExternalLink, MessageCircle, RefreshCw } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { formatUptime } from '../dashboard/dashboard-utils'
 import { Section, SectionCard } from '../ui/Section'
@@ -168,7 +154,7 @@ export function ServiceHealthSection() {
             <HealthCard
               title="LLM provider"
               status={!aiEnabled ? 'neutral' : healthTone(health?.ok)}
-              statusLabel={!aiEnabled ? 'disabled' : health?.status ?? 'checking…'}
+              statusLabel={!aiEnabled ? 'disabled' : (health?.status ?? 'checking…')}
             >
               {!aiEnabled ? (
                 <Text fontSize="sm" color="fg.muted">
@@ -301,7 +287,12 @@ function SupportLink({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: 'none', color: 'inherit' }}
+      >
         <Box {...boxProps}>{content}</Box>
       </a>
     )
@@ -396,7 +387,10 @@ export function ServiceSupportSection() {
                   status={scheduler?.running ? 'running' : 'neutral'}
                   label={scheduler?.running ? 'Active' : 'Stopped'}
                 />
-                <RouterLink to="/agent/schedules" style={{ fontSize: '0.75rem', color: 'var(--app-accent)' }}>
+                <RouterLink
+                  to="/agent/schedules"
+                  style={{ fontSize: '0.75rem', color: 'var(--app-accent)' }}
+                >
                   Manage tasks →
                 </RouterLink>
               </HStack>
@@ -434,7 +428,11 @@ export function ServiceSupportSection() {
                         <Table.Cell>
                           <StatusBadge
                             status={
-                              !t.enabled ? 'neutral' : t.last_status === 'failed' ? 'danger' : 'success'
+                              !t.enabled
+                                ? 'neutral'
+                                : t.last_status === 'failed'
+                                  ? 'danger'
+                                  : 'success'
                             }
                             label={!t.enabled ? 'Paused' : (t.last_status ?? 'idle')}
                           />
@@ -475,8 +473,8 @@ export function ServiceSupportSection() {
             </HStack>
             <Text fontSize="sm" color="fg.muted" mb={4}>
               {data.stats.products} products · {data.stats.batches} batches ·{' '}
-              {data.stats.running_batches} running · logs: {data.logs.operation} op / {data.logs.run}{' '}
-              run / {data.logs.cron} cron
+              {data.stats.running_batches} running · logs: {data.logs.operation} op /{' '}
+              {data.logs.run} run / {data.logs.cron} cron
             </Text>
             {runtime ? (
               <Box pt={3} borderTopWidth="1px" borderColor="border.subtle">
@@ -506,10 +504,22 @@ export function ServiceSupportSection() {
                     </Text>
                   </Text>
                 </SimpleGrid>
-                <Text fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={2} title={data.paths.db}>
+                <Text
+                  fontSize="xs"
+                  color="fg.subtle"
+                  fontFamily="mono"
+                  lineClamp={2}
+                  title={data.paths.db}
+                >
                   DB: {data.paths.db}
                 </Text>
-                <Text fontSize="xs" color="fg.subtle" fontFamily="mono" lineClamp={1} title={data.paths.output}>
+                <Text
+                  fontSize="xs"
+                  color="fg.subtle"
+                  fontFamily="mono"
+                  lineClamp={1}
+                  title={data.paths.output}
+                >
                   Output: {data.paths.output}
                 </Text>
               </Box>

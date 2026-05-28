@@ -207,7 +207,10 @@ function CatalogTabContent({
   onSettings: (id: string) => void
 }) {
   const list = useStoreListState(6)
-  const searched = useMemo(() => searchCatalog(catalogBase, list.search), [catalogBase, list.search])
+  const searched = useMemo(
+    () => searchCatalog(catalogBase, list.search),
+    [catalogBase, list.search],
+  )
   const paged = useStorePagedList(searched, list)
 
   if (loading) {

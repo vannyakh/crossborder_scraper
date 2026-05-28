@@ -14,19 +14,21 @@ export function Toolbar({
 }) {
   return (
     <FadeIn>
-      <Box
-        mb="var(--content-gap)"
-        pb={3}
-        borderBottomWidth="1px"
-        borderColor="border.subtle"
-      >
+      <Box mb="var(--content-gap)" pb={3} borderBottomWidth="1px" borderColor="border.subtle">
         <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={3}>
           <Box minW={0}>
             <Heading size="md" fontWeight="semibold" letterSpacing="-0.01em">
               {title}
             </Heading>
             {description ? (
-              <Text mt={0.5} fontSize="sm" color="fg.muted" lineClamp={1} truncate title={description}>
+              <Text
+                mt={0.5}
+                fontSize="sm"
+                color="fg.muted"
+                lineClamp={1}
+                truncate
+                title={description}
+              >
                 {description}
               </Text>
             ) : null}

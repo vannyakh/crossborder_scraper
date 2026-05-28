@@ -68,8 +68,7 @@ Use absolute image URLs. Ignore ads and unrelated products."""
 
         snippet = self._prepare_html(html)
         user_msg = (
-            f"URL: {url}\nPlatform: {platform.value}\n"
-            f"Product ID: {product_id}\n\nHTML:\n{snippet}"
+            f"URL: {url}\nPlatform: {platform.value}\nProduct ID: {product_id}\n\nHTML:\n{snippet}"
         )
 
         result = await self.llm.chat(

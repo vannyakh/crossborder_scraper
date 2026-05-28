@@ -8,8 +8,8 @@ import zipfile
 from pathlib import Path
 
 from gateway.skills.installer import extract_skill_zip, resolve_skill_id
-from gateway.skills.manifest import parse_skill_md
 from gateway.skills.manager import SkillManager
+from gateway.skills.manifest import parse_skill_md
 
 
 def _zip_bytes(files: dict[str, str]) -> bytes:
@@ -119,9 +119,13 @@ def test_resolve_registry_slug_from_installed_state(tmp_path: Path) -> None:
     installed.mkdir()
     skill_dir = installed / "custom-id"
     skill_dir.mkdir()
-    (skill_dir / "SKILL.md").write_text("---\nname: Custom\ndescription: x\n---\n", encoding="utf-8")
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: Custom\ndescription: x\n---\n", encoding="utf-8"
+    )
     (installed / "installed.json").write_text(
-        json.dumps({"skills": {"custom-id": {"slug": "registry-slug", "registry": "https://example.test"}}}),
+        json.dumps(
+            {"skills": {"custom-id": {"slug": "registry-slug", "registry": "https://example.test"}}}
+        ),
         encoding="utf-8",
     )
 

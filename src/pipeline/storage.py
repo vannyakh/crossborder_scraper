@@ -242,7 +242,10 @@ class ProductStore:
     def list_batches(self, *, limit: int = 30, offset: int = 0) -> list[dict]:
         with Session(self.engine) as session:
             rows = session.scalars(
-                select(BatchRecord).order_by(desc(BatchRecord.started_at)).offset(offset).limit(limit)
+                select(BatchRecord)
+                .order_by(desc(BatchRecord.started_at))
+                .offset(offset)
+                .limit(limit)
             ).all()
             return [
                 {

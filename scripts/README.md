@@ -12,6 +12,7 @@ Run from repository root (or any path — scripts resolve `ROOT` automatically).
 | `serve-api.sh` | FastAPI panel (`uv run serve` / uvicorn reload) |
 | `dev-ui.sh` | Vite dev server (`apps/web`, proxies API) |
 | `dev-stack.sh` | Print two-terminal dev instructions |
+| `../Makefile` | `make fmt`, `make lint`, `make check`, `make test` — see [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
 Environment:
 

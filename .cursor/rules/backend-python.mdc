@@ -1,0 +1,49 @@
+---
+description: Python backend conventions — server, gateway, deploy, schemas
+globs:
+  - "src/**/*.py"
+  - "tests/**/*.py"
+  - "main.py"
+alwaysApply: false
+---
+
+# Backend conventions
+
+## Layering
+
+```
+routers/   → HTTP only (auth, parse body, call service, map errors)
+services/  → business logic, subprocess, file I/O
+schemas/   → Pydantic models shared with OpenAPI
+deploy/    → host/VPS scripts (sudo, systemd, apt)
+gateway/   → agent tools & workflows (may call services)
+```
+
+Use `from server.deps import protected_router` for authenticated panel routes.
+
+## Patterns
+
+```python
+# Service singleton
+_manager: FooService | None = None
+
+def get_foo_service() -> FooService:
+    global _manager
+    if _manager is None:
+        _manager = FooService()
+    return _manager
+```
+
+- Paths: `from core.paths import repo_root, config_dir, data_dir`
+- Async blocking work: `await asyncio.to_thread(...)` in services
+- Re-export public schema names in `schemas/__init__.py` `__all__`
+
+## App Store / drivers
+
+- Infra catalog: `server/app_store/catalog.py`
+- Native install scripts: `libs/store_drivers/<id>/install-*.sh`
+- Executor: `deploy/drivers/executor.py`
+
+## Tests
+
+- `tests/test_*.py` — pytest from repo root: `make test`

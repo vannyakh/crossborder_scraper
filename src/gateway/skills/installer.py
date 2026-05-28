@@ -92,7 +92,8 @@ def resolve_skill_id(workspace: Path, *, slug_hint: str | None = None) -> str:
         return folder
 
     raise SkillInstallError(
-        "cannot determine skill id; install from the skill registry or include _meta.json with slug",
+        "cannot determine skill id; install from the skill registry "
+        "or include _meta.json with slug",
     )
 
 

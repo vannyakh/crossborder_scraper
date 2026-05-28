@@ -83,19 +83,8 @@ export function LiveBatchesPanel({
                     {b.success}/{b.total} OK · {pct}%
                   </Text>
                 </Box>
-                <Box
-                  mt={2}
-                  h="6px"
-                  borderRadius="full"
-                  bg="bg.panelHover"
-                  overflow="hidden"
-                >
-                  <Box
-                    h="full"
-                    w={`${pct}%`}
-                    bg="accent"
-                    transition="width 0.25s ease"
-                  />
+                <Box mt={2} h="6px" borderRadius="full" bg="bg.panelHover" overflow="hidden">
+                  <Box h="full" w={`${pct}%`} bg="accent" transition="width 0.25s ease" />
                 </Box>
                 {b.running ? (
                   <Button

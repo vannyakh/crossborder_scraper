@@ -41,7 +41,8 @@ export function useDockerHubQuery(query: string) {
 export function useDockerInstallMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => api<import('../../lib/api').DockerInstallResult>('/docker/install', { method: 'POST' }),
+    mutationFn: () =>
+      api<import('../../lib/api').DockerInstallResult>('/docker/install', { method: 'POST' }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.dockerStatus })
       void qc.invalidateQueries({ queryKey: queryKeys.storeEnvironment })
@@ -53,7 +54,9 @@ export function useDockerServiceMutation() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (action: 'start' | 'stop' | 'restart') =>
-      api<import('../../lib/api').DockerServiceResult>(`/docker/service/${action}`, { method: 'POST' }),
+      api<import('../../lib/api').DockerServiceResult>(`/docker/service/${action}`, {
+        method: 'POST',
+      }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.dockerStatus })
       void qc.invalidateQueries({ queryKey: queryKeys.dockerContainers })
@@ -65,7 +68,9 @@ export function useDockerServiceMutation() {
 export function useDockerConfigMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (patch: Partial<import('../../lib/api').DockerConfig> & { registry_mirror?: string }) =>
+    mutationFn: (
+      patch: Partial<import('../../lib/api').DockerConfig> & { registry_mirror?: string },
+    ) =>
       api<import('../../lib/api').DockerConfig>('/docker/config', {
         method: 'PATCH',
         body: JSON.stringify(patch),
@@ -80,9 +85,12 @@ export function useDockerContainerActionMutation() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'start' | 'stop' | 'restart' | 'remove' }) =>
-      api<{ ok: boolean; message: string }>(`/docker/containers/${encodeURIComponent(id)}/${action}`, {
-        method: 'POST',
-      }),
+      api<{ ok: boolean; message: string }>(
+        `/docker/containers/${encodeURIComponent(id)}/${action}`,
+        {
+          method: 'POST',
+        },
+      ),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.dockerContainers })
       void qc.invalidateQueries({ queryKey: queryKeys.dockerStatus })

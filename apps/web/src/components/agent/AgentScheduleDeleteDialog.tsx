@@ -30,20 +30,22 @@ export function AgentScheduleDeleteDialog({
   const canDelete = typed.trim().toLowerCase() === CONFIRM_PHRASE
 
   return (
-    <AgentModalPanel
-      open={open}
-      onClose={onClose}
-      title="Delete cron task"
-      maxW="440px"
-    >
+    <AgentModalPanel open={open} onClose={onClose} title="Delete cron task" maxW="440px">
       <Text fontSize="sm" color="fg.muted" mb={4}>
-        This removes <Text as="span" fontWeight="semibold" color="fg">{schedule?.name}</Text>{' '}
+        This removes{' '}
+        <Text as="span" fontWeight="semibold" color="fg">
+          {schedule?.name}
+        </Text>{' '}
         from the server schedule file. Running jobs are not cancelled automatically.
       </Text>
 
       <Field.Root>
         <Field.Label fontSize="xs" color="fg.muted">
-          Type <Text as="span" fontFamily="mono">{CONFIRM_PHRASE}</Text> to delete
+          Type{' '}
+          <Text as="span" fontFamily="mono">
+            {CONFIRM_PHRASE}
+          </Text>{' '}
+          to delete
         </Field.Label>
         <Input
           {...fieldStyles}
@@ -55,7 +57,12 @@ export function AgentScheduleDeleteDialog({
       </Field.Root>
 
       <HStack justify="flex-end" gap={2} mt={6}>
-        <Button variant="outline" borderColor="border.subtle" borderRadius="input" onClick={onClose}>
+        <Button
+          variant="outline"
+          borderColor="border.subtle"
+          borderRadius="input"
+          onClick={onClose}
+        >
           Cancel
         </Button>
         <Button

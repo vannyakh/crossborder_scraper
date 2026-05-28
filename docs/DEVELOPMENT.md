@@ -43,4 +43,22 @@ docker compose up --build
 
 ## CI
 
-Lint, web build, and Docker smoke tests run on push/PR to `main`. Release workflow runs on `v*` tags. See [.github/RELEASE.md](../.github/RELEASE.md).
+Lint, format check, web build, and Docker smoke tests run on push/PR to `main`. Release workflow runs on `v*` tags. See [.github/RELEASE.md](../.github/RELEASE.md).
+
+## Formatting & quality
+
+From the repo root:
+
+```bash
+make install    # uv sync --all-groups + pnpm install
+make hooks      # pre-commit (optional, recommended)
+make fmt        # auto-format Python + web
+make check      # same checks as CI (format + lint + smoke)
+make test       # pytest
+```
+
+Editor setup: open the repo in VS Code or Cursor and install recommended extensions (`.vscode/extensions.json`). Format-on-save uses **Ruff** (Python) and **Prettier** (TypeScript).
+
+Contributor guide: [CONTRIBUTING.md](../CONTRIBUTING.md)
+
+Cursor / IDE agents: [AGENTS.md](../AGENTS.md) and `.cursor/rules/` (project map, scalable feature checklist, backend/frontend conventions).

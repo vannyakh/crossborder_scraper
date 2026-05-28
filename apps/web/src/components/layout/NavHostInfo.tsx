@@ -83,13 +83,7 @@ export function NavHostInfo() {
         </HoverCard.Trigger>
         <Portal>
           <HoverCard.Positioner zIndex={60}>
-            <HoverCard.Content
-              p={0}
-              bg="transparent"
-              border="none"
-              shadow="none"
-              minW="280px"
-            >
+            <HoverCard.Content p={0} bg="transparent" border="none" shadow="none" minW="280px">
               <Box
                 bg="var(--flyout-bg)"
                 borderWidth="1px"
@@ -99,10 +93,7 @@ export function NavHostInfo() {
                 px={3}
                 py={1}
               >
-                <InfoLine
-                  label="System:"
-                  value={isLoading && !data ? '…' : systemDetail}
-                />
+                <InfoLine label="System:" value={isLoading && !data ? '…' : systemDetail} />
                 <InfoLine label="Hostname:" value={hostname} />
                 <InfoLine label="Up Time:" value={uptime} />
               </Box>

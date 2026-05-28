@@ -35,11 +35,7 @@ Rules:
 
     @property
     def enabled(self) -> bool:
-        return (
-            self.settings.ai_enabled
-            and self.settings.ai_agent_enabled
-            and self.llm.enabled
-        )
+        return self.settings.ai_enabled and self.settings.ai_agent_enabled and self.llm.enabled
 
     def _parse_json(self, content: str) -> dict[str, Any]:
         content = content.strip()

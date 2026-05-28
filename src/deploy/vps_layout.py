@@ -109,7 +109,6 @@ def prepare_wwwroot_site(
 
     if is_root and owner_user:
         try:
-
             subprocess.run(
                 ["chown", "-R", f"{owner_user}:{owner_user}", str(install_dir)],
                 check=True,

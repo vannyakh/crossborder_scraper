@@ -218,7 +218,14 @@ export function AiLlmSettingsPanel({
   const modelRef = formatModelRef(form.provider, form.model)
 
   if (isLoading) {
-    return <SectionPanelSkeleton title="AI & LLM" description="Model, API key, extraction & agent" mt={0} fields={6} />
+    return (
+      <SectionPanelSkeleton
+        title="AI & LLM"
+        description="Model, API key, extraction & agent"
+        mt={0}
+        fields={6}
+      />
+    )
   }
 
   return (
@@ -255,7 +262,9 @@ export function AiLlmSettingsPanel({
                 <StatusBadge status={healthTone(health.ok)} label={health.status} />
               </HStack>
               <Text fontSize="xs" color="fg.subtle" maxW="20rem">
-                {health.model_ref ?? health.provider_label ? `${health.model_ref ?? health.provider_label} · ` : ''}
+                {(health.model_ref ?? health.provider_label)
+                  ? `${health.model_ref ?? health.provider_label} · `
+                  : ''}
                 {health.message}
               </Text>
             </Box>
@@ -358,7 +367,9 @@ export function AiLlmSettingsPanel({
               value={form.aiApiKey}
               onChange={(e) => form.setAiApiKey(e.target.value)}
               placeholder={
-                panel?.ai_api_key_set ? 'Leave blank to keep current' : selectedProvider?.api_key_hint
+                panel?.ai_api_key_set
+                  ? 'Leave blank to keep current'
+                  : selectedProvider?.api_key_hint
               }
             />
           </SettingsField>

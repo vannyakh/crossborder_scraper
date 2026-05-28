@@ -13,9 +13,7 @@ export function PanelUpdateButton() {
   const updateStatus = usePanelUpdateStatusQuery()
 
   const updateAvailable =
-    updateStatus.data?.update_available ??
-    gateway.data?.update_available ??
-    false
+    updateStatus.data?.update_available ?? gateway.data?.update_available ?? false
 
   const latest = updateStatus.data?.latest_version ?? gateway.data?.latest_version
   const current = updateStatus.data?.current_version ?? gateway.data?.version

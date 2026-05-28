@@ -164,7 +164,10 @@ export function AgentRuleDetailDrawer({
                   <Separator borderColor="border.subtle" />
 
                   <Box>
-                    <InfoRow label="Category" value={RULE_CATEGORY_LABEL[rule.category] ?? rule.category} />
+                    <InfoRow
+                      label="Category"
+                      value={RULE_CATEGORY_LABEL[rule.category] ?? rule.category}
+                    />
                     <InfoRow label="Priority" value={String(rule.priority)} />
                   </Box>
 
@@ -182,7 +185,8 @@ export function AgentRuleDetailDrawer({
                     </Button>
                   ) : (
                     <Text fontSize="xs" color="fg.muted">
-                      Built-in rules cannot be edited. Create a custom rule to add your own policies.
+                      Built-in rules cannot be edited. Create a custom rule to add your own
+                      policies.
                     </Text>
                   )}
                 </VStack>

@@ -19,14 +19,7 @@ export function GaugeTileSkeleton() {
     <ShimmerSurface {...GAUGE_TILE} display="flex" flexDirection="column">
       <ShimmerBlock w="52px" h="14px" />
       <ShimmerBlock w="72px" h="11px" radius="sm" mt={0.5} />
-      <Box
-        flex={1}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        minH="88px"
-        mt={0}
-      >
+      <Box flex={1} display="flex" alignItems="center" justifyContent="center" minH="88px" mt={0}>
         <ShimmerBlock w="72px" h="72px" radius="full" />
       </Box>
     </ShimmerSurface>
@@ -34,26 +27,15 @@ export function GaugeTileSkeleton() {
 }
 
 /** 4-column gauge row — title only */
-export function GaugeRowSkeleton({
-  title,
-  footer,
-}: {
-  title: string
-  footer?: boolean
-}) {
+export function GaugeRowSkeleton({ title, footer }: { title: string; footer?: boolean }) {
   return (
     <Section title={title} mt={0}>
-      <Grid
-        templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }}
-        gap={3}
-      >
+      <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: 'repeat(4, 1fr)' }} gap={3}>
         {Array.from({ length: 4 }).map((_, i) => (
           <GaugeTileSkeleton key={i} />
         ))}
       </Grid>
-      {footer ? (
-        <ShimmerBar w="min(280px, 65%)" h="11px" radius="sm" mt={2.5} />
-      ) : null}
+      {footer ? <ShimmerBar w="min(280px, 65%)" h="11px" radius="sm" mt={2.5} /> : null}
     </Section>
   )
 }
@@ -87,10 +69,7 @@ export function OverviewSkeleton() {
         bg="bg.elevated"
         overflow="hidden"
       >
-        <Grid
-          templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }}
-          gap={0}
-        >
+        <Grid templateColumns={{ base: '1fr', md: '1fr 1fr', xl: 'repeat(5, 1fr)' }} gap={0}>
           {Array.from({ length: 5 }).map((_, i) => (
             <OverviewColSkeleton key={i} />
           ))}
@@ -199,5 +178,9 @@ export function CardShell({
   loading: boolean
   skeleton: ReactNode
 }) {
-  return <PanelShell loading={loading} skeleton={skeleton}>{children}</PanelShell>
+  return (
+    <PanelShell loading={loading} skeleton={skeleton}>
+      {children}
+    </PanelShell>
+  )
 }

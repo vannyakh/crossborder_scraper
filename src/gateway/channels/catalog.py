@@ -74,7 +74,9 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
             "Enable the channel when the Discord runner ships in a future release.",
         ],
         "fields": [
-            _field("enabled", type="boolean", label="Enable Discord channel (credentials only for now)"),
+            _field(
+                "enabled", type="boolean", label="Enable Discord channel (credentials only for now)"
+            ),
             _field(
                 "allow_any_guild",
                 type="boolean",
@@ -115,7 +117,9 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
             "Enable when the Slack runner ships in a future release.",
         ],
         "fields": [
-            _field("enabled", type="boolean", label="Enable Slack channel (credentials only for now)"),
+            _field(
+                "enabled", type="boolean", label="Enable Slack channel (credentials only for now)"
+            ),
             _field(
                 "allow_any_workspace",
                 type="boolean",
@@ -149,12 +153,19 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
             "List allowed sender addresses to restrict who can control the agent.",
         ],
         "fields": [
-            _field("enabled", type="boolean", label="Enable email channel (credentials only for now)"),
+            _field(
+                "enabled", type="boolean", label="Enable email channel (credentials only for now)"
+            ),
             _field("imap_host", type="text", label="IMAP host", placeholder="imap.example.com"),
             _field("imap_port", type="number", label="IMAP port"),
             _field("imap_username", type="text", label="IMAP username"),
             _field("imap_password", type="secret", label="IMAP password"),
-            _field("smtp_host", type="text", label="SMTP host (optional)", placeholder="smtp.example.com"),
+            _field(
+                "smtp_host",
+                type="text",
+                label="SMTP host (optional)",
+                placeholder="smtp.example.com",
+            ),
             _field("smtp_port", type="number", label="SMTP port"),
             _field("smtp_username", type="text", label="SMTP username"),
             _field("smtp_password", type="secret", label="SMTP password"),

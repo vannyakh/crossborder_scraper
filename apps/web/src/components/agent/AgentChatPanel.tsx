@@ -155,9 +155,7 @@ function ChatMessageRow({
         {isUser ? 'U' : 'A'}
       </div>
       <div className="agent-chat__bubble-wrap">
-        <div
-          className={`agent-chat__bubble${isSession ? ' agent-chat__bubble--session' : ''}`}
-        >
+        <div className={`agent-chat__bubble${isSession ? ' agent-chat__bubble--session' : ''}`}>
           {isSession ? (
             <>
               <span aria-hidden>✅ </span>
@@ -495,45 +493,45 @@ export function AgentChatPanel() {
         </Box>
       ) : (
         <>
-      <AnimatePresence>
-        {fullscreen ? (
-          <Portal>
-            <MotionBox
-              key="agent-chat-backdrop"
-              className="agent-chat-backdrop"
-              initial={motionEnabled ? { opacity: 0 } : false}
-              animate={{ opacity: 1 }}
-              exit={motionEnabled ? { opacity: 0 } : undefined}
-              transition={transition}
-              onClick={() => setFullscreen(false)}
-              aria-hidden
-            />
-          </Portal>
-        ) : null}
-      </AnimatePresence>
+          <AnimatePresence>
+            {fullscreen ? (
+              <Portal>
+                <MotionBox
+                  key="agent-chat-backdrop"
+                  className="agent-chat-backdrop"
+                  initial={motionEnabled ? { opacity: 0 } : false}
+                  animate={{ opacity: 1 }}
+                  exit={motionEnabled ? { opacity: 0 } : undefined}
+                  transition={transition}
+                  onClick={() => setFullscreen(false)}
+                  aria-hidden
+                />
+              </Portal>
+            ) : null}
+          </AnimatePresence>
 
-      {fullscreen ? <Box className="agent-chat-placeholder" aria-hidden /> : null}
+          {fullscreen ? <Box className="agent-chat-placeholder" aria-hidden /> : null}
 
-      <MotionBox
-        className="agent-chat"
-        data-fullscreen={fullscreen ? '' : undefined}
-        role="region"
-        aria-label="Gateway agent chat"
-        layout={motionEnabled && !fullscreen}
-        flex="1 1 auto"
-        minH={0}
-        h={fullscreen ? '100dvh' : '100%'}
-        maxH={fullscreen ? '100dvh' : '100%'}
-        position={fullscreen ? 'fixed' : 'relative'}
-        top={fullscreen ? 0 : undefined}
-        left={fullscreen ? 0 : undefined}
-        right={fullscreen ? 0 : undefined}
-        bottom={fullscreen ? 0 : undefined}
-        zIndex={fullscreen ? 40 : undefined}
-        transition={transition}
-      >
-        {chatShell}
-      </MotionBox>
+          <MotionBox
+            className="agent-chat"
+            data-fullscreen={fullscreen ? '' : undefined}
+            role="region"
+            aria-label="Gateway agent chat"
+            layout={motionEnabled && !fullscreen}
+            flex="1 1 auto"
+            minH={0}
+            h={fullscreen ? '100dvh' : '100%'}
+            maxH={fullscreen ? '100dvh' : '100%'}
+            position={fullscreen ? 'fixed' : 'relative'}
+            top={fullscreen ? 0 : undefined}
+            left={fullscreen ? 0 : undefined}
+            right={fullscreen ? 0 : undefined}
+            bottom={fullscreen ? 0 : undefined}
+            zIndex={fullscreen ? 40 : undefined}
+            transition={transition}
+          >
+            {chatShell}
+          </MotionBox>
         </>
       )}
     </>

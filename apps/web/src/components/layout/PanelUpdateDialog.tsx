@@ -1,13 +1,4 @@
-import {
-  Badge,
-  Box,
-  Button,
-  HStack,
-  Link,
-  List,
-  Text,
-  VStack,
-} from '@chakra-ui/react'
+import { Badge, Box, Button, HStack, Link, List, Text, VStack } from '@chakra-ui/react'
 import { useState } from 'react'
 import {
   useApplyPanelUpdateMutation,
@@ -64,7 +55,13 @@ export function PanelUpdateDialog({
             Update steps completed. The panel is restarting — reload this page in a few seconds.
           </Text>
           {applyMutation.data?.steps?.length ? (
-            <Box fontSize="xs" color="fg.subtle" className="app-scroll" maxH="160px" overflow="auto">
+            <Box
+              fontSize="xs"
+              color="fg.subtle"
+              className="app-scroll"
+              maxH="160px"
+              overflow="auto"
+            >
               <List.Root gap={1}>
                 {applyMutation.data.steps.map((step) => (
                   <List.Item key={step}>{step}</List.Item>
@@ -130,7 +127,13 @@ export function PanelUpdateDialog({
           ) : null}
 
           {status?.release_url ? (
-            <Link href={status.release_url} target="_blank" rel="noreferrer" fontSize="xs" color="fg.muted">
+            <Link
+              href={status.release_url}
+              target="_blank"
+              rel="noreferrer"
+              fontSize="xs"
+              color="fg.muted"
+            >
               View release on GitHub
             </Link>
           ) : null}
@@ -142,15 +145,17 @@ export function PanelUpdateDialog({
           ) : null}
 
           <Text fontSize="xs" color="fg.subtle">
-            Update runs <Text as="span" fontFamily="mono">git pull</Text>, syncs Python dependencies, updates
-            Playwright, and restarts the panel. Active scrape jobs may be interrupted.
+            Update runs{' '}
+            <Text as="span" fontFamily="mono">
+              git pull
+            </Text>
+            , syncs Python dependencies, updates Playwright, and restarts the panel. Active scrape
+            jobs may be interrupted.
           </Text>
 
           {applyMutation.isError ? (
             <Text fontSize="sm" color="red.500">
-              {applyMutation.error instanceof Error
-                ? applyMutation.error.message
-                : 'Update failed'}
+              {applyMutation.error instanceof Error ? applyMutation.error.message : 'Update failed'}
             </Text>
           ) : null}
 

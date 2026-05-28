@@ -8,9 +8,7 @@ export function useProductsQuery(limit = 100, offset = 0) {
   return useQuery({
     queryKey: queryKeys.products(limit, offset),
     queryFn: () =>
-      api<{ items: ProductSummary[]; total: number }>(
-        `/products?limit=${limit}&offset=${offset}`,
-      ),
+      api<{ items: ProductSummary[]; total: number }>(`/products?limit=${limit}&offset=${offset}`),
     enabled: isAuthenticated,
   })
 }

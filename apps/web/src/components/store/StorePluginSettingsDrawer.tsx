@@ -112,7 +112,8 @@ export function StorePluginSettingsDrawer({
   const installation = detail.data?.installation
   const name = merged?.name ?? installation?.name ?? pluginId ?? 'Plugin'
   const Icon = pluginIcon(pluginId ?? '')
-  const busy = lifecycleMutation.isPending || uninstallMutation.isPending || refreshMutation.isPending
+  const busy =
+    lifecycleMutation.isPending || uninstallMutation.isPending || refreshMutation.isPending
   const isManaged = installation?.mode === 'docker' || installation?.mode === 'native'
   const status = installation?.status ?? merged?.status ?? 'unknown'
   const scrapeSpec = merged?.scrape_spec
@@ -159,9 +160,7 @@ export function StorePluginSettingsDrawer({
         return (
           <SectionCard>
             {domains.length ? (
-              domains.map((d) => (
-                <InfoRow key={d} label="Host" value={d} />
-              ))
+              domains.map((d) => <InfoRow key={d} label="Host" value={d} />)
             ) : (
               <DataListEmpty>No domains configured.</DataListEmpty>
             )}
@@ -296,7 +295,8 @@ export function StorePluginSettingsDrawer({
                   </Switch.Root>
                 </HStack>
                 <Text fontSize="xs" color="fg.muted" lineHeight="tall">
-                  When enabled, the panel will treat this service as critical and surface alerts if it stops.
+                  When enabled, the panel will treat this service as critical and surface alerts if
+                  it stops.
                 </Text>
               </>
             ) : null}
@@ -326,7 +326,8 @@ export function StorePluginSettingsDrawer({
             <InfoRow label="Bind host" value={host} />
             <InfoRow label="Install mode" value={installation?.mode ?? '—'} />
             <Text mt={3} fontSize="xs" color="fg.muted">
-              Docker installs map this host port to the container. Change port by reinstalling the plugin.
+              Docker installs map this host port to the container. Change port by reinstalling the
+              plugin.
             </Text>
           </SectionCard>
         )
@@ -357,7 +358,8 @@ export function StorePluginSettingsDrawer({
       case 'logs':
         return (
           <DataListEmpty>
-            Container log streaming will be added in a future release. Use Docker logs on the host for now.
+            Container log streaming will be added in a future release. Use Docker logs on the host
+            for now.
           </DataListEmpty>
         )
 

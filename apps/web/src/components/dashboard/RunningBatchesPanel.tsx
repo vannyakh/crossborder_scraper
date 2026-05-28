@@ -33,19 +33,8 @@ export function RunningBatchesPanel({ batches }: { batches: RuntimeBatchInfo[] }
                 {b.success}/{b.total} OK · {pct}%
               </Text>
             </Box>
-            <Box
-              mt={1.5}
-              h="4px"
-              borderRadius="full"
-              bg="bg.panelHover"
-              overflow="hidden"
-            >
-              <Box
-                h="full"
-                w={`${pct}%`}
-                bg="accent"
-                transition="width 0.3s ease"
-              />
+            <Box mt={1.5} h="4px" borderRadius="full" bg="bg.panelHover" overflow="hidden">
+              <Box h="full" w={`${pct}%`} bg="accent" transition="width 0.3s ease" />
             </Box>
           </Box>
         )

@@ -71,7 +71,11 @@ function ThemePickCard({
   children: React.ReactNode
 }) {
   return (
-    <button type="button" className={`theme-pick-card${active ? ' is-active' : ''}`} onClick={onClick}>
+    <button
+      type="button"
+      className={`theme-pick-card${active ? ' is-active' : ''}`}
+      onClick={onClick}
+    >
       {active ? <span className="theme-pick-card__dot" aria-hidden /> : null}
       <div className="theme-pick-card__content">{children}</div>
       <div className="theme-pick-card__label">{label}</div>
@@ -192,7 +196,13 @@ function PanelImageDropzoneContent({
   if (file) {
     return (
       <Box className="panel-image-dropzone" position="relative" w="full" minH="120px">
-        <FileUpload.ItemGroup w="full" minH="120px" display="flex" alignItems="center" justifyContent="center">
+        <FileUpload.ItemGroup
+          w="full"
+          minH="120px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
           <FileUpload.Item
             file={file}
             w="full"
@@ -365,12 +375,7 @@ function ImageUploadField({
 
           <HStack gap={2} flexWrap="wrap">
             <FileUpload.Trigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                borderColor="border.subtle"
-                borderRadius="input"
-              >
+              <Button size="sm" variant="outline" borderColor="border.subtle" borderRadius="input">
                 <Image size={16} strokeWidth={2} />
                 {uploadLabel}
               </Button>
@@ -460,7 +465,9 @@ function LoginPageBackgroundSettings({
             />
 
             <Text fontSize="xs" color="fg.subtle">
-              {usingDefault ? 'Using bundled default wallpaper.' : 'Custom images saved in this browser.'}
+              {usingDefault
+                ? 'Using bundled default wallpaper.'
+                : 'Custom images saved in this browser.'}
             </Text>
 
             <Box
@@ -540,13 +547,8 @@ function PanelPathsFooter({ form }: { form: PanelSettingsForm }) {
 export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
   const customColorRef = useRef<HTMLInputElement>(null)
   const { mode, config, accentPalette, setMode, setConfig, resetConfig } = useUiConfig()
-  const {
-    activeAccentHex,
-    activePreset,
-    isCustomAccentColor,
-    setAccentHex,
-    resetAccentColor,
-  } = useThemeActions()
+  const { activeAccentHex, activePreset, isCustomAccentColor, setAccentHex, resetAccentColor } =
+    useThemeActions()
 
   return (
     <Section
@@ -665,9 +667,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
           hasCustomImage={Boolean(config.branding.logoUrl)}
           uploadLabel="Upload logo"
           resetLabel="Use default"
-          onUpload={(logoUrl) =>
-            setConfig({ branding: { ...config.branding, logoUrl } })
-          }
+          onUpload={(logoUrl) => setConfig({ branding: { ...config.branding, logoUrl } })}
           onReset={() => setConfig({ branding: { ...config.branding, logoUrl: null } })}
         />
 
@@ -680,9 +680,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
           hasCustomImage={Boolean(config.branding.faviconUrl)}
           uploadLabel="Upload favicon"
           resetLabel="Use default"
-          onUpload={(faviconUrl) =>
-            setConfig({ branding: { ...config.branding, faviconUrl } })
-          }
+          onUpload={(faviconUrl) => setConfig({ branding: { ...config.branding, faviconUrl } })}
           onReset={() => setConfig({ branding: { ...config.branding, faviconUrl: null } })}
         />
 
@@ -800,9 +798,7 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
           background={config.loginPage.background}
           accentPalette={accentPalette}
           onPatch={(background) => setConfig({ loginPage: { background } })}
-          onReset={() =>
-            setConfig({ loginPage: { background: DEFAULT_LOGIN_BACKGROUND } })
-          }
+          onReset={() => setConfig({ loginPage: { background: DEFAULT_LOGIN_BACKGROUND } })}
         />
 
         <Separator borderColor="border.subtle" />
@@ -887,12 +883,8 @@ export function PanelAppearanceSection({ form }: { form: PanelSettingsForm }) {
                     <Button
                       key={opt.value}
                       size="xs"
-                      variant={
-                        config.pageTransition === opt.value ? 'solid' : 'outline'
-                      }
-                      colorPalette={
-                        config.pageTransition === opt.value ? accentPalette : 'gray'
-                      }
+                      variant={config.pageTransition === opt.value ? 'solid' : 'outline'}
+                      colorPalette={config.pageTransition === opt.value ? accentPalette : 'gray'}
                       onClick={() =>
                         setConfig({ pageTransition: opt.value as PageTransitionStyle })
                       }

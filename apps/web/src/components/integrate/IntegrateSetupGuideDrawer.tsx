@@ -1,22 +1,11 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  Drawer,
-  HStack,
-  IconButton,
-  Portal,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Button, Dialog, Drawer, HStack, IconButton, Portal, Text } from '@chakra-ui/react'
 import { BookOpen, Maximize2, X } from 'lucide-react'
 import { useState } from 'react'
 import type { IntegrateChannelDetail } from '../../lib/api'
 import { MarkdownContent } from '../ui/MarkdownContent'
 import { StatusBadge } from '../ui/StatusBadge'
 
-function channelStatusTone(
-  channel: IntegrateChannelDetail,
-): 'success' | 'neutral' | 'running' {
+function channelStatusTone(channel: IntegrateChannelDetail): 'success' | 'neutral' | 'running' {
   if (channel.runtime_active) return 'success'
   if (channel.configured) return 'running'
   return 'neutral'
@@ -101,7 +90,13 @@ export function IntegrateSetupGuideFullDialog({
                 </IconButton>
               </Dialog.CloseTrigger>
             </Dialog.Header>
-            <Dialog.Body px={{ base: 4, md: 6 }} py={5} overflow="auto" className="app-scroll" flex={1}>
+            <Dialog.Body
+              px={{ base: 4, md: 6 }}
+              py={5}
+              overflow="auto"
+              className="app-scroll"
+              flex={1}
+            >
               <Box maxW="720px" mx="auto">
                 <IntegrateSetupGuideBody channel={channel} />
               </Box>

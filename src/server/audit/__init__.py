@@ -17,4 +17,5 @@ __all__ = [
     "ensure_logs_file",
     "import_agent_runs_to_cron_logs",
     "list_service_logs",
+    "logs_file_path",
 ]

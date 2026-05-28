@@ -85,13 +85,7 @@ function CoreGrid({ cores }: { cores: number[] }) {
     )
   }
   return (
-    <Box
-      display="grid"
-      gridTemplateColumns="repeat(2, 1fr)"
-      gap={2}
-      fontSize="xs"
-      color="fg"
-    >
+    <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} fontSize="xs" color="fg">
       {cores.map((pct, i) => (
         <HStack key={i} justify="space-between" gap={2}>
           <Text color="fg.muted">Core {i + 1}</Text>
@@ -242,11 +236,7 @@ function TopProcessFooter({
         <Text fontSize="xs" color="fg.muted">
           {label}
         </Text>
-        {expanded ? (
-          <ChevronDown size={14} />
-        ) : (
-          <ChevronRight size={14} />
-        )}
+        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
       </button>
       {expanded ? <Box mt={2}>{children}</Box> : null}
     </Box>
@@ -267,7 +257,10 @@ export function CpuHoverDetail({ hardware }: { hardware: HardwareMonitor }) {
       <DetailSection title="More load information">
         <CoreGrid cores={cpu.per_core_percent ?? []} />
         <Box mt={2}>
-          <InfoRow label="Load (1/5/15)" value={`${hardware.load.load_1} / ${hardware.load.load_5} / ${hardware.load.load_15}`} />
+          <InfoRow
+            label="Load (1/5/15)"
+            value={`${hardware.load.load_1} / ${hardware.load.load_5} / ${hardware.load.load_15}`}
+          />
         </Box>
       </DetailSection>
       <TopProcessFooter
@@ -275,7 +268,11 @@ export function CpuHoverDetail({ hardware }: { hardware: HardwareMonitor }) {
         expanded={showProcs}
         onToggle={() => setShowProcs((v) => !v)}
       >
-        <ProcessList title="Top CPU" items={hardware.top_cpu_processes ?? []} valueKey="cpu_percent" />
+        <ProcessList
+          title="Top CPU"
+          items={hardware.top_cpu_processes ?? []}
+          valueKey="cpu_percent"
+        />
       </TopProcessFooter>
     </HoverDetailPanel>
   )

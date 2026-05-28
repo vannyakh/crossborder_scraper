@@ -25,8 +25,7 @@ export function useCancelBatchMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (batchId: string) =>
-      api(`/jobs/${batchId}/cancel`, { method: 'POST' }),
+    mutationFn: (batchId: string) => api(`/jobs/${batchId}/cancel`, { method: 'POST' }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['batches'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.stats })

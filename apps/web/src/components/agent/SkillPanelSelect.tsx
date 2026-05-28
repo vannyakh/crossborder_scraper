@@ -23,10 +23,7 @@ export function SkillPanelSelect({
   disabled?: boolean
   onChange: (value: string) => void
 }) {
-  const collection = useMemo(
-    () => createListCollection({ items: options }),
-    [options],
-  )
+  const collection = useMemo(() => createListCollection({ items: options }), [options])
 
   return (
     <HStack gap={2} align="center" flexShrink={0}>

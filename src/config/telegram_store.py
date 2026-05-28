@@ -49,9 +49,9 @@ def normalize_telegram(raw: Any) -> dict[str, Any]:
     merged["allow_any_chat"] = bool(merged.get("allow_any_chat"))
     merged["bot_token"] = str(merged.get("bot_token") or "").strip()
     merged["control_chat_ids"] = _parse_id_list(merged.get("control_chat_ids"))
-    merged["prompt_id"] = str(merged.get("prompt_id") or base["prompt_id"]).strip() or base[
-        "prompt_id"
-    ]
+    merged["prompt_id"] = (
+        str(merged.get("prompt_id") or base["prompt_id"]).strip() or base["prompt_id"]
+    )
     try:
         merged["max_reply_chars"] = max(500, min(8000, int(merged.get("max_reply_chars") or 3500)))
     except (TypeError, ValueError):

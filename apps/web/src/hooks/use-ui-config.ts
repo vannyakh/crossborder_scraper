@@ -1,9 +1,5 @@
 import { useShallow } from 'zustand/react/shallow'
-import {
-  accentChakraPalette,
-  type AccentKey,
-  type ThemeConfig,
-} from '../theme/config'
+import { accentChakraPalette, type AccentKey, type ThemeConfig } from '../theme/config'
 import { useThemeStore, type ColorMode } from '../stores/theme-store'
 
 export function useUiConfig() {

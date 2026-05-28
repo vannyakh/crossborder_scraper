@@ -1,11 +1,7 @@
 import { Badge, Box, Grid, HStack, Link, Text, VStack } from '@chakra-ui/react'
 import { ExternalLink } from 'lucide-react'
 import type { PluginScrapeSpec } from '../../lib/api/plugin-spec'
-import {
-  DATA_FIELD_LABEL,
-  MARKET_LABEL,
-  PLUGIN_TYPE_LABEL,
-} from '../../lib/api/plugin-spec'
+import { DATA_FIELD_LABEL, MARKET_LABEL, PLUGIN_TYPE_LABEL } from '../../lib/api/plugin-spec'
 import { SectionCard } from '../ui/Section'
 
 function SpecRow({ label, value }: { label: string; value: string }) {

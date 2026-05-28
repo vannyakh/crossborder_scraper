@@ -186,8 +186,7 @@ def run_sync(
 
     elif result.runtime == RuntimeKind.DOCKER and deps:
         result.warn(
-            "docker stack running — run: scraper tools restart "
-            "(or tools sync --docker-rebuild)"
+            "docker stack running — run: scraper tools restart (or tools sync --docker-rebuild)"
         )
 
     return result

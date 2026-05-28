@@ -6,23 +6,25 @@ from starlette.exceptions import HTTPException
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
-_ASSET_SUFFIXES = frozenset({
-    ".css",
-    ".gif",
-    ".ico",
-    ".jpeg",
-    ".jpg",
-    ".js",
-    ".json",
-    ".map",
-    ".png",
-    ".svg",
-    ".txt",
-    ".webp",
-    ".woff",
-    ".woff2",
-    ".xml",
-})
+_ASSET_SUFFIXES = frozenset(
+    {
+        ".css",
+        ".gif",
+        ".ico",
+        ".jpeg",
+        ".jpg",
+        ".js",
+        ".json",
+        ".map",
+        ".png",
+        ".svg",
+        ".txt",
+        ".webp",
+        ".woff",
+        ".woff2",
+        ".xml",
+    }
+)
 
 
 class SPAStaticFiles(StaticFiles):

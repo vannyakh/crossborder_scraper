@@ -22,7 +22,12 @@ function SettingRowSkeleton({
       {hint ? <ShimmerBlock w="72%" h="10px" maxW="18rem" mt={1.5} mb={2} /> : <Box mb={2} />}
       {variant === 'input-action' ? (
         <HStack gap={2} align="stretch" flexWrap={{ base: 'wrap', sm: 'nowrap' }}>
-          <ShimmerBar flex={1} minW={{ base: 'full', sm: '10rem' }} h="2.5rem" radius="var(--radius-input)" />
+          <ShimmerBar
+            flex={1}
+            minW={{ base: 'full', sm: '10rem' }}
+            h="2.5rem"
+            radius="var(--radius-input)"
+          />
           <ShimmerBar w="4.75rem" h="2rem" radius="var(--radius-input)" flexShrink={0} />
         </HStack>
       ) : variant === 'input-buttons' ? (

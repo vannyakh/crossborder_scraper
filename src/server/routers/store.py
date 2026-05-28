@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import Depends, HTTPException
 
 from core.plugins import get_source_spec
+from server.app_store import get_store_manager
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
@@ -16,7 +17,6 @@ from server.schemas import (
     StorePluginDetailResponse,
 )
 from server.services.audit import log_operation
-from server.app_store import get_store_manager
 
 router = protected_router(prefix="/store", tags=["store"])
 

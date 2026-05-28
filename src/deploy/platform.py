@@ -29,9 +29,8 @@ def detect_platform() -> PlatformInfo:
     is_macos = sys_name == "darwin"
 
     has_docker = shutil.which("docker") is not None
-    has_compose = (
-        shutil.which("docker-compose") is not None
-        or (has_docker and _docker_compose_plugin())
+    has_compose = shutil.which("docker-compose") is not None or (
+        has_docker and _docker_compose_plugin()
     )
     has_uv = shutil.which("uv") is not None
     has_systemd = is_linux and Path_exists("/run/systemd/system")
@@ -78,6 +77,7 @@ def compose_command() -> list[str]:
     if shutil.which("docker-compose"):
         return ["docker-compose"]
     return []
+
 
 def python_executable() -> str:
     return sys.executable

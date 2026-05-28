@@ -36,16 +36,19 @@ class TaobaoScraper(BaseScraper):
         soup = self.soup(html)
         product_id = self.extract_product_id(url) or "unknown"
 
-        title = self.first_text(
-            soup,
-            [
-                "h1[data-spm]",
-                "h1[class*='ItemHeader']",
-                "h1[class*='title']",
-                ".tb-main-title",
-                "h1",
-            ],
-        ) or f"Taobao Product {product_id}"
+        title = (
+            self.first_text(
+                soup,
+                [
+                    "h1[data-spm]",
+                    "h1[class*='ItemHeader']",
+                    "h1[class*='title']",
+                    ".tb-main-title",
+                    "h1",
+                ],
+            )
+            or f"Taobao Product {product_id}"
+        )
 
         price_text = self.first_text(
             soup,

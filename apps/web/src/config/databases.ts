@@ -31,17 +31,9 @@ export function isDatabasePluginId(value: string): value is DatabaseEnginePlugin
   return (DATABASE_ENGINE_PLUGIN_IDS as readonly string[]).includes(value)
 }
 
-export function isDatabaseCatalogItem(item: {
-  id?: string
-  plugin_id?: string
-  category: string
-}) {
+export function isDatabaseCatalogItem(item: { id?: string; plugin_id?: string; category: string }) {
   const id = item.id ?? item.plugin_id ?? ''
-  return (
-    item.category === 'database' ||
-    item.category === 'cache' ||
-    isDatabasePluginId(id)
-  )
+  return item.category === 'database' || item.category === 'cache' || isDatabasePluginId(id)
 }
 
 /** @deprecated use isDatabaseEngineId */

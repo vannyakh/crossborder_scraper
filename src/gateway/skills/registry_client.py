@@ -34,7 +34,9 @@ def registry_plugin_url(name: str) -> str:
     return f"{registry_base_url()}/plugins/{quote(slug, safe='')}"
 
 
-def _map_skill_row(raw: dict[str, Any], *, local_ids: set[str], enabled: set[str]) -> dict[str, Any]:
+def _map_skill_row(
+    raw: dict[str, Any], *, local_ids: set[str], enabled: set[str]
+) -> dict[str, Any]:
     slug = str(raw.get("slug") or "").strip()
     stats = raw.get("stats") if isinstance(raw.get("stats"), dict) else {}
     latest = raw.get("latestVersion") if isinstance(raw.get("latestVersion"), dict) else {}
@@ -57,7 +59,9 @@ def _map_skill_row(raw: dict[str, Any], *, local_ids: set[str], enabled: set[str
     }
 
 
-def _map_plugin_row(raw: dict[str, Any], *, local_ids: set[str], enabled: set[str]) -> dict[str, Any]:
+def _map_plugin_row(
+    raw: dict[str, Any], *, local_ids: set[str], enabled: set[str]
+) -> dict[str, Any]:
     name = str(raw.get("name") or "").strip()
     runtime_id = str(raw.get("runtimeId") or name).strip()
     slug = runtime_id or name.lstrip("@").replace("/", "-")
@@ -112,7 +116,9 @@ async def browse_registry(
     async with httpx.AsyncClient(timeout=REGISTRY_TIMEOUT, headers=headers) as client:
         if kind == "skill":
             if query:
-                data = await _get_json(client, "/api/v1/search", params={"q": query, "limit": safe_limit})
+                data = await _get_json(
+                    client, "/api/v1/search", params={"q": query, "limit": safe_limit}
+                )
                 items = [
                     _map_skill_row(
                         {
@@ -211,7 +217,9 @@ async def download_registry_skill(*, slug: str, version: str | None = None) -> b
 
     headers = {"User-Agent": USER_AGENT}
     url = f"{registry_base_url()}/api/v1/download"
-    async with httpx.AsyncClient(timeout=REGISTRY_TIMEOUT, headers=headers, follow_redirects=True) as client:
+    async with httpx.AsyncClient(
+        timeout=REGISTRY_TIMEOUT, headers=headers, follow_redirects=True
+    ) as client:
         resp = await client.get(url, params=params)
         if resp.status_code >= 400:
             detail = resp.text[:240].strip()

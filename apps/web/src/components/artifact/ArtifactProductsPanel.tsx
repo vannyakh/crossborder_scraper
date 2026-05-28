@@ -103,7 +103,12 @@ export function ArtifactProductsPanel() {
                   <HStack gap={1} justify="flex-end">
                     <Link asChild>
                       <RouterLink to={artifactProductPath(p.id)}>
-                        <Button size="xs" variant="outline" borderColor="border.subtle" borderRadius="input">
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          borderColor="border.subtle"
+                          borderRadius="input"
+                        >
                           Open
                         </Button>
                       </RouterLink>

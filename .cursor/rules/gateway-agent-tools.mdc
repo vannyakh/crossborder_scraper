@@ -1,0 +1,40 @@
+---
+description: Adding gateway agent tools and runtime rules (panel AI, not Cursor)
+globs:
+  - "src/gateway/**"
+  - "libs/agent_rules/**"
+  - "config/agent_rules.yaml"
+alwaysApply: false
+---
+
+# Gateway agent (runtime panel AI)
+
+## Two agent systems
+
+| System | Purpose | Location |
+|--------|---------|----------|
+| **Cursor rules** | IDE coding assistant | `.cursor/rules/`, `AGENTS.md` |
+| **Gateway agent** | User-facing panel AI | `src/gateway/`, `libs/agent_rules/` |
+
+## Adding a gateway tool
+
+1. Implement handler in `src/gateway/tools.py` (`_tool_name` async fn)
+2. Add to `TOOL_DEFINITIONS` with JSON schema parameters
+3. Register in `TOOL_HANDLERS` dict
+4. Tool should call services (`get_store_manager()`, etc.) — not duplicate business logic
+
+## Agent rules (behavior policies)
+
+- Built-in: `libs/agent_rules/*.md`
+- Custom: `data/agent_rules/` (user-editable)
+- Config: `config/agent_rules.yaml`
+- API: `/gateway/rules`; UI: Agent → Rules
+
+Rules inject into the system prompt via `gateway/rules/manager.py`. Keep rules short and policy-focused.
+
+## Skills vs tools
+
+- **Tools** — callable functions (`list_products`, `list_firewall_rules`)
+- **Skills** — SKILL.md packages in `skills/` and `installed_skills/`
+
+Do not put long implementation guides in gateway rules; use `AGENTS.md` for developers.

@@ -149,10 +149,7 @@ export function useStoreListState(defaultPageSize: number) {
   }
 }
 
-export function useStorePagedList<T>(
-  items: T[],
-  state: ReturnType<typeof useStoreListState>,
-) {
+export function useStorePagedList<T>(items: T[], state: ReturnType<typeof useStoreListState>) {
   const pagination = useMemo(
     () => paginateItems(items, state.page, state.pageSize),
     [items, state.page, state.pageSize],

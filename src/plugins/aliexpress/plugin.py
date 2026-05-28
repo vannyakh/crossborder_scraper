@@ -41,10 +41,13 @@ class AliExpressScraper(BaseScraper):
             return self._from_embedded(url, product_id, embedded)
 
         soup = self.soup(html)
-        title = self.first_text(
-            soup,
-            ["h1[data-pl='product-title']", "h1", "[class*='title--']"],
-        ) or f"AliExpress Product {product_id}"
+        title = (
+            self.first_text(
+                soup,
+                ["h1[data-pl='product-title']", "h1", "[class*='title--']"],
+            )
+            or f"AliExpress Product {product_id}"
+        )
 
         price_text = self.first_text(
             soup, ["[class*='price--']", "[class*='uniform-banner-box-price']"]

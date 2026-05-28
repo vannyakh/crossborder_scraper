@@ -42,7 +42,9 @@ class RuleManifest:
         }
 
 
-def parse_rule_md(text: str, *, rule_id: str, kind: str = "builtin", path: str = "") -> RuleManifest:
+def parse_rule_md(
+    text: str, *, rule_id: str, kind: str = "builtin", path: str = ""
+) -> RuleManifest:
     body = text.strip()
     meta: dict[str, Any] = {}
     match = _FRONTMATTER_RE.match(text)
@@ -77,7 +79,9 @@ def parse_rule_md(text: str, *, rule_id: str, kind: str = "builtin", path: str =
     )
 
 
-def load_rule_file(path: Path, *, rule_id: str | None = None, kind: str = "builtin") -> RuleManifest:
+def load_rule_file(
+    path: Path, *, rule_id: str | None = None, kind: str = "builtin"
+) -> RuleManifest:
     rid = rule_id or path.stem
     text = path.read_text(encoding="utf-8")
     rel = str(path).replace("\\", "/")

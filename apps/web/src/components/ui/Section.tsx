@@ -10,17 +10,17 @@ export function SubtitleText({ children, ...props }: TextProps) {
   )
 }
 
-export function SectionDivider({
-  title,
-  action,
-}: {
-  title: string
-  action?: ReactNode
-}) {
+export function SectionDivider({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <HStack gap={2} align="center" w="full">
       <Box w={6} minW={6} borderTopWidth="1px" borderColor="border.subtle" aria-hidden />
-      <Text fontSize="md" fontWeight="semibold" color="fg" whiteSpace="nowrap" letterSpacing="0.01em">
+      <Text
+        fontSize="md"
+        fontWeight="semibold"
+        color="fg"
+        whiteSpace="nowrap"
+        letterSpacing="0.01em"
+      >
         {title}
       </Text>
       <Box flex={1} minW={8} borderTopWidth="1px" borderColor="border.subtle" aria-hidden />

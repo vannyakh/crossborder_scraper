@@ -219,7 +219,9 @@ export function useSkillRegistryQuery(params: SkillRegistryQueryParams, enabled 
       q: params.q?.trim() ?? '',
     }),
     queryFn: () =>
-      api<import('../../lib/api').SkillRegistryList>(`/gateway/skills/registry?${search.toString()}`),
+      api<import('../../lib/api').SkillRegistryList>(
+        `/gateway/skills/registry?${search.toString()}`,
+      ),
     staleTime: 60_000,
     enabled,
   })
@@ -357,19 +359,15 @@ export function useIntegrateChannelQuery(channelId: string) {
 export function useUpdateIntegrateChannelMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      channelId,
-      updates,
-    }: {
-      channelId: string
-      updates: Record<string, unknown>
-    }) =>
+    mutationFn: ({ channelId, updates }: { channelId: string; updates: Record<string, unknown> }) =>
       api<import('../../lib/api').IntegrateChannelDetail>(`/gateway/channels/${channelId}`, {
         method: 'PATCH',
         body: JSON.stringify({ updates }),
       }),
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannel(variables.channelId) })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.gatewayChannel(variables.channelId),
+      })
       void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayChannels })
       void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
       if (variables.channelId === 'telegram') {

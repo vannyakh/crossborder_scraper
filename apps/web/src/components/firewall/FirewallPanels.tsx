@@ -121,7 +121,11 @@ function AddRuleDialog({
                 </Field.Root>
                 <Field.Root required>
                   <Field.Label>Port</Field.Label>
-                  <Input value={port} placeholder="22 or 80,443 or 39000-40000" onChange={(e) => setPort(e.target.value)} />
+                  <Input
+                    value={port}
+                    placeholder="22 or 80,443 or 39000-40000"
+                    onChange={(e) => setPort(e.target.value)}
+                  />
                 </Field.Root>
                 <Field.Root>
                   <Field.Label>Source IP</Field.Label>
@@ -154,7 +158,10 @@ function AddRuleDialog({
                 <Field.Root>
                   <Field.Label>Group</Field.Label>
                   <NativeSelect.Root>
-                    <NativeSelect.Field value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+                    <NativeSelect.Field
+                      value={groupId}
+                      onChange={(e) => setGroupId(e.target.value)}
+                    >
                       <option value="">None</option>
                       {groups.map((g) => (
                         <option key={g.id} value={g.id}>
@@ -166,7 +173,11 @@ function AddRuleDialog({
                 </Field.Root>
                 <Field.Root gridColumn="1 / -1">
                   <Field.Label>Remarks</Field.Label>
-                  <Input value={remark} placeholder="SSH remote service" onChange={(e) => setRemark(e.target.value)} />
+                  <Input
+                    value={remark}
+                    placeholder="SSH remote service"
+                    onChange={(e) => setRemark(e.target.value)}
+                  />
                 </Field.Root>
               </Grid>
               {createMutation.error ? (
@@ -206,7 +217,11 @@ function RuleRow({
 }) {
   return (
     <Box px={4} py={3} borderBottomWidth="1px" borderColor="border.subtle">
-      <Grid templateColumns={{ base: '1fr', lg: '80px 100px 1fr 100px 100px 120px auto' }} gap={2} alignItems="center">
+      <Grid
+        templateColumns={{ base: '1fr', lg: '80px 100px 1fr 100px 100px 120px auto' }}
+        gap={2}
+        alignItems="center"
+      >
         <Text fontSize="sm" fontFamily="mono">
           {rule.protocol}
         </Text>
@@ -227,7 +242,10 @@ function RuleRow({
           status={rule.listening ? 'success' : rule.listening === false ? 'neutral' : 'running'}
           label={rule.status_label}
         />
-        <StatusBadge status={rule.action === 'allow' ? 'success' : 'danger'} label={rule.strategy} />
+        <StatusBadge
+          status={rule.action === 'allow' ? 'success' : 'danger'}
+          label={rule.strategy}
+        />
         <Text fontSize="xs" color="fg.muted" lineClamp={1}>
           {rule.source} · {rule.direction}
         </Text>
@@ -336,7 +354,9 @@ export function FirewallPanels() {
       {!status?.installed ? (
         <SectionCard mb={4} p={4} borderColor="orange.500">
           <HStack justify="space-between" flexWrap="wrap" gap={3}>
-            <Text fontSize="sm">UFW is not installed on this host. Install it to manage port rules from the panel.</Text>
+            <Text fontSize="sm">
+              UFW is not installed on this host. Install it to manage port rules from the panel.
+            </Text>
             <Button
               size="sm"
               colorPalette={accentPalette}
@@ -396,11 +416,17 @@ export function FirewallPanels() {
         </HStack>
 
         <Text fontSize="xs" color="fg.muted">
-          {status?.summary || 'ufw status unavailable'} · requires root or passwordless sudo to apply changes
+          {status?.summary || 'ufw status unavailable'} · requires root or passwordless sudo to
+          apply changes
         </Text>
       </SectionCard>
 
-      <Tabs.Root value={tab} onValueChange={(d) => setTab((d.value as typeof tab) ?? 'rules')} variant="line" size="sm">
+      <Tabs.Root
+        value={tab}
+        onValueChange={(d) => setTab((d.value as typeof tab) ?? 'rules')}
+        variant="line"
+        size="sm"
+      >
         <Tabs.List mb={3}>
           <Tabs.Trigger value="rules">Port rules</Tabs.Trigger>
           <Tabs.Trigger value="groups">UFW groups</Tabs.Trigger>
@@ -413,11 +439,21 @@ export function FirewallPanels() {
                 <Plus size={14} />
                 Add port rule
               </Button>
-              <Button size="sm" variant="outline" borderColor="border.subtle" onClick={() => void handleExportDownload()}>
+              <Button
+                size="sm"
+                variant="outline"
+                borderColor="border.subtle"
+                onClick={() => void handleExportDownload()}
+              >
                 <Download size={14} />
                 Export
               </Button>
-              <Button size="sm" variant="outline" borderColor="border.subtle" onClick={() => fileRef.current?.click()}>
+              <Button
+                size="sm"
+                variant="outline"
+                borderColor="border.subtle"
+                onClick={() => fileRef.current?.click()}
+              >
                 <Upload size={14} />
                 Import
               </Button>
@@ -438,7 +474,11 @@ export function FirewallPanels() {
               />
             </HStack>
             <HStack gap={2}>
-              <ButtonGroupFilter value={directionFilter} onChange={setDirectionFilter} accent={accentPalette} />
+              <ButtonGroupFilter
+                value={directionFilter}
+                onChange={setDirectionFilter}
+                accent={accentPalette}
+              />
               <Input
                 size="sm"
                 w="180px"
@@ -450,14 +490,35 @@ export function FirewallPanels() {
           </HStack>
 
           <SectionCard p={0} overflow="hidden">
-            <Box px={4} py={2} bg="bg.panelHover" display={{ base: 'none', lg: 'grid' }} gridTemplateColumns="80px 100px 1fr 100px 100px 120px auto" gap={2}>
-              <Text fontSize="xs" color="fg.muted">Protocol</Text>
-              <Text fontSize="xs" color="fg.muted">Port</Text>
-              <Text fontSize="xs" color="fg.muted">Remarks</Text>
-              <Text fontSize="xs" color="fg.muted">Status</Text>
-              <Text fontSize="xs" color="fg.muted">Strategy</Text>
-              <Text fontSize="xs" color="fg.muted">Source</Text>
-              <Text fontSize="xs" color="fg.muted"> </Text>
+            <Box
+              px={4}
+              py={2}
+              bg="bg.panelHover"
+              display={{ base: 'none', lg: 'grid' }}
+              gridTemplateColumns="80px 100px 1fr 100px 100px 120px auto"
+              gap={2}
+            >
+              <Text fontSize="xs" color="fg.muted">
+                Protocol
+              </Text>
+              <Text fontSize="xs" color="fg.muted">
+                Port
+              </Text>
+              <Text fontSize="xs" color="fg.muted">
+                Remarks
+              </Text>
+              <Text fontSize="xs" color="fg.muted">
+                Status
+              </Text>
+              <Text fontSize="xs" color="fg.muted">
+                Strategy
+              </Text>
+              <Text fontSize="xs" color="fg.muted">
+                Source
+              </Text>
+              <Text fontSize="xs" color="fg.muted">
+                {' '}
+              </Text>
             </Box>
             <Separator borderColor="border.subtle" />
             {filteredRules.length === 0 ? (
@@ -543,9 +604,24 @@ function GroupsPanel({
           Create group
         </Text>
         <Grid templateColumns={{ base: '1fr', md: '1fr 1fr 2fr auto' }} gap={2}>
-          <Input size="sm" placeholder="id (panel)" value={id} onChange={(e) => setId(e.target.value)} />
-          <Input size="sm" placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} />
-          <Input size="sm" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input
+            size="sm"
+            placeholder="id (panel)"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+          />
+          <Input
+            size="sm"
+            placeholder="Label"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+          />
+          <Input
+            size="sm"
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
           <Button
             size="sm"
             disabled={!id.trim() || !label.trim() || busy}

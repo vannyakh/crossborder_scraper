@@ -48,15 +48,16 @@ function SkillsTabContent({
   onDetails: (id: string) => void
 }) {
   const list = useStoreListState(6)
-  const filtered = useMemo(
-    () => filterSkillsByCategory(items, category),
-    [items, category],
-  )
+  const filtered = useMemo(() => filterSkillsByCategory(items, category), [items, category])
   const searched = useMemo(() => searchSkills(filtered, list.search), [filtered, list.search])
   const paged = useStorePagedList(searched, list)
 
   if (loading) {
-    return list.viewMode === 'grid' ? <CardGridSkeleton count={6} /> : <ListCardRowsSkeleton rows={5} />
+    return list.viewMode === 'grid' ? (
+      <CardGridSkeleton count={6} />
+    ) : (
+      <ListCardRowsSkeleton rows={5} />
+    )
   }
 
   return (

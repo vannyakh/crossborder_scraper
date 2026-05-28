@@ -75,5 +75,3 @@ def print_mode_footer(mode: str) -> None:
         console.print(hint("  Or:           ") + cmd("crossborder setup --server"))
     elif mode == "docker":
         console.print(hint("  Next: ") + cmd("crossborder deploy up"))
-
-

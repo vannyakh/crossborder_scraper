@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from gateway.channels.catalog import ALL_CHANNEL_IDS
 from gateway.channels import store as channel_store
+from gateway.channels.catalog import ALL_CHANNEL_IDS
 
 
 def list_channels() -> list[dict[str, Any]]:

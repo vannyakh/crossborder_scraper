@@ -6,12 +6,7 @@ import {
   usePanelConfigQuery,
   useUpdatePanelConfigMutation,
 } from '../../hooks'
-import {
-  buildProxyLine,
-  emptyParsedProxy,
-  type ParsedProxy,
-  type ProxyScheme,
-} from './proxy-url'
+import { buildProxyLine, emptyParsedProxy, type ParsedProxy, type ProxyScheme } from './proxy-url'
 
 export type VpnMode = 'local_socks' | 'wireguard'
 
@@ -52,9 +47,7 @@ export function usePanelSettingsForm() {
     setTimeoutSeconds(panel.ai_timeout_seconds)
     setProxyParts(emptyParsedProxy())
     setProxyListPath(panel.proxy_list_path ?? '')
-    setProxyRotation(
-      panel.proxy_rotation_strategy === 'random' ? 'random' : 'round_robin',
-    )
+    setProxyRotation(panel.proxy_rotation_strategy === 'random' ? 'random' : 'round_robin')
     setVpnEnabled(panel.vpn_enabled ?? false)
     setVpnMode(panel.vpn_mode === 'wireguard' ? 'wireguard' : 'local_socks')
     setVpnLocalEndpoint('')

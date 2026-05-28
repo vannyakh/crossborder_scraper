@@ -1,13 +1,4 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  Code,
-  Field,
-  HStack,
-  NativeSelect,
-  VStack,
-} from '@chakra-ui/react'
+import { Box, Button, Checkbox, Code, Field, HStack, NativeSelect, VStack } from '@chakra-ui/react'
 import { useState } from 'react'
 import { fieldStyles } from '../ui/field-styles'
 import { Panel, PanelBody, PanelHeader } from '../ui/Panel'

@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 import yaml
 
-import sys
-
 from config import get_settings
 from core.paths import firewall_config_path
+from deploy.network_access import _exec_firewall
 from deploy.ufw_manager import (
     add_port_rule,
-    can_manage_ufw,
     delete_rule_by_number,
     disable_ufw,
     enable_ufw,
@@ -23,14 +22,16 @@ from deploy.ufw_manager import (
     set_icmp_block,
     ufw_installed,
 )
-from deploy.network_access import _exec_firewall
-
 
 _DEFAULT_CONFIG: dict[str, Any] = {
     "block_icmp": False,
     "groups": [
         {"id": "panel", "label": "Panel access", "description": "Core panel and SSH ports"},
-        {"id": "scrape", "label": "Scrape stack", "description": "Batch workers and export services"},
+        {
+            "id": "scrape",
+            "label": "Scrape stack",
+            "description": "Batch workers and export services",
+        },
         {"id": "database", "label": "Database", "description": "App Store database containers"},
     ],
     "rules_meta": {},
@@ -67,7 +68,9 @@ class FirewallService:
         summary = get_ufw_summary(settings.panel_port)
         rules = self.list_rules()
         cfg = self._load_config()
-        ip_rules = sum(1 for r in rules["items"] if r.get("source") not in ("0.0.0.0/0", "::/0", "any"))
+        ip_rules = sum(
+            1 for r in rules["items"] if r.get("source") not in ("0.0.0.0/0", "::/0", "any")
+        )
         return {
             **summary,
             "platform": sys.platform,
@@ -82,7 +85,9 @@ class FirewallService:
     def list_rules(self) -> dict[str, Any]:
         cfg = self._load_config()
         meta: dict[str, Any] = cfg.get("rules_meta") or {}
-        groups = {g["id"]: g for g in cfg.get("groups") or [] if isinstance(g, dict) and g.get("id")}
+        groups = {
+            g["id"]: g for g in cfg.get("groups") or [] if isinstance(g, dict) and g.get("id")
+        }
         parsed = self._list_parsed_rules() if ufw_installed() else []
         items: list[dict[str, Any]] = []
         for row in parsed:
@@ -99,9 +104,9 @@ class FirewallService:
                     "group_label": group.get("label") if group else None,
                     "managed": bool(m.get("managed")),
                     "strategy": row.get("action", "allow"),
-                    "status_label": "listening" if row.get("listening") else (
-                        "not listening" if row.get("listening") is False else "—"
-                    ),
+                    "status_label": "listening"
+                    if row.get("listening")
+                    else ("not listening" if row.get("listening") is False else "—"),
                 }
             )
         return {"items": items, "total": len(items)}
@@ -183,7 +188,10 @@ class FirewallService:
 
     def delete_rule(self, rule_id: str) -> dict[str, Any]:
         rules = self.list_rules()["items"]
-        target = next((r for r in rules if r.get("id") == rule_id or str(r.get("ufw_number")) == rule_id), None)
+        target = next(
+            (r for r in rules if r.get("id") == rule_id or str(r.get("ufw_number")) == rule_id),
+            None,
+        )
         if not target:
             return {"ok": False, "message": "rule not found"}
         ok, message = delete_rule_by_number(int(target["ufw_number"]))

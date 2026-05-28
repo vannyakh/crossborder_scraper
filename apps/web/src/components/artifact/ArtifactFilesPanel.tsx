@@ -12,9 +12,7 @@ import type { FileEntry } from '../../lib/api'
 function searchFiles(items: FileEntry[], query: string) {
   const q = query.trim().toLowerCase()
   if (!q) return items
-  return items.filter((f) =>
-    [f.path, f.name, f.kind].join(' ').toLowerCase().includes(q),
-  )
+  return items.filter((f) => [f.path, f.name, f.kind].join(' ').toLowerCase().includes(q))
 }
 
 export function ArtifactFilesPanel() {
@@ -34,7 +32,13 @@ export function ArtifactFilesPanel() {
   return (
     <Box>
       <HStack justify="space-between" mb={3} flexWrap="wrap" gap={2}>
-        <Text fontSize="sm" color="fg.muted" fontFamily="mono" lineClamp={1} title={data?.output_dir}>
+        <Text
+          fontSize="sm"
+          color="fg.muted"
+          fontFamily="mono"
+          lineClamp={1}
+          title={data?.output_dir}
+        >
           {data?.output_dir ?? 'data/output'}
         </Text>
         <ListSearchBar

@@ -31,8 +31,7 @@ function LoginNotice({
   tone: 'warning' | 'danger' | 'muted'
   children: ReactNode
 }) {
-  const color =
-    tone === 'danger' ? 'red.500' : tone === 'warning' ? 'orange.500' : 'fg.muted'
+  const color = tone === 'danger' ? 'red.500' : tone === 'warning' ? 'orange.500' : 'fg.muted'
 
   return (
     <Box
@@ -63,7 +62,12 @@ function LoginBrandPanel({ version }: { version?: string }) {
     >
       <HStackBrand version={version} />
       <Box maxW="md">
-        <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="semibold" lineHeight="short">
+        <Heading
+          as="h1"
+          fontSize={{ base: 'xl', md: '2xl' }}
+          fontWeight="semibold"
+          lineHeight="short"
+        >
           Cross-border product intelligence
         </Heading>
         <Text mt={3} fontSize="sm" color="fg.muted" lineHeight="tall">
@@ -150,7 +154,8 @@ function LoginFormCard({
           ) : null}
           {apiOffline ? (
             <LoginNotice tone="warning">
-              API offline — start the server with <code className="login-page__code">uv run serve</code>
+              API offline — start the server with{' '}
+              <code className="login-page__code">uv run serve</code>
             </LoginNotice>
           ) : null}
         </VStack>
@@ -210,7 +215,6 @@ function LoginFormCard({
         <Text fontSize="xs" color="fg.subtle" textAlign="center" lineHeight="short">
           © {new Date().getFullYear()} Crossborder. All rights reserved.
         </Text>
-   
       </PanelBody>
     </Panel>
   )

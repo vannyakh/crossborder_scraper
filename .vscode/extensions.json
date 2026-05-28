@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "charliermarsh.ruff",
+    "ms-python.python",
+    "ms-python.debugpy",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "bradlc.vscode-tailwindcss",
+    "redhat.vscode-yaml",
+    "ms-azuretools.vscode-docker",
+    "tamasfe.even-better-toml"
+  ],
+  "unwantedRecommendations": ["ms-python.autopep8", "ms-python.black-formatter"]
+}

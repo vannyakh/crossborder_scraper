@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  HStack,
-  Input,
-  NativeSelect,
-  Table,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Button, HStack, Input, NativeSelect, Table, Text } from '@chakra-ui/react'
 import { Link2, Plus, RefreshCw, Settings } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { DatabaseEnginePluginId } from '../../config/databases'
@@ -118,8 +110,7 @@ export function DatabaseEnginePanel({
   const installed = installedQuery.data?.find((row) => row.plugin_id === pluginId)
   const canInstall =
     !installed &&
-    ((catalogItem?.supports_native && nativeReady) ||
-      (catalogItem?.supports_docker && dockerReady))
+    ((catalogItem?.supports_native && nativeReady) || (catalogItem?.supports_docker && dockerReady))
 
   const serviceLabel = catalogItem?.name ?? pluginId
   const Icon = pluginIcon(pluginId)
@@ -333,12 +324,14 @@ export function DatabaseEnginePanel({
                     borderRadius="input"
                     loading={installing}
                     disabled={!canInstall}
-                    onClick={() => void handleInstallConfirm({
-                      pluginId: pluginId,
-                      mode: 'native',
-                      version: catalogItem.version,
-                      port: catalogItem.default_port ?? 0,
-                    })}
+                    onClick={() =>
+                      void handleInstallConfirm({
+                        pluginId: pluginId,
+                        mode: 'native',
+                        version: catalogItem.version,
+                        port: catalogItem.default_port ?? 0,
+                      })
+                    }
                   >
                     <Plus size={14} />
                     {t('db.engine.addDb')}

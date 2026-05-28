@@ -13,11 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { LLMHealth, RuntimeStatus, ServiceGatewaySummary } from '../lib/api'
-import {
-  SCRAPE_DASHBOARD_TOOLS,
-  formatScrapeBadge,
-  type ScrapeNavBadgeKey,
-} from './scrape-panel'
+import { SCRAPE_DASHBOARD_TOOLS, formatScrapeBadge, type ScrapeNavBadgeKey } from './scrape-panel'
 
 /** Sidebar + dashboard: panel diagnostics & help */
 export const OPERATIONS_TOOL_NAV = [

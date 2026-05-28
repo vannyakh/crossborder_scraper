@@ -50,7 +50,6 @@ export function ShellFooter({ children, ...props }: BoxProps) {
   )
 }
 
-
 export function BrandVersionBadge({
   version,
   updateAvailable,

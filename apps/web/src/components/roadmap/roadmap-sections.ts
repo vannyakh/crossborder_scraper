@@ -1,20 +1,6 @@
-import {
-  Bell,
-  DatabaseBackup,
-  KeyRound,
-  Plug,
-  Users,
-  Webhook,
-  type LucideIcon,
-} from 'lucide-react'
+import { Bell, DatabaseBackup, KeyRound, Plug, Users, Webhook, type LucideIcon } from 'lucide-react'
 
-export type RoadmapFeatureId =
-  | 'webhooks'
-  | 'backups'
-  | 'api-keys'
-  | 'alerts'
-  | 'team'
-  | 'plugins'
+export type RoadmapFeatureId = 'webhooks' | 'backups' | 'api-keys' | 'alerts' | 'team' | 'plugins'
 
 export type RoadmapFeature = {
   id: RoadmapFeatureId

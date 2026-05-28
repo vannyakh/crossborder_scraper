@@ -27,7 +27,13 @@ function ToolCardTile({ tool }: { tool: SoftwareToolCard }) {
         <StatusBadge status={tool.statusTone} label={tool.status} />
       </Box>
       <Grid templateColumns="1fr 1fr" gap={2} mt={3}>
-        <Button asChild size="xs" variant="outline" borderColor="border.subtle" borderRadius="input">
+        <Button
+          asChild
+          size="xs"
+          variant="outline"
+          borderColor="border.subtle"
+          borderRadius="input"
+        >
           <Link to={tool.to}>Open</Link>
         </Button>
         {tool.primaryAction ? (
@@ -71,7 +77,14 @@ export function ToolsPanel({
                 {section.title}
               </Text>
             )}
-            <Text fontSize="xs" color="fg.muted" mb={3} lineClamp={1} truncate title={section.description}>
+            <Text
+              fontSize="xs"
+              color="fg.muted"
+              mb={3}
+              lineClamp={1}
+              truncate
+              title={section.description}
+            >
               {section.description}
             </Text>
             <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }} gap={3}>

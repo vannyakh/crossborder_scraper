@@ -27,8 +27,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "export_listing",
         "description": (
-            "Export a saved product to a marketplace "
-            "(shopee, lazada, tiktok_shop, shopify)."
+            "Export a saved product to a marketplace (shopee, lazada, tiktok_shop, shopify)."
         ),
         "parameters": {
             "type": "object",
@@ -148,7 +147,9 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 },
                 "updates": {
                     "type": "object",
-                    "description": "Channel fields to merge (enabled, bot_token, control_chat_ids, …)",
+                    "description": (
+                        "Channel fields to merge (enabled, bot_token, control_chat_ids, …)"
+                    ),
                 },
             },
             "required": ["channel_id", "updates"],

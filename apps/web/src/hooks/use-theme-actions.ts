@@ -1,9 +1,6 @@
 import { useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import {
-  getAccentColor,
-  type AccentKey,
-} from '../theme/config'
+import { getAccentColor, type AccentKey } from '../theme/config'
 import { DEFAULT_THEME_COLOR_HEX, matchThemeColorPreset } from '../theme/panel-appearance'
 import { useThemeStore } from '../stores/theme-store'
 

@@ -181,8 +181,7 @@ class AgentScheduler:
             log_cron(
                 operation_type="Cron job" if trigger == "cron" else "Agent schedule",
                 details=(
-                    f"{schedule.get('name')}: {status} — "
-                    f"{(result.get('message') or '')[:180]}"
+                    f"{schedule.get('name')}: {status} — {(result.get('message') or '')[:180]}"
                 ),
                 meta={"run_id": run_id, "schedule_id": schedule_id, "trigger": trigger},
             )
