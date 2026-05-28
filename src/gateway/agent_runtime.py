@@ -21,7 +21,7 @@ class GatewayAgent:
     System prompts load from libs/prompts/{prompt_id}.md.
     """
 
-    FALLBACK_PROMPT = """You are the Crossborder Scraper gateway agent.
+    FALLBACK_PROMPT = """You are the Cross-Border gateway agent.
 Use available tools to scrape, list, export, and report status. Be concise."""
 
     def __init__(self, settings: Settings | None = None) -> None:

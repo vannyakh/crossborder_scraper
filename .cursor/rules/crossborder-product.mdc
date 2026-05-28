@@ -1,13 +1,13 @@
 ---
-description: Crossborder product naming — avoid third-party control-panel and cloud vendor branding in code and user-facing text
+description: Cross-Border product naming — avoid third-party control-panel and cloud vendor branding in code and user-facing text
 globs:
   - "**/*"
 alwaysApply: true
 ---
 
-# Crossborder product language
+# Cross-Border product language
 
-This repository is **Crossborder Scraper** — use our own product terms in implementation, CLI messages, and docs.
+This repository is **Cross-Border** — use our own product terms in implementation, CLI messages, and docs.
 
 ## Do not add to code or user-facing strings
 

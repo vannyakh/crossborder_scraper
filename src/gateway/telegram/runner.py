@@ -85,7 +85,7 @@ class TelegramGatewayRunner:
             return
         cid = update.effective_chat.id if update.effective_chat else "?"
         await update.effective_message.reply_text(
-            f"Crossborder gateway agent is online.\n"
+            f"Cross-Border gateway agent is online.\n"
             f"Your chat id: `{cid}`\n"
             f"Send any text message to run the agent (same tools as the web panel).",
             parse_mode="Markdown",

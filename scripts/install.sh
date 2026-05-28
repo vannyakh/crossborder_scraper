@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Crossborder Scraper — self-host one-liner
+# Cross-Border — self-host one-liner
 #
 # Linux / macOS (from repo):
 #   bash scripts/install.sh
@@ -44,7 +44,7 @@ CROSSBORDER_START="${CROSSBORDER_START:-1}"
 
 banner() {
   echo ""
-  echo "  Crossborder Scraper — self-host install"
+  echo "  Cross-Border — self-host install"
   echo "  Works on Linux, macOS, and Windows (use install.ps1)."
   echo "  Default panel port: ${PANEL_PORT} (set CROSSBORDER_PORT to override)"
   echo ""

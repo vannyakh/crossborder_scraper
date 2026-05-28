@@ -1,11 +1,11 @@
 ---
-description: Crossborder repo map — gateway, panel, and where code lives (always read for new work)
+description: Cross-Border repo map — gateway, panel, and where code lives (always read for new work)
 alwaysApply: true
 ---
 
 # Project overview
 
-**Crossborder Scraper** monorepo:
+**Cross-Border** monorepo:
 
 | Area | Path | Role |
 |------|------|------|

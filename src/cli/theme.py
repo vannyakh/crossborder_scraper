@@ -1,4 +1,4 @@
-"""Shared Rich theme and terminal styling for the Crossborder CLI."""
+"""Shared Rich theme and terminal styling for the Cross-Border CLI."""
 
 from __future__ import annotations
 

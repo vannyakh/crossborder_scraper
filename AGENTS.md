@@ -1,4 +1,4 @@
-# Agent guide — Crossborder Scraper
+# Agent guide — Cross-Border
 
 This file orients **Cursor / coding agents** on how the repo is organized and how to add features safely at scale.
 
@@ -6,7 +6,7 @@ This file orients **Cursor / coding agents** on how the repo is organized and ho
 
 ## What this project is
 
-**Crossborder Scraper** — scrape 1688/Taobao/AliExpress (and plugins), normalize products, export to marketplaces. One **FastAPI gateway** serves the React **panel** (`/ui/`), CLI, and gateway agent tools.
+**Cross-Border** — scrape 1688/Taobao/AliExpress (and plugins), normalize products, export to marketplaces. One **FastAPI gateway** serves the React **panel** (`/ui/`), CLI, and gateway agent tools.
 
 ```
 apps/web/     React panel (Vite, Chakra, React Query)

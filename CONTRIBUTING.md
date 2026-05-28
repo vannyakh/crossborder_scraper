@@ -1,4 +1,4 @@
-# Contributing to Crossborder Scraper
+# Contributing to Cross-Border
 
 Thanks for helping improve the scraper panel, API, and plugins. This guide covers setup, formatting, and how we organize the repo.
 
@@ -54,10 +54,15 @@ We use **Ruff** for Python and **Prettier + ESLint** for the web app. Line lengt
 make fmt          # auto-format everything
 make lint         # ruff + eslint (no fixes)
 make check        # quick import smoke
-make check-ci     # ruff on src + smoke (GitHub CI)
-make check-all    # format + full lint + pytest
-make fmt          # auto-format before opening a PR
-make test         # pytest
+make check-ci     # ruff + test-dev (GitHub CI Python job)
+make check-all    # format + lint + test-dev + build-prod
+make test-dev     # pytest + import smoke
+make test-prod    # build prod bundle + HTTP smoke
+make test-prod-docker  # docker container health
+make build-dev    # deps only (no dist/)
+make build-prod   # production panel bundle
+make run-dev      # API with reload
+make run-prod     # API serves dist/ (no reload)
 ```
 
 Per area:
@@ -66,6 +71,7 @@ Per area:
 uv run ruff format src tests main.py
 uv run ruff check --fix src tests main.py
 cd apps/web && pnpm format && pnpm lint
+bash scripts/test.sh -v
 ```
 
 ## VS Code / Cursor
@@ -77,8 +83,9 @@ Workspace settings (`.vscode/settings.json`) enable:
 - Format on save (Ruff for Python, Prettier for TS/TSX)
 - ESLint in `apps/web`
 - Python path `src/` for analysis
-- Tasks: **Terminal → Run Task** → `Check: format + lint (all)`, `Dev: API server`, etc.
-- Debug: **API: uvicorn (reload)** under Run and Debug
+- **Testing sidebar** — pytest discovers `tests/` automatically
+- Tasks: **Terminal → Run Task** → `Dev: full stack (API + Vite)`, `Test: pytest`, `Check: CI parity`
+- Debug: **API: uvicorn (reload)**, **Test: pytest (current file)** — see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 
 ## Pull requests
 
@@ -90,7 +97,7 @@ Workspace settings (`.vscode/settings.json`) enable:
 
 ## CI
 
-GitHub Actions runs on push/PR to `main`: Python ruff + format check, web build/lint, Docker smoke. See [.github/workflows/ci.yml](.github/workflows/ci.yml).
+GitHub Actions runs on push/PR to `main`: Python ruff + pytest + import smoke, web build/lint, Docker smoke. See [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 ## Questions
 

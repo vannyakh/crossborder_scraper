@@ -22,7 +22,7 @@ def systemd_unit(
         else f"/usr/bin/env python3 -m uvicorn server.app:app --host 0.0.0.0 --port {port}"
     )
     return f"""[Unit]
-Description=Crossborder Scraper Panel (FastAPI + gateway agent)
+Description=Cross-Border panel (FastAPI + gateway agent)
 After=network.target
 
 [Service]
@@ -54,7 +54,7 @@ def nginx_site(
         )
     else:
         listen = "listen 80;"
-    return f"""# Reverse proxy for Crossborder Scraper panel (place in sites-enabled)
+    return f"""# Reverse proxy for Cross-Border panel (place in sites-enabled)
 server {{
     {listen}
     server_name {server_name};

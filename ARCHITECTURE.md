@@ -1,4 +1,4 @@
-# Crossborder Scraper — Architecture
+# Cross-Border — Architecture
 
 ## Vision
 

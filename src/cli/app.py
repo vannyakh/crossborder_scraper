@@ -1,4 +1,4 @@
-"""Crossborder scraper CLI — scrape, gateway agent, skills, panel serve."""
+"""Cross-Border CLI — scrape, gateway agent, skills, panel serve."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def build_app() -> typer.Typer:
     app = typer.Typer(
         name="crossborder",
         help=(
-            "[bold bright_blue]Crossborder Scraper[/] — scrape, export, "
+            "[bold bright_blue]Cross-Border[/] — scrape, export, "
             "self-host panel, gateway agent.\n\n"
             "[bold]Install:[/]   curl …/scripts/install.sh | bash\n"
             "[bold]Run panel:[/] [cyan]crossborder serve --no-reload[/]  "

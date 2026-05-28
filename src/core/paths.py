@@ -182,7 +182,7 @@ def ensure_runtime_layout() -> list[str]:
         marker = repo_root() / "var" / _LAYOUT_MARKER
         if not marker.exists():
             marker.write_text(
-                "# Crossborder runtime layout — mutable data; keep while panel runs.\n",
+                "# Cross-Border runtime layout — mutable data; keep while panel runs.\n",
                 encoding="utf-8",
             )
         created.append("var/")

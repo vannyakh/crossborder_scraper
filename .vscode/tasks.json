@@ -2,21 +2,125 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Check: lint (CI parity)",
-      "type": "shell",
-      "command": "make check",
+      "label": "Dev: full stack (API + Vite)",
+      "dependsOn": ["Dev: API server", "Dev: Vite panel"],
+      "dependsOrder": "parallel",
       "group": {
-        "kind": "test",
+        "kind": "build",
         "isDefault": true
       },
       "problemMatcher": []
     },
     {
-      "label": "Check: format + lint (full)",
+      "label": "Dev: API server",
+      "type": "shell",
+      "command": "bash scripts/serve-api.sh",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      }
+    },
+    {
+      "label": "Dev: Vite panel",
+      "type": "shell",
+      "command": "bash scripts/dev-ui.sh",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      }
+    },
+    {
+      "label": "Dev: stack instructions",
+      "type": "shell",
+      "command": "make dev",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    },
+    {
+      "label": "Build: dev (deps only)",
+      "type": "shell",
+      "command": "make build-dev",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: prod (panel bundle)",
+      "type": "shell",
+      "command": "make build-prod",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: prod (static bundle)",
+      "type": "shell",
+      "command": "make run-prod",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "prod"
+      }
+    },
+    {
+      "label": "Test: pytest",
+      "type": "shell",
+      "command": "make test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$pytest"]
+    },
+    {
+      "label": "Test: prod (build + HTTP smoke)",
+      "type": "shell",
+      "command": "make test-prod",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: prod-docker (container health)",
+      "type": "shell",
+      "command": "make test-prod-docker",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: pytest (verbose)",
+      "type": "shell",
+      "command": "make test-v",
+      "group": "test",
+      "problemMatcher": ["$pytest"]
+    },
+    {
+      "label": "Check: smoke (quick)",
+      "type": "shell",
+      "command": "make check",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Check: CI parity",
+      "type": "shell",
+      "command": "make check-ci",
+      "group": "test",
+      "problemMatcher": ["$pytest"]
+    },
+    {
+      "label": "Check: full (format + lint + test + build)",
       "type": "shell",
       "command": "make check-all",
       "group": "test",
-      "problemMatcher": []
+      "problemMatcher": ["$pytest"]
     },
     {
       "label": "Format: Python + Web",
@@ -38,34 +142,6 @@
         "cwd": "${workspaceFolder}"
       },
       "problemMatcher": ["$eslint-stylish"]
-    },
-    {
-      "label": "Dev: API server",
-      "type": "shell",
-      "command": "bash scripts/serve-api.sh",
-      "isBackground": true,
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Dev: Vite panel",
-      "type": "shell",
-      "command": "bash scripts/dev-ui.sh",
-      "isBackground": true,
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Test: pytest",
-      "type": "shell",
-      "command": "make test",
-      "problemMatcher": []
     },
     {
       "label": "Git: pre-commit (staged files)",

@@ -46,13 +46,13 @@ function SidebarHeader({
       gap={collapsed ? 1 : 2}
       py={collapsed ? 1.5 : undefined}
     >
-      <ShellLogoMark collapsed={collapsed} label="Crossborder" onClick={onCopyCollapsed} />
+      <ShellLogoMark collapsed={collapsed} label="Cross-Border" onClick={onCopyCollapsed} />
       {collapsed ? (
         <BrandVersionBadge version={version} updateAvailable={updateAvailable} />
       ) : (
         <ShellBrandText
           collapsed={false}
-          title="Crossborder"
+          title="Cross-Border"
           version={version}
           updateAvailable={updateAvailable}
         />

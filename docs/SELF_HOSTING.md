@@ -1,6 +1,6 @@
 # Self-hosting guide
 
-Deploy Crossborder Scraper on your own VPS, Docker host, or Windows server.
+Deploy Cross-Border on your own VPS, Docker host, or Windows server.
 
 ## Requirements
 

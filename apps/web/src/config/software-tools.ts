@@ -203,7 +203,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'telegram',
           icon: 'agent',
           title: 'Telegram bot',
-          description: 'Control chat channel wired to the Crossborder gateway agent.',
+          description: 'Control chat channel wired to the Cross-Border gateway agent.',
           to: '/integrate/telegram',
           status: stats.gateway?.telegram?.enabled
             ? 'Live'

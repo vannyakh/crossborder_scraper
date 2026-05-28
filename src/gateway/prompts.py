@@ -7,7 +7,7 @@ from core.paths import prompts_dir
 PROMPTS_DIR = prompts_dir()
 DEFAULT_PROMPT_ID = "gateway_agent"
 
-_FALLBACK_PROMPT = """You are the Crossborder Scraper gateway agent.
+_FALLBACK_PROMPT = """You are the Cross-Border gateway agent.
 Use available tools to scrape, list, export, and report status. Be concise."""
 
 _BUILTIN_IDS = frozenset(
