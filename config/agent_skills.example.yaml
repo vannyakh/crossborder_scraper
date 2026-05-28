@@ -5,3 +5,4 @@ enabled:
   - export-review
   - batch-ops
   - agent-control
+  - panel-ops

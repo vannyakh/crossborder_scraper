@@ -1,40 +1,78 @@
 ---
-description: Adding gateway agent tools and runtime rules (panel AI, not Cursor)
+description: Gateway agent flow — tools, skills, rules, integrate runners (panel AI, not Cursor)
 globs:
   - "src/gateway/**"
+  - "skills/**"
   - "libs/agent_rules/**"
+  - "libs/prompts/**"
+  - "config/agent_skills.yaml"
   - "config/agent_rules.yaml"
 alwaysApply: false
 ---
 
 # Gateway agent (runtime panel AI)
 
-## Two agent systems
+## Flow
 
-| System | Purpose | Location |
-|--------|---------|----------|
-| **Cursor rules** | IDE coding assistant | `.cursor/rules/`, `AGENTS.md` |
-| **Gateway agent** | User-facing panel AI | `src/gateway/`, `libs/agent_rules/` |
+```
+Message → chat_sessions / integrate runner
+       → compose_instructions(base_prompt, skills, rules)
+       → agent_runtime tool loop
+       → tools.py → services
+       → reply (ground truth: tool ok: true only)
+```
 
 ## Adding a gateway tool
 
-1. Implement handler in `src/gateway/tools.py` (`_tool_name` async fn)
-2. Add to `TOOL_DEFINITIONS` with JSON schema parameters
-3. Register in `TOOL_HANDLERS` dict
-4. Tool should call services (`get_store_manager()`, etc.) — not duplicate business logic
+1. Handler in `src/gateway/tools.py` (`_tool_name` async fn)
+2. Entry in `TOOL_DEFINITIONS` + `TOOL_HANDLERS`
+3. Call **services** — do not duplicate business logic from routers
+4. Add to a **skill** `metadata.crossborder.tools` if workflow is non-trivial
+5. Test in `tests/test_gateway_*.py`
 
-## Agent rules (behavior policies)
+## Adding a skill
 
-- Built-in: `libs/agent_rules/*.md`
-- Custom: `data/agent_rules/` (user-editable)
-- Config: `config/agent_rules.yaml`
-- API: `/gateway/rules`; UI: Agent → Rules
+1. Create `skills/<id>/SKILL.md` with frontmatter:
 
-Rules inject into the system prompt via `gateway/rules/manager.py`. Keep rules short and policy-focused.
+```yaml
+metadata:
+  crossborder:
+    emoji: "🛡️"
+    category: panel | scrape | catalog | export | gateway
+    tools:
+      - tool_name
+```
 
-## Skills vs tools
+2. Add `<id>` to `_BUILTIN_DEFAULT_ENABLED` in `src/gateway/skills/manager.py`
+3. Update `config/agent_skills.example.yaml`
+4. Body: when to use, workflow steps, safety, ground-truth bullets
 
-- **Tools** — callable functions (`list_products`, `list_firewall_rules`)
-- **Skills** — SKILL.md packages in `skills/` and `installed_skills/`
+Built-in skills: `scrape-assistant`, `batch-ops`, `catalog-monitor`, `export-review`, `agent-control`, `panel-ops`.
 
-Do not put long implementation guides in gateway rules; use `AGENTS.md` for developers.
+## Agent rules vs skills vs prompts
+
+| Layer | Location | Use for |
+|-------|----------|---------|
+| **Prompts** | `libs/prompts/*.md` | Persona, channel tone (`telegram_agent`) |
+| **Skills** | `skills/*/SKILL.md` | Task playbooks + tool scoping |
+| **Rules** | `libs/agent_rules/*.md` | Short policies (grounding, safety) |
+
+Keep rules **short**. Long guides belong in skills or `libs/guides/`.
+
+## Integrate channels
+
+- Catalog: `src/gateway/integrate/catalog.py`
+- Telegram runner: `src/gateway/integrate/runners/telegram/` (modular: `commands/`, `group_agent.py`, `pending.py`)
+- Same agent runtime as web chat — session context via `chat_sessions.py`
+- Config: `config/ui_config.json` → `telegram` section; `src/config/telegram_store.py`
+
+When changing Telegram UX, update runner modules + `tests/test_telegram_*.py`.
+
+## Cursor vs gateway
+
+| Cursor rules | Gateway agent |
+|--------------|---------------|
+| `.cursor/rules/` | `libs/agent_rules/` |
+| For developers | For operators in production |
+
+Do not put IDE checklists in gateway rules; use `AGENTS.md`.

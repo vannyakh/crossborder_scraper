@@ -19,6 +19,7 @@ _BUILTIN_DEFAULT_ENABLED = (
     "export-review",
     "batch-ops",
     "agent-control",
+    "panel-ops",
 )
 
 _SKILL_GROUND_TRUTH = """

@@ -246,7 +246,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'skills',
           icon: 'skills',
           title: 'Agent skills',
-          description: 'Install SKILL.md packages — scrape, batch, catalog, export playbooks.',
+          description: 'Install SKILL.md packages — scrape, batch, catalog, export, panel ops.',
           to: '/agent/skills',
           status: stats.gateway?.skills_count
             ? `${stats.gateway.enabled_skills_count ?? 0}/${stats.gateway.skills_count} on`

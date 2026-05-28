@@ -8,6 +8,7 @@ from typing import Any
 import typer
 from rich.table import Table
 
+from cli.commands.agent_cli_cmds import register_agent_cli_commands
 from cli.helpers import console, exit_gateway_error, gateway_client, run_async
 
 skills_app = typer.Typer(help="Agent skills (SKILL.md packages)")
@@ -26,7 +27,9 @@ def register_gateway_commands(app: typer.Typer) -> None:
     app.add_typer(skills_app, name="skills")
     app.add_typer(prompts_app, name="prompts")
     app.add_typer(channels_app, name="channels")
+    app.add_typer(channels_app, name="integrate")
     app.add_typer(schedules_app, name="schedules")
+    register_agent_cli_commands(app)
 
     @app.command("gateway")
     def gateway_status(
@@ -64,6 +67,11 @@ def register_gateway_commands(app: typer.Typer) -> None:
     def agent_run(
         message: str = typer.Argument(..., help="Instruction for the gateway agent"),
         url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        session: str | None = typer.Option(
+            None,
+            "--session",
+            help="Chat session id for multi-turn history (HTTP API)",
+        ),
         prompt_id: str | None = typer.Option(None, "--prompt", "-p", help="Role prompt id"),
         skill: list[str] = typer.Option(
             None,
@@ -77,6 +85,9 @@ def register_gateway_commands(app: typer.Typer) -> None:
         skill_ids = list(skill) if skill else None
 
         if local:
+            if session:
+                console.print("[yellow]--session requires HTTP API; omit --local[/yellow]")
+                raise typer.Exit(1)
             from config import get_settings
             from gateway.agent_runtime import GatewayAgent
             from server.manager import ScrapeManager
@@ -102,11 +113,14 @@ def register_gateway_commands(app: typer.Typer) -> None:
             result = gateway_client(url).agent_run(
                 message,
                 prompt_id=prompt_id,
+                session_id=session,
                 skill_ids=skill_ids,
             )
         except RuntimeError as exc:
             exit_gateway_error(exc)
         console.print(result.get("message") or json.dumps(result, indent=2))
+        if result.get("session_id"):
+            console.print("[dim]Session:[/dim]", result["session_id"])
         if result.get("skill_ids"):
             console.print("[dim]Skills:[/dim]", ", ".join(result["skill_ids"]))
 
@@ -203,6 +217,54 @@ def register_gateway_commands(app: typer.Typer) -> None:
             exit_gateway_error(exc)
         console.print("[green]Enabled skills:[/green]", ", ".join(data.get("enabled") or []))
 
+    @skills_app.command("disable")
+    def skills_disable(
+        skill_id: list[str] = typer.Argument(..., help="Skill ids to disable"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(
+            False, "--local", help="Update config/agent_skills.yaml locally"
+        ),
+    ) -> None:
+        """Disable skill ids."""
+        if local:
+            from gateway.skills import get_skill_manager
+
+            mgr = get_skill_manager()
+            current = mgr.enabled_ids() - set(skill_id)
+            mgr.set_enabled(sorted(current))
+            console.print("[green]Enabled:[/green]", ", ".join(sorted(current)))
+            return
+        try:
+            client = gateway_client(url)
+            current = set(client.list_skills().get("enabled") or [])
+            current -= set(skill_id)
+            data = client.set_enabled_skills(sorted(current))
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print("[green]Enabled skills:[/green]", ", ".join(data.get("enabled") or []))
+
+    @skills_app.command("set")
+    def skills_set(
+        skill_id: list[str] = typer.Argument(..., help="Complete enabled skill id list"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(
+            False, "--local", help="Replace config/agent_skills.yaml enabled list"
+        ),
+    ) -> None:
+        """Replace the enabled skills set."""
+        if local:
+            from gateway.skills import get_skill_manager
+
+            mgr = get_skill_manager()
+            enabled = mgr.set_enabled(list(skill_id))
+            console.print("[green]Enabled:[/green]", ", ".join(enabled))
+            return
+        try:
+            data = gateway_client(url).set_enabled_skills(list(skill_id))
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print("[green]Enabled skills:[/green]", ", ".join(data.get("enabled") or []))
+
     @prompts_app.command("list")
     def prompts_list(
         url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
@@ -244,7 +306,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
             items = list_channels()
         else:
             try:
-                data = gateway_client(url)._request("GET", "/gateway/channels")
+                data = gateway_client(url).list_channels()
                 items = data.get("items") or []
             except RuntimeError as exc:
                 exit_gateway_error(exc)
@@ -278,7 +340,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
             data = get_channel(channel_id)
         else:
             try:
-                data = gateway_client(url)._request("GET", f"/gateway/channels/{channel_id}")
+                data = gateway_client(url).get_channel(channel_id)
             except RuntimeError as exc:
                 exit_gateway_error(exc)
         console.print(json.dumps(data, indent=2))
@@ -319,11 +381,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
                 run_async(_reload_local_telegram())
             return
         try:
-            data = gateway_client(url)._request(
-                "PATCH",
-                f"/gateway/channels/{channel_id}",
-                body={"updates": updates},
-            )
+            data = gateway_client(url).configure_channel(channel_id, updates)
         except RuntimeError as exc:
             exit_gateway_error(exc)
         console.print(json.dumps(data, indent=2))
@@ -343,7 +401,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
             console.print("[green]Telegram runner reloaded[/green]")
             return
         try:
-            data = gateway_client(url)._request("POST", f"/gateway/channels/{channel_id}/reload")
+            data = gateway_client(url).reload_channel(channel_id)
         except RuntimeError as exc:
             exit_gateway_error(exc)
         console.print(json.dumps(data, indent=2))
@@ -439,6 +497,41 @@ def register_gateway_commands(app: typer.Typer) -> None:
             return
         try:
             data = gateway_client(url).create_schedule(body)
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print(json.dumps(data, indent=2))
+
+    @schedules_app.command("update")
+    def schedules_update(
+        schedule_id: str = typer.Argument(..., help="Schedule id"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        name: str | None = typer.Option(None, "--name", help="New label"),
+        cron: str | None = typer.Option(None, "--cron", help="New cron expression"),
+        message: str | None = typer.Option(None, "--message", "-m", help="New agent instruction"),
+        prompt_id: str | None = typer.Option(None, "--prompt", "-p"),
+        enable: bool | None = typer.Option(None, "--enable/--disable"),
+        notify_telegram: bool | None = typer.Option(
+            None, "--notify-telegram/--no-notify", help="Telegram alert on tick"
+        ),
+    ) -> None:
+        """Update a gateway agent cron schedule."""
+        body: dict[str, Any] = {}
+        if name is not None:
+            body["name"] = name
+        if cron is not None:
+            body["cron"] = cron
+        if message is not None:
+            body["message"] = message
+        if prompt_id is not None:
+            body["prompt_id"] = prompt_id
+        if enable is not None:
+            body["enabled"] = enable
+        if notify_telegram is not None:
+            body["notify_telegram"] = notify_telegram
+        if not body:
+            raise typer.BadParameter("Pass at least one field to update")
+        try:
+            data = gateway_client(url).update_schedule(schedule_id, body)
         except RuntimeError as exc:
             exit_gateway_error(exc)
         console.print(json.dumps(data, indent=2))

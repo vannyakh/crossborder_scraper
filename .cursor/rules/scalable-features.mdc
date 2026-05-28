@@ -5,7 +5,12 @@ alwaysApply: true
 
 # Scalable feature development
 
-Before implementing, identify the **vertical slice**: schema → service → router → (optional gateway tool) → hooks → page → route-config.
+Before implementing, identify the **vertical slice**:
+
+- **Panel UI:** schema → service → router → hooks → page → route-config
+- **Agent-facing:** tool (`tools.py`) → service → (optional skill + rule) → test
+
+If operators should do it via chat/Telegram/cron, the gateway tool slice is **required** — UI alone is not enough.
 
 ## Backend (required for new API)
 

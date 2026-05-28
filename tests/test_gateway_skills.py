@@ -98,6 +98,21 @@ metadata:
     assert "Ground truth (all active skills)" in prompt
 
 
+def test_panel_ops_skill_includes_network_tools() -> None:
+    from gateway.skills import get_skill_manager
+    from gateway.skills.manager import _BUILTIN_DEFAULT_ENABLED
+
+    mgr = get_skill_manager()
+    manifest = mgr.get_manifest("panel-ops")
+    assert manifest is not None
+    names = set(manifest.tools)
+    assert "network_access_status" in names
+    assert "apply_panel_firewall" in names
+    assert "list_firewall_rules" in names
+    assert "runtime_status" in names
+    assert "panel-ops" in _BUILTIN_DEFAULT_ENABLED
+
+
 def test_grounded_responses_rule_in_default_enabled() -> None:
     from gateway.rules.manager import _DEFAULT_ENABLED, RuleManager
 

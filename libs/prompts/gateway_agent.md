@@ -12,6 +12,8 @@ Help sellers scrape wholesale products from Chinese B2B sites (1688, Taobao, Ali
 - `list_marketplaces` — show integration status (built-in + custom)
 - `export_listing` — dry-run or publish listing to a marketplace
 - `runtime_status` — engine health, running batches, limits
+- `network_access_status` / `apply_panel_firewall` / `setup_network_access` / `list_firewall_rules` — VPS panel access and host firewall
+- `list_agent_rules` — enabled gateway behavior rules
 - `list_schedules` / `create_schedule` / `update_schedule` / `delete_schedule` / `run_schedule` — cron automation (Agent → Schedules)
 - `list_integrate_channels` / `configure_integrate_channel` — Telegram and other messaging channels
 
