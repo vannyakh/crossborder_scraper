@@ -8,6 +8,10 @@ from .common import StatsResponse
 class GatewayAgentRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=8000)
     prompt_id: str | None = None
+    session_id: str | None = Field(
+        default=None,
+        description="Panel chat session id — loads multi-turn history and persists the turn",
+    )
     skill_ids: list[str] | None = Field(
         default=None,
         description="Optional skill ids; omit to use config/agent_skills.yaml enabled set",
@@ -22,8 +26,11 @@ class GatewayAgentResponse(BaseModel):
     provider: str | None = None
     model_ref: str | None = None
     prompt_id: str | None = None
+    session_id: str | None = None
     skill_ids: list[str] = Field(default_factory=list)
     rule_ids: list[str] = Field(default_factory=list)
+    channel_id: str | None = None
+    platform_chat_id: str | None = None
 
 
 class AgentRuleInfo(BaseModel):
@@ -170,6 +177,56 @@ class GatewayPromptInfo(BaseModel):
     label: str
     path: str
     recommended: bool = False
+    kind: Literal["role", "task"] = "task"
+
+
+class AgentChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: str | None = None
+    ok: bool | None = None
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    model_ref: str | None = None
+    kind: Literal["session"] | None = None
+
+
+class AgentChatSession(BaseModel):
+    id: str
+    label: str
+    display_label: str | None = None
+    channel_id: str = "panel"
+    platform_chat_id: str | None = None
+    platform_chat_title: str | None = None
+    platform_chat_kind: Literal["direct", "group", "unknown"] | None = None
+    message_count: int = 0
+    prompt_id: str = "gateway_agent"
+    created_at: str
+    updated_at: str
+    messages: list[AgentChatMessage] = Field(default_factory=list)
+
+
+class AgentChatSessionChannelSummary(BaseModel):
+    channel_id: str
+    label: str
+    count: int
+
+
+class AgentChatSessionListResponse(BaseModel):
+    items: list[AgentChatSession]
+    total: int
+    channels: list[AgentChatSessionChannelSummary] = Field(default_factory=list)
+
+
+class AgentChatSessionCreateRequest(BaseModel):
+    label: str | None = Field(default=None, max_length=80)
+    prompt_id: str | None = None
+    channel_id: str | None = Field(default="panel", max_length=32)
+    platform_chat_id: str | None = Field(default=None, max_length=64)
+
+
+class AgentChatSessionUpdateRequest(BaseModel):
+    label: str | None = Field(default=None, max_length=80)
+    prompt_id: str | None = None
 
 
 class GatewayPromptListResponse(BaseModel):
@@ -183,6 +240,7 @@ class AgentSchedule(BaseModel):
     cron: str
     prompt_id: str = "gateway_agent"
     message: str
+    notify_telegram: bool = False
     next_run_at: str | None = None
     last_run_at: str | None = None
     last_status: str | None = None
@@ -197,6 +255,7 @@ class AgentScheduleCreate(BaseModel):
     cron: str = Field(..., min_length=9, max_length=64)
     prompt_id: str = "gateway_agent"
     message: str = Field(..., min_length=1, max_length=8000)
+    notify_telegram: bool = False
 
 
 class AgentScheduleUpdate(BaseModel):
@@ -205,6 +264,7 @@ class AgentScheduleUpdate(BaseModel):
     cron: str | None = None
     prompt_id: str | None = None
     message: str | None = None
+    notify_telegram: bool | None = None
 
 
 class AgentScheduleListResponse(BaseModel):
@@ -343,6 +403,7 @@ class GatewayStatusResponse(BaseModel):
     recent_failed_runs: int = 0
     runtime: dict[str, Any]
     telegram: dict[str, Any] = Field(default_factory=dict)
+    server_timezone: dict[str, Any] = Field(default_factory=dict)
 
 
 class ServiceGatewaySummary(BaseModel):

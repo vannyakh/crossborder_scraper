@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Bot,
   FolderOpen,
   HeartPulse,
@@ -22,6 +23,7 @@ export const OPERATIONS_TOOL_NAV = [
   { to: '/docker', label: 'Docker' },
   { to: '/firewall', label: 'Firewall' },
   { to: '/health', label: 'Health' },
+  { to: '/guides', label: 'Guides' },
   { to: '/support', label: 'Support' },
 ] as const
 
@@ -40,6 +42,7 @@ export const SOFTWARE_TOOL_ICONS = {
   health: HeartPulse,
   logs: ScrollText,
   support: LifeBuoy,
+  guides: BookOpen,
   tools: Wrench,
   skills: Sparkles,
 } as const satisfies Record<string, LucideIcon>
@@ -105,7 +108,7 @@ function scrapeStatus(
 /** Dashboard “Software tools” cards grouped by use case */
 export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareToolSection[] {
   const { runtime, llm, runningBatches, products, files, enabledSchedules, recentFailures } = stats
-  const aiAgentOn = runtime?.ai?.ai_agent_enabled
+  const agentLlmOn = Boolean(runtime?.ai?.ai_enabled && runtime?.ai?.llm_ready)
   const scrapeStats = {
     running_batches: runningBatches,
     products,
@@ -155,14 +158,23 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           title: 'Health',
           description: 'Engine, gateway agent summary, LLM probe, active batches.',
           to: '/health',
-          status: llm?.ok ? 'LLM OK' : runtime?.ai?.ai_enabled ? 'Check LLM' : 'Engine',
+          status: llm?.ok ? 'Agent LLM OK' : runtime?.ai?.ai_enabled ? 'Check agent LLM' : 'Engine',
           statusTone: llm?.ok ? 'success' : recentFailures > 0 ? 'danger' : 'neutral',
+        }),
+        card({
+          id: 'guides',
+          icon: 'guides',
+          title: 'Guides',
+          description: 'Setup instructions for agent LLM, scrape workflow, and panel tools.',
+          to: '/guides',
+          status: 'Setup docs',
+          statusTone: 'neutral',
         }),
         card({
           id: 'support',
           icon: 'support',
           title: 'Support',
-          description: 'Documentation links, build info, quick navigation.',
+          description: 'Readiness checks, cron scheduler, and quick navigation.',
           to: '/support',
           status: runtime ? `v${runtime.version}` : 'Panel',
           statusTone: 'neutral',
@@ -203,7 +215,7 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'telegram',
           icon: 'agent',
           title: 'Telegram bot',
-          description: 'Control chat channel wired to the Crossborder gateway agent.',
+          description: 'Control chat channel wired to the Cross-Border gateway agent.',
           to: '/integrate/telegram',
           status: stats.gateway?.telegram?.enabled
             ? 'Live'
@@ -220,24 +232,26 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           description: 'Chat, cron schedules, skills, and workflows.',
           to: '/agent/chat',
           status:
-            aiAgentOn && enabledSchedules > 0
+            agentLlmOn && enabledSchedules > 0
               ? `${enabledSchedules} schedules`
-              : aiAgentOn
+              : agentLlmOn
                 ? 'Ready'
-                : 'Off',
-          statusTone: aiAgentOn ? 'success' : 'neutral',
+                : runtime?.ai?.ai_enabled
+                  ? 'Check LLM'
+                  : 'Off',
+          statusTone: agentLlmOn ? 'success' : runtime?.ai?.ai_enabled ? 'neutral' : 'neutral',
           primaryAction: { label: 'Chat', to: '/agent/chat' },
         }),
         card({
           id: 'skills',
           icon: 'skills',
           title: 'Agent skills',
-          description: 'Install SKILL.md packages — scrape, batch, catalog, export playbooks.',
+          description: 'Install SKILL.md packages — scrape, batch, catalog, export, panel ops.',
           to: '/agent/skills',
           status: stats.gateway?.skills_count
             ? `${stats.gateway.enabled_skills_count ?? 0}/${stats.gateway.skills_count} on`
             : 'SKILL.md',
-          statusTone: aiAgentOn ? 'success' : 'neutral',
+          statusTone: agentLlmOn ? 'success' : 'neutral',
           primaryAction: { label: 'Skills', to: '/agent/skills' },
         }),
         card({
@@ -262,9 +276,9 @@ export function buildSoftwareToolSections(stats: DashboardToolStats): SoftwareTo
           id: 'settings',
           icon: 'settings',
           title: 'Configuration',
-          description: 'AI, scrape engine, proxy, pricing, marketplaces.',
+          description: 'Agent LLM, proxy, pricing, and marketplace credentials.',
           to: '/settings/ai',
-          status: llm?.ok ? 'LLM OK' : runtime?.ai?.ai_enabled ? 'Check LLM' : 'Panel',
+          status: llm?.ok ? 'Agent LLM OK' : runtime?.ai?.ai_enabled ? 'Check agent LLM' : 'Panel',
           statusTone: llm?.ok ? 'success' : 'neutral',
         }),
       ],

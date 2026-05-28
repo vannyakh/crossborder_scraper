@@ -1,4 +1,4 @@
-# Releasing Crossborder Scraper
+# Releasing Cross-Border
 
 ## Version bump
 

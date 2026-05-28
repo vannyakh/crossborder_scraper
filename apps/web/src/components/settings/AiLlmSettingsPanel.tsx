@@ -1,35 +1,25 @@
 import {
   Box,
-  Button,
-  Grid,
   HStack,
   Input,
-  Menu,
   Portal,
   Select,
   SimpleGrid,
   Text,
   createListCollection,
 } from '@chakra-ui/react'
-import { Check, ChevronDown, Sparkles } from 'lucide-react'
-import { useMemo } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
 import { formatModelRef } from '../../config/llm-providers'
-import { useAccentPalette, useLlmProvidersQuery } from '../../hooks'
+import { useLlmModelsQuery, useLlmProvidersQuery } from '../../hooks'
 import type { LLMHealth, LlmProviderId, LlmProviderInfo } from '../../lib/api'
-import { fieldStyles } from '../ui/field-styles'
-import { Section, SectionCard } from '../ui/Section'
 import { SectionPanelSkeleton } from '../ui/PanelSkeleton'
+import { Section, SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
+import { fieldStyles } from '../ui/field-styles'
+import { AgentLlmSetupPanel } from './AgentLlmSetupPanel'
 import { SettingsCheckbox, SettingsField } from './SettingsFields'
 import type { PanelSettingsForm } from './use-panel-settings-form'
-
-const MODEL_SUGGESTIONS: Partial<Record<LlmProviderId, string[]>> = {
-  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini'],
-  anthropic: ['claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'],
-  google: ['gemini-2.0-flash', 'gemini-2.5-flash-preview-05-20'],
-  ollama: ['llama3.2', 'llama3.3', 'qwen2.5'],
-  qwen: ['qwen-plus', 'qwen-turbo', 'qwen-max'],
-}
 
 function healthTone(ok: boolean | undefined): 'success' | 'danger' | 'neutral' {
   if (ok === true) return 'success'
@@ -122,85 +112,85 @@ function ProviderSelect({
   )
 }
 
-function ModelPresetMenu({
-  provider,
-  selectedProvider,
-  model,
+function ModelSelect({
+  models,
+  value,
+  loading,
   disabled,
-  onSelect,
+  placeholder,
+  onChange,
 }: {
-  provider: LlmProviderId
-  selectedProvider?: LlmProviderInfo
-  model: string
+  models: { id: string; label?: string | null }[]
+  value: string
+  loading?: boolean
   disabled?: boolean
-  onSelect: (model: string) => void
+  placeholder?: string
+  onChange: (id: string) => void
 }) {
-  const accentPalette = useAccentPalette()
-  const suggestions = useMemo(() => {
-    const fromMap = MODEL_SUGGESTIONS[provider] ?? []
-    const defaults = selectedProvider?.default_model ? [selectedProvider.default_model] : []
-    return [...new Set([...defaults, ...fromMap])]
-  }, [provider, selectedProvider?.default_model])
+  const collection = useMemo(
+    () =>
+      createListCollection({
+        items: models.map((m) => ({ label: m.label || m.id, value: m.id })),
+      }),
+    [models],
+  )
+
+  const selectValue = value && models.some((m) => m.id === value) ? [value] : []
 
   return (
-    <Menu.Root positioning={{ placement: 'bottom-end' }} closeOnSelect>
-      <Menu.Trigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          colorPalette={accentPalette}
-          borderColor="border.subtle"
-          borderRadius="var(--radius-input)"
-          disabled={disabled || suggestions.length === 0}
-          flexShrink={0}
-        >
-          <HStack gap={1.5}>
-            <Sparkles size={14} strokeWidth={2} aria-hidden />
-            <Text fontSize="sm">Presets</Text>
-            <ChevronDown size={14} strokeWidth={2} aria-hidden />
-          </HStack>
-        </Button>
-      </Menu.Trigger>
+    <Select.Root
+      collection={collection}
+      value={selectValue}
+      disabled={disabled || loading || models.length === 0}
+      positioning={{ sameWidth: true }}
+      onValueChange={(details) => {
+        const next = details.value[0]
+        if (next) onChange(next)
+      }}
+    >
+      <Select.HiddenSelect name="ai_model" />
+      <Select.Control flex={1}>
+        <Select.Trigger {...selectTriggerProps()}>
+          <Select.ValueText
+            placeholder={placeholder ?? 'Select model'}
+            fontSize="sm"
+            fontFamily="mono"
+          />
+          <Select.IndicatorGroup>
+            <Select.Indicator>
+              <ChevronDown size={14} strokeWidth={2} aria-hidden />
+            </Select.Indicator>
+          </Select.IndicatorGroup>
+        </Select.Trigger>
+      </Select.Control>
       <Portal>
-        <Menu.Positioner zIndex={50}>
-          <Menu.Content
-            minW="14rem"
-            maxH="min(280px, 45vh)"
-            overflowY="auto"
-            className="app-scroll"
+        <Select.Positioner zIndex={50}>
+          <Select.Content
             borderRadius="input"
             borderWidth="1px"
             borderColor="border.subtle"
             bg="bg.panel"
             py={1}
+            maxH="min(360px, 55vh)"
+            overflowY="auto"
+            className="app-scroll"
           >
-            <Menu.ItemGroup>
-              <Menu.ItemGroupLabel px={3} py={1.5} fontSize="xs" color="fg.muted">
-                Suggested models
-              </Menu.ItemGroupLabel>
-              {suggestions.map((id) => {
-                const active = model === id
-                return (
-                  <Menu.Item
-                    key={id}
-                    value={id}
-                    onClick={() => onSelect(id)}
-                    bg={active ? 'bg.panelHover' : undefined}
-                  >
-                    <HStack justify="space-between" w="full" gap={2}>
-                      <Text fontSize="sm" fontFamily="mono">
-                        {id}
-                      </Text>
-                      {active ? <Check size={14} strokeWidth={2} aria-hidden /> : null}
-                    </HStack>
-                  </Menu.Item>
-                )
-              })}
-            </Menu.ItemGroup>
-          </Menu.Content>
-        </Menu.Positioner>
+            {collection.items.map((item) => (
+              <Select.Item key={item.value} item={item} px={3} py={2}>
+                <HStack justify="space-between" w="full" gap={2}>
+                  <Select.ItemText fontSize="sm" fontFamily="mono">
+                    {item.label}
+                  </Select.ItemText>
+                  <Select.ItemIndicator>
+                    <Check size={14} strokeWidth={2} aria-hidden />
+                  </Select.ItemIndicator>
+                </HStack>
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Positioner>
       </Portal>
-    </Menu.Root>
+    </Select.Root>
   )
 }
 
@@ -217,24 +207,62 @@ export function AiLlmSettingsPanel({
   const selectedProvider = providers.find((p) => p.id === form.provider)
   const modelRef = formatModelRef(form.provider, form.model)
 
+  const modelsProbe = useMemo(
+    () => ({
+      ai_provider: form.provider,
+      ai_base_url: form.aiBaseUrl,
+      ...(form.aiApiKey.trim() ? { ai_api_key: form.aiApiKey.trim() } : {}),
+    }),
+    [form.provider, form.aiBaseUrl, form.aiApiKey],
+  )
+
+  const modelsQuery = useLlmModelsQuery(modelsProbe)
+  const models = modelsQuery.data?.models ?? []
+  const { setModel } = form
+
+  useEffect(() => {
+    if (!models.length || modelsQuery.isLoading) return
+    if (!form.model || !models.some((m) => m.id === form.model)) {
+      const preferred =
+        models.find((m) => m.id === selectedProvider?.default_model)?.id ?? models[0]?.id
+      if (preferred) setModel(preferred)
+    }
+  }, [models, modelsQuery.isLoading, form.model, setModel, selectedProvider?.default_model])
+
   if (isLoading) {
     return (
       <SectionPanelSkeleton
-        title="AI & LLM"
-        description="Model, API key, extraction & agent"
+        title="Gateway agent LLM"
+        description="Provider, model, and API credentials for the panel agent"
         mt={0}
-        fields={6}
+        fields={5}
       />
     )
   }
 
+  const modelsHint = modelsQuery.isError
+    ? 'Could not load models from provider'
+    : modelsQuery.data?.message ||
+      (modelsQuery.data?.source === 'api'
+        ? 'Models loaded from provider API'
+        : 'Add API key or use local Ollama to list models')
+
   return (
-    <Section
-      title="AI & LLM"
-      description="Provider, model ref, and credentials for extraction and the gateway agent"
-      mt={0}
-    >
+    <Section title="Gateway agent LLM" mt={0}>
+      <AgentLlmSetupPanel
+        health={health}
+        testing={form.checkMutation.isPending}
+        onTestConnection={() => void form.handleHealthCheck()}
+      />
+
       <SectionCard>
+        <Text fontSize="sm" fontWeight="semibold" mb={1}>
+          LLM connection
+        </Text>
+        <Text fontSize="xs" color="fg.muted" mb={4}>
+          Provider, model, and credentials saved to panel config. Used by chat, cron, and integrate
+          channels.
+        </Text>
         <HStack
           justify="space-between"
           align="flex-start"
@@ -247,95 +275,77 @@ export function AiLlmSettingsPanel({
         >
           <Box minW={0}>
             <Text fontSize="xs" color="fg.muted" mb={1}>
-              Active model ref
+              Agent model ref
             </Text>
             <Text fontSize="sm" fontFamily="mono" fontWeight="medium">
               {modelRef}
+            </Text>
+            <Text fontSize="xs" color="fg.subtle" mt={1}>
+              Used by Agent chat, cron schedules, and Telegram. Provider presets come from the
+              gateway configuration on the server.
             </Text>
           </Box>
           {health ? (
             <Box textAlign={{ base: 'left', sm: 'right' }}>
               <HStack gap={2} justify={{ base: 'flex-start', sm: 'flex-end' }} mb={1}>
                 <Text fontSize="xs" color="fg.muted">
-                  LLM status
+                  Connection
                 </Text>
                 <StatusBadge status={healthTone(health.ok)} label={health.status} />
               </HStack>
               <Text fontSize="xs" color="fg.subtle" maxW="20rem">
-                {(health.model_ref ?? health.provider_label)
-                  ? `${health.model_ref ?? health.provider_label} · `
-                  : ''}
                 {health.message}
               </Text>
             </Box>
           ) : null}
         </HStack>
 
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6}>
-          <Box>
-            <Text fontSize="sm" fontWeight="semibold" mb={3}>
-              Provider
-            </Text>
-            <SettingsField
-              label="LLM provider"
-              hint={
-                providersQuery.isError
-                  ? 'Could not load providers from server'
-                  : 'Auto-fills base URL and default model'
-              }
-            >
-              <ProviderSelect
-                providers={providers}
-                value={form.provider}
-                disabled={providersQuery.isLoading}
-                onChange={form.setProvider}
-              />
-            </SettingsField>
-            {selectedProvider?.docs_url ? (
-              <Text fontSize="xs" color="fg.subtle" mt={2}>
-                API keys: {selectedProvider.docs_url}
-              </Text>
-            ) : null}
-          </Box>
+        <SettingsCheckbox checked={form.agentEnabled} onCheckedChange={form.setAgentEnabled}>
+          Enable gateway agent LLM
+        </SettingsCheckbox>
+        <Text fontSize="xs" color="fg.subtle" mt={2} mb={5}>
+          Turn on after connection test passes. Skills and cron jobs reuse this model automatically.
+        </Text>
 
-          <Box>
-            <Text fontSize="sm" fontWeight="semibold" mb={3}>
-              Features
-            </Text>
-            <Box display="flex" flexDirection="column" gap={3}>
-              <SettingsCheckbox checked={form.enabled} onCheckedChange={form.setEnabled}>
-                Enable AI extraction
-              </SettingsCheckbox>
-              <SettingsCheckbox checked={form.fallback} onCheckedChange={form.setFallback}>
-                Auto-fallback when CSS parse incomplete
-              </SettingsCheckbox>
-              <SettingsCheckbox checked={form.agentEnabled} onCheckedChange={form.setAgentEnabled}>
-                Scrape validate & enrich (post-extraction)
-              </SettingsCheckbox>
-            </Box>
-          </Box>
-        </Grid>
+        <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+          <SettingsField
+            label="LLM provider"
+            hint={
+              providersQuery.isError
+                ? 'Could not load provider list from server'
+                : 'Gateway agent provider presets'
+            }
+          >
+            <ProviderSelect
+              providers={providers}
+              value={form.provider}
+              disabled={providersQuery.isLoading}
+              onChange={form.setProvider}
+            />
+          </SettingsField>
+          <SettingsField label="Model" hint={modelsHint}>
+            <ModelSelect
+              models={models}
+              value={form.model}
+              loading={modelsQuery.isFetching}
+              disabled={!form.provider}
+              placeholder={
+                modelsQuery.isFetching
+                  ? 'Loading models…'
+                  : selectedProvider?.default_model || 'Select model'
+              }
+              onChange={form.setModel}
+            />
+          </SettingsField>
+        </SimpleGrid>
+
+        {selectedProvider?.docs_url ? (
+          <Text fontSize="xs" color="fg.subtle" mt={2}>
+            API keys: {selectedProvider.docs_url}
+          </Text>
+        ) : null}
 
         <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mt={6}>
-          <SettingsField label="Model ID" hint={`Ref: ${modelRef}`}>
-            <HStack gap={2} align="stretch">
-              <Input
-                {...fieldStyles}
-                flex={1}
-                fontFamily="mono"
-                fontSize="sm"
-                value={form.model}
-                onChange={(e) => form.setModel(e.target.value)}
-                placeholder={selectedProvider?.default_model || 'model-id'}
-              />
-              <ModelPresetMenu
-                provider={form.provider}
-                selectedProvider={selectedProvider}
-                model={form.model}
-                onSelect={form.setModel}
-              />
-            </HStack>
-          </SettingsField>
           <SettingsField
             label="Base URL"
             hint={
@@ -376,15 +386,7 @@ export function AiLlmSettingsPanel({
         </SimpleGrid>
 
         <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mt={6}>
-          <SettingsField label="Max HTML chars" hint="Truncate page HTML before LLM prompt">
-            <Input
-              {...fieldStyles}
-              type="number"
-              value={String(form.maxHtmlChars)}
-              onChange={(e) => form.setMaxHtmlChars(Number(e.target.value))}
-            />
-          </SettingsField>
-          <SettingsField label="Timeout (seconds)" hint="LLM request timeout">
+          <SettingsField label="Timeout (seconds)" hint="Agent LLM request timeout">
             <Input
               {...fieldStyles}
               type="number"

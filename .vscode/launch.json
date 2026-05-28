@@ -1,16 +1,45 @@
 {
   "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "cliArgs",
+      "type": "promptString",
+      "description": "crossborder CLI arguments",
+      "default": "--help"
+    },
+    {
+      "id": "pytestK",
+      "type": "promptString",
+      "description": "pytest -k name filter (empty = all tests)",
+      "default": ""
+    }
+  ],
   "configurations": [
     {
       "name": "API: uvicorn (reload)",
       "type": "debugpy",
       "request": "launch",
-      "module": "uvicorn",
-      "args": ["server.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "module": "server.__main__",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "UVICORN_RELOAD": "1"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "CLI: crossborder",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "cli.app",
+      "args": ["${input:cliArgs}"],
       "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src"
       },
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "justMyCode": true
     },
@@ -19,22 +48,66 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
+      "args": ["${input:cliArgs}"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Test: pytest (all)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["tests", "-v", "-s"],
       "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src"
       },
       "console": "integratedTerminal",
       "justMyCode": true
-    }
-  ],
-  "compounds": [
+    },
     {
-      "name": "Dev: API + instructions",
-      "configurations": ["API: uvicorn (reload)"],
-      "presentation": {
-        "hidden": false
+      "name": "Test: pytest (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v", "-s"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
       },
-      "stopAll": true
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Test: pytest (last failed)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["tests", "--lf", "-v", "-s"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Test: pytest (-k filter)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["tests", "-k", "${input:pytestK}", "-v", "-s"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Crossborder Scraper — self-host one-liner
+# Cross-Border — self-host one-liner
 #
 # Linux / macOS (from repo):
 #   bash scripts/install.sh
@@ -44,7 +44,7 @@ CROSSBORDER_START="${CROSSBORDER_START:-1}"
 
 banner() {
   echo ""
-  echo "  Crossborder Scraper — self-host install"
+  echo "  Cross-Border — self-host install"
   echo "  Works on Linux, macOS, and Windows (use install.ps1)."
   echo "  Default panel port: ${PANEL_PORT} (set CROSSBORDER_PORT to override)"
   echo ""
@@ -476,8 +476,15 @@ print(ips[0] if ips else '')
   echo ""
   echo "  CLI (any terminal — no cd, no uv run):"
   echo "    crossborder --help"
-  echo "    crossborder deploy status"
-  echo "    crossborder serve --no-reload    # foreground"
+  echo "    crossborder service status"
+  echo "    crossborder gateway              # agent hub status"
+  echo "    crossborder chat                 # interactive agent"
+  echo "    crossborder agent \"list schedules\""
+  echo "    crossborder schedules list"
+  echo "    crossborder skills list"
+  echo "    crossborder integrate list       # Telegram, Discord, …"
+  echo "    crossborder service start        # background panel"
+  echo "    crossborder serve --no-reload    # foreground panel"
   echo ""
   echo "  Install dir:  ${root}"
   if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" ]]; then

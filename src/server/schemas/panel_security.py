@@ -14,6 +14,18 @@ class PanelSecurityUrls(BaseModel):
     bare_host_note: str = "http://<host>:<port> returns 404 when security entrance is enabled"
 
 
+class ServerTimezoneInfo(BaseModel):
+    timezone: str = "UTC"
+    label: str = "UTC"
+    local_time: str = ""
+    utc_offset: str = "+00:00"
+
+
+class TimezoneOption(BaseModel):
+    id: str
+    label: str
+
+
 class PanelSecurityStatusResponse(BaseModel):
     security_entrance_enabled: bool
     entry_path: str | None = None
@@ -26,6 +38,8 @@ class PanelSecurityStatusResponse(BaseModel):
     urls: PanelSecurityUrls
     network: NetworkAccessStatusResponse
     restart_required: bool = False
+    server_timezone: ServerTimezoneInfo
+    timezone_options: list[TimezoneOption] = Field(default_factory=list)
 
 
 class PanelSecurityUpdateRequest(BaseModel):
@@ -42,6 +56,10 @@ class PanelSecurityUpdateRequest(BaseModel):
     enable_entrance: bool | None = None
     username: str | None = Field(default=None, min_length=1, max_length=64)
     password: str | None = Field(default=None, min_length=8, max_length=128)
+    timezone: str | None = Field(
+        default=None,
+        description="IANA timezone for cron schedules and server time display",
+    )
 
 
 class PanelSecurityUpdateResponse(BaseModel):

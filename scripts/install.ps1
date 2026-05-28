@@ -1,4 +1,4 @@
-# Crossborder Scraper — Windows self-host one-liner
+# Cross-Border — Windows self-host one-liner
 #
 # From repo:
 #   .\scripts\install.ps1
@@ -26,7 +26,7 @@ $Branch = if ($env:CROSSBORDER_BRANCH) { $env:CROSSBORDER_BRANCH } else { "main"
 
 function Write-Banner {
     Write-Host ""
-    Write-Host "  Crossborder Scraper - self-host install (Windows)"
+    Write-Host "  Cross-Border - self-host install (Windows)"
     Write-Host "  Installs Python deps, panel login, and prints your access URL."
     Write-Host ""
 }

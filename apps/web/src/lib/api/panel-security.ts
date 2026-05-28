@@ -9,6 +9,18 @@ export type PanelSecurityUrls = {
   bare_host_note: string
 }
 
+export type ServerTimezoneInfo = {
+  timezone: string
+  label: string
+  local_time: string
+  utc_offset: string
+}
+
+export type TimezoneOption = {
+  id: string
+  label: string
+}
+
 export type PanelSecurityStatus = {
   security_entrance_enabled: boolean
   entry_path: string | null
@@ -21,6 +33,8 @@ export type PanelSecurityStatus = {
   urls: PanelSecurityUrls
   network: NetworkAccessStatus
   restart_required: boolean
+  server_timezone: ServerTimezoneInfo
+  timezone_options: TimezoneOption[]
 }
 
 export type PanelSecurityUpdateBody = {
@@ -31,6 +45,7 @@ export type PanelSecurityUpdateBody = {
   enable_entrance?: boolean
   username?: string
   password?: string
+  timezone?: string
 }
 
 export type PanelSecurityUpdateResponse = {
@@ -73,6 +88,13 @@ async function fetchPanelSecurityLegacy(): Promise<PanelSecurityStatus> {
     },
     network,
     restart_required: false,
+    server_timezone: {
+      timezone: 'UTC',
+      label: 'UTC',
+      local_time: '',
+      utc_offset: '+00:00',
+    },
+    timezone_options: [{ id: 'UTC', label: 'UTC' }],
   }
 }
 

@@ -12,8 +12,7 @@ if [[ -f "${ROOT}/.env" ]]; then
 fi
 
 need_pnpm
-cd "${ROOT}/apps/web"
-[[ -d node_modules ]] || pnpm install
+pnpm_install_web 0
 
 PORT="${PANEL_PORT:-8787}"
 if ! curl -sf --max-time 1 "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; then

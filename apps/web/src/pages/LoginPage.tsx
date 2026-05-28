@@ -81,7 +81,7 @@ function LoginBrandPanel({ version }: { version?: string }) {
 function HStackBrand({ version }: { version?: string }) {
   return (
     <Flex align="center" gap={2}>
-      <ShellLogoMark collapsed={false} label="Crossborder" />
+      <ShellLogoMark collapsed={false} label="Cross-Border" />
       <Text
         fontFamily="heading"
         fontWeight="semibold"
@@ -91,7 +91,7 @@ function HStackBrand({ version }: { version?: string }) {
         textTransform="uppercase"
         color="fg"
       >
-        Crossborder
+        Cross-Border
       </Text>
       <BrandVersionBadge version={version} />
     </Flex>
@@ -213,7 +213,7 @@ function LoginFormCard({
         <Separator borderColor="border.subtle" my={5} />
 
         <Text fontSize="xs" color="fg.subtle" textAlign="center" lineHeight="short">
-          © {new Date().getFullYear()} Crossborder. All rights reserved.
+          © {new Date().getFullYear()} Cross-Border. All rights reserved.
         </Text>
       </PanelBody>
     </Panel>

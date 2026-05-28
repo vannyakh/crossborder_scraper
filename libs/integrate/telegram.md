@@ -29,8 +29,8 @@ Save credentials — the runner reloads automatically.
 ## 3. Find your chat ID
 
 1. Enable Telegram and save with a valid token.
-2. Message your bot `/start` from the chat you want to control.
-3. The bot replies with `Your chat id: …`.
+2. Message your bot `/start` or `/getid` from the chat you want to control.
+3. The bot replies with `Your chat id: …` (works before the chat is allowlisted).
 4. Add that number to **Allowed chat IDs** and save again.
 
 ## 4. Use the agent
@@ -39,9 +39,10 @@ Send any text message in an allowed chat. The bot runs gateway tools (scrape, ex
 
 ### Useful bot commands
 
-- `/start` — show chat id and confirm the bot is online
+- `/start` — show chat id and setup steps (works before allowlist)
+- `/getid` — chat id only (works before allowlist)
 - `/help` — same as start
-- `/status` — gateway version, tool count, schedules
+- `/status` — gateway version, tool count, schedules (allowlisted chats only)
 
 ## Script & API
 
@@ -59,6 +60,6 @@ uv run crossborder gateway channels configure telegram --enable \
 Python:
 
 ```python
-from gateway.channels.setup import configure_channel, reload_channel
+from gateway.integrate.setup import configure_channel, reload_channel
 configure_channel("telegram", {"enabled": True, "bot_token": "…"})
 ```

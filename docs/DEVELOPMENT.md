@@ -1,64 +1,147 @@
 # Local development
 
-## API
+## Quick reference
+
+### Development
+
+| Goal | Command |
+|------|---------|
+| Install deps (no prod bundle) | `make build-dev` or `make install` |
+| Dev stack instructions | `make dev` |
+| API with reload | `make run-dev` |
+| Vite panel (hot reload) | `make run-dev-ui` |
+| Dev tests (pytest + smoke) | `make test-dev` |
+| CI parity (ruff + dev test) | `make check-ci` |
+
+### Production (local)
+
+| Goal | Command |
+|------|---------|
+| Build panel bundle | `make build-prod` → `apps/web/dist/` |
+| Run prod-like API | `make run-prod` (serves `dist/`, no reload) |
+| Prod smoke test | `make test-prod` (build + `/health` + `/ui/`) |
+| Docker prod image | `make build-prod-docker` |
+| Run Docker prod | `make run-prod-docker` |
+| Docker smoke test | `make test-prod-docker` (CI parity) |
+
+### Scripts (same as Make targets)
 
 ```bash
-uv run serve
-bash scripts/serve-api.sh   # with reload
+bash scripts/build.sh dev|prod|docker|prod-docker
+bash scripts/run.sh dev|dev-ui|prod|prod-docker
+bash scripts/test.sh dev|prod|prod-docker
 ```
 
-Default port comes from `PANEL_PORT` in `.env` (8787 in `.env.example`, often 8000 locally).
+## Dev stack (API + panel)
 
-## React panel (Vite)
+**Terminal 1 — API:**
 
 ```bash
-bash scripts/dev-ui.sh
+make run-dev
 ```
 
-Or manually:
+**Terminal 2 — Vite (hot reload):**
 
 ```bash
-cd apps/web
-pnpm install
-pnpm dev
+make run-dev-ui
 ```
 
-Vite probes `http://127.0.0.1:<port>/health` on startup and proxies API routes to the first match among **8000**, `PANEL_PORT` from `.env`, and **8787**. Override with `VITE_API_PORT` in `apps/web/.env.local` if needed.
+Default port comes from `PANEL_PORT` in `.env` (8787 in `.env.example`).
 
-On startup you should see:
+| URL | When |
+|-----|------|
+| `http://127.0.0.1:<PANEL_PORT>/ui/` | API (proxies to Vite when `dist/` is missing) |
+| `http://127.0.0.1:5173/ui/` | Vite dev server (fastest UI iteration) |
 
-```text
-[vite] API proxy → http://127.0.0.1:8000 (auto-detected)
-```
+**502 on `/health`:** start `make run-dev` and restart Vite.
 
-**502 on `/health`:** the API is not running, or nothing responds on those ports — start `uv run serve` (or uvicorn on 8000) and restart Vite.
+## Production-like local run
 
-Production UI: `pnpm build` in `apps/web`, then served by the API at `http://localhost:<PANEL_PORT>/ui/`.
-
-## Docker
+Build once, then run without Vite or reload:
 
 ```bash
-docker compose up --build
+make build-prod
+make run-prod
+# → http://127.0.0.1:<PANEL_PORT>/ui/
+```
+
+Verify the full prod path:
+
+```bash
+make test-prod
+```
+
+Docker (matches deployed container):
+
+```bash
+make build-prod-docker
+make run-prod-docker
+make test-prod-docker   # build image + container /health
+```
+
+## VS Code / Cursor
+
+**Terminal → Run Task** (or `Cmd+Shift+B`):
+
+| Task | Purpose |
+|------|---------|
+| **Dev: full stack (API + Vite)** | Default build task — both dev servers |
+| **Build: prod (panel bundle)** | `apps/web/dist/` |
+| **Run: prod (static bundle)** | API without reload |
+| **Test: dev** | pytest + import smoke |
+| **Test: prod** | build + HTTP smoke |
+| **Test: prod-docker** | container health (needs Docker) |
+| **Check: CI parity** | ruff + dev test |
+
+**Run and Debug:** API reload, CLI, pytest (current file / last failed / `-k` filter).
+
+**Testing sidebar:** pytest discovers `tests/` automatically.
+
+## Tests
+
+**Development** (fast, daily):
+
+```bash
+make test-dev                         # pytest + import smoke
+make test-v                           # verbose pytest
+make test-k K=gateway                 # name filter
+make test-file FILE=tests/test_foo.py
+bash scripts/test.sh dev -- -x -v     # raw pytest args
+```
+
+**Production** (before release / deploy):
+
+```bash
+make test-prod          # build dist + import smoke + /health + /ui/
+make test-prod-docker   # docker build + container health
+```
+
+Pytest config: `pyproject.toml`. Fixtures: `tests/conftest.py`.
+
+## Formatting & quality
+
+```bash
+make install      # build-dev
+make hooks        # pre-commit
+make fmt          # auto-format
+make lint         # ruff + eslint
+make check        # import smoke only
+make check-ci     # ruff + test-dev
+make check-all    # format + lint + test-dev + build-prod
 ```
 
 ## CI
 
-Lint, format check, web build, and Docker smoke tests run on push/PR to `main`. Release workflow runs on `v*` tags. See [.github/RELEASE.md](../.github/RELEASE.md).
+On push/PR to `main`:
 
-## Formatting & quality
+| Job | What runs |
+|-----|-----------|
+| Python | ruff + `test-dev` |
+| Web | `pnpm build` |
+| Docker | buildx image + `test-prod-docker` smoke |
 
-From the repo root:
-
-```bash
-make install    # uv sync --all-groups + pnpm install
-make hooks      # pre-commit (optional, recommended)
-make fmt        # auto-format Python + web
-make check      # same checks as CI (format + lint + smoke)
-make test       # pytest
-```
-
-Editor setup: open the repo in VS Code or Cursor and install recommended extensions (`.vscode/extensions.json`). Format-on-save uses **Ruff** (Python) and **Prettier** (TypeScript).
+See [.github/workflows/ci.yml](../.github/workflows/ci.yml) and [.github/RELEASE.md](../.github/RELEASE.md).
 
 Contributor guide: [CONTRIBUTING.md](../CONTRIBUTING.md)
 
-Cursor / IDE agents: [AGENTS.md](../AGENTS.md) and `.cursor/rules/` (project map, scalable feature checklist, backend/frontend conventions).
+Cursor / IDE agents: [AGENTS.md](../AGENTS.md) and `.cursor/rules/`.

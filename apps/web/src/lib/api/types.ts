@@ -109,6 +109,26 @@ export type LlmProviderInfo = {
   docs_url?: string
 }
 
+export type LlmModelItem = {
+  id: string
+  label?: string | null
+}
+
+export type LlmModelsList = {
+  provider: LlmProviderId
+  provider_label: string
+  models: LlmModelItem[]
+  source: 'api' | 'default'
+  message?: string
+}
+
+export type LlmModelsProbe = {
+  ai_provider?: LlmProviderId
+  ai_base_url?: string
+  ai_api_key?: string
+  ai_model?: string
+}
+
 export type AIConfig = {
   ai_provider?: LlmProviderId
   provider_label?: string
@@ -226,6 +246,32 @@ export type LLMHealth = {
   models_count?: number | null
   model_available?: boolean | null
   probe?: string | null
+}
+
+export type AgentLlmSetupStep = {
+  id: string
+  label: string
+  detail: string
+  ok: boolean
+  optional?: boolean
+}
+
+export type AgentLlmGatewaySummary = {
+  tools_count: number
+  skills_count: number
+  enabled_skills_count: number
+  workflows_count: number
+  schedules_count: number
+  enabled_schedules_count: number
+}
+
+export type AgentLlmSetup = {
+  config: AIConfig
+  health: LLMHealth | null
+  gateway: AgentLlmGatewaySummary
+  steps: AgentLlmSetupStep[]
+  setup_complete: boolean
+  chat_ready: boolean
 }
 
 export type RuntimeBatchInfo = {
@@ -521,6 +567,33 @@ export type ServiceOverview = {
   llm: LLMHealth | null
 }
 
+export type PanelGuideCategoryId = 'agent' | 'scrape' | 'panel' | 'integrate'
+
+export type PanelGuideLink = {
+  label: string
+  path: string
+}
+
+export type PanelGuideSummary = {
+  id: string
+  title: string
+  summary: string
+  category: PanelGuideCategoryId
+  category_label: string
+  tool_ids: string[]
+  links: PanelGuideLink[]
+}
+
+export type PanelGuideDetail = PanelGuideSummary & {
+  body_md: string
+  source_path: string
+}
+
+export type PanelGuideList = {
+  items: PanelGuideSummary[]
+  categories: { id: string; label: string }[]
+}
+
 export type ServiceSupportLink = {
   id: string
   label: string
@@ -593,8 +666,42 @@ export type GatewayAgentResponse = {
   provider?: string | null
   model_ref?: string | null
   prompt_id?: string | null
+  session_id?: string | null
   skill_ids?: string[]
   rule_ids?: string[]
+  channel_id?: string | null
+  platform_chat_id?: string | null
+}
+
+export type AgentChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+  created_at?: string | null
+  ok?: boolean | null
+  tool_calls?: GatewayToolCall[]
+  model_ref?: string | null
+  kind?: 'session' | null
+}
+
+export type AgentChatSession = {
+  id: string
+  label: string
+  display_label?: string | null
+  channel_id: string
+  platform_chat_id?: string | null
+  platform_chat_title?: string | null
+  platform_chat_kind?: 'direct' | 'group' | 'unknown' | null
+  message_count?: number
+  prompt_id: string
+  created_at: string
+  updated_at: string
+  messages: AgentChatMessage[]
+}
+
+export type AgentChatSessionChannelSummary = {
+  channel_id: string
+  label: string
+  count: number
 }
 
 export type AgentRule = {
@@ -689,6 +796,7 @@ export type GatewayPrompt = {
   label: string
   path: string
   recommended: boolean
+  kind?: 'role' | 'task'
 }
 
 export type AgentSchedule = {
@@ -698,6 +806,7 @@ export type AgentSchedule = {
   cron: string
   prompt_id: string
   message: string
+  notify_telegram?: boolean
   next_run_at?: string | null
   last_run_at?: string | null
   last_status?: string | null
@@ -710,6 +819,7 @@ export type AgentScheduleCreate = {
   cron: string
   prompt_id?: string
   message: string
+  notify_telegram?: boolean
 }
 
 export type AgentRunRecord = {

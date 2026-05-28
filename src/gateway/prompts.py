@@ -2,22 +2,45 @@
 
 from __future__ import annotations
 
+import re
+
 from core.paths import prompts_dir
 
 PROMPTS_DIR = prompts_dir()
 DEFAULT_PROMPT_ID = "gateway_agent"
 
-_FALLBACK_PROMPT = """You are the Crossborder Scraper gateway agent.
+_FALLBACK_PROMPT = """You are the Cross-Border gateway agent.
 Use available tools to scrape, list, export, and report status. Be concise."""
 
 _BUILTIN_IDS = frozenset(
     {
         "gateway_agent",
+        "telegram_agent",
         "catalog_monitor",
         "scrape_ops",
         "export_review",
     }
 )
+
+
+def _prompt_label(prompt_id: str, text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("# "):
+            return stripped.lstrip("#").strip()
+        match = re.search(r"\*\*([^*]+)\*\*", stripped)
+        if match and stripped.lower().startswith("you are"):
+            title = match.group(1).strip()
+            return title[:72]
+    return prompt_id.replace("_", " ").title()
+
+
+def _prompt_kind(prompt_id: str) -> str:
+    if prompt_id == "gateway_agent":
+        return "role"
+    return "task"
 
 
 def list_prompts() -> list[dict[str, str | bool]]:
@@ -29,18 +52,13 @@ def list_prompts() -> list[dict[str, str | bool]]:
             continue
         prompt_id = path.stem
         text = path.read_text(encoding="utf-8").strip()
-        label = prompt_id.replace("_", " ").title()
-        for line in text.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("#"):
-                label = stripped.lstrip("#").strip()
-                break
         items.append(
             {
                 "id": prompt_id,
-                "label": label,
+                "label": _prompt_label(prompt_id, text),
                 "path": f"libs/prompts/{path.name}",
                 "recommended": prompt_id in _BUILTIN_IDS,
+                "kind": _prompt_kind(prompt_id),
             }
         )
     return items

@@ -70,5 +70,8 @@
     "allow_any_chat": false,
     "prompt_id": "gateway_agent",
     "max_reply_chars": 3500
+  },
+  "server": {
+    "timezone": "UTC"
   }
 }

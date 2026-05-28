@@ -26,7 +26,7 @@ class CloudSecurityRule(BaseModel):
     port: str
     source: str = "0.0.0.0/0"
     action: str = "allow"
-    description: str = "Crossborder panel"
+    description: str = "Cross-Border panel"
 
 
 class NetworkAccessStatusResponse(BaseModel):

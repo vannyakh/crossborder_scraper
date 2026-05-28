@@ -24,8 +24,8 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
   },
   {
     id: 'ai',
-    label: 'AI & LLM',
-    description: 'Model, API key, extraction & agent',
+    label: 'Agent LLM',
+    description: 'Gateway agent provider, model, and API key',
     icon: Bot,
   },
   {

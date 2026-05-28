@@ -138,10 +138,43 @@ def update_run(run_id: str, patch: dict[str, Any]) -> None:
 
 
 def compute_next_run(cron: str, base: datetime | None = None) -> str:
+    from zoneinfo import ZoneInfo
+
     from croniter import croniter
 
-    base = base or datetime.utcnow()
-    return croniter(cron, base).get_next(datetime).isoformat() + "Z"
+    from core.timezone import get_panel_timezone
+
+    tz = get_panel_timezone()
+    if base is None:
+        cron_base = datetime.now(tz)
+    elif base.tzinfo is None:
+        cron_base = base.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz)
+    else:
+        cron_base = base.astimezone(tz)
+
+    nxt = croniter(cron, cron_base).get_next(datetime)
+    if nxt.tzinfo is None:
+        nxt = nxt.replace(tzinfo=tz)
+    utc = nxt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+    return utc.isoformat() + "Z"
+
+
+def recalculate_schedule_next_runs() -> int:
+    """Recompute ``next_run_at`` for all schedules after timezone change."""
+    schedules = load_schedules()
+    changed = 0
+    for schedule in schedules:
+        cron = schedule.get("cron")
+        if not cron:
+            continue
+        try:
+            schedule["next_run_at"] = compute_next_run(str(cron))
+            changed += 1
+        except Exception:
+            continue
+    if changed:
+        save_schedules(schedules)
+    return changed
 
 
 def update_schedule_run_meta(schedule_id: str, *, status: str, error: str | None = None) -> None:

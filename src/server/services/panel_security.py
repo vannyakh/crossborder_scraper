@@ -7,6 +7,7 @@ from typing import Any
 from config import get_settings
 from config.credentials import upsert_env_file
 from core.paths import env_file_path
+from core.timezone import build_timezone_info, list_timezone_options
 from deploy.network_access import build_network_access_status
 from deploy.panel_security import (
     build_entrance_url,
@@ -58,6 +59,8 @@ def build_panel_security_status(*, port: int | None = None) -> dict[str, Any]:
         "urls": urls,
         "network": build_network_access_status(port=chosen_port),
         "restart_required": False,
+        "server_timezone": build_timezone_info(),
+        "timezone_options": list_timezone_options(),
     }
 
 
@@ -75,6 +78,7 @@ class PanelSecurityService:
         enable_entrance: bool | None = None,
         username: str | None = None,
         password: str | None = None,
+        timezone: str | None = None,
         actor: str = "admin",
     ) -> dict[str, Any]:
         from server.services.audit import log_operation
@@ -146,6 +150,16 @@ class PanelSecurityService:
         if password is not None:
             updates["PANEL_PASSWORD"] = password
             messages.append("Panel password updated")
+
+        if timezone is not None:
+            from config.server_store import save_server_timezone
+            from gateway.schedules_store import recalculate_schedule_next_runs
+
+            validated = save_server_timezone(timezone)
+            recalculated = recalculate_schedule_next_runs()
+            messages.append(f"Server timezone set to {validated}")
+            if recalculated:
+                messages.append(f"Recalculated next run for {recalculated} schedule(s)")
 
         if updates:
             upsert_env_file(env_path, updates)

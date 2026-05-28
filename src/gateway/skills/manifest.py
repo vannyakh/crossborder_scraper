@@ -1,4 +1,4 @@
-"""Parse SKILL.md packages for the Crossborder gateway agent (built-in + installed)."""
+"""Parse SKILL.md packages for the Cross-Border gateway agent (built-in + installed)."""
 
 from __future__ import annotations
 

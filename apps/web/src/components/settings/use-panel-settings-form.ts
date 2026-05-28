@@ -17,14 +17,14 @@ export function usePanelSettingsForm() {
   const checkMutation = useCheckLLMHealthMutation()
 
   const [provider, setProvider] = useState<LlmProviderId>('openai')
-  const [enabled, setEnabled] = useState(false)
-  const [fallback, setFallback] = useState(true)
   const [agentEnabled, setAgentEnabled] = useState(false)
   const [model, setModel] = useState('')
   const [aiBaseUrl, setAiBaseUrl] = useState('')
   const [aiApiKey, setAiApiKey] = useState('')
-  const [maxHtmlChars, setMaxHtmlChars] = useState(24000)
   const [timeoutSeconds, setTimeoutSeconds] = useState(90)
+  // Scrape engine fields — kept in sync from panel; not edited on agent LLM page
+  const [scrapeFallback, setScrapeFallback] = useState(true)
+  const [scrapeMaxHtmlChars, setScrapeMaxHtmlChars] = useState(24000)
   const [proxyParts, setProxyParts] = useState<ParsedProxy>(emptyParsedProxy())
   const [proxyListPath, setProxyListPath] = useState('')
   const [proxyRotation, setProxyRotation] = useState<'round_robin' | 'random'>('round_robin')
@@ -37,14 +37,13 @@ export function usePanelSettingsForm() {
   useEffect(() => {
     if (!panel) return
     setProvider((panel.ai_provider as LlmProviderId) || 'openai')
-    setEnabled(panel.ai_enabled)
-    setFallback(panel.ai_fallback)
-    setAgentEnabled(panel.ai_agent_enabled)
+    setAgentEnabled(panel.ai_enabled)
     setModel(panel.ai_model)
     setAiBaseUrl(panel.ai_base_url)
     setAiApiKey('')
-    setMaxHtmlChars(panel.ai_max_html_chars)
     setTimeoutSeconds(panel.ai_timeout_seconds)
+    setScrapeFallback(panel.ai_fallback)
+    setScrapeMaxHtmlChars(panel.ai_max_html_chars)
     setProxyParts(emptyParsedProxy())
     setProxyListPath(panel.proxy_list_path ?? '')
     setProxyRotation(panel.proxy_rotation_strategy === 'random' ? 'random' : 'round_robin')
@@ -65,15 +64,26 @@ export function usePanelSettingsForm() {
     if (preset?.default_model) setModel(preset.default_model)
   }
 
+  function buildAgentLlmPayload(): PanelConfigUpdate {
+    const payload: PanelConfigUpdate = {
+      ai_provider: provider,
+      ai_enabled: agentEnabled,
+      ai_model: model,
+      ai_base_url: aiBaseUrl,
+      ai_timeout_seconds: timeoutSeconds,
+    }
+    if (aiApiKey.trim()) payload.ai_api_key = aiApiKey.trim()
+    return payload
+  }
+
   function buildPayload(): PanelConfigUpdate {
     const payload: PanelConfigUpdate = {
       ai_provider: provider,
-      ai_enabled: enabled,
-      ai_fallback: fallback,
-      ai_agent_enabled: agentEnabled,
+      ai_enabled: agentEnabled,
+      ai_fallback: scrapeFallback,
       ai_model: model,
       ai_base_url: aiBaseUrl,
-      ai_max_html_chars: maxHtmlChars,
+      ai_max_html_chars: scrapeMaxHtmlChars,
       ai_timeout_seconds: timeoutSeconds,
       proxy_list_path: proxyListPath.trim() || null,
       proxy_rotation_strategy: proxyRotation,
@@ -86,6 +96,17 @@ export function usePanelSettingsForm() {
     if (vpnLocalEndpoint.trim()) payload.vpn_local_endpoint = vpnLocalEndpoint.trim()
     if (aiApiKey.trim()) payload.ai_api_key = aiApiKey.trim()
     return payload
+  }
+
+  async function handleSaveAgentLlm() {
+    setMessage('')
+    try {
+      await updateMutation.mutateAsync(buildAgentLlmPayload())
+      setAiApiKey('')
+      setMessage(`Agent LLM saved to ${panel?.ui_config_path ?? 'config/ui_config.json'}`)
+    } catch (err) {
+      setMessage(String((err as Error).message || err))
+    }
   }
 
   async function handleSave() {
@@ -104,7 +125,13 @@ export function usePanelSettingsForm() {
   async function handleHealthCheck() {
     setMessage('')
     try {
-      const result = await checkMutation.mutateAsync()
+      const probe = {
+        ai_provider: provider,
+        ai_base_url: aiBaseUrl,
+        ai_model: model,
+        ...(aiApiKey.trim() ? { ai_api_key: aiApiKey.trim() } : {}),
+      }
+      const result = await checkMutation.mutateAsync(probe)
       setMessage(result.message)
     } catch (err) {
       setMessage(String((err as Error).message || err))
@@ -119,10 +146,6 @@ export function usePanelSettingsForm() {
     message,
     provider,
     setProvider: handleProviderChange,
-    enabled,
-    setEnabled,
-    fallback,
-    setFallback,
     agentEnabled,
     setAgentEnabled,
     model,
@@ -131,8 +154,6 @@ export function usePanelSettingsForm() {
     setAiBaseUrl,
     aiApiKey,
     setAiApiKey,
-    maxHtmlChars,
-    setMaxHtmlChars,
     timeoutSeconds,
     setTimeoutSeconds,
     proxyParts,
@@ -151,6 +172,7 @@ export function usePanelSettingsForm() {
     vpnConfigPath,
     setVpnConfigPath,
     handleSave,
+    handleSaveAgentLlm,
     handleHealthCheck,
   }
 }

@@ -28,7 +28,10 @@ jobs:
         run: uv run ruff check src main.py
 
       - name: Import smoke test
-        run: uv run python -c "from cli.app import app; from server.app import app as api"
+        run: bash -c 'source scripts/_lib.sh && smoke_imports'
+
+      - name: Pytest (dev)
+        run: bash scripts/test.sh dev
 
   web:
     name: Web client build
@@ -70,19 +73,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Smoke test container health
-        run: |
-          docker run -d --name crossborder-ci -p 18787:8787 \
-            -e PANEL_AUTH_ENABLED=false \
-            crossborder-scraper:ci
-          for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:18787/health; then
-              echo "Health OK"
-              docker rm -f crossborder-ci
-              exit 0
-            fi
-            sleep 2
-          done
-          docker logs crossborder-ci
-          docker rm -f crossborder-ci
-          exit 1
+      - name: Production smoke (container health)
+        run: SMOKE_DOCKER_TAG=crossborder-scraper:ci SMOKE_SKIP_BUILD=1 bash scripts/smoke-docker.sh
+        env:
+          SMOKE_DOCKER_TAG: crossborder-scraper:ci
+          SMOKE_SKIP_BUILD: "1"

@@ -109,7 +109,7 @@ export function ServiceHealthSection() {
   return (
     <Section
       title="Health"
-      description="Scrape engine status, gateway agent, and LLM connectivity"
+      description="Scrape engine status, gateway agent, and agent LLM connectivity"
       mt={0}
     >
       {error ? (
@@ -152,15 +152,15 @@ export function ServiceHealthSection() {
             </HealthCard>
 
             <HealthCard
-              title="LLM provider"
+              title="Gateway agent LLM"
               status={!aiEnabled ? 'neutral' : healthTone(health?.ok)}
               statusLabel={!aiEnabled ? 'disabled' : (health?.status ?? 'checking…')}
             >
               {!aiEnabled ? (
                 <Text fontSize="sm" color="fg.muted">
-                  AI extraction is off. Enable it in{' '}
+                  Gateway agent LLM is off. Enable it under{' '}
                   <RouterLink to="/settings/ai" style={{ color: 'var(--app-accent)' }}>
-                    Settings → AI & LLM
+                    Settings → Agent LLM
                   </RouterLink>
                   .
                 </Text>
@@ -199,10 +199,10 @@ export function ServiceHealthSection() {
                   variant="outline"
                   colorPalette={accentPalette}
                   loading={checkMutation.isPending}
-                  onClick={() => void checkMutation.mutate()}
+                  onClick={() => void checkMutation.mutate(undefined)}
                 >
                   <RefreshCw size={14} />
-                  Test LLM connection
+                  Test connection
                 </Button>
               ) : null}
             </HealthCard>
@@ -310,28 +310,32 @@ function supportLinkHref(link: ServiceSupportLink): string {
   return link.path
 }
 
+export function SupportRefreshButton() {
+  const { refetch, isFetching } = useServiceSupportQuery()
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      borderColor="border.subtle"
+      borderRadius="input"
+      loading={isFetching}
+      onClick={() => void refetch()}
+    >
+      <RefreshCw size={14} />
+      Refresh
+    </Button>
+  )
+}
+
 export function ServiceSupportSection() {
-  const { data, isLoading, error, refetch, isFetching } = useServiceSupportQuery()
+  const { data, isLoading, error } = useServiceSupportQuery()
   const runtime = data?.runtime
   const scheduler = data?.scheduler
   const gateway = data?.gateway
 
   return (
     <Box mt={0}>
-      <HStack justify="flex-end" mb={4}>
-        <Button
-          size="sm"
-          variant="outline"
-          borderColor="border.subtle"
-          borderRadius="input"
-          loading={isFetching}
-          onClick={() => void refetch()}
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </Button>
-      </HStack>
-
       {error ? (
         <Text fontSize="sm" color="red.500" mb={4}>
           {String((error as Error).message || error)}

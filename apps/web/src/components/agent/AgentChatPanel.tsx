@@ -1,5 +1,4 @@
 import { Box, Button, HStack, IconButton, Menu, Portal, Text } from '@chakra-ui/react'
-import { AnimatePresence, motion } from 'motion/react'
 import {
   AlertCircle,
   Brain,
@@ -7,16 +6,25 @@ import {
   ChevronDown,
   Maximize2,
   Minimize2,
+  Plus,
   RefreshCw,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
-import { useGatewayPromptsQuery, useGatewayStatusQuery, useRunAgentMutation } from '../../hooks'
 import { formatModelRef } from '../../config/llm-providers'
+import {
+  useAgentChatSessionsQuery,
+  useCreateChatSessionMutation,
+  useGatewayPromptsQuery,
+  useGatewayStatusQuery,
+  useRunAgentMutation,
+  useUpdateChatSessionMutation,
+} from '../../hooks'
 import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-props'
-import { AgentToolTrace } from './AgentToolTrace'
+import type { AgentChatSession, GatewayAgentResponse, GatewayPrompt } from '../../lib/api'
 import { ChatPanelSkeleton } from '../ui/PanelSkeleton'
-import type { GatewayAgentResponse, GatewayPrompt } from '../../lib/api'
+import { AgentToolTrace } from './AgentToolTrace'
 
 const MotionBox = motion.create(Box)
 
@@ -42,6 +50,287 @@ function formatChatTime(d: Date): string {
   return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }
 
+function channelLabel(session: AgentChatSession): string {
+  if (session.channel_id === 'panel') return 'Panel'
+  if (session.channel_id === 'telegram') return 'Telegram'
+  return session.channel_id
+}
+
+function sessionDisplayName(session: AgentChatSession | null | undefined): string {
+  if (!session) return 'New session'
+  return session.display_label?.trim() || session.platform_chat_title?.trim() || session.label
+}
+
+function sessionSubtitle(session: AgentChatSession): string {
+  const parts: string[] = [`${session.message_count ?? 0} messages`]
+  if (session.channel_id !== 'panel') {
+    parts.push(platformKindLabel(session.platform_chat_kind))
+  }
+  if (session.platform_chat_id) {
+    parts.push(session.platform_chat_id)
+  }
+  return parts.join(' · ')
+}
+
+function sessionIcon(session: AgentChatSession | null | undefined): string {
+  if (!session || session.channel_id === 'panel') return '💬'
+  if (session.channel_id === 'telegram') return '📱'
+  return '🔗'
+}
+
+function sessionMessagesToUi(session: AgentChatSession): ChatMessage[] {
+  return session.messages.map((m, idx) => ({
+    id: `${session.id}-${idx}`,
+    role: m.role,
+    content: m.content,
+    kind: m.kind ?? undefined,
+    createdAt: m.created_at ? new Date(m.created_at) : new Date(),
+    toolCalls: m.tool_calls,
+    ok: m.ok ?? undefined,
+    model: m.model_ref,
+  }))
+}
+
+function formatRelativeTime(iso: string | undefined): string {
+  if (!iso) return ''
+  const ms = Date.now() - new Date(iso).getTime()
+  if (Number.isNaN(ms)) return ''
+  const sec = Math.floor(ms / 1000)
+  if (sec < 60) return 'just now'
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+function platformKindLabel(kind: AgentChatSession['platform_chat_kind']): string {
+  if (kind === 'group') return 'group'
+  if (kind === 'direct') return 'direct'
+  return 'bot'
+}
+
+type SessionGroup = { id: string; label: string; sessions: AgentChatSession[] }
+
+function groupSessions(sessions: AgentChatSession[]): SessionGroup[] {
+  const panel = sessions.filter((s) => s.channel_id === 'panel')
+  const tgDirect = sessions.filter(
+    (s) => s.channel_id === 'telegram' && s.platform_chat_kind === 'direct',
+  )
+  const tgGroup = sessions.filter(
+    (s) => s.channel_id === 'telegram' && s.platform_chat_kind === 'group',
+  )
+  const tgOther = sessions.filter(
+    (s) =>
+      s.channel_id === 'telegram' &&
+      s.platform_chat_kind !== 'direct' &&
+      s.platform_chat_kind !== 'group',
+  )
+  const otherIds = new Set(
+    sessions
+      .filter((s) => s.channel_id !== 'panel' && s.channel_id !== 'telegram')
+      .map((s) => s.channel_id),
+  )
+  const groups: SessionGroup[] = []
+  if (panel.length) groups.push({ id: 'panel', label: 'Panel', sessions: panel })
+  if (tgDirect.length)
+    groups.push({ id: 'telegram-direct', label: 'Telegram · Direct', sessions: tgDirect })
+  if (tgGroup.length)
+    groups.push({ id: 'telegram-group', label: 'Telegram · Groups', sessions: tgGroup })
+  if (tgOther.length) groups.push({ id: 'telegram-other', label: 'Telegram', sessions: tgOther })
+  for (const cid of otherIds) {
+    const rows = sessions.filter((s) => s.channel_id === cid)
+    if (rows.length) groups.push({ id: cid, label: channelLabel(rows[0]), sessions: rows })
+  }
+  return groups
+}
+
+function ChannelFilterMenu({
+  channelFilter,
+  channels,
+  disabled,
+  onSelect,
+}: {
+  channelFilter: string
+  channels: { channel_id: string; label: string; count: number }[]
+  disabled?: boolean
+  onSelect: (id: string) => void
+}) {
+  const total = channels.reduce((n, c) => n + c.count, 0)
+  const activeLabel =
+    channelFilter === 'all'
+      ? 'All channels'
+      : (channels.find((c) => c.channel_id === channelFilter)?.label ?? channelFilter)
+
+  return (
+    <Menu.Root positioning={{ placement: 'bottom-start' }}>
+      <Menu.Trigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          borderColor="border.subtle"
+          borderRadius="input"
+          className="agent-chat__channel-trigger"
+          disabled={disabled}
+          _open={{ bg: 'bg.panelHover' }}
+        >
+          <HStack gap={1} minW={0}>
+            <Text fontSize="sm" fontWeight="medium" truncate maxW="7rem">
+              {activeLabel}
+            </Text>
+            <ChevronDown size={14} strokeWidth={2} aria-hidden />
+          </HStack>
+        </Button>
+      </Menu.Trigger>
+      <Portal>
+        <Menu.Positioner zIndex={50}>
+          <Menu.Content
+            minW="12rem"
+            borderRadius="input"
+            borderWidth="1px"
+            borderColor="border.subtle"
+            bg="bg.panel"
+            py={1}
+          >
+            <Menu.Item
+              value="all"
+              onClick={() => onSelect('all')}
+              bg={channelFilter === 'all' ? 'bg.panelHover' : undefined}
+            >
+              <HStack justify="space-between" w="full">
+                <Text fontSize="sm">All channels</Text>
+                <Text fontSize="xs" color="fg.muted">
+                  {total}
+                </Text>
+              </HStack>
+            </Menu.Item>
+            {channels.map((c) => (
+              <Menu.Item
+                key={c.channel_id}
+                value={c.channel_id}
+                onClick={() => onSelect(c.channel_id)}
+                bg={channelFilter === c.channel_id ? 'bg.panelHover' : undefined}
+              >
+                <HStack justify="space-between" w="full">
+                  <Text fontSize="sm">{c.label}</Text>
+                  <Text fontSize="xs" color="fg.muted">
+                    {c.count}
+                  </Text>
+                </HStack>
+              </Menu.Item>
+            ))}
+          </Menu.Content>
+        </Menu.Positioner>
+      </Portal>
+    </Menu.Root>
+  )
+}
+
+function SessionMenu({
+  sessions,
+  sessionId,
+  disabled,
+  modelLabel,
+  onSelect,
+  onNewSession,
+}: {
+  sessions: AgentChatSession[]
+  sessionId: string | null
+  disabled?: boolean
+  modelLabel: string
+  onSelect: (id: string) => void
+  onNewSession: () => void
+}) {
+  const active = sessions.find((s) => s.id === sessionId)
+  const groups = groupSessions(sessions)
+
+  return (
+    <Menu.Root positioning={{ placement: 'bottom-start' }}>
+      <Menu.Trigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          borderColor="border.subtle"
+          borderRadius="input"
+          className="agent-chat__session-trigger"
+          disabled={disabled}
+          _open={{ bg: 'bg.panelHover' }}
+        >
+          <HStack gap={1.5} minW={0}>
+            <Text as="span" fontSize="xs" aria-hidden>
+              {sessionIcon(active)}
+            </Text>
+            <Text fontSize="sm" fontWeight="medium" truncate maxW="9rem">
+              {sessionDisplayName(active)}
+            </Text>
+            <Text fontSize="xs" color="fg.muted" truncate maxW="5rem">
+              {modelLabel}
+            </Text>
+            <ChevronDown size={14} strokeWidth={2} aria-hidden />
+          </HStack>
+        </Button>
+      </Menu.Trigger>
+      <Portal>
+        <Menu.Positioner zIndex={50}>
+          <Menu.Content
+            minW="16rem"
+            maxH="min(360px, 55vh)"
+            overflowY="auto"
+            className="app-scroll"
+            borderRadius="input"
+            borderWidth="1px"
+            borderColor="border.subtle"
+            bg="bg.panel"
+            py={1}
+          >
+            <Menu.Item value="new" onClick={onNewSession}>
+              <HStack gap={2}>
+                <Plus size={14} aria-hidden />
+                <Text fontSize="sm">New panel session</Text>
+              </HStack>
+            </Menu.Item>
+            {groups.length ? (
+              groups.map((group) => (
+                <Menu.ItemGroup key={group.id}>
+                  <Menu.ItemGroupLabel px={3} py={1.5} fontSize="xs" color="fg.muted">
+                    {group.label}
+                  </Menu.ItemGroupLabel>
+                  {group.sessions.map((s) => (
+                    <Menu.Item
+                      key={s.id}
+                      value={s.id}
+                      onClick={() => onSelect(s.id)}
+                      bg={s.id === sessionId ? 'bg.panelHover' : undefined}
+                    >
+                      <Box minW={0} w="full">
+                        <HStack justify="space-between" gap={2}>
+                          <Text fontSize="sm" truncate flex="1">
+                            {sessionDisplayName(s)}
+                          </Text>
+                          <Text fontSize="xs" color="fg.muted" flexShrink={0}>
+                            {formatRelativeTime(s.updated_at)}
+                          </Text>
+                        </HStack>
+                        <Text fontSize="xs" color="fg.muted" truncate>
+                          {sessionSubtitle(s)}
+                        </Text>
+                      </Box>
+                    </Menu.Item>
+                  ))}
+                </Menu.ItemGroup>
+              ))
+            ) : (
+              <Menu.Item value="empty" disabled closeOnSelect={false}>
+                <Text fontSize="sm" color="fg.muted" px={2}>
+                  No sessions in this channel yet
+                </Text>
+              </Menu.Item>
+            )}
+          </Menu.Content>
+        </Menu.Positioner>
+      </Portal>
+    </Menu.Root>
+  )
+}
+
 function PromptRoleMenu({
   prompts,
   promptId,
@@ -54,6 +343,7 @@ function PromptRoleMenu({
   onSelect: (id: string) => void
 }) {
   const active = prompts.find((p) => p.id === promptId)
+  const kindLabel = active?.kind === 'role' ? 'Role' : 'Task'
 
   return (
     <Menu.Root positioning={{ placement: 'bottom-end' }}>
@@ -69,7 +359,7 @@ function PromptRoleMenu({
         >
           <HStack gap={1} minW={0}>
             <Text fontSize="sm" fontWeight="medium" truncate maxW="7.5rem">
-              {active?.label ?? 'Role'}
+              {active?.label ?? kindLabel}
             </Text>
             {active?.recommended ? (
               <Text as="span" fontSize="xs" color="fg.muted" aria-hidden>
@@ -102,9 +392,14 @@ function PromptRoleMenu({
                   bg={p.id === promptId ? 'bg.panelHover' : undefined}
                 >
                   <HStack justify="space-between" w="full" gap={2}>
-                    <Text fontSize="sm" truncate>
-                      {p.label}
-                    </Text>
+                    <Box minW={0}>
+                      <Text fontSize="sm" truncate>
+                        {p.label}
+                      </Text>
+                      <Text fontSize="xs" color="fg.muted" textTransform="capitalize">
+                        {p.kind ?? 'task'}
+                      </Text>
+                    </Box>
                     {p.recommended ? (
                       <Text fontSize="xs" color="fg.muted">
                         ★
@@ -199,11 +494,18 @@ function ChatMessageRow({
 export function AgentChatPanel() {
   const gatewayQuery = useGatewayStatusQuery()
   const promptsQuery = useGatewayPromptsQuery()
+  const [channelFilter, setChannelFilter] = useState('all')
+  const sessionsQuery = useAgentChatSessionsQuery({
+    channelId: channelFilter === 'all' ? undefined : channelFilter,
+  })
+  const createSessionMutation = useCreateChatSessionMutation()
+  const updateSessionMutation = useUpdateChatSessionMutation()
   const runMutation = useRunAgentMutation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const motionEnabled = useMotionEnabled()
   const transition = useMotionTransition(0.28)
 
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [promptId, setPromptId] = useState('gateway_agent')
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -215,9 +517,16 @@ export function AgentChatPanel() {
   const llmReady = runtime?.ai?.llm_ready ?? false
   const canRun = Boolean(llmReady)
   const prompts: GatewayPrompt[] = promptsQuery.data?.items ?? []
-  const activePrompt = prompts.find((p) => p.id === promptId)
+  const sessions: AgentChatSession[] = sessionsQuery.data?.items ?? []
+  const channelSummaries = sessionsQuery.data?.channels ?? []
+  const activeSession = useMemo(
+    () => sessions.find((s) => s.id === sessionId) ?? null,
+    [sessions, sessionId],
+  )
   const bootLoading =
-    (gatewayQuery.isLoading && !gatewayQuery.data) || (promptsQuery.isLoading && !promptsQuery.data)
+    (gatewayQuery.isLoading && !gatewayQuery.data) ||
+    (promptsQuery.isLoading && !promptsQuery.data) ||
+    (sessionsQuery.isLoading && !sessionsQuery.data)
 
   const modelLabel = useMemo(() => {
     const fromRuntime = runtime?.ai?.model_ref
@@ -228,6 +537,44 @@ export function AgentChatPanel() {
     const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant' && m.model)
     return lastAssistant?.model ?? 'gateway'
   }, [runtime?.ai?.model_ref, runtime?.ai?.ai_provider, runtime?.ai?.ai_model, messages])
+
+  const applySession = useCallback((session: AgentChatSession) => {
+    setSessionId(session.id)
+    setPromptId(session.prompt_id)
+    setMessages(sessionMessagesToUi(session))
+    setExpandedToolId(null)
+  }, [])
+
+  useEffect(() => {
+    if (sessionsQuery.isLoading) return
+    const items = sessionsQuery.data?.items ?? []
+    if (sessionId && items.some((s) => s.id === sessionId)) return
+    if (items.length > 0) {
+      applySession(items[0])
+      return
+    }
+    if (channelFilter !== 'all') return
+    if (createSessionMutation.isPending) return
+    void createSessionMutation.mutateAsync({ prompt_id: 'gateway_agent' }).then(applySession)
+  }, [
+    applySession,
+    channelFilter,
+    createSessionMutation,
+    sessionId,
+    sessionsQuery.data,
+    sessionsQuery.isLoading,
+  ])
+
+  function handleChannelFilter(next: string) {
+    setChannelFilter(next)
+    setSessionId(null)
+    setMessages([])
+  }
+
+  useEffect(() => {
+    if (!activeSession || runMutation.isPending) return
+    setMessages(sessionMessagesToUi(activeSession))
+  }, [activeSession?.updated_at, activeSession?.id, runMutation.isPending, activeSession])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -255,32 +602,37 @@ export function AgentChatPanel() {
     }
   }, [])
 
-  function startNewSession() {
-    const promptLabel = activePrompt?.label ?? promptId
-    setMessages([
-      {
-        id: nextMessageId(),
-        role: 'assistant',
-        kind: 'session',
-        content: `New session started · model: ${modelLabel} · ${promptLabel}`,
-        createdAt: new Date(),
-        ok: true,
-      },
-    ])
-    setExpandedToolId(null)
+  async function handleNewSession() {
+    const session = await createSessionMutation.mutateAsync({ prompt_id: promptId })
+    applySession(session)
     setInput('')
+  }
+
+  function handleSelectSession(id: string) {
+    const session = sessions.find((s) => s.id === id)
+    if (session) applySession(session)
+  }
+
+  async function handlePromptChange(id: string) {
+    setPromptId(id)
+    if (!sessionId) return
+    await updateSessionMutation.mutateAsync({ id: sessionId, prompt_id: id })
   }
 
   async function handleSend() {
     const text = input.trim()
-    if (!text || !canRun || runMutation.isPending) return
+    if (!text || !canRun || runMutation.isPending || !sessionId) return
     setInput('')
     setMessages((prev) => [
       ...prev,
       { id: nextMessageId(), role: 'user', content: text, createdAt: new Date() },
     ])
     try {
-      const result = await runMutation.mutateAsync({ message: text, prompt_id: promptId })
+      const result = await runMutation.mutateAsync({
+        message: text,
+        prompt_id: promptId,
+        session_id: sessionId,
+      })
       setMessages((prev) => [
         ...prev,
         {
@@ -315,16 +667,32 @@ export function AgentChatPanel() {
           <Box minW={0}>
             <h2 className="agent-chat__title">Chat</h2>
             <p className="agent-chat__subtitle">
-              Direct gateway chat session for quick interventions.
+              Panel and bot platform sessions stay in sync — Chats appear here automatically.
             </p>
           </Box>
 
           <div className="agent-chat__toolbar">
+            <ChannelFilterMenu
+              channelFilter={channelFilter}
+              channels={channelSummaries}
+              disabled={sessionsQuery.isLoading}
+              onSelect={handleChannelFilter}
+            />
+
+            <SessionMenu
+              sessions={sessions}
+              sessionId={sessionId}
+              modelLabel={modelLabel}
+              disabled={sessionsQuery.isLoading || createSessionMutation.isPending}
+              onSelect={handleSelectSession}
+              onNewSession={() => void handleNewSession()}
+            />
+
             <PromptRoleMenu
               prompts={prompts}
               promptId={promptId}
-              disabled={promptsQuery.isLoading}
-              onSelect={setPromptId}
+              disabled={promptsQuery.isLoading || updateSessionMutation.isPending}
+              onSelect={(id) => void handlePromptChange(id)}
             />
 
             <IconButton
@@ -332,9 +700,12 @@ export function AgentChatPanel() {
               variant="outline"
               borderColor="border.subtle"
               borderRadius="input"
-              aria-label="Refresh gateway status"
-              loading={gatewayQuery.isFetching}
-              onClick={() => void gatewayQuery.refetch()}
+              aria-label="Refresh chat and gateway status"
+              loading={sessionsQuery.isFetching || gatewayQuery.isFetching}
+              onClick={() => {
+                void sessionsQuery.refetch()
+                void gatewayQuery.refetch()
+              }}
             >
               <RefreshCw size={16} />
             </IconButton>
@@ -396,12 +767,32 @@ export function AgentChatPanel() {
             </Box>
             <Text fontSize="sm" color="fg.muted">
               {!aiEnabled
-                ? 'AI is disabled. Enable it under '
-                : 'LLM is not ready — pick a provider, set a model ref, and add an API key (or use local Ollama) under '}
+                ? 'Gateway agent LLM is disabled. Enable it under '
+                : 'LLM is not ready — pick a provider, model, and API key (or use local Ollama) under '}
               <RouterLink to="/settings/ai" style={{ color: 'var(--app-accent)' }}>
-                Settings → AI & LLM
+                Settings → Agent LLM
               </RouterLink>
               {!aiEnabled ? ' before using the gateway agent.' : '.'}
+            </Text>
+          </Box>
+        ) : null}
+
+        {activeSession && activeSession.channel_id !== 'panel' ? (
+          <Box
+            px={5}
+            py={2}
+            borderBottomWidth="1px"
+            borderColor="border.subtle"
+            bg="bg.subtle"
+            flexShrink={0}
+          >
+            <Text fontSize="xs" color="fg.muted">
+              {channelLabel(activeSession)} · {platformKindLabel(activeSession.platform_chat_kind)}
+              {' · '}
+              {sessionDisplayName(activeSession)}
+              {activeSession.platform_chat_id ? ` · ${activeSession.platform_chat_id}` : ''}
+              {' · '}
+              {activeSession.message_count ?? 0} messages · synced from bot
             </Text>
           </Box>
         ) : null}
@@ -409,8 +800,8 @@ export function AgentChatPanel() {
         <div ref={scrollRef} className="agent-chat__scroll app-scroll">
           {messages.length === 0 && !runMutation.isPending ? (
             <div className="agent-chat__empty">
-              Start a session or send a message — scrape URLs, check catalog health, preview
-              exports.
+              Pick a role and send a message — scrape URLs, check catalog health, preview exports.
+              History is kept per session on the gateway.
             </div>
           ) : (
             <>
@@ -450,7 +841,7 @@ export function AgentChatPanel() {
               className="agent-chat__input"
               rows={2}
               value={input}
-              disabled={!canRun || runMutation.isPending}
+              disabled={!canRun || runMutation.isPending || !sessionId}
               placeholder={
                 canRun
                   ? 'Message (⏎ to send, Shift+⏎ for line breaks)'
@@ -468,15 +859,15 @@ export function AgentChatPanel() {
               <button
                 type="button"
                 className="agent-chat__btn-ghost"
-                disabled={runMutation.isPending}
-                onClick={startNewSession}
+                disabled={runMutation.isPending || createSessionMutation.isPending}
+                onClick={() => void handleNewSession()}
               >
                 New session
               </button>
               <button
                 type="button"
                 className="agent-chat__btn-send"
-                disabled={!canRun || !input.trim() || runMutation.isPending}
+                disabled={!canRun || !input.trim() || runMutation.isPending || !sessionId}
                 onClick={() => void handleSend()}
               >
                 Send
@@ -487,6 +878,9 @@ export function AgentChatPanel() {
           {gatewayQuery.data ? (
             <Text mt={2} fontSize="xs" color="fg.subtle">
               {gatewayQuery.data.tools_count} tools · {gatewayQuery.data.workflows_count} workflows
+              {activeSession
+                ? ` · ${sessionDisplayName(activeSession)}${activeSession.platform_chat_id ? ` (${activeSession.platform_chat_id})` : ''}`
+                : ''}
             </Text>
           ) : null}
         </footer>

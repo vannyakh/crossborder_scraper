@@ -31,6 +31,13 @@ def _support_links() -> list[dict[str, Any]]:
             "external": False,
         },
         {
+            "id": "guides",
+            "label": "Setup guides",
+            "description": "Agent LLM, scrape workflow, and panel tool instructions",
+            "path": "/guides",
+            "external": False,
+        },
+        {
             "id": "workflow",
             "label": "Batch queue",
             "description": "Submit scrape URLs and monitor jobs",
@@ -53,8 +60,8 @@ def _support_links() -> list[dict[str, Any]]:
         },
         {
             "id": "settings",
-            "label": "Configuration",
-            "description": "AI, scrape engine, proxy, and marketplaces",
+            "label": "Agent LLM & configuration",
+            "description": "Gateway agent LLM, proxy, and marketplaces",
             "path": "/settings/ai",
             "external": False,
         },
@@ -114,11 +121,11 @@ def _readiness_checks(runtime: dict[str, Any], stats: dict[str, Any]) -> list[di
         },
         {
             "id": "ai",
-            "label": "AI extraction",
+            "label": "Gateway agent LLM",
             "ok": not ai.get("ai_enabled") or bool(ai.get("llm_ready")),
             "detail": "Disabled"
             if not ai.get("ai_enabled")
-            else ("Configured" if ai.get("llm_ready") else "Enabled but LLM not ready"),
+            else ("Ready" if ai.get("llm_ready") else "Enabled but connection not ready"),
         },
     ]
 

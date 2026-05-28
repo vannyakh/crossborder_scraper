@@ -9,7 +9,7 @@ from urllib.request import Request, urlopen
 
 
 class GatewayClient:
-    """Thin client for the scraper gateway."""
+    """Thin client for the Cross-Border gateway."""
 
     def __init__(
         self,
@@ -67,25 +67,81 @@ class GatewayClient:
     def list_skills(self) -> dict[str, Any]:
         return self._request("GET", "/gateway/skills")
 
+    def set_enabled_skills(self, skill_ids: list[str]) -> dict[str, Any]:
+        return self._request("PUT", "/gateway/skills/enabled", body={"enabled": skill_ids})
+
+    def list_rules(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/rules")
+
+    def set_enabled_rules(self, rule_ids: list[str]) -> dict[str, Any]:
+        return self._request("PUT", "/gateway/rules/enabled", body={"enabled": rule_ids})
+
+    def get_rule(self, rule_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/gateway/rules/{rule_id}")
+
+    def list_chat_sessions(self, *, channel_id: str | None = None) -> dict[str, Any]:
+        path = "/gateway/chat/sessions"
+        if channel_id:
+            path = f"{path}?channel_id={channel_id}"
+        return self._request("GET", path)
+
+    def create_chat_session(
+        self,
+        *,
+        label: str | None = None,
+        prompt_id: str | None = None,
+        channel_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if label:
+            body["label"] = label
+        if prompt_id:
+            body["prompt_id"] = prompt_id
+        if channel_id:
+            body["channel_id"] = channel_id
+        return self._request("POST", "/gateway/chat/sessions", body=body)
+
+    def get_chat_session(self, session_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/gateway/chat/sessions/{session_id}")
+
+    def delete_chat_session(self, session_id: str) -> dict[str, Any]:
+        return self._request("DELETE", f"/gateway/chat/sessions/{session_id}")
+
+    def list_channels(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/channels")
+
+    def get_channel(self, channel_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/gateway/channels/{channel_id}")
+
+    def configure_channel(self, channel_id: str, updates: dict[str, Any]) -> dict[str, Any]:
+        return self._request(
+            "PATCH",
+            f"/gateway/channels/{channel_id}",
+            body={"updates": updates},
+        )
+
+    def reload_channel(self, channel_id: str) -> dict[str, Any]:
+        return self._request("POST", f"/gateway/channels/{channel_id}/reload")
+
     def get_telegram(self) -> dict[str, Any]:
         return self._request("GET", "/gateway/telegram")
 
     def update_telegram(self, updates: dict[str, Any]) -> dict[str, Any]:
         return self._request("PATCH", "/gateway/telegram", body=updates)
 
-    def set_enabled_skills(self, skill_ids: list[str]) -> dict[str, Any]:
-        return self._request("PUT", "/gateway/skills/enabled", body={"enabled": skill_ids})
-
     def agent_run(
         self,
         message: str,
         *,
         prompt_id: str | None = None,
+        session_id: str | None = None,
         skill_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"message": message}
         if prompt_id:
             body["prompt_id"] = prompt_id
+        if session_id:
+            body["session_id"] = session_id
         if skill_ids is not None:
             body["skill_ids"] = skill_ids
         return self._request("POST", "/gateway/agent/run", body=body)
@@ -96,6 +152,24 @@ class GatewayClient:
             f"/gateway/workflows/{workflow_id}/run",
             body={"inputs": inputs},
         )
+
+    def list_schedules(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/schedules")
+
+    def create_schedule(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._request("POST", "/gateway/schedules", body=body)
+
+    def update_schedule(self, schedule_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return self._request("PATCH", f"/gateway/schedules/{schedule_id}", body=body)
+
+    def delete_schedule(self, schedule_id: str) -> dict[str, Any]:
+        return self._request("DELETE", f"/gateway/schedules/{schedule_id}")
+
+    def run_schedule(self, schedule_id: str) -> dict[str, Any]:
+        return self._request("POST", f"/gateway/schedules/{schedule_id}/run")
+
+    def list_runs(self, *, limit: int = 30) -> dict[str, Any]:
+        return self._request("GET", f"/gateway/runs?limit={limit}")
 
     @classmethod
     def from_env(cls, base_url: str | None = None) -> GatewayClient:

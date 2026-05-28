@@ -161,7 +161,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           cat > release-notes.md <<EOF
-          ## Crossborder Scraper v${VERSION}
+          ## Cross-Border v${VERSION}
 
           Self-host scrape panel with gateway agent and marketplace export.
 

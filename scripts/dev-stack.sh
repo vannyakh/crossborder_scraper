@@ -4,21 +4,34 @@ set -euo pipefail
 # shellcheck source=_lib.sh
 source "$(dirname "$0")/_lib.sh"
 
-PORT="${PANEL_PORT:-8787}"
+load_dotenv
+PORT="$(panel_port)"
 cat <<EOF
-Crossborder scraper — local dev stack
+Cross-Border — local dev stack
 
-Terminal 1 (API):
-  bash scripts/serve-api.sh
-  → http://127.0.0.1:${PORT}/ui/   (proxies to Vite when dist/ is missing)
+Development (hot reload):
+  Terminal 1:  make run-dev      # API + reload; proxies to Vite when dist/ missing
+  Terminal 2:  make run-dev-ui   # Vite → http://127.0.0.1:5173/ui/
 
-Terminal 2 (UI hot reload):
-  bash scripts/dev-ui.sh
-  → http://127.0.0.1:5173/ui/   (or use API URL above after Vite is up)
+Production-like (local):
+  make build-prod                # apps/web/dist/
+  make run-prod                  # API serves static bundle (no reload)
+  make test-prod                 # build + /health + /ui/ smoke
+  make test-prod-docker          # docker build + container health
+
+Tests:
+  make test-dev                  # pytest + import smoke (daily dev)
+  make check-ci                  # ruff + test-dev (GitHub CI Python job)
+
+URLs (dev):
+  API:  http://127.0.0.1:${PORT}/ui/
+  Vite: http://127.0.0.1:5173/ui/
+
+Debug (VS Code / Cursor):
+  Run and Debug → "API: uvicorn (reload)" or "Test: pytest (current file)"
 
 CLI:
-  uv run scraper gateway
-  uv run scraper skills list --local
-  uv run scraper agent "list last 5 products" --local
+  uv run crossborder gateway
+  uv run crossborder skills list --local
 
 EOF

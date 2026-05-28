@@ -662,6 +662,14 @@ button:focus-visible {
   max-width: 11rem;
 }
 
+.agent-chat__session-trigger {
+  max-width: 16rem;
+}
+
+.agent-chat__channel-trigger {
+  max-width: 9rem;
+}
+
 .agent-chat__vdivider {
   width: 1px;
   align-self: stretch;

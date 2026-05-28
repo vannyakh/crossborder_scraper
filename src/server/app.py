@@ -11,7 +11,7 @@ from server.middleware.panel_entrance import add_panel_entrance_middleware
 
 def create_app() -> FastAPI:
     application = FastAPI(
-        title="Crossborder Scraper API",
+        title="Cross-Border API",
         version=APP_VERSION,
         description="Gateway control plane: scrape, AI agent, workflows, export.",
         lifespan=panel_lifespan,

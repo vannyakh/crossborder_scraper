@@ -118,7 +118,7 @@ def cloud_security_group_rule(*, port: int, source: str = "0.0.0.0/0") -> dict[s
         "port": str(port),
         "source": source,
         "action": "allow",
-        "description": "Crossborder panel",
+        "description": "Cross-Border panel",
     }
 
 

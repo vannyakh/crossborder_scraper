@@ -6,8 +6,12 @@ from config import Settings
 from core.ai.llm_client import LLMClient, resolve_llm_config
 
 
-async def check_llm_health(settings: Settings) -> dict[str, Any]:
-    """Probe the configured LLM provider endpoint."""
+async def check_agent_llm_health(
+    settings: Settings,
+    *,
+    allow_disabled: bool = False,
+) -> dict[str, Any]:
+    """Probe the gateway agent LLM provider endpoint."""
     cfg = resolve_llm_config(settings)
     base: dict[str, Any] = {
         "model": cfg.model,
@@ -17,12 +21,12 @@ async def check_llm_health(settings: Settings) -> dict[str, Any]:
         "provider_label": cfg.provider_label,
     }
 
-    if not settings.ai_enabled:
+    if not settings.ai_enabled and not allow_disabled:
         return {
             **base,
             "ok": False,
             "status": "disabled",
-            "message": "AI extraction is disabled",
+            "message": "Gateway agent LLM is disabled",
         }
 
     if cfg.requires_api_key and not cfg.api_key and not cfg.is_local:
@@ -119,3 +123,8 @@ async def check_llm_health(settings: Settings) -> dict[str, Any]:
             "status": "error",
             "message": str(exc),
         }
+
+
+async def check_llm_health(settings: Settings) -> dict[str, Any]:
+    """Backward-compatible alias for gateway agent LLM health."""
+    return await check_agent_llm_health(settings)

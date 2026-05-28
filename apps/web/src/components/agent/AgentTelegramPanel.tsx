@@ -158,7 +158,7 @@ function TelegramChannelForm({
               fontSize="sm"
             />
             <Field.HelperText fontSize="xs">
-              Comma or space separated. Get ids from /start on your bot.
+              Comma or space separated. Get ids from /start or /getid on your bot.
             </Field.HelperText>
           </Field.Root>
 
@@ -299,7 +299,7 @@ export function AgentTelegramPanel() {
         <VStack align="stretch" gap={2} fontSize="sm" color="fg.muted" lineHeight="tall">
           <Text>1. Create a bot with @BotFather and paste the token below.</Text>
           <Text>2. Enable Telegram and save (panel server must be running).</Text>
-          <Text>3. Message your bot /start — it replies with your chat id.</Text>
+          <Text>3. Message your bot /start or /getid — it replies with your chat id.</Text>
           <Text>4. Add that id to allowed chats, save again, then send scrape commands.</Text>
         </VStack>
       </SectionCard>

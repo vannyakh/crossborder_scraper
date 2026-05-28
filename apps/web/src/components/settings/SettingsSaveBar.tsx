@@ -38,7 +38,6 @@ export function SettingsSaveBar({
       <HStack justify="space-between" flexWrap="wrap" gap={3}>
         <HStack gap={2} flexWrap="wrap">
           <Button
-            size="sm"
             colorPalette={accentPalette}
             borderRadius="var(--radius-input)"
             loading={saving}
@@ -48,14 +47,13 @@ export function SettingsSaveBar({
           </Button>
           {showTest && onTestLlm ? (
             <Button
-              size="sm"
               variant="outline"
               borderColor="border.subtle"
               borderRadius="var(--radius-input)"
               loading={testing}
               onClick={onTestLlm}
             >
-              Test LLM
+              Test connection
             </Button>
           ) : null}
         </HStack>

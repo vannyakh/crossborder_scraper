@@ -1,4 +1,4 @@
-# Crossborder Scraper — Architecture
+# Cross-Border — Architecture
 
 ## Vision
 
@@ -148,7 +148,7 @@ Marketplace config supports **any platform** via `marketplaces.{id}.credentials`
 ### Phase 4 (in progress)
 - Multi-tenant workspaces
 - Sandbox export dry-runs
-- **Telegram** channel adapter (`gateway/telegram/`) — control chat → gateway agent
+- **Telegram** channel adapter (`gateway/integrate/runners/telegram/`) — control chat → gateway agent
 - Slack / webhook channel adapters (planned)
 
 ## Design principles

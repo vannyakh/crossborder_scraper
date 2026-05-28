@@ -7,7 +7,6 @@ from typing import Any
 from config.ui_store import (
     PANEL_SCALAR_KEYS,
     UI_CONFIG_PATH,
-    mask_api_key,
     panel_config_for_api,
     save_panel_config,
 )
@@ -101,32 +100,14 @@ class ConfigService:
         return scalar
 
     def get_ai_config(self) -> dict[str, Any]:
-        from core.ai.llm_client import LLMClient, resolve_llm_config
+        from server.services.agent_llm_service import get_agent_llm_service
 
-        s = self._ctx.settings
-        panel = panel_config_for_api(mask_secrets=True)
-        cfg = resolve_llm_config(s)
-        llm = LLMClient(s)
-        return {
-            "ai_provider": cfg.provider_id,
-            "provider_label": cfg.provider_label,
-            "model_ref": cfg.model_ref,
-            "ai_enabled": s.ai_enabled,
-            "ai_fallback": s.ai_fallback,
-            "ai_agent_enabled": s.ai_agent_enabled,
-            "ai_model": cfg.model,
-            "ai_base_url": cfg.base_url,
-            "ai_max_html_chars": s.ai_max_html_chars,
-            "ai_timeout_seconds": s.ai_timeout_seconds,
-            "ai_api_key_set": bool(s.ai_api_key),
-            "ai_api_key_masked": panel.get("ai_api_key_masked") or mask_api_key(s.ai_api_key),
-            "llm_ready": llm.enabled,
-            "ui_config_path": str(UI_CONFIG_PATH),
-            "secrets_from_env": False,
-        }
+        return get_agent_llm_service().get_status()
 
     def update_ai_config(self, updates: dict[str, Any]) -> dict[str, Any]:
-        return self.update_panel_config(updates)
+        from server.services.agent_llm_service import get_agent_llm_service
+
+        return get_agent_llm_service().update_config(updates)
 
     def get_config(self) -> dict[str, Any]:
         s = self._ctx.settings

@@ -10,7 +10,14 @@ export { useUpdatePanelConfigMutation } from './mutations/use-panel-mutations'
 export { useDeleteFileMutation } from './mutations/use-file-mutations'
 export { useDeleteProductMutation } from './mutations/use-product-mutations'
 export { useBatchesQuery } from './queries/use-batches-query'
-export { useLLMHealthQuery, useLlmProvidersQuery } from './queries/use-ai-query'
+export {
+  useLLMHealthQuery,
+  useAgentLlmSetupQuery,
+  useLlmModelsQuery,
+  useLlmProvidersQuery,
+} from './queries/use-ai-query'
+export { usePanelGuidesQuery, usePanelGuideQuery } from './queries/use-panel-guides-query'
+export { useToolGuideMap } from './use-tool-guide-map'
 export { usePanelConfigQuery } from './queries/use-panel-config-query'
 export { useConfigQuery } from './queries/use-config-query'
 export { useFilesQuery } from './queries/use-files-query'
@@ -21,6 +28,9 @@ export { useProductQuery, useProductsQuery } from './queries/use-products-query'
 export {
   useAgentRunsQuery,
   useAgentSchedulesQuery,
+  useAgentChatSessionsQuery,
+  useCreateChatSessionMutation,
+  useUpdateChatSessionMutation,
   useCreateScheduleMutation,
   useDeleteScheduleMutation,
   useGatewayPromptsQuery,

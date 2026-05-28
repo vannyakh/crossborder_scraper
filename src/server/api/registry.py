@@ -17,6 +17,7 @@ from server.routers import (
     files,
     firewall,
     gateway,
+    guides,
     jobs,
     logs,
     monitor,
@@ -43,6 +44,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(monitor.router)
     app.include_router(logs.router)
     app.include_router(service.router)
+    app.include_router(guides.router)
     app.include_router(deploy.router)
     app.include_router(docker.router)
     app.include_router(firewall.router)

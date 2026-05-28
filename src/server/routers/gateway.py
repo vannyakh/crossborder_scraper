@@ -4,6 +4,11 @@ from gateway.skills import SkillInstallError, get_skill_installer
 from server.auth import require_panel_auth
 from server.deps import protected_router
 from server.schemas import (
+    AgentChatSession,
+    AgentChatSessionChannelSummary,
+    AgentChatSessionCreateRequest,
+    AgentChatSessionListResponse,
+    AgentChatSessionUpdateRequest,
     AgentRuleCreateRequest,
     AgentRuleDeleteResponse,
     AgentRuleDetail,
@@ -336,12 +341,64 @@ async def update_registry_skill(
 @router.post("/agent/run", response_model=GatewayAgentResponse)
 async def agent_run(body: GatewayAgentRequest) -> GatewayAgentResponse:
     svc = get_gateway_service()
-    result = await svc.run_agent(
-        body.message,
-        prompt_id=body.prompt_id,
-        skill_ids=body.skill_ids,
-    )
+    try:
+        result = await svc.run_agent(
+            body.message,
+            prompt_id=body.prompt_id,
+            skill_ids=body.skill_ids,
+            session_id=body.session_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return GatewayAgentResponse(**result)
+
+
+@router.get("/chat/sessions", response_model=AgentChatSessionListResponse)
+async def list_chat_sessions(
+    channel_id: str | None = Query(None, max_length=32),
+) -> AgentChatSessionListResponse:
+    payload = get_gateway_service().list_chat_sessions(channel_id=channel_id)
+    return AgentChatSessionListResponse(
+        items=[AgentChatSession(**s) for s in payload["items"]],
+        total=payload["total"],
+        channels=[AgentChatSessionChannelSummary(**c) for c in payload.get("channels") or []],
+    )
+
+
+@router.post("/chat/sessions", response_model=AgentChatSession)
+async def create_chat_session(body: AgentChatSessionCreateRequest) -> AgentChatSession:
+    record = get_gateway_service().create_chat_session(body.model_dump(exclude_unset=True))
+    return AgentChatSession(**record)
+
+
+@router.get("/chat/sessions/{session_id}", response_model=AgentChatSession)
+async def get_chat_session(session_id: str) -> AgentChatSession:
+    svc = get_gateway_service()
+    try:
+        record = svc.get_chat_session(session_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return AgentChatSession(**record)
+
+
+@router.patch("/chat/sessions/{session_id}", response_model=AgentChatSession)
+async def update_chat_session(
+    session_id: str,
+    body: AgentChatSessionUpdateRequest,
+) -> AgentChatSession:
+    svc = get_gateway_service()
+    try:
+        record = svc.update_chat_session(session_id, body.model_dump(exclude_unset=True))
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return AgentChatSession(**record)
+
+
+@router.delete("/chat/sessions/{session_id}")
+async def remove_chat_session(session_id: str) -> dict[str, bool]:
+    if not get_gateway_service().delete_chat_session(session_id):
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"ok": True}
 
 
 @router.get("/schedules", response_model=AgentScheduleListResponse)

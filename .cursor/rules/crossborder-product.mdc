@@ -1,13 +1,13 @@
 ---
-description: Crossborder product naming — avoid third-party control-panel and cloud vendor branding in code and user-facing text
+description: Cross-Border product naming — avoid third-party control-panel and cloud vendor branding in code and user-facing text
 globs:
   - "**/*"
 alwaysApply: true
 ---
 
-# Crossborder product language
+# Cross-Border product language
 
-This repository is **Crossborder Scraper** — use our own product terms in implementation, CLI messages, and docs.
+This repository is **Cross-Border** — use our own product terms in implementation, CLI messages, and docs.
 
 ## Do not add to code or user-facing strings
 
@@ -17,7 +17,10 @@ This repository is **Crossborder Scraper** — use our own product terms in impl
 
 ## Use instead
 
-- **panel** / **install card** / **access card** — setup summary with URL and credentials
+- **Cross-Border** / **agent hub** / **gateway agent** — self-hosted AI control plane (not "scraper bot" as the whole product)
+- **panel** / **agent panel** / **install card** / **access card** — setup summary with URL and credentials
+- **integrate channel** / **control chat** — Telegram, Discord, Slack, Email runners wired to the gateway agent
+- **skill** — runtime `SKILL.md` playbook; **agent rule** — short policy in `libs/agent_rules/`
 - **VPS** / **self-host** / **wwwroot layout** — `/www/wwwroot/<site>` on Linux servers
 - **cloud security group** / **host firewall** — public access troubleshooting
 - **workflow** / **pipeline** / **tool steps** — gateway automation

@@ -270,11 +270,17 @@ def print_panel_access_card(
 def default_next_commands(mode: str) -> list[str]:
     from cli.theme import cmd
 
-    serve = cmd("crossborder serve --no-reload")
+    serve = cmd("crossborder service start")
+    agent = cmd("crossborder chat")
     if mode == "docker":
         return [cmd("crossborder deploy up"), cmd("crossborder deploy status")]
     if mode == "install":
-        return [cmd("crossborder --help"), cmd("crossborder deploy status")]
+        return [
+            cmd("crossborder service status"),
+            cmd("crossborder gateway"),
+            agent,
+            cmd("crossborder --help"),
+        ]
     if mode == "server":
-        return [serve]
+        return [serve, cmd("crossborder gateway"), agent]
     return [serve, cmd("crossborder --help")]

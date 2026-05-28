@@ -29,7 +29,7 @@ def print_onboard_banner(*, mode: str = "server") -> None:
     }.get(mode, "Setup")
 
     art = Text()
-    art.append("Crossborder", style="bold bright_blue")
+    art.append("Cross-Border", style="bold bright_blue")
     art.append(" Scraper", style="white")
     art.append(f"\n{subtitle}", style="dim")
 
