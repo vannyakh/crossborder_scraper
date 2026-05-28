@@ -3,14 +3,30 @@
 from __future__ import annotations
 
 import json
+from datetime import date, datetime
 from typing import Any
 
 from config import Settings
-from core.ai.llm_client import LLMClient
+from core.ai.agent_llm import agent_llm_ready
+from core.ai.llm_client import LLMClient, LLMRequestError
 from gateway.prompts import DEFAULT_PROMPT_ID, load_prompt
 from gateway.rules import get_rule_manager
 from gateway.skills import get_skill_manager
 from gateway.tools import execute_tool, parse_tool_call, tools_for_llm
+
+
+def _json_default(value: Any) -> str:
+    if isinstance(value, datetime | date):
+        return value.isoformat()
+    return str(value)
+
+
+def tool_outcome_for_llm(outcome: Any) -> str:
+    return json.dumps(outcome, ensure_ascii=False, default=_json_default)
+
+
+def tool_outcome_for_log(outcome: Any) -> Any:
+    return json.loads(json.dumps(outcome, ensure_ascii=False, default=_json_default))
 
 
 class GatewayAgent:
@@ -30,7 +46,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
 
     @property
     def enabled(self) -> bool:
-        return self.settings.ai_enabled and self.llm.enabled
+        return agent_llm_ready(self.settings)
 
     async def run(
         self,
@@ -39,14 +55,15 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         manager: Any,
         prompt_id: str | None = None,
         skill_ids: list[str] | None = None,
+        history: list[dict[str, str]] | None = None,
         max_tool_rounds: int = 3,
     ) -> dict[str, Any]:
         if not self.enabled:
             return {
                 "ok": False,
                 "message": (
-                    "AI agent disabled. Enable AI in Settings, pick a provider, "
-                    "and set an API key (or use local Ollama)."
+                    "Gateway agent LLM is disabled. Open Settings → Agent LLM, enable it, "
+                    "pick a provider and model, then set an API key (or use local Ollama)."
                 ),
                 "tool_calls": [],
                 "prompt_id": prompt_id or DEFAULT_PROMPT_ID,
@@ -65,17 +82,37 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             skill_ids=skill_ids,
         )
         allow_tools = skill_tools if skill_tools else None
-        messages: list[dict[str, Any]] = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": message},
-        ]
+        messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
+        if history:
+            for turn in history:
+                role = turn.get("role")
+                content = str(turn.get("content") or "").strip()
+                if role in ("user", "assistant") and content:
+                    messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": message})
         tool_calls_log: list[dict[str, Any]] = []
 
+        def _agent_error(message: str) -> dict[str, Any]:
+            return {
+                "ok": False,
+                "message": message,
+                "tool_calls": tool_calls_log,
+                "prompt_id": resolved_id,
+                "skill_ids": resolved_skills,
+                "rule_ids": resolved_rules,
+                "provider": self.llm.cfg.provider_id,
+                "model_ref": self.llm.cfg.model_ref,
+            }
+
         for _ in range(max_tool_rounds):
-            result = await self.llm.chat(
-                messages,
-                tools=tools_for_llm(allow_names=allow_tools),
-            )
+            try:
+                result = await self.llm.chat(
+                    messages,
+                    tools=tools_for_llm(allow_names=allow_tools),
+                )
+            except LLMRequestError as exc:
+                return _agent_error(str(exc))
+
             tool_calls = result.tool_calls
 
             if not tool_calls:
@@ -104,16 +141,25 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                     continue
                 name, args = parsed
                 outcome = await execute_tool(name, args, manager=manager)
-                tool_calls_log.append({"name": name, "arguments": args, "outcome": outcome})
+                tool_calls_log.append(
+                    {
+                        "name": name,
+                        "arguments": args,
+                        "outcome": tool_outcome_for_log(outcome),
+                    }
+                )
                 messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": call.get("id", name),
-                        "content": json.dumps(outcome, ensure_ascii=False),
+                        "content": tool_outcome_for_llm(outcome),
                     }
                 )
 
-        summary = await self.llm.chat(messages)
+        try:
+            summary = await self.llm.chat(messages)
+        except LLMRequestError as exc:
+            return _agent_error(str(exc))
         final = summary.content or "Done."
         return {
             "ok": True,

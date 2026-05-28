@@ -47,11 +47,13 @@ export function SettingsPage() {
   const { section: sectionParam } = useParams<{ section?: string }>()
   const section = isSettingsSectionId(sectionParam) ? sectionParam : DEFAULT_SETTINGS_SECTION
   const form = usePanelSettingsForm()
-  const healthQuery = useLLMHealthQuery(Boolean(form.panel?.ai_enabled))
+  const healthQuery = useLLMHealthQuery(section === 'ai')
   const health = form.checkMutation.data ?? healthQuery.data
   const motionEnabled = useMotionEnabled()
   const transition = useMotionTransition(0.2)
   const showTest = section === 'ai'
+  const onSave =
+    section === 'ai' ? () => void form.handleSaveAgentLlm() : () => void form.handleSave()
 
   if (!isSettingsSectionId(sectionParam)) {
     return <Navigate to={settingsSectionPath(DEFAULT_SETTINGS_SECTION)} replace />
@@ -74,7 +76,7 @@ export function SettingsPage() {
               message={form.message}
               saving={form.updateMutation.isPending}
               testing={form.checkMutation.isPending}
-              onSave={() => void form.handleSave()}
+              onSave={onSave}
               onTestLlm={() => void form.handleHealthCheck()}
               showTest={showTest}
             />

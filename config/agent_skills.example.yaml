@@ -4,3 +4,4 @@ enabled:
   - catalog-monitor
   - export-review
   - batch-ops
+  - agent-control

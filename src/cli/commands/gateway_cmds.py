@@ -13,10 +13,11 @@ from cli.helpers import console, exit_gateway_error, gateway_client, run_async
 skills_app = typer.Typer(help="Agent skills (SKILL.md packages)")
 prompts_app = typer.Typer(help="Gateway agent role prompts")
 channels_app = typer.Typer(help="Control-plane messaging channels (Telegram, …)")
+schedules_app = typer.Typer(help="Gateway agent cron schedules")
 
 
 async def _reload_local_telegram() -> None:
-    from gateway.channels.lifecycle import reload_channel
+    from gateway.integrate.lifecycle import reload_channel
 
     await reload_channel("telegram")
 
@@ -25,6 +26,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
     app.add_typer(skills_app, name="skills")
     app.add_typer(prompts_app, name="prompts")
     app.add_typer(channels_app, name="channels")
+    app.add_typer(schedules_app, name="schedules")
 
     @app.command("gateway")
     def gateway_status(
@@ -237,7 +239,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
     ) -> None:
         """List integrate channel status (Telegram, Discord, Slack, Email)."""
         if local:
-            from gateway.channels.setup import list_channels
+            from gateway.integrate.setup import list_channels
 
             items = list_channels()
         else:
@@ -271,7 +273,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
     ) -> None:
         """Show integrate channel setup detail."""
         if local:
-            from gateway.channels.setup import get_channel
+            from gateway.integrate.setup import get_channel
 
             data = get_channel(channel_id)
         else:
@@ -309,7 +311,7 @@ def register_gateway_commands(app: typer.Typer) -> None:
             raise typer.BadParameter("Pass --enable/--disable and/or --json with updates")
 
         if local:
-            from gateway.channels.setup import configure_channel
+            from gateway.integrate.setup import configure_channel
 
             detail = configure_channel(channel_id, updates)
             console.print(json.dumps(detail, indent=2))
@@ -366,3 +368,110 @@ def register_gateway_commands(app: typer.Typer) -> None:
         except RuntimeError as exc:
             exit_gateway_error(exc)
         console.print(json.dumps(tg, indent=2))
+
+    @schedules_app.command("list")
+    def schedules_list(
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(
+            False, "--local", help="Read config/agent_schedules.json locally"
+        ),
+    ) -> None:
+        """List gateway agent cron schedules."""
+        if local:
+            from gateway.schedules_store import load_schedules
+
+            items = load_schedules()
+        else:
+            try:
+                data = gateway_client(url).list_schedules()
+                items = data.get("items") or []
+            except RuntimeError as exc:
+                exit_gateway_error(exc)
+
+        table = Table(title="Agent schedules")
+        table.add_column("ID")
+        table.add_column("Name")
+        table.add_column("Cron")
+        table.add_column("Enabled")
+        table.add_column("Telegram")
+        table.add_column("Last")
+        for row in items:
+            table.add_row(
+                str(row.get("id") or "")[:12],
+                str(row.get("name") or ""),
+                str(row.get("cron") or ""),
+                "yes" if row.get("enabled", True) else "no",
+                "yes" if row.get("notify_telegram") else "",
+                str(row.get("last_status") or ""),
+            )
+        console.print(table)
+
+    @schedules_app.command("create")
+    def schedules_create(
+        name: str = typer.Argument(..., help="Schedule label"),
+        cron: str = typer.Argument(..., help="Cron expression, e.g. */1 * * * *"),
+        message: str = typer.Argument(..., help="Agent instruction each tick"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(
+            False, "--local", help="Write config/agent_schedules.json locally"
+        ),
+        prompt_id: str = typer.Option("gateway_agent", "--prompt", "-p", help="Role prompt id"),
+        notify_telegram: bool = typer.Option(
+            False, "--notify-telegram/--no-notify", help="Push summary to Telegram control chats"
+        ),
+        disable: bool = typer.Option(False, "--disable", help="Create disabled"),
+    ) -> None:
+        """Create a gateway agent cron schedule."""
+        body = {
+            "name": name,
+            "cron": cron,
+            "message": message,
+            "enabled": not disable,
+            "prompt_id": prompt_id,
+            "notify_telegram": notify_telegram,
+        }
+        if local:
+            from gateway.schedules_store import compute_next_run, upsert_schedule
+
+            compute_next_run(cron)
+            record = upsert_schedule(body)
+            console.print(json.dumps(record, indent=2))
+            return
+        try:
+            data = gateway_client(url).create_schedule(body)
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print(json.dumps(data, indent=2))
+
+    @schedules_app.command("run")
+    def schedules_run(
+        schedule_id: str = typer.Argument(..., help="Schedule id"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+    ) -> None:
+        """Run a schedule immediately."""
+        try:
+            data = gateway_client(url).run_schedule(schedule_id)
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print(json.dumps(data, indent=2, ensure_ascii=False))
+
+    @schedules_app.command("delete")
+    def schedules_delete(
+        schedule_id: str = typer.Argument(..., help="Schedule id"),
+        url: str | None = typer.Option(None, "--url", help="Gateway base URL"),
+        local: bool = typer.Option(False, "--local", help="Delete from local config file"),
+    ) -> None:
+        """Delete a cron schedule."""
+        if local:
+            from gateway.schedules_store import delete_schedule
+
+            if not delete_schedule(schedule_id):
+                console.print("[red]Schedule not found[/red]")
+                raise typer.Exit(1)
+            console.print("[green]Deleted[/green]", schedule_id)
+            return
+        try:
+            gateway_client(url).delete_schedule(schedule_id)
+        except RuntimeError as exc:
+            exit_gateway_error(exc)
+        console.print("[green]Deleted[/green]", schedule_id)

@@ -14,6 +14,7 @@ export function useUpdatePanelConfigMutation() {
       queryClient.setQueryData(queryKeys.panelConfig, data)
       void queryClient.invalidateQueries({ queryKey: queryKeys.config })
       void queryClient.invalidateQueries({ queryKey: queryKeys.llmHealth })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agentLlmSetup })
       void queryClient.invalidateQueries({ queryKey: queryKeys.gatewayStatus })
       void queryClient.invalidateQueries({ queryKey: queryKeys.runtimeStatus })
     },

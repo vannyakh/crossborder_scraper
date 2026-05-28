@@ -18,6 +18,7 @@ _BUILTIN_DEFAULT_ENABLED = (
     "catalog-monitor",
     "export-review",
     "batch-ops",
+    "agent-control",
 )
 
 

@@ -92,6 +92,33 @@ class LLMProviderListResponse(BaseModel):
     providers: list[LLMProviderInfo]
 
 
+class LLMModelItem(BaseModel):
+    id: str
+    label: str | None = None
+
+
+class LLMModelsProbeRequest(BaseModel):
+    ai_provider: str | None = None
+    ai_base_url: str | None = None
+    ai_api_key: str | None = None
+    ai_model: str | None = None
+
+
+class LLMHealthProbeRequest(BaseModel):
+    ai_provider: str | None = None
+    ai_base_url: str | None = None
+    ai_api_key: str | None = None
+    ai_model: str | None = None
+
+
+class LLMModelsListResponse(BaseModel):
+    provider: str
+    provider_label: str
+    models: list[LLMModelItem]
+    source: Literal["api", "default"] = "default"
+    message: str = ""
+
+
 class AIConfigResponse(BaseModel):
     ai_provider: str = "openai"
     provider_label: str = "OpenAI"

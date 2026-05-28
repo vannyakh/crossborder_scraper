@@ -14,6 +14,7 @@ import {
 import { ChevronDown, Copy, RefreshCw, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Toolbar } from '../layout/Toolbar'
+import { PanelGuideViews, usePanelGuideState } from '../guides/PanelGuideViews'
 import { DataListEmpty } from '../ui/DataList'
 import { ListCardRowsSkeleton, FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { SectionCard } from '../ui/Section'
@@ -178,6 +179,7 @@ export function ToolCatalogPanel() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<ToolCategory>('all')
   const [selectedName, setSelectedName] = useState<string | null>(null)
+  const guide = usePanelGuideState()
 
   const filtered = useMemo(() => {
     const byCategory = filterToolsByCategory(tools, category)
@@ -195,17 +197,29 @@ export function ToolCatalogPanel() {
         title="Tool catalog"
         description="Tools the gateway agent can call during chat and cron runs"
         actions={
-          <Button
-            size="sm"
-            variant="outline"
-            borderColor="border.subtle"
-            borderRadius="input"
-            loading={isFetching}
-            onClick={() => void refetch()}
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              colorPalette={accentPalette}
+              onClick={() => guide.openGuide('agent-tools')}
+            >
+              Setup guide
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              loading={isFetching}
+              onClick={() => void refetch()}
+            >
+              <RefreshCw size={14} />
+              Refresh
+            </Button>
+          </>
         }
       />
 
@@ -300,6 +314,8 @@ export function ToolCatalogPanel() {
           </Box>
         )}
       </SectionCard>
+
+      <PanelGuideViews guideId={guide.guideId} open={guide.open} onClose={guide.closeGuide} />
     </>
   )
 }

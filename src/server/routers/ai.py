@@ -1,29 +1,39 @@
 from fastapi import HTTPException
 
-from config import get_settings
-from config.llm_providers import list_providers
-from core.ai.health import check_llm_health
 from server.deps import protected_router
 from server.schemas import (
+    AgentLlmSetupResponse,
     AIConfigResponse,
     AIConfigUpdate,
+    LLMHealthProbeRequest,
     LLMHealthResponse,
+    LLMModelsListResponse,
+    LLMModelsProbeRequest,
     LLMProviderListResponse,
 )
-from server.services.config import get_config_service
+from server.services.agent_llm_service import get_agent_llm_service
 
 router = protected_router(prefix="/ai", tags=["ai"])
 
 
 @router.get("/providers", response_model=LLMProviderListResponse)
 async def list_llm_providers() -> LLMProviderListResponse:
-    """Built-in LLM provider presets for the settings UI."""
-    return LLMProviderListResponse(providers=list_providers())
+    """Built-in LLM provider presets for the gateway agent."""
+    providers = get_agent_llm_service().list_providers()
+    return LLMProviderListResponse(providers=providers)
+
+
+@router.post("/models", response_model=LLMModelsListResponse)
+async def list_llm_models(body: LLMModelsProbeRequest | None = None) -> LLMModelsListResponse:
+    """List models from the provider API using saved or draft connection settings."""
+    probe = body.model_dump(exclude_unset=True) if body else None
+    result = await get_agent_llm_service().list_models(probe)
+    return LLMModelsListResponse(**result)
 
 
 @router.get("/config", response_model=AIConfigResponse)
 async def get_ai_config() -> AIConfigResponse:
-    return AIConfigResponse(**get_config_service().get_ai_config())
+    return AIConfigResponse(**get_agent_llm_service().get_status())
 
 
 @router.patch("/config", response_model=AIConfigResponse)
@@ -31,10 +41,26 @@ async def patch_ai_config(body: AIConfigUpdate) -> AIConfigResponse:
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=400, detail="no fields to update")
-    return AIConfigResponse(**get_config_service().update_ai_config(updates))
+    return AIConfigResponse(**get_agent_llm_service().update_config(updates))
+
+
+@router.get("/agent-setup", response_model=AgentLlmSetupResponse)
+async def agent_llm_setup() -> AgentLlmSetupResponse:
+    """Gateway agent LLM setup checklist, health, and tool/skill summary."""
+    result = await get_agent_llm_service().get_setup()
+    return AgentLlmSetupResponse(**result)
 
 
 @router.get("/health", response_model=LLMHealthResponse)
 async def llm_health() -> LLMHealthResponse:
-    result = await check_llm_health(get_settings())
+    """Test saved gateway agent LLM connection."""
+    result = await get_agent_llm_service().check_health()
+    return LLMHealthResponse(**result)
+
+
+@router.post("/health", response_model=LLMHealthResponse)
+async def llm_health_probe(body: LLMHealthProbeRequest | None = None) -> LLMHealthResponse:
+    """Test draft provider settings before save (optional API key / base URL)."""
+    probe = body.model_dump(exclude_unset=True) if body else None
+    result = await get_agent_llm_service().check_health(probe)
     return LLMHealthResponse(**result)

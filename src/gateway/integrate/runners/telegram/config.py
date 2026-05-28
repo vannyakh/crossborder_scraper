@@ -1,4 +1,4 @@
-"""Re-exports for gateway.telegram (config lives in ``config.telegram_store``)."""
+"""Telegram config adapter (persisted in ui_config.json → telegram)."""
 
 from config.telegram_store import (
     default_telegram,

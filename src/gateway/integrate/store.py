@@ -10,8 +10,9 @@ from config.integrate_channels_store import (
     normalize_channel,
 )
 from config.telegram_store import load_telegram_config, normalize_telegram
-from gateway.channels.catalog import ALL_CHANNEL_IDS, CHANNEL_CATALOG, get_catalog_entry
-from gateway.channels.guides import load_setup_guide, setup_guide_path
+from gateway.integrate.catalog import ALL_CHANNEL_IDS, CHANNEL_CATALOG
+from gateway.integrate.guides import load_setup_guide, setup_guide_path
+from gateway.integrate.registry import get_channel_spec, secret_keys_for
 
 _SECRET_SUFFIX = "_masked"
 _SET_SUFFIX = "_set"
@@ -31,22 +32,9 @@ def _mask_secret_fields(cfg: dict[str, Any], secret_keys: set[str]) -> dict[str,
     return out
 
 
-def _telegram_secret_keys() -> set[str]:
-    return {"bot_token"}
-
-
-def _stored_secret_keys(channel_id: str) -> set[str]:
-    if channel_id == "discord":
-        return {"bot_token", "public_key"}
-    if channel_id == "slack":
-        return {"bot_token", "signing_secret", "app_token"}
-    if channel_id == "email":
-        return {"imap_password", "smtp_password"}
-    return set()
-
-
 def load_channel_raw(channel_id: str) -> dict[str, Any]:
-    if channel_id == "telegram":
+    spec = get_channel_spec(channel_id)
+    if spec.config_backend == "telegram":
         return load_telegram_config()
     if channel_id in STORED_CHANNEL_IDS:
         from config.integrate_channels_store import load_stored_channel
@@ -56,18 +44,21 @@ def load_channel_raw(channel_id: str) -> dict[str, Any]:
 
 
 def load_channel_for_api(channel_id: str, *, mask_secrets: bool = True) -> dict[str, Any]:
+    spec = get_channel_spec(channel_id)
     cfg = load_channel_raw(channel_id)
-    if channel_id == "telegram":
+    secrets = set(spec.secret_keys)
+
+    if spec.config_backend == "telegram":
         cfg = normalize_telegram(cfg)
         if mask_secrets:
-            masked = _mask_secret_fields(cfg, _telegram_secret_keys())
-            return masked
+            return _mask_secret_fields(cfg, secrets)
         cfg["bot_token_set"] = bool(cfg.get("bot_token"))
         return cfg
+
     cfg = normalize_channel(channel_id, cfg)
     if mask_secrets:
-        return _mask_secret_fields(cfg, _stored_secret_keys(channel_id))
-    for key in _stored_secret_keys(channel_id):
+        return _mask_secret_fields(cfg, secrets)
+    for key in secrets:
         cfg[f"{key}{_SET_SUFFIX}"] = bool(cfg.get(key))
     return cfg
 
@@ -75,9 +66,10 @@ def load_channel_for_api(channel_id: str, *, mask_secrets: bool = True) -> dict[
 def save_channel_updates(channel_id: str, updates: dict[str, Any]) -> dict[str, Any]:
     from config.ui_store import save_panel_config
 
-    if channel_id == "telegram":
+    spec = get_channel_spec(channel_id)
+    if spec.config_backend == "telegram":
         save_panel_config(telegram_updates=updates)
-        return load_channel_for_api("telegram")
+        return load_channel_for_api(channel_id)
 
     if channel_id not in STORED_CHANNEL_IDS:
         raise ValueError(f"unknown channel: {channel_id}")
@@ -87,18 +79,23 @@ def save_channel_updates(channel_id: str, updates: dict[str, Any]) -> dict[str, 
 
 
 def channel_runtime_active(channel_id: str) -> bool:
-    if channel_id == "telegram":
-        from gateway.telegram import lifecycle as tg_lifecycle
+    spec = get_channel_spec(channel_id)
+    if spec.lifecycle_module is None:
+        return False
+    import importlib
 
-        task = tg_lifecycle._task
-        return task is not None and not task.done()
-    return False
+    lifecycle = importlib.import_module(spec.lifecycle_module)
+    is_active = getattr(lifecycle, "is_active", None)
+    if callable(is_active):
+        return bool(is_active())
+    task = getattr(lifecycle, "_task", None)
+    return task is not None and not task.done()
 
 
 def channel_summary(channel_id: str) -> dict[str, Any]:
-    meta = get_catalog_entry(channel_id) or {}
+    spec = get_channel_spec(channel_id)
     cfg = load_channel_raw(channel_id)
-    if channel_id == "telegram":
+    if spec.config_backend == "telegram":
         cfg = normalize_telegram(cfg)
         configured = bool(cfg.get("bot_token"))
         enabled = bool(cfg.get("enabled"))
@@ -108,9 +105,9 @@ def channel_summary(channel_id: str) -> dict[str, Any]:
         enabled = bool(cfg.get("enabled"))
     return {
         "id": channel_id,
-        "label": meta.get("label") or channel_id,
-        "description": meta.get("description") or "",
-        "runner": meta.get("runner") or "stored",
+        "label": spec.label,
+        "description": spec.description,
+        "runner": spec.runner,
         "configured": configured,
         "enabled": enabled,
         "runtime_active": channel_runtime_active(channel_id),
@@ -133,3 +130,15 @@ def channel_detail(channel_id: str) -> dict[str, Any]:
         "fields": list(meta.get("fields") or []),
         "config": load_channel_for_api(channel_id),
     }
+
+
+__all__ = [
+    "channel_detail",
+    "channel_runtime_active",
+    "channel_summary",
+    "list_channel_summaries",
+    "load_channel_for_api",
+    "load_channel_raw",
+    "save_channel_updates",
+    "secret_keys_for",
+]

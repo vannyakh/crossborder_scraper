@@ -1,4 +1,4 @@
-"""Unified LLM client for extraction, scrape agent, and gateway agent."""
+"""Unified LLM client for scrape extraction and gateway agent tools."""
 
 from __future__ import annotations
 
@@ -46,6 +46,77 @@ class LLMChatResult:
     raw: dict[str, Any]
 
 
+class LLMRequestError(Exception):
+    """LLM provider returned an error (HTTP or invalid request)."""
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
+def format_llm_http_error(exc: httpx.HTTPStatusError) -> str:
+    try:
+        body = exc.response.json()
+        if isinstance(body, dict):
+            err = body.get("error")
+            if isinstance(err, dict) and err.get("message"):
+                return f"HTTP {exc.response.status_code}: {err['message']}"
+            if isinstance(err, str):
+                return f"HTTP {exc.response.status_code}: {err}"
+    except Exception:
+        pass
+    text = (exc.response.text or exc.response.reason_phrase or "request failed").strip()
+    return f"HTTP {exc.response.status_code}: {text[:300]}"
+
+
+def normalize_anthropic_input_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Make OpenAI-style JSON Schema valid for Anthropic Messages tool definitions."""
+    if not isinstance(schema, dict):
+        return {"type": "object", "properties": {}, "additionalProperties": False}
+
+    schema_type = schema.get("type")
+    if schema_type == "array":
+        items = schema.get("items")
+        if isinstance(items, dict):
+            return {**schema, "items": normalize_anthropic_input_schema(items)}
+        return schema
+
+    if (
+        schema_type == "object"
+        or "properties" in schema
+        or schema.get("additionalProperties") is not None
+    ):
+        props = schema.get("properties")
+        if not isinstance(props, dict):
+            props = {}
+        normalized_props = {
+            key: normalize_anthropic_input_schema(val) if isinstance(val, dict) else val
+            for key, val in props.items()
+        }
+        out: dict[str, Any] = {"type": "object", "properties": normalized_props}
+        if schema.get("description"):
+            out["description"] = schema["description"]
+        if schema.get("required"):
+            out["required"] = schema["required"]
+        if "additionalProperties" in schema:
+            out["additionalProperties"] = schema["additionalProperties"]
+        elif not normalized_props and schema.get("description"):
+            out["additionalProperties"] = True
+        else:
+            out["additionalProperties"] = False
+        return out
+
+    return schema
+
+
+def anthropic_supports_sampling(model: str) -> bool:
+    """Claude Opus 4.7+ rejects temperature, top_p, and top_k in Messages API."""
+    mid = (model or "").lower()
+    if "opus-4-7" in mid or "opus-4.7" in mid:
+        return False
+    return True
+
+
 def resolve_llm_config(settings: Settings) -> ResolvedLLMConfig:
     provider_id = getattr(settings, "ai_provider", None) or infer_provider_id(
         base_url=settings.ai_base_url,
@@ -67,6 +138,37 @@ def resolve_llm_config(settings: Settings) -> ResolvedLLMConfig:
         timeout_seconds=float(settings.ai_timeout_seconds),
         requires_api_key=preset.requires_api_key,
     )
+
+
+def build_anthropic_messages_payload(
+    messages: list[dict[str, Any]],
+    *,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    tools: list[dict[str, Any]] | None,
+    system: str | None,
+    anthropic_messages: list[dict[str, Any]],
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "messages": anthropic_messages,
+    }
+    if anthropic_supports_sampling(model):
+        payload["temperature"] = temperature
+    if system:
+        payload["system"] = system
+    if tools:
+        payload["tools"] = tools
+    return payload
+
+
+def anthropic_temperature_deprecated_response(response: httpx.Response) -> bool:
+    if response.status_code != 400:
+        return False
+    text = response.text.lower()
+    return "temperature" in text and "deprecated" in text
 
 
 class LLMClient:
@@ -142,7 +244,13 @@ class LLMClient:
                 headers=self._openai_headers(),
                 json=payload,
             )
-            resp.raise_for_status()
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                raise LLMRequestError(
+                    format_llm_http_error(exc),
+                    status_code=exc.response.status_code,
+                ) from exc
             data = resp.json()
 
         choice = data["choices"][0]["message"]
@@ -165,11 +273,12 @@ class LLMClient:
         out: list[dict[str, Any]] = []
         for tool in tools:
             fn = tool.get("function") or tool
+            raw_params = fn.get("parameters") or {"type": "object", "properties": {}}
             out.append(
                 {
                     "name": fn.get("name", ""),
                     "description": fn.get("description", ""),
-                    "input_schema": fn.get("parameters") or {"type": "object", "properties": {}},
+                    "input_schema": normalize_anthropic_input_schema(raw_params),
                 }
             )
         return out
@@ -258,21 +367,30 @@ class LLMClient:
         max_tokens: int | None,
     ) -> LLMChatResult:
         system, anthropic_messages = self._anthropic_messages_payload(messages)
-        payload: dict[str, Any] = {
-            "model": self.cfg.model,
-            "max_tokens": max_tokens or 4096,
-            "messages": anthropic_messages,
-            "temperature": temperature,
-        }
-        if system:
-            payload["system"] = system
-        if tools:
-            payload["tools"] = self._openai_tools_to_anthropic(tools)
+        anthropic_tools = self._openai_tools_to_anthropic(tools) if tools else None
+        payload = build_anthropic_messages_payload(
+            messages,
+            model=self.cfg.model,
+            max_tokens=max_tokens or 4096,
+            temperature=temperature,
+            tools=anthropic_tools,
+            system=system,
+            anthropic_messages=anthropic_messages,
+        )
 
         url = f"{self.cfg.base_url.rstrip('/')}/v1/messages"
         async with httpx.AsyncClient(timeout=self.cfg.timeout_seconds) as client:
             resp = await client.post(url, headers=self._anthropic_headers(), json=payload)
-            resp.raise_for_status()
+            if anthropic_temperature_deprecated_response(resp):
+                payload.pop("temperature", None)
+                resp = await client.post(url, headers=self._anthropic_headers(), json=payload)
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                raise LLMRequestError(
+                    format_llm_http_error(exc),
+                    status_code=exc.response.status_code,
+                ) from exc
             data = resp.json()
 
         content_blocks = data.get("content") or []

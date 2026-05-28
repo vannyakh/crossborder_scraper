@@ -35,8 +35,8 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
         "setup_steps": [
             "Create a bot with @BotFather and paste the token below.",
             "Enable Telegram and save (panel server must be running).",
-            "Message your bot /start — it replies with your chat id.",
-            "Add that id to allowed chats, save again, then send scrape commands.",
+            "Message your bot /start or /getid — it replies with your chat id.",
+            "Add that id to allowed chats and save. Messages sync to Agent → Chat.",
         ],
         "fields": [
             _field("enabled", type="boolean", label="Enable Telegram bot (long-polling)"),
@@ -57,7 +57,7 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
                 type="chat_ids",
                 label="Allowed chat IDs",
                 placeholder="-1001234567890, 123456789",
-                helper="Comma or space separated. Get ids from /start on your bot.",
+                helper="Comma or space separated. Get ids from /start or /getid on your bot.",
             ),
             _field("prompt_id", type="prompt", label="Agent prompt"),
             _field("max_reply_chars", type="number", label="Max reply length"),

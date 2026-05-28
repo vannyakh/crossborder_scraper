@@ -69,7 +69,7 @@ class GatewayService:
         return dict(panel_config_for_api(mask_secrets=True).get("telegram") or {})
 
     def update_telegram_config(self, updates: dict[str, Any]) -> dict[str, Any]:
-        from gateway.channels.setup import configure_channel
+        from gateway.integrate.setup import configure_channel
 
         configure_channel("telegram", updates)
         from server.services.context import get_context
@@ -78,18 +78,18 @@ class GatewayService:
         return self.get_telegram_config()
 
     def list_integrate_channels(self) -> dict[str, Any]:
-        from gateway.channels.setup import list_channels
+        from gateway.integrate.setup import list_channels
 
         items = list_channels()
         return {"items": items, "total": len(items)}
 
     def get_integrate_channel(self, channel_id: str) -> dict[str, Any]:
-        from gateway.channels.setup import get_channel
+        from gateway.integrate.setup import get_channel
 
         return get_channel(channel_id)
 
     def update_integrate_channel(self, channel_id: str, updates: dict[str, Any]) -> dict[str, Any]:
-        from gateway.channels.setup import configure_channel
+        from gateway.integrate.setup import configure_channel
 
         detail = configure_channel(channel_id, updates)
         if channel_id == "telegram":
@@ -99,7 +99,7 @@ class GatewayService:
         return detail
 
     async def reload_integrate_channel(self, channel_id: str) -> dict[str, Any]:
-        from gateway.channels.setup import reload_channel
+        from gateway.integrate.setup import reload_channel
 
         return await reload_channel(channel_id)
 
@@ -271,17 +271,80 @@ class GatewayService:
         *,
         prompt_id: str | None = None,
         skill_ids: list[str] | None = None,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
+        from gateway.chat_sessions import append_turn, get_session, history_for_llm
         from server.manager import get_manager
 
         mgr = get_manager()
         agent = GatewayAgent(mgr.settings)
-        return await agent.run(
+        history = None
+        resolved_prompt = prompt_id
+        if session_id:
+            session = get_session(session_id)
+            if session is None:
+                raise LookupError("session not found")
+            history = history_for_llm(session.get("messages") or [])
+            if not resolved_prompt:
+                resolved_prompt = session.get("prompt_id")
+
+        result = await agent.run(
             message.strip(),
             manager=mgr,
-            prompt_id=prompt_id,
+            prompt_id=resolved_prompt,
             skill_ids=skill_ids,
+            history=history,
         )
+
+        if session_id:
+            append_turn(
+                session_id,
+                user_message=message.strip(),
+                assistant_message=str(result.get("message") or ""),
+                ok=bool(result.get("ok")),
+                tool_calls=result.get("tool_calls") or [],
+                model_ref=result.get("model_ref"),
+                prompt_id=result.get("prompt_id") or resolved_prompt,
+            )
+            result["session_id"] = session_id
+            if session:
+                result["channel_id"] = session.get("channel_id")
+                result["platform_chat_id"] = session.get("platform_chat_id")
+
+        return result
+
+    def list_chat_sessions(self, *, channel_id: str | None = None) -> dict[str, Any]:
+        from gateway.chat_sessions import list_sessions_payload
+
+        return list_sessions_payload(channel_id=channel_id)
+
+    def get_chat_session(self, session_id: str) -> dict[str, Any]:
+        from gateway.chat_sessions import get_session
+
+        session = get_session(session_id)
+        if session is None:
+            raise LookupError("session not found")
+        return session
+
+    def create_chat_session(self, payload: dict[str, Any]) -> dict[str, Any]:
+        from gateway.chat_sessions import create_session
+
+        return create_session(
+            label=payload.get("label"),
+            prompt_id=payload.get("prompt_id"),
+            channel_id=str(payload.get("channel_id") or "panel"),
+            platform_chat_id=payload.get("platform_chat_id"),
+        )
+
+    def update_chat_session(self, session_id: str, patch: dict[str, Any]) -> dict[str, Any]:
+        from gateway.chat_sessions import update_session
+
+        return update_session(session_id, patch)
+
+    def delete_chat_session(self, session_id: str) -> bool:
+        from gateway.chat_sessions import delete_session
+
+        return delete_session(session_id)
 
     async def run_workflow(self, workflow_id: str, *, inputs: dict[str, Any]) -> dict[str, Any]:
         from server.manager import get_manager

@@ -1,8 +1,17 @@
+from .agent_llm import (
+    AgentLlmGatewaySummary,
+    AgentLlmSetupResponse,
+    AgentLlmSetupStep,
+)
 from .common import FileEntry, FileListResponse, MessageResponse, StatsResponse
 from .config import (
     AIConfigResponse,
     AIConfigUpdate,
+    LLMHealthProbeRequest,
     LLMHealthResponse,
+    LLMModelItem,
+    LLMModelsListResponse,
+    LLMModelsProbeRequest,
     LLMProviderInfo,
     LLMProviderListResponse,
     MarketplaceCredentialsUpdate,
@@ -43,6 +52,11 @@ from .firewall import (
     FirewallToggleRequest,
 )
 from .gateway import (
+    AgentChatSession,
+    AgentChatSessionChannelSummary,
+    AgentChatSessionCreateRequest,
+    AgentChatSessionListResponse,
+    AgentChatSessionUpdateRequest,
     AgentRuleCreateRequest,
     AgentRuleDeleteResponse,
     AgentRuleDetail,
@@ -95,6 +109,13 @@ from .gateway import (
     TelegramChannelConfig,
     TelegramChannelUpdate,
 )
+from .guides import (
+    PanelGuideCategory,
+    PanelGuideDetailResponse,
+    PanelGuideLink,
+    PanelGuideListResponse,
+    PanelGuideSummary,
+)
 from .jobs import (
     BatchDetailResponse,
     BatchListResponse,
@@ -146,8 +167,16 @@ from .runtime import (
 )
 
 __all__ = [
+    "AgentChatSession",
+    "AgentChatSessionChannelSummary",
+    "AgentChatSessionCreateRequest",
+    "AgentChatSessionListResponse",
+    "AgentChatSessionUpdateRequest",
     "AgentRunListResponse",
     "AgentRunRecord",
+    "AgentLlmGatewaySummary",
+    "AgentLlmSetupResponse",
+    "AgentLlmSetupStep",
     "AgentRuleCreateRequest",
     "AgentRuleDeleteResponse",
     "AgentRuleDetail",
@@ -181,6 +210,11 @@ __all__ = [
     "AIConfigUpdate",
     "PanelConfigResponse",
     "PanelConfigUpdate",
+    "PanelGuideCategory",
+    "PanelGuideDetailResponse",
+    "PanelGuideLink",
+    "PanelGuideListResponse",
+    "PanelGuideSummary",
     "ProxyStatusResponse",
     "ProxyTestResponse",
     "BatchDetailResponse",
@@ -189,7 +223,11 @@ __all__ = [
     "ExportRequest",
     "ExportResponse",
     "FileListResponse",
+    "LLMHealthProbeRequest",
     "LLMHealthResponse",
+    "LLMModelItem",
+    "LLMModelsListResponse",
+    "LLMModelsProbeRequest",
     "MarketplaceInfo",
     "MarketplaceListResponse",
     "HardwareMonitorResponse",

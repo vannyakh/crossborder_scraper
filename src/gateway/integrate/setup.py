@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from gateway.channels import store as channel_store
-from gateway.channels.catalog import ALL_CHANNEL_IDS
+from gateway.integrate import store as channel_store
+from gateway.integrate.catalog import ALL_CHANNEL_IDS
+from gateway.integrate.lifecycle import reload_channel as _reload_channel
 
 
 def list_channels() -> list[dict[str, Any]]:
@@ -42,7 +43,5 @@ def channel_status(channel_id: str | None = None) -> dict[str, Any]:
 
 
 async def reload_channel(channel_id: str) -> dict[str, Any]:
-    """Restart the live runner for a channel (Telegram today)."""
-    from gateway.channels.lifecycle import reload_channel as _reload
-
-    return await _reload(channel_id)
+    """Restart the live runner for a channel."""
+    return await _reload_channel(channel_id)

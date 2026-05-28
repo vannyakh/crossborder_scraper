@@ -32,7 +32,7 @@ async def panel_lifespan(_app: FastAPI):
 
     ensure_schedules_file()
     get_scheduler().start()
-    from gateway.channels.lifecycle import start_all_channels, stop_all_channels
+    from gateway.integrate.lifecycle import start_all_channels, stop_all_channels
 
     await start_all_channels()
     yield

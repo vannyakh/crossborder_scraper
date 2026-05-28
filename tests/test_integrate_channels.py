@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from config.integrate_channels_store import merge_channel_updates
-from gateway.channels.setup import configure_channel, list_channels
+from gateway.integrate.setup import configure_channel, list_channels
 
 
 def test_list_channels_includes_all_ids() -> None:

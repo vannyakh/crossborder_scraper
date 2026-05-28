@@ -10,7 +10,7 @@ from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
-from gateway.telegram.config import load_telegram_config
+from gateway.integrate.runners.telegram.config import load_telegram_config
 
 
 def _authorized(update: Update, cfg: dict[str, Any]) -> bool:
@@ -46,6 +46,37 @@ def _split_telegram_chunks(text: str, limit: int = 4000) -> list[str]:
     return [text[i : i + limit] for i in range(0, len(text), limit)]
 
 
+def _chat_id(update: Update) -> int | None:
+    chat = update.effective_chat
+    return chat.id if chat is not None else None
+
+
+def format_setup_reply(chat_id: int | str, *, authorized: bool) -> str:
+    lines = [
+        "Cross-Border gateway agent bot is online.",
+        f"Your chat id: `{chat_id}`",
+    ]
+    if authorized:
+        lines.append("Send any text message to run the agent (same tools as the web panel).")
+        lines.append("Commands: /start · /getid · /help · /status")
+    else:
+        lines.append(
+            "Add this id under **Integrate → Telegram → Allowed chat IDs** in the panel, "
+            "save, then message again."
+        )
+        lines.append("Commands: /start · /getid · /help")
+    return "\n".join(lines)
+
+
+def format_getid_reply(chat_id: int | str, *, authorized: bool) -> str:
+    if authorized:
+        return f"Chat id: `{chat_id}`"
+    return (
+        f"Chat id: `{chat_id}`\n"
+        "Add it to **Integrate → Telegram → Allowed chat IDs**, save, then send a message."
+    )
+
+
 class TelegramGatewayRunner:
     def __init__(self, cfg: dict[str, Any]) -> None:
         self._cfg = cfg
@@ -56,6 +87,7 @@ class TelegramGatewayRunner:
         self._app = Application.builder().token(token).build()
         self._app.add_handler(CommandHandler("start", self._cmd_start))
         self._app.add_handler(CommandHandler("help", self._cmd_help))
+        self._app.add_handler(CommandHandler("getid", self._cmd_getid))
         self._app.add_handler(CommandHandler("status", self._cmd_status))
         self._app.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, self._on_text),
@@ -77,25 +109,38 @@ class TelegramGatewayRunner:
             self._app = None
 
     async def _cmd_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        if not _authorized(update, self._cfg):
-            await update.effective_message.reply_text(
-                "This chat is not allowed to use this bot. Add its chat_id to "
-                "config/ui_config.json → telegram.control_chat_ids."
-            )
+        cid = _chat_id(update)
+        if cid is None:
+            await update.effective_message.reply_text("Could not read chat id from this update.")
             return
-        cid = update.effective_chat.id if update.effective_chat else "?"
+        cfg = load_telegram_config()
+        authorized = _authorized(update, cfg)
         await update.effective_message.reply_text(
-            f"Cross-Border gateway agent is online.\n"
-            f"Your chat id: `{cid}`\n"
-            f"Send any text message to run the agent (same tools as the web panel).",
+            format_setup_reply(cid, authorized=authorized),
             parse_mode="Markdown",
         )
 
     async def _cmd_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await self._cmd_start(update, context)
 
+    async def _cmd_getid(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        cid = _chat_id(update)
+        if cid is None:
+            await update.effective_message.reply_text("Could not read chat id from this update.")
+            return
+        cfg = load_telegram_config()
+        authorized = _authorized(update, cfg)
+        await update.effective_message.reply_text(
+            format_getid_reply(cid, authorized=authorized),
+            parse_mode="Markdown",
+        )
+
     async def _cmd_status(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        if not _authorized(update, self._cfg):
+        cfg = load_telegram_config()
+        if not _authorized(update, cfg):
+            await update.effective_message.reply_text(
+                "This chat is not allowed yet. Send /getid, add the id in the panel, then save."
+            )
             return
         from server.services.gateway_service import get_gateway_service
 
@@ -110,7 +155,10 @@ class TelegramGatewayRunner:
         if not cfg.get("enabled"):
             return
         if not _authorized(update, cfg):
-            await update.effective_message.reply_text("Unauthorized.")
+            await update.effective_message.reply_text(
+                "Unauthorized. Send /getid, add the chat id under Integrate → Telegram, save, "
+                "then try again."
+            )
             return
         text = (update.effective_message.text or "").strip()
         if not text:
@@ -123,7 +171,17 @@ class TelegramGatewayRunner:
         prompt_id = str(cfg.get("prompt_id") or "gateway_agent")
         max_chars = int(cfg.get("max_reply_chars") or 3500)
         try:
-            result = await svc.run_agent(text, prompt_id=prompt_id, skill_ids=None)
+            from gateway.integrate.bot_sessions import run_agent_via_bot_session
+            from gateway.integrate.runners.telegram.chat_meta import telegram_chat_title
+
+            result = await run_agent_via_bot_session(
+                svc,
+                channel_id="telegram",
+                platform_chat_id=chat.id,
+                platform_chat_title=telegram_chat_title(chat),
+                message=text,
+                prompt_id=prompt_id,
+            )
         except Exception as exc:
             logger.exception("Telegram agent run failed")
             await update.effective_message.reply_text(f"Error: {exc}"[:4000])

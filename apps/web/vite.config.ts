@@ -43,6 +43,7 @@ const API_PROXY_PATHS = [
   '/config',
   '/stats',
   '/gateway',
+  '/guides',
   '/jobs',
   '/batches',
   '/products',

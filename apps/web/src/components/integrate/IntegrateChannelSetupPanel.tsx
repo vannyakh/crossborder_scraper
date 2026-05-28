@@ -115,7 +115,7 @@ export function IntegrateChannelSetupPanel({ channelId }: { channelId: Integrate
               _dark={{ bg: 'orange.950', borderColor: 'orange.800' }}
             >
               <Text fontSize="sm">
-                Set up <strong>Settings → AI & LLM</strong> before the agent can reply on Telegram.
+                Set up <strong>Settings → Agent LLM</strong> before the agent can reply on Telegram.
               </Text>
             </Box>
           ) : null}

@@ -16,6 +16,55 @@ export function useGatewayPromptsQuery() {
   })
 }
 
+export function useAgentChatSessionsQuery(options?: { channelId?: string; poll?: boolean }) {
+  const channelId = options?.channelId
+  const poll = options?.poll ?? true
+  const query = channelId
+    ? `/gateway/chat/sessions?channel_id=${encodeURIComponent(channelId)}`
+    : '/gateway/chat/sessions'
+  return useQuery({
+    queryKey: channelId
+      ? ([...queryKeys.agentChatSessions, channelId] as const)
+      : queryKeys.agentChatSessions,
+    queryFn: () =>
+      api<{
+        items: import('../../lib/api').AgentChatSession[]
+        total: number
+        channels: import('../../lib/api').AgentChatSessionChannelSummary[]
+      }>(query),
+    staleTime: 2_000,
+    refetchInterval: poll ? 5_000 : false,
+  })
+}
+
+export function useCreateChatSessionMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { label?: string; prompt_id?: string }) =>
+      api<import('../../lib/api').AgentChatSession>('/gateway/chat/sessions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agentChatSessions })
+    },
+  })
+}
+
+export function useUpdateChatSessionMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...patch }: { id: string; label?: string; prompt_id?: string }) =>
+      api<import('../../lib/api').AgentChatSession>(`/gateway/chat/sessions/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agentChatSessions })
+    },
+  })
+}
+
 export function useAgentRunsQuery(limit = 30, enabled = true) {
   return useQuery({
     queryKey: [...queryKeys.agentRuns, limit] as const,
@@ -261,13 +310,19 @@ export function useUpdateRegistrySkillMutation() {
 export function useRunAgentMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { message: string; prompt_id?: string; skill_ids?: string[] }) =>
+    mutationFn: (payload: {
+      message: string
+      prompt_id?: string
+      skill_ids?: string[]
+      session_id?: string
+    }) =>
       api<GatewayAgentResponse>('/gateway/agent/run', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.agentRuns })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agentChatSessions })
     },
   })
 }

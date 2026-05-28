@@ -12,14 +12,13 @@ from gateway.agent_runtime import GatewayAgent
 from gateway.schedules_store import (
     append_run,
     compute_next_run,
+    ensure_schedules_file,
     get_schedule,
     load_schedules,
     save_schedules,
     update_run,
     update_schedule_run_meta,
 )
-from server.manager import get_manager
-from server.services.audit import log_cron
 
 
 def _parse_iso(value: str | None) -> datetime | None:
@@ -64,9 +63,7 @@ class AgentScheduler:
         return bool(self._running and self._task and not self._task.done())
 
     def get_status(self) -> dict[str, Any]:
-        from gateway.schedules_store import SCHEDULES_PATH, ensure_schedules_file
-
-        ensure_schedules_file()
+        path = ensure_schedules_file()
         schedules = load_schedules()
         tasks = [
             {
@@ -87,7 +84,7 @@ class AgentScheduler:
         return {
             "running": self.is_active(),
             "tick_seconds": self._tick_seconds,
-            "schedules_path": str(SCHEDULES_PATH),
+            "schedules_path": str(path),
             "total": len(tasks),
             "enabled": enabled,
             "failed_last_run": failed,
@@ -151,6 +148,9 @@ class AgentScheduler:
         )
         run_id = run_entry["id"]
 
+        from server.manager import get_manager
+        from server.services.audit import log_cron
+
         mgr = get_manager()
         agent = GatewayAgent(mgr.settings)
         try:
@@ -185,6 +185,8 @@ class AgentScheduler:
                 ),
                 meta={"run_id": run_id, "schedule_id": schedule_id, "trigger": trigger},
             )
+            if schedule.get("notify_telegram"):
+                await self._notify_telegram(schedule, result, status=status)
             return {"ok": result.get("ok", False), "run_id": run_id, **result}
         except Exception as exc:
             logger.exception("Scheduled agent failed: {}", exc)
@@ -203,7 +205,33 @@ class AgentScheduler:
                 details=f"{schedule.get('name')}: failed — {exc}",
                 meta={"run_id": run_id, "schedule_id": schedule_id, "trigger": trigger},
             )
+            if schedule.get("notify_telegram"):
+                await self._notify_telegram(
+                    schedule,
+                    {"ok": False, "message": str(exc)},
+                    status="failed",
+                )
             return {"ok": False, "run_id": run_id, "error": str(exc)}
+
+    async def _notify_telegram(
+        self,
+        schedule: dict[str, Any],
+        result: dict[str, Any],
+        *,
+        status: str,
+    ) -> None:
+        from gateway.integrate.runners.telegram.notify import send_control_chat_message
+
+        name = schedule.get("name") or schedule.get("id") or "schedule"
+        summary = (result.get("message") or result.get("error") or "").strip()
+        if len(summary) > 1200:
+            summary = summary[:1197] + "..."
+        icon = "✅" if status == "success" else "⚠️"
+        text = f"{icon} Cron · {name}\n{summary or status}"
+        try:
+            await send_control_chat_message(text)
+        except Exception as exc:
+            logger.warning("Schedule Telegram notify failed: {}", exc)
 
 
 _scheduler: AgentScheduler | None = None

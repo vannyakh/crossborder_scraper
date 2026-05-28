@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from config import get_settings
-from core.ai.health import check_llm_health
+from server.services.agent_llm_service import get_agent_llm_service
 from server.services.gateway_service import get_gateway_service
 from server.services.runtime import get_service_runtime
 
@@ -17,7 +16,7 @@ async def get_service_overview() -> dict[str, Any]:
     ai = runtime.get("ai") or {}
     llm: dict[str, Any] | None = None
     if ai.get("ai_enabled"):
-        llm = await check_llm_health(get_settings())
+        llm = await get_agent_llm_service().check_health()
 
     return {
         "runtime": runtime,

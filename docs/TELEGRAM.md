@@ -33,8 +33,8 @@ Edit `config/ui_config.json` (or use the API / panel when UI is wired):
 ### Find your chat ID
 
 1. Set `enabled: true` and `bot_token`, restart the panel.
-2. Message your bot `/start` from the chat you want to control.
-3. The bot replies with `Your chat id: \`…\``.
+2. Message your bot `/start` or `/getid` from the chat you want to control.
+3. The bot replies with `Your chat id: \`…\`` (works before the chat is allowlisted).
 4. Add that number to `control_chat_ids` and restart (or `PATCH /gateway/telegram`).
 
 ## 3. Run the panel

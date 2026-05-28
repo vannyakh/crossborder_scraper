@@ -1,14 +1,26 @@
 import { Box, Button, Grid, Text, VStack } from '@chakra-ui/react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { SoftwareToolCard, SoftwareToolSection } from '../../config/software-tools'
+import { useToolGuideMap } from '../../hooks/use-tool-guide-map'
 import { useAccentPalette } from '../../hooks/use-ui-config'
+import { PanelGuideViews } from '../guides/PanelGuideViews'
 import { Section, SectionDivider } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import { ToolsPanelSkeleton } from './DashboardSkeleton'
 
-function ToolCardTile({ tool }: { tool: SoftwareToolCard }) {
+function ToolCardTile({
+  tool,
+  guideId,
+  onOpenGuide,
+}: {
+  tool: SoftwareToolCard
+  guideId?: string
+  onOpenGuide: (id: string) => void
+}) {
   const accentPalette = useAccentPalette()
   const Icon = tool.icon
+  const hasGuide = Boolean(guideId)
 
   return (
     <Box
@@ -26,7 +38,7 @@ function ToolCardTile({ tool }: { tool: SoftwareToolCard }) {
       <Box mt={2}>
         <StatusBadge status={tool.statusTone} label={tool.status} />
       </Box>
-      <Grid templateColumns="1fr 1fr" gap={2} mt={3}>
+      <Grid templateColumns={hasGuide ? '1fr 1fr' : '1fr'} gap={2} mt={3}>
         <Button
           asChild
           size="xs"
@@ -36,16 +48,42 @@ function ToolCardTile({ tool }: { tool: SoftwareToolCard }) {
         >
           <Link to={tool.to}>Open</Link>
         </Button>
-        {tool.primaryAction ? (
-          <Button asChild size="xs" colorPalette={accentPalette} borderRadius="var(--radius-input)">
-            <Link to={tool.primaryAction.to}>{tool.primaryAction.label}</Link>
+        {hasGuide ? (
+          <Button
+            size="xs"
+            variant="outline"
+            borderColor="border.subtle"
+            borderRadius="input"
+            colorPalette={accentPalette}
+            onClick={() => guideId && onOpenGuide(guideId)}
+          >
+            Guide
           </Button>
-        ) : (
-          <Button asChild size="xs" colorPalette={accentPalette} borderRadius="var(--radius-input)">
-            <Link to={tool.to}>Manage</Link>
-          </Button>
-        )}
+        ) : null}
       </Grid>
+      {tool.primaryAction ? (
+        <Button
+          asChild
+          size="xs"
+          w="full"
+          mt={2}
+          colorPalette={accentPalette}
+          borderRadius="var(--radius-input)"
+        >
+          <Link to={tool.primaryAction.to}>{tool.primaryAction.label}</Link>
+        </Button>
+      ) : !hasGuide ? (
+        <Button
+          asChild
+          size="xs"
+          w="full"
+          mt={2}
+          colorPalette={accentPalette}
+          borderRadius="var(--radius-input)"
+        >
+          <Link to={tool.to}>Manage</Link>
+        </Button>
+      ) : null}
     </Box>
   )
 }
@@ -57,45 +95,57 @@ export function ToolsPanel({
   sections: SoftwareToolSection[]
   loading?: boolean
 }) {
+  const toolGuideMap = useToolGuideMap()
+  const [guideId, setGuideId] = useState<string | null>(null)
+
   if (loading) return <ToolsPanelSkeleton />
 
   return (
-    <Section
-      title="Software tools"
-      description="Scrape panel, server tools, and gateway automation — aligned with the sidebar"
-      mt={0}
-    >
-      <VStack align="stretch" gap={6}>
-        {sections.map((section, index) => (
-          <Box key={section.id}>
-            {index > 0 ? (
-              <Box mb={3}>
-                <SectionDivider title={section.title} />
-              </Box>
-            ) : (
-              <Text fontSize="sm" fontWeight="semibold" color="fg" mb={0.5}>
-                {section.title}
+    <>
+      <Section
+        title="Software tools"
+        description="Scrape panel, server tools, and gateway automation — Guide opens markdown instructions"
+        mt={0}
+      >
+        <VStack align="stretch" gap={6}>
+          {sections.map((section, index) => (
+            <Box key={section.id}>
+              {index > 0 ? (
+                <Box mb={3}>
+                  <SectionDivider title={section.title} />
+                </Box>
+              ) : (
+                <Text fontSize="sm" fontWeight="semibold" color="fg" mb={0.5}>
+                  {section.title}
+                </Text>
+              )}
+              <Text
+                fontSize="xs"
+                color="fg.muted"
+                mb={3}
+                lineClamp={1}
+                truncate
+                title={section.description}
+              >
+                {section.description}
               </Text>
-            )}
-            <Text
-              fontSize="xs"
-              color="fg.muted"
-              mb={3}
-              lineClamp={1}
-              truncate
-              title={section.description}
-            >
-              {section.description}
-            </Text>
-            <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }} gap={3}>
-              {section.tools.map((tool) => (
-                <ToolCardTile key={tool.id} tool={tool} />
-              ))}
-            </Grid>
-          </Box>
-        ))}
-      </VStack>
-    </Section>
+              <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }} gap={3}>
+                {section.tools.map((tool) => (
+                  <ToolCardTile
+                    key={tool.id}
+                    tool={tool}
+                    guideId={toolGuideMap[tool.id]}
+                    onOpenGuide={setGuideId}
+                  />
+                ))}
+              </Grid>
+            </Box>
+          ))}
+        </VStack>
+      </Section>
+
+      <PanelGuideViews guideId={guideId} open={Boolean(guideId)} onClose={() => setGuideId(null)} />
+    </>
   )
 }
 

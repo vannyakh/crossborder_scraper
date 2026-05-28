@@ -72,7 +72,7 @@ Restart API after router changes. Restart Vite after `vite.config.ts` proxy chan
 | Scrape jobs | `routers/jobs.py`, `services/` | `/workflow/batches` |
 | App Store / infra | `server/app_store/`, `/store` | `/store`, `/databases` |
 | Gateway agent | `routers/gateway.py`, `gateway/tools.py` | `/agent/*` |
-| Integrate channels | `gateway/channels/` | `/integrate/*` |
+| Integrate channels | `gateway/integrate/` (`runners/<platform>/`) | `/integrate/*` |
 | Panel security | `services/panel_security.py`, `deploy/` | Settings → Network, `/firewall` |
 | Docker host | `services/docker_host.py`, `/docker` | `/docker` |
 | Source plugins | `core/plugins/`, `plugins/` | App Store catalog |

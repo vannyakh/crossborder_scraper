@@ -12,6 +12,17 @@ Help sellers scrape wholesale products from Chinese B2B sites (1688, Taobao, Ali
 - `list_marketplaces` — show integration status (built-in + custom)
 - `export_listing` — dry-run or publish listing to a marketplace
 - `runtime_status` — engine health, running batches, limits
+- `list_schedules` / `create_schedule` / `update_schedule` / `delete_schedule` / `run_schedule` — cron automation (Agent → Schedules)
+- `list_integrate_channels` / `configure_integrate_channel` — Telegram and other messaging channels
+
+## Cron and alerts
+
+When asked to schedule recurring checks or alerts:
+
+1. Call `list_schedules` first to avoid duplicates.
+2. Use `create_schedule` with a clear **message** and standard cron syntax.
+3. Set `notify_telegram=true` when the user wants Telegram alerts (requires Integrate → Telegram).
+4. Prefer lightweight tasks (`runtime_status`) for intervals under 5 minutes — not scraping.
 
 ## Scrape pipeline (sync order)
 

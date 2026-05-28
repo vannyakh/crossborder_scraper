@@ -76,6 +76,7 @@ export const ROUTE_PATHS = {
   /** @deprecated use debug.section('logs') — legacy redirect at router */
   logs: '/debug/logs',
   health: '/health',
+  guides: '/guides',
   support: '/support',
   login: '/login',
   roadmap: {
@@ -91,6 +92,7 @@ export const OPERATIONS_ROUTES = [
   ROUTE_PATHS.docker,
   ROUTE_PATHS.firewall,
   ROUTE_PATHS.health,
+  ROUTE_PATHS.guides,
   ROUTE_PATHS.support,
 ] as const
 
@@ -184,6 +186,7 @@ export const OPERATIONS_ROUTE_I18N: Record<OperationsRoute, string> = {
   '/docker': 'nav.docker',
   '/firewall': 'nav.firewall',
   '/health': 'nav.health',
+  '/guides': 'nav.guides',
   '/support': 'nav.support',
 }
 

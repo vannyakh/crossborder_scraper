@@ -97,6 +97,21 @@ class GatewayClient:
             body={"inputs": inputs},
         )
 
+    def list_schedules(self) -> dict[str, Any]:
+        return self._request("GET", "/gateway/schedules")
+
+    def create_schedule(self, body: dict[str, Any]) -> dict[str, Any]:
+        return self._request("POST", "/gateway/schedules", body=body)
+
+    def update_schedule(self, schedule_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        return self._request("PATCH", f"/gateway/schedules/{schedule_id}", body=body)
+
+    def delete_schedule(self, schedule_id: str) -> dict[str, Any]:
+        return self._request("DELETE", f"/gateway/schedules/{schedule_id}")
+
+    def run_schedule(self, schedule_id: str) -> dict[str, Any]:
+        return self._request("POST", f"/gateway/schedules/{schedule_id}/run")
+
     @classmethod
     def from_env(cls, base_url: str | None = None) -> GatewayClient:
         from config import get_settings

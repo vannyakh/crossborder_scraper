@@ -14,6 +14,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { DebugPage } from '../pages/DebugPage'
 import { DockerPage } from '../pages/DockerPage'
 import { FirewallPage } from '../pages/FirewallPage'
+import { GuidesPage } from '../pages/GuidesPage'
 import { HealthPage } from '../pages/HealthPage'
 import { IntegratePage } from '../pages/IntegratePage'
 import { MonitorPage } from '../pages/MonitorPage'
@@ -124,6 +125,7 @@ const router = createBrowserRouter(
             },
             { path: 'debug/:section?', element: <DebugPage /> },
             { path: 'health', element: <HealthPage /> },
+            { path: 'guides', element: <GuidesPage /> },
             { path: 'support', element: <SupportPage /> },
             { path: 'roadmap/:feature', element: <RoadmapPage /> },
             {
