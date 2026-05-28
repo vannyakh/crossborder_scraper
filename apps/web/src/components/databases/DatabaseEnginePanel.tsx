@@ -1,10 +1,12 @@
-import { Box, Button, HStack, Input, NativeSelect, Table, Text } from '@chakra-ui/react'
+import { Box, Button, HStack, Input, NativeSelect, Table } from '@chakra-ui/react'
 import { Link2, Plus, RefreshCw, Settings } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { DatabaseEnginePluginId } from '../../config/databases'
 import {
   useStoreCatalogQuery,
   useStoreConnectMutation,
+  useStoreCreateDatabasesMutation,
+  useStoreDatabasesQuery,
   useStoreEnvironmentQuery,
   useStoreInstallMutation,
   useStoreInstalledQuery,
@@ -12,15 +14,24 @@ import {
 } from '../../hooks/queries/use-store-query'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
-import type { StoreCatalogItem, StoreConnectRequest, StoreInstalled } from '../../lib/api'
+import type {
+  StoreCatalogItem,
+  StoreConnectRequest,
+  StoreDatabaseEntry,
+  StoreInstalled,
+} from '../../lib/api'
 import { StoreConnectForm } from '../store/StoreConnectForm'
 import { StoreInstallDialog, type StoreInstallOptions } from '../store/StoreInstallDialog'
-import { pluginIcon, statusTone } from '../store/store-utils'
+import { statusTone } from '../store/store-utils'
 import { DataList, DataListEmpty } from '../ui/DataList'
 import { Panel, PanelBody } from '../ui/Panel'
 import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
 import { fieldStyles } from '../ui/field-styles'
+import { getDatabaseEngineSetupState } from './database-engine-setup'
+import { DatabaseAddDialog, type DatabaseCreateDraft } from './DatabaseAddDialog'
+import { DatabaseSetupOverlay } from './DatabaseSetupOverlay'
+import { ClickToCopyText } from './ClickToCopyText'
 
 function defaultConnectForm(item: StoreCatalogItem): StoreConnectRequest {
   const form: StoreConnectRequest = {
@@ -39,10 +50,12 @@ function defaultConnectForm(item: StoreCatalogItem): StoreConnectRequest {
 function EngineTableRow({
   catalog,
   installed,
+  database,
   onSettings,
 }: {
   catalog: StoreCatalogItem
   installed: StoreInstalled
+  database: StoreDatabaseEntry
   onSettings: () => void
 }) {
   const { t } = useLocale()
@@ -50,23 +63,31 @@ function EngineTableRow({
   const host = String(config.host ?? '127.0.0.1')
   const port = config.port != null ? String(config.port) : '—'
   const endpoint = port !== '—' ? `${host}:${port}` : host
+  const username = database.username || String(config.username ?? '—')
+  const password = database.password || ''
 
   return (
     <Table.Row _hover={{ bg: 'bg.panelHover' }}>
       <Table.Cell fontWeight="medium">{catalog.name}</Table.Cell>
-      <Table.Cell fontSize="sm">{String(config.username ?? '—')}</Table.Cell>
+      <Table.Cell>
+        <ClickToCopyText value={username} mono />
+      </Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
         {endpoint}
       </Table.Cell>
-      <Table.Cell fontSize="sm">{String(config.database ?? '—')}</Table.Cell>
-      <Table.Cell fontSize="sm">{config.password_set ? '••••••••' : '—'}</Table.Cell>
+      <Table.Cell>
+        <ClickToCopyText value={database.name} />
+      </Table.Cell>
+      <Table.Cell>
+        <ClickToCopyText value={password || '—'} masked={Boolean(password)} mono />
+      </Table.Cell>
       <Table.Cell fontSize="sm" color="fg.muted">
         {installed.mode ?? '—'}
       </Table.Cell>
       <Table.Cell>
         <StatusBadge status={statusTone(installed.status)} label={installed.status} />
       </Table.Cell>
-      <Table.Cell>
+      <Table.Cell textAlign="right">
         <Button
           size="xs"
           variant="ghost"
@@ -97,41 +118,57 @@ export function DatabaseEnginePanel({
   const installMutation = useStoreInstallMutation()
   const connectMutation = useStoreConnectMutation()
   const refreshMutation = useStoreRefreshMutation()
+  const createDatabasesMutation = useStoreCreateDatabasesMutation()
 
   const [search, setSearch] = useState('')
   const [installing, setInstalling] = useState(false)
   const [showInstall, setShowInstall] = useState(false)
+  const [showAddDb, setShowAddDb] = useState(false)
   const [showConnect, setShowConnect] = useState(false)
   const [connectForm, setConnectForm] = useState<StoreConnectRequest>({})
 
-  const dockerReady = Boolean(env.data?.docker_available && env.data?.compose_available)
-  const nativeReady = Boolean(env.data?.native_driver_available)
   const catalogItem = catalog.data?.find((item) => item.id === pluginId)
   const installed = installedQuery.data?.find((row) => row.plugin_id === pluginId)
-  const canInstall =
-    !installed &&
-    ((catalogItem?.supports_native && nativeReady) || (catalogItem?.supports_docker && dockerReady))
+  const databasesQuery = useStoreDatabasesQuery(pluginId, Boolean(installed))
+  const setup = useMemo(
+    () => getDatabaseEngineSetupState(catalogItem, env.data, Boolean(installed)),
+    [catalogItem, env.data, installed],
+  )
 
   const serviceLabel = catalogItem?.name ?? pluginId
-  const Icon = pluginIcon(pluginId)
-  const busy = installMutation.isPending || connectMutation.isPending || refreshMutation.isPending
+  const busy =
+    installMutation.isPending ||
+    connectMutation.isPending ||
+    refreshMutation.isPending ||
+    createDatabasesMutation.isPending
 
-  const tableVisible = useMemo(() => {
-    if (!installed) return false
+  const databaseRows = databasesQuery.data?.items ?? []
+
+  const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return true
-    const haystack = [
-      serviceLabel,
-      installed.status,
-      String(installed.config.host ?? ''),
-      String(installed.config.port ?? ''),
-      String(installed.config.username ?? ''),
-      String(installed.config.database ?? ''),
-    ]
-      .join(' ')
-      .toLowerCase()
-    return haystack.includes(q)
-  }, [installed, search, serviceLabel])
+    if (!q) return databaseRows
+    return databaseRows.filter((row) => {
+      const haystack = [
+        serviceLabel,
+        row.name,
+        row.username,
+        row.password,
+        installed?.status ?? '',
+        String(installed?.config.host ?? ''),
+        String(installed?.config.port ?? ''),
+      ]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [
+    databaseRows,
+    search,
+    serviceLabel,
+    installed?.config.host,
+    installed?.config.port,
+    installed?.status,
+  ])
 
   async function handleInstallConfirm(options: StoreInstallOptions) {
     setInstalling(true)
@@ -148,6 +185,14 @@ export function DatabaseEnginePanel({
     }
   }
 
+  function openAddDb() {
+    if (installed) {
+      setShowAddDb(true)
+      return
+    }
+    setShowInstall(true)
+  }
+
   function openConnect() {
     if (!catalogItem) return
     setConnectForm(defaultConnectForm(catalogItem))
@@ -159,6 +204,22 @@ export function DatabaseEnginePanel({
     setShowConnect(false)
   }
 
+  async function handleCreateDatabase(draft: DatabaseCreateDraft) {
+    await createDatabasesMutation.mutateAsync({
+      pluginId,
+      databases: [
+        {
+          name: draft.name.trim(),
+          username: draft.username.trim() || undefined,
+          password: draft.password.trim() || undefined,
+          charset: draft.charset,
+          access: draft.access,
+        },
+      ],
+    })
+    setShowAddDb(false)
+  }
+
   if (catalog.isLoading || installedQuery.isLoading) {
     return <FormFieldsSkeleton fields={4} />
   }
@@ -166,6 +227,11 @@ export function DatabaseEnginePanel({
   if (!catalogItem) {
     return <DataListEmpty>{t('db.engine.unavailable')}</DataListEmpty>
   }
+
+  const canAddDatabase = Boolean(
+    installed &&
+    (databasesQuery.data?.supports_create ?? ['mysql', 'postgresql', 'mongodb'].includes(pluginId)),
+  )
 
   return (
     <Box>
@@ -177,6 +243,15 @@ export function DatabaseEnginePanel({
         onClose={() => setShowInstall(false)}
         onConfirm={(options) => void handleInstallConfirm(options)}
       />
+      {installed && canAddDatabase ? (
+        <DatabaseAddDialog
+          open={showAddDb}
+          loading={createDatabasesMutation.isPending}
+          catalogItem={catalogItem}
+          onClose={() => setShowAddDb(false)}
+          onConfirm={handleCreateDatabase}
+        />
+      ) : null}
       <HStack
         mb={4}
         gap={2}
@@ -189,9 +264,9 @@ export function DatabaseEnginePanel({
             size="sm"
             colorPalette={accentPalette}
             borderRadius="input"
-            loading={installing}
-            disabled={Boolean(installed) || !canInstall}
-            onClick={() => setShowInstall(true)}
+            loading={installing || createDatabasesMutation.isPending}
+            disabled={!installed && !setup.canInstall}
+            onClick={openAddDb}
           >
             <Plus size={14} />
             {t('db.engine.addDb')}
@@ -210,8 +285,10 @@ export function DatabaseEnginePanel({
             </Button>
           ) : null}
           <StatusBadge
-            status={installed ? statusTone(installed.status) : 'neutral'}
-            label={installed ? installed.status : t('db.engine.notInstalled')}
+            status={
+              installed ? statusTone(installed.status) : setup.canInstall ? 'brand' : 'neutral'
+            }
+            label={installed ? installed.status : t(setup.statusLabelKey)}
           />
         </HStack>
 
@@ -231,6 +308,7 @@ export function DatabaseEnginePanel({
             w={{ base: 'full', sm: '200px' }}
             placeholder={t('db.table.searchPlaceholder')}
             value={search}
+            disabled={!installed}
             onChange={(e) => setSearch(e.target.value)}
           />
           <Button
@@ -242,19 +320,16 @@ export function DatabaseEnginePanel({
             onClick={() => {
               void catalog.refetch()
               void installedQuery.refetch()
-              if (installed) void refreshMutation.mutateAsync(pluginId)
+              if (installed) {
+                void databasesQuery.refetch()
+                void refreshMutation.mutateAsync(pluginId)
+              }
             }}
           >
             <RefreshCw size={14} />
           </Button>
         </HStack>
       </HStack>
-
-      {!canInstall && !installed && (catalogItem.supports_native || catalogItem.supports_docker) ? (
-        <Text mb={3} fontSize="xs" color="fg.subtle">
-          {t('db.install.dockerHint')}
-        </Text>
-      ) : null}
 
       {showConnect ? (
         <StoreConnectForm
@@ -267,8 +342,8 @@ export function DatabaseEnginePanel({
         />
       ) : null}
 
-      {installed && tableVisible ? (
-        <Panel overflow="hidden">
+      {installed && filteredRows.length > 0 ? (
+        <Panel>
           <PanelBody p={0}>
             <DataList>
               <Table.Header bg="bg.panelHover">
@@ -284,74 +359,33 @@ export function DatabaseEnginePanel({
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                <EngineTableRow
-                  catalog={catalogItem}
-                  installed={installed}
-                  onSettings={() => onSettings(pluginId)}
-                />
+                {filteredRows.map((row) => (
+                  <EngineTableRow
+                    key={row.name}
+                    catalog={catalogItem}
+                    installed={installed}
+                    database={row}
+                    onSettings={() => onSettings(pluginId)}
+                  />
+                ))}
               </Table.Body>
             </DataList>
           </PanelBody>
         </Panel>
       ) : installed && search.trim() ? (
         <DataListEmpty>{t('db.table.noMatch')}</DataListEmpty>
+      ) : installed && databaseRows.length === 0 && !databasesQuery.isLoading ? (
+        <DataListEmpty>{t('db.create.emptyList')}</DataListEmpty>
+      ) : !installed ? (
+        <DatabaseSetupOverlay
+          catalogItem={catalogItem}
+          setup={setup}
+          installing={installing}
+          onInstall={() => setShowInstall(true)}
+          onConnectExternal={openConnect}
+        />
       ) : (
-        <Panel>
-          <PanelBody py={10}>
-            <DataListEmpty>
-              <Box textAlign="center">
-                <Box
-                  mx="auto"
-                  mb={3}
-                  w="fit-content"
-                  p={3}
-                  borderRadius="full"
-                  bg="bg.panelHover"
-                  color="fg.muted"
-                >
-                  <Icon size={28} strokeWidth={1.75} />
-                </Box>
-                <Text fontWeight="medium" mb={1}>
-                  {t('db.engine.emptyTitle', { engine: serviceLabel })}
-                </Text>
-                <Text fontSize="sm" color="fg.muted" mb={4}>
-                  {catalogItem.description}
-                </Text>
-                <HStack justify="center" gap={2} flexWrap="wrap">
-                  <Button
-                    size="sm"
-                    colorPalette={accentPalette}
-                    borderRadius="input"
-                    loading={installing}
-                    disabled={!canInstall}
-                    onClick={() =>
-                      void handleInstallConfirm({
-                        pluginId: pluginId,
-                        mode: 'native',
-                        version: catalogItem.version,
-                        port: catalogItem.default_port ?? 0,
-                      })
-                    }
-                  >
-                    <Plus size={14} />
-                    {t('db.engine.addDb')}
-                  </Button>
-                  {catalogItem.supports_external ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      borderColor="border.subtle"
-                      borderRadius="input"
-                      onClick={openConnect}
-                    >
-                      {t('db.install.connectExternal')}
-                    </Button>
-                  ) : null}
-                </HStack>
-              </Box>
-            </DataListEmpty>
-          </PanelBody>
-        </Panel>
+        <FormFieldsSkeleton fields={2} />
       )}
     </Box>
   )

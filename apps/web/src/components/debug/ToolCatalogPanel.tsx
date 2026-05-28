@@ -209,7 +209,7 @@ export function ToolCatalogPanel() {
         }
       />
 
-      <SectionCard p={0} overflow="hidden">
+      <SectionCard p={0}>
         <Box px={{ base: 3, md: 4 }} py={{ base: 3, md: 4 }}>
           <HStack gap={3} flexWrap="wrap" align="center" justify="space-between" w="full">
             <ButtonGroup size="xs" variant="outline" attached flexWrap="wrap" flexShrink={0}>

@@ -15,7 +15,7 @@ export type StorePluginSection = {
 export const STORE_SERVICE_SECTIONS: StorePluginSection[] = [
   { id: 'service', label: 'Service' },
   { id: 'port', label: 'Port' },
-  { id: 'connection', label: 'Connection' },
+  { id: 'connection', label: 'Manage' },
   { id: 'storage', label: 'Storage location' },
   { id: 'logs', label: 'Logs' },
 ]

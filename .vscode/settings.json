@@ -72,6 +72,7 @@
   ],
   "typescript.tsdk": "apps/web/node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.tsconfig": "apps/web/tsconfig.app.json",
   "tailwindCSS.experimental.configFile": "apps/web/src/index.css",
   "makefile.configureOnOpen": false,
   "workbench.colorCustomizations": {

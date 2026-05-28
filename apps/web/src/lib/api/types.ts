@@ -823,6 +823,57 @@ export type StoreConnectRequest = {
   management_port?: number
 }
 
+export type StoreUpdateConfigRequest = {
+  host?: string
+  port?: number
+  username?: string
+  password?: string
+  database?: string
+  management_port?: number
+  regenerate_password?: boolean
+}
+
+export type StoreDatabaseEntry = {
+  name: string
+  username: string
+  password: string
+  charset: string
+  access?: string
+  created_at?: string | null
+  legacy?: boolean
+}
+
+export type StoreDatabaseListResponse = {
+  plugin_id: string
+  items: StoreDatabaseEntry[]
+  total: number
+  supports_create: boolean
+}
+
+export type StoreDatabaseCreateItem = {
+  name: string
+  username?: string
+  password?: string
+  charset?: string
+  access?: 'local' | 'remote'
+}
+
+export type StoreCreateDatabasesRequest = {
+  databases: StoreDatabaseCreateItem[]
+}
+
+export type StorePluginCredentials = {
+  plugin_id: string
+  mode?: string | null
+  host?: string | null
+  port?: number | null
+  username?: string | null
+  database?: string | null
+  password?: string | null
+  management_port?: number | null
+  has_password: boolean
+}
+
 export type StorePluginDetail = StoreCatalogItem & {
   installation?: StoreInstalled | null
 }

@@ -25,9 +25,16 @@ import {
 } from '../../hooks/queries/use-store-query'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem } from '../../lib/api'
+import { isDatabaseCatalogItem } from '../../config/databases'
+import { DatabaseConnectionManage } from '../databases/DatabaseConnectionManage'
 import { PluginScrapeSpecPanel } from './PluginScrapeSpecPanel'
 import { pluginIcon, statusTone } from './store-utils'
 import { sectionsForPlugin, type StorePluginSectionId } from './store-plugin-sections'
+
+function isDatabaseService(item?: StoreCatalogItem | null): boolean {
+  if (!item) return false
+  return isDatabaseCatalogItem({ id: item.id, category: item.category })
+}
 
 function NavItem({
   label,
@@ -320,19 +327,25 @@ export function StorePluginSettingsDrawer({
         )
 
       case 'port':
-        return (
-          <SectionCard>
-            <InfoRow label="Host port" value={port} />
-            <InfoRow label="Bind host" value={host} />
-            <InfoRow label="Install mode" value={installation?.mode ?? '—'} />
-            <Text mt={3} fontSize="xs" color="fg.muted">
-              Docker installs map this host port to the container. Change port by reinstalling the
-              plugin.
-            </Text>
-          </SectionCard>
-        )
-
       case 'connection':
+        if (isDatabaseService(merged) && installation && pluginId) {
+          return (
+            <DatabaseConnectionManage
+              pluginId={pluginId}
+              catalogItem={merged}
+              installation={installation}
+            />
+          )
+        }
+        if (section === 'port') {
+          return (
+            <SectionCard>
+              <InfoRow label="Host port" value={port} />
+              <InfoRow label="Bind host" value={host} />
+              <InfoRow label="Install mode" value={installation?.mode ?? '—'} />
+            </SectionCard>
+          )
+        }
         return (
           <SectionCard>
             <InfoRow label="Endpoint" value={port !== '—' ? `${host}:${port}` : host} />

@@ -141,6 +141,7 @@ const router = createBrowserRouter(
             { path: 'settings/service', element: <Navigate to={ROUTE_PATHS.health} replace /> },
             { path: 'settings', element: <Navigate to={settingsPath()} replace /> },
             { path: 'settings/:section?', element: <SettingsPage /> },
+            { path: '*', element: <NotFoundPage /> },
           ],
         },
       ],

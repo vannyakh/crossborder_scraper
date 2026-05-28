@@ -1,0 +1,40 @@
+---
+description: Use Chakra Menu (not Select/NativeSelect) for panel dropdown fields
+globs: apps/web/**/*.tsx
+alwaysApply: false
+---
+
+# Panel dropdowns — Chakra Menu
+
+For **enum / preset / charset** fields in the React panel (`apps/web/`), use **`PanelSelect`** (`apps/web/src/components/ui/PanelSelect.tsx`), which wraps Chakra **`Menu`** (trigger + portal list + checkmark).
+
+## Do
+
+- Reuse **`PanelSelect`** for charset, access mode, presets, and similar single-choice fields.
+- Reference: `PanelSelect.tsx`, `LocaleSelector.tsx` (same Menu pattern).
+- In **`Dialog`**, pass **`zIndex={1400}`** so the list renders above the modal.
+
+```tsx
+<PanelSelect
+  value={draft.charset}
+  options={charsetOptions}
+  zIndex={1400}
+  onChange={(charset) => patch({ charset })}
+/>
+```
+
+## Do not (new code)
+
+- Do not use **`Select.Root`** / **`Select.HiddenSelect`** in dialogs or shared form pickers — Zag’s `syncSelectElement` can throw (`selectEl.options is not iterable`).
+- Do not add new **`NativeSelect`** for user-facing choice lists unless there is a strong reason.
+- Do not use raw HTML `<select>`.
+
+Legacy screens may still use `NativeSelect` or `Select` until migrated.
+
+## Menu vs Select
+
+| Component | Use for |
+|-----------|---------|
+| **`Menu`** / **`PanelSelect`** | Pick one value from a fixed list (form state) |
+| **`Select`** | Only where a native hidden `<select>` is required for HTML form submit (rare) |
+| **`NativeSelect`** | Legacy only; prefer `PanelSelect` when touching the file |

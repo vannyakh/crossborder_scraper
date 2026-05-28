@@ -249,6 +249,12 @@ export function AgentChatPanel() {
     }
   }, [fullscreen])
 
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
   function startNewSession() {
     const promptLabel = activePrompt?.label ?? promptId
     setMessages([
@@ -302,187 +308,213 @@ export function AgentChatPanel() {
     }
   }
 
-  const chatShell = (
-    <>
-      <header className="agent-chat__header">
-        <Box minW={0}>
-          <h2 className="agent-chat__title">Chat</h2>
-          <p className="agent-chat__subtitle">
-            Direct gateway chat session for quick interventions.
-          </p>
-        </Box>
-
-        <div className="agent-chat__toolbar">
-          <PromptRoleMenu
-            prompts={prompts}
-            promptId={promptId}
-            disabled={promptsQuery.isLoading}
-            onSelect={setPromptId}
-          />
-
-          <IconButton
-            size="sm"
-            variant="outline"
-            borderColor="border.subtle"
-            borderRadius="input"
-            aria-label="Refresh gateway status"
-            loading={gatewayQuery.isFetching}
-            onClick={() => void gatewayQuery.refetch()}
-          >
-            <RefreshCw size={16} />
-          </IconButton>
-
-          <span className="agent-chat__vdivider" aria-hidden />
-
-          {canRun ? (
-            <IconButton
-              size="sm"
-              variant="solid"
-              colorPalette="green"
-              borderRadius="input"
-              aria-label="AI ready"
-            >
-              <Brain size={16} />
-            </IconButton>
-          ) : (
-            <IconButton
-              asChild
-              size="sm"
-              variant="solid"
-              colorPalette="red"
-              borderRadius="input"
-              aria-label="Configure AI"
-            >
-              <RouterLink to="/settings/ai">
-                <Brain size={16} />
-              </RouterLink>
-            </IconButton>
-          )}
-
-          <IconButton
-            size="sm"
-            variant="outline"
-            borderColor="border.subtle"
-            borderRadius="input"
-            aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen chat'}
-            onClick={() => setFullscreen((v) => !v)}
-          >
-            {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </IconButton>
-        </div>
-      </header>
-
-      {!canRun ? (
-        <Box
-          px={5}
-          py={3}
-          borderBottomWidth="1px"
-          borderColor="orange.200"
-          bg="orange.subtle"
-          display="flex"
-          gap={2}
-          alignItems="flex-start"
-          flexShrink={0}
-        >
-          <Box color="orange.fg" pt={0.5}>
-            <AlertCircle size={16} />
+  function renderChatBody() {
+    return (
+      <>
+        <header className="agent-chat__header">
+          <Box minW={0}>
+            <h2 className="agent-chat__title">Chat</h2>
+            <p className="agent-chat__subtitle">
+              Direct gateway chat session for quick interventions.
+            </p>
           </Box>
-          <Text fontSize="sm" color="fg.muted">
-            {!aiEnabled
-              ? 'AI is disabled. Enable it under '
-              : 'LLM is not ready — pick a provider, set a model ref, and add an API key (or use local Ollama) under '}
-            <RouterLink to="/settings/ai" style={{ color: 'var(--app-accent)' }}>
-              Settings → AI & LLM
-            </RouterLink>
-            {!aiEnabled ? ' before using the gateway agent.' : '.'}
-          </Text>
-        </Box>
-      ) : null}
 
-      <div ref={scrollRef} className="agent-chat__scroll app-scroll">
-        {messages.length === 0 && !runMutation.isPending ? (
-          <div className="agent-chat__empty">
-            Start a session or send a message — scrape URLs, check catalog health, preview exports.
-          </div>
-        ) : (
-          <>
-            {messages.map((m) => (
-              <ChatMessageRow
-                key={m.id}
-                message={m}
-                expandedToolId={expandedToolId}
-                motionEnabled={motionEnabled}
-                transition={transition}
-                onToggleTools={(id) => setExpandedToolId(expandedToolId === id ? null : id)}
-              />
-            ))}
-            {runMutation.isPending ? (
-              <motion.div
-                className="agent-chat__row"
-                initial={motionEnabled ? { opacity: 0, y: 6 } : false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={transition}
+          <div className="agent-chat__toolbar">
+            <PromptRoleMenu
+              prompts={prompts}
+              promptId={promptId}
+              disabled={promptsQuery.isLoading}
+              onSelect={setPromptId}
+            />
+
+            <IconButton
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              aria-label="Refresh gateway status"
+              loading={gatewayQuery.isFetching}
+              onClick={() => void gatewayQuery.refetch()}
+            >
+              <RefreshCw size={16} />
+            </IconButton>
+
+            <span className="agent-chat__vdivider" aria-hidden />
+
+            {canRun ? (
+              <IconButton
+                size="sm"
+                variant="solid"
+                colorPalette="green"
+                borderRadius="input"
+                aria-label="AI ready"
               >
-                <div className="agent-chat__avatar" aria-hidden>
-                  A
-                </div>
-                <div className="agent-chat__bubble-wrap">
-                  <div className="agent-chat__thinking">Thinking…</div>
-                  <div className="agent-chat__meta">Assistant {formatChatTime(new Date())}</div>
-                </div>
-              </motion.div>
-            ) : null}
-          </>
-        )}
-      </div>
+                <Brain size={16} />
+              </IconButton>
+            ) : (
+              <IconButton
+                asChild
+                size="sm"
+                variant="solid"
+                colorPalette="red"
+                borderRadius="input"
+                aria-label="Configure AI"
+              >
+                <RouterLink to="/settings/ai">
+                  <Brain size={16} />
+                </RouterLink>
+              </IconButton>
+            )}
 
-      <footer className="agent-chat__footer">
-        <div className="agent-chat__compose">
-          <textarea
-            className="agent-chat__input"
-            rows={2}
-            value={input}
-            disabled={!canRun || runMutation.isPending}
-            placeholder={
-              canRun
-                ? 'Message (⏎ to send, Shift+⏎ for line breaks)'
-                : 'Enable AI and configure API key to chat'
-            }
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void handleSend()
-              }
-            }}
-          />
-          <div className="agent-chat__actions">
-            <button
-              type="button"
-              className="agent-chat__btn-ghost"
-              disabled={runMutation.isPending}
-              onClick={startNewSession}
+            <IconButton
+              size="sm"
+              variant="outline"
+              borderColor="border.subtle"
+              borderRadius="input"
+              aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen chat'}
+              onClick={() => setFullscreen((v) => !v)}
             >
-              New session
-            </button>
-            <button
-              type="button"
-              className="agent-chat__btn-send"
-              disabled={!canRun || !input.trim() || runMutation.isPending}
-              onClick={() => void handleSend()}
-            >
-              Send
-              <Check size={16} strokeWidth={2.5} aria-hidden />
-            </button>
+              {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </IconButton>
           </div>
-        </div>
-        {gatewayQuery.data ? (
-          <Text mt={2} fontSize="xs" color="fg.subtle">
-            {gatewayQuery.data.tools_count} tools · {gatewayQuery.data.workflows_count} workflows
-          </Text>
+        </header>
+
+        {!canRun ? (
+          <Box
+            px={5}
+            py={3}
+            borderBottomWidth="1px"
+            borderColor="orange.200"
+            bg="orange.subtle"
+            display="flex"
+            gap={2}
+            alignItems="flex-start"
+            flexShrink={0}
+          >
+            <Box color="orange.fg" pt={0.5}>
+              <AlertCircle size={16} />
+            </Box>
+            <Text fontSize="sm" color="fg.muted">
+              {!aiEnabled
+                ? 'AI is disabled. Enable it under '
+                : 'LLM is not ready — pick a provider, set a model ref, and add an API key (or use local Ollama) under '}
+              <RouterLink to="/settings/ai" style={{ color: 'var(--app-accent)' }}>
+                Settings → AI & LLM
+              </RouterLink>
+              {!aiEnabled ? ' before using the gateway agent.' : '.'}
+            </Text>
+          </Box>
         ) : null}
-      </footer>
-    </>
+
+        <div ref={scrollRef} className="agent-chat__scroll app-scroll">
+          {messages.length === 0 && !runMutation.isPending ? (
+            <div className="agent-chat__empty">
+              Start a session or send a message — scrape URLs, check catalog health, preview
+              exports.
+            </div>
+          ) : (
+            <>
+              {messages.map((m) => (
+                <ChatMessageRow
+                  key={m.id}
+                  message={m}
+                  expandedToolId={expandedToolId}
+                  motionEnabled={motionEnabled}
+                  transition={transition}
+                  onToggleTools={(id) => setExpandedToolId(expandedToolId === id ? null : id)}
+                />
+              ))}
+              {runMutation.isPending ? (
+                <motion.div
+                  className="agent-chat__row"
+                  initial={motionEnabled ? { opacity: 0, y: 6 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={transition}
+                >
+                  <div className="agent-chat__avatar" aria-hidden>
+                    A
+                  </div>
+                  <div className="agent-chat__bubble-wrap">
+                    <div className="agent-chat__thinking">Thinking…</div>
+                    <div className="agent-chat__meta">Assistant {formatChatTime(new Date())}</div>
+                  </div>
+                </motion.div>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        <footer className="agent-chat__footer">
+          <div className="agent-chat__compose">
+            <textarea
+              className="agent-chat__input"
+              rows={2}
+              value={input}
+              disabled={!canRun || runMutation.isPending}
+              placeholder={
+                canRun
+                  ? 'Message (⏎ to send, Shift+⏎ for line breaks)'
+                  : 'Enable AI and configure API key to chat'
+              }
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  void handleSend()
+                }
+              }}
+            />
+            <div className="agent-chat__actions">
+              <button
+                type="button"
+                className="agent-chat__btn-ghost"
+                disabled={runMutation.isPending}
+                onClick={startNewSession}
+              >
+                New session
+              </button>
+              <button
+                type="button"
+                className="agent-chat__btn-send"
+                disabled={!canRun || !input.trim() || runMutation.isPending}
+                onClick={() => void handleSend()}
+              >
+                Send
+                <Check size={16} strokeWidth={2.5} aria-hidden />
+              </button>
+            </div>
+          </div>
+          {gatewayQuery.data ? (
+            <Text mt={2} fontSize="xs" color="fg.subtle">
+              {gatewayQuery.data.tools_count} tools · {gatewayQuery.data.workflows_count} workflows
+            </Text>
+          ) : null}
+        </footer>
+      </>
+    )
+  }
+
+  const chatPanel = (
+    <MotionBox
+      className="agent-chat"
+      data-fullscreen={fullscreen ? '' : undefined}
+      role="region"
+      aria-label="Gateway agent chat"
+      layout={motionEnabled && !fullscreen}
+      flex="1 1 auto"
+      minH={0}
+      h={fullscreen ? '100dvh' : '100%'}
+      maxH={fullscreen ? '100dvh' : '100%'}
+      position={fullscreen ? 'fixed' : 'relative'}
+      top={fullscreen ? 0 : undefined}
+      left={fullscreen ? 0 : undefined}
+      right={fullscreen ? 0 : undefined}
+      bottom={fullscreen ? 0 : undefined}
+      zIndex={fullscreen ? 40 : undefined}
+      transition={transition}
+    >
+      {renderChatBody()}
+    </MotionBox>
   )
 
   return (
@@ -493,9 +525,10 @@ export function AgentChatPanel() {
         </Box>
       ) : (
         <>
-          <AnimatePresence>
-            {fullscreen ? (
-              <Portal>
+          {fullscreen ? <Box className="agent-chat-placeholder" aria-hidden /> : null}
+          {fullscreen ? (
+            <Portal>
+              <AnimatePresence>
                 <MotionBox
                   key="agent-chat-backdrop"
                   className="agent-chat-backdrop"
@@ -506,32 +539,12 @@ export function AgentChatPanel() {
                   onClick={() => setFullscreen(false)}
                   aria-hidden
                 />
-              </Portal>
-            ) : null}
-          </AnimatePresence>
-
-          {fullscreen ? <Box className="agent-chat-placeholder" aria-hidden /> : null}
-
-          <MotionBox
-            className="agent-chat"
-            data-fullscreen={fullscreen ? '' : undefined}
-            role="region"
-            aria-label="Gateway agent chat"
-            layout={motionEnabled && !fullscreen}
-            flex="1 1 auto"
-            minH={0}
-            h={fullscreen ? '100dvh' : '100%'}
-            maxH={fullscreen ? '100dvh' : '100%'}
-            position={fullscreen ? 'fixed' : 'relative'}
-            top={fullscreen ? 0 : undefined}
-            left={fullscreen ? 0 : undefined}
-            right={fullscreen ? 0 : undefined}
-            bottom={fullscreen ? 0 : undefined}
-            zIndex={fullscreen ? 40 : undefined}
-            transition={transition}
-          >
-            {chatShell}
-          </MotionBox>
+              </AnimatePresence>
+              {chatPanel}
+            </Portal>
+          ) : (
+            chatPanel
+          )}
         </>
       )}
     </>

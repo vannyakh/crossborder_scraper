@@ -1,6 +1,7 @@
 import { Button, Field, Grid, HStack, IconButton, Input, Text } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
-import { X } from 'lucide-react'
+import { RefreshCw, X } from 'lucide-react'
+import { randomDbPassword, randomDbUsername } from '../databases/db-form-utils'
 import { Panel, PanelBody, PanelHeader } from '../ui/Panel'
 import { fieldStyles } from '../ui/field-styles'
 import { useAccentPalette } from '../../hooks/use-ui-config'
@@ -80,23 +81,49 @@ export function StoreConnectForm({
           </ConnectField>
           {fields.some((f) => f.key === 'username') ? (
             <ConnectField label="Username">
-              <Input
-                size="sm"
-                {...fieldStyles}
-                value={form.username ?? ''}
-                onChange={(e) => onChange({ ...form, username: e.target.value })}
-              />
+              <HStack gap={1}>
+                <Input
+                  size="sm"
+                  {...fieldStyles}
+                  fontFamily="mono"
+                  value={form.username ?? ''}
+                  onChange={(e) => onChange({ ...form, username: e.target.value })}
+                />
+                <IconButton
+                  size="sm"
+                  variant="outline"
+                  borderColor="border.subtle"
+                  borderRadius="input"
+                  aria-label="Generate username"
+                  onClick={() => onChange({ ...form, username: randomDbUsername() })}
+                >
+                  <RefreshCw size={14} />
+                </IconButton>
+              </HStack>
             </ConnectField>
           ) : null}
           {fields.some((f) => f.key === 'password') ? (
             <ConnectField label="Password">
-              <Input
-                size="sm"
-                type="password"
-                {...fieldStyles}
-                value={form.password ?? ''}
-                onChange={(e) => onChange({ ...form, password: e.target.value })}
-              />
+              <HStack gap={1}>
+                <Input
+                  size="sm"
+                  type="text"
+                  {...fieldStyles}
+                  fontFamily="mono"
+                  value={form.password ?? ''}
+                  onChange={(e) => onChange({ ...form, password: e.target.value })}
+                />
+                <IconButton
+                  size="sm"
+                  variant="outline"
+                  borderColor="border.subtle"
+                  borderRadius="input"
+                  aria-label="Generate password"
+                  onClick={() => onChange({ ...form, password: randomDbPassword() })}
+                >
+                  <RefreshCw size={14} />
+                </IconButton>
+              </HStack>
             </ConnectField>
           ) : null}
           {fields.some((f) => f.key === 'database') ? (

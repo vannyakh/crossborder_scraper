@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { panelUiBaseRedirectPlugin } from './vite-plugin-panel-base'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -127,11 +128,12 @@ export default defineConfig(async () => {
   }
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), panelUiBaseRedirectPlugin(API_PROXY_PATHS)],
     base: '/ui/',
     server: {
       port: 5173,
       strictPort: true,
+      open: '/ui/',
       proxy: apiProxy,
     },
     preview: {

@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
         settings = get_settings()
         if normalize_entry_path(settings.panel_entry_path):
             return JSONResponse({"detail": "Not Found"}, status_code=404)
-        return RedirectResponse(url="/ui")
+        return RedirectResponse(url="/ui/")
 
     return application
 

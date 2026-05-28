@@ -10,11 +10,15 @@ from server.schemas import (
     MessageResponse,
     StoreCatalogResponse,
     StoreConnectRequest,
+    StoreCreateDatabasesRequest,
+    StoreDatabaseListResponse,
     StoreEnvironmentResponse,
     StoreInstalledListResponse,
     StoreInstalledResponse,
     StoreInstallRequest,
+    StorePluginCredentialsResponse,
     StorePluginDetailResponse,
+    StoreUpdateConfigRequest,
 )
 from server.services.audit import log_operation
 
@@ -116,6 +120,59 @@ async def store_connect(
         operation_type="Store connect",
         details=f"Connected external {plugin_id} at {config.get('host')}:{config.get('port')}",
         meta={"plugin_id": plugin_id, "mode": "external"},
+    )
+    return StoreInstalledResponse(**result)
+
+
+@router.get("/plugins/{plugin_id}/credentials", response_model=StorePluginCredentialsResponse)
+async def store_plugin_credentials(
+    plugin_id: str,
+    _username: str = Depends(require_panel_auth),
+) -> StorePluginCredentialsResponse:
+    return StorePluginCredentialsResponse(**get_store_manager().get_credentials(plugin_id))
+
+
+@router.get("/plugins/{plugin_id}/databases", response_model=StoreDatabaseListResponse)
+async def store_list_databases(
+    plugin_id: str,
+    _username: str = Depends(require_panel_auth),
+) -> StoreDatabaseListResponse:
+    return StoreDatabaseListResponse(**get_store_manager().list_plugin_databases(plugin_id))
+
+
+@router.post("/plugins/{plugin_id}/databases", response_model=StoreDatabaseListResponse)
+async def store_create_databases(
+    plugin_id: str,
+    body: StoreCreateDatabasesRequest,
+    username: str = Depends(require_panel_auth),
+) -> StoreDatabaseListResponse:
+    payload = [item.model_dump() for item in body.databases]
+    result = await get_store_manager().create_plugin_databases(plugin_id, payload)
+    names = ", ".join(row["name"] for row in result["items"])
+    log_operation(
+        user=username,
+        operation_type="Store create databases",
+        details=f"Created {len(result['items'])} database(s) on {plugin_id}: {names}",
+        meta={"plugin_id": plugin_id, "count": len(result["items"])},
+    )
+    return StoreDatabaseListResponse(**get_store_manager().list_plugin_databases(plugin_id))
+
+
+@router.patch("/plugins/{plugin_id}/config", response_model=StoreInstalledResponse)
+async def store_update_config(
+    plugin_id: str,
+    body: StoreUpdateConfigRequest,
+    username: str = Depends(require_panel_auth),
+) -> StoreInstalledResponse:
+    patch: dict[str, Any] = body.model_dump(exclude_unset=True)
+    result = await get_store_manager().update_config(plugin_id, patch)
+    cfg = result["config"]
+    endpoint = f"{cfg.get('host')}:{cfg.get('port')}"
+    log_operation(
+        user=username,
+        operation_type="Store update config",
+        details=f"Updated {plugin_id} connection at {endpoint}",
+        meta={"plugin_id": plugin_id, "mode": result.get("mode")},
     )
     return StoreInstalledResponse(**result)
 

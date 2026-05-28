@@ -48,7 +48,8 @@ export function useRunningBatchesLive(batchIds: string[]) {
   const batchKey = batchIds.slice().sort().join(',')
 
   useEffect(() => {
-    if (!isAuthenticated || !batchIds.length) {
+    const ids = batchKey ? batchKey.split(',') : []
+    if (!isAuthenticated || !ids.length) {
       setByBatch({})
       return
     }
@@ -155,13 +156,13 @@ export function useRunningBatchesLive(batchIds: string[]) {
       }
     }
 
-    void Promise.all(batchIds.map((id) => connectBatch(id)))
+    void Promise.all(ids.map((id) => connectBatch(id)))
 
     return () => {
       active = false
       abort.abort()
     }
-  }, [batchKey, batchIds, isAuthenticated, pushEvent, queryClient])
+  }, [batchKey, isAuthenticated, pushEvent, queryClient])
 
   const connectedCount = batchIds.filter((id) => byBatch[id]?.isConnected).length
 

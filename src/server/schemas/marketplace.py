@@ -176,3 +176,54 @@ class StoreConnectRequest(BaseModel):
     password: str | None = None
     database: str | None = None
     management_port: int | None = None
+
+
+class StoreUpdateConfigRequest(BaseModel):
+    host: str | None = None
+    port: int | None = Field(default=None, ge=1, le=65535)
+    username: str | None = None
+    password: str | None = None
+    database: str | None = None
+    management_port: int | None = Field(default=None, ge=1, le=65535)
+    regenerate_password: bool = False
+
+
+class StorePluginCredentialsResponse(BaseModel):
+    plugin_id: str
+    mode: str | None = None
+    host: str | None = None
+    port: int | None = None
+    username: str | None = None
+    database: str | None = None
+    password: str | None = None
+    management_port: int | None = None
+    has_password: bool = False
+
+
+class StoreDatabaseEntry(BaseModel):
+    name: str
+    username: str
+    password: str
+    charset: str = "utf8mb4"
+    access: str = "local"
+    created_at: str | None = None
+    legacy: bool = False
+
+
+class StoreDatabaseCreateItem(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+    username: str | None = Field(default=None, max_length=64)
+    password: str | None = Field(default=None, max_length=128)
+    charset: str = "utf8mb4"
+    access: str = Field(default="local", pattern="^(local|remote)$")
+
+
+class StoreCreateDatabasesRequest(BaseModel):
+    databases: list[StoreDatabaseCreateItem] = Field(min_length=1, max_length=20)
+
+
+class StoreDatabaseListResponse(BaseModel):
+    plugin_id: str
+    items: list[StoreDatabaseEntry]
+    total: int
+    supports_create: bool = False
