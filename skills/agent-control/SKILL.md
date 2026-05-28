@@ -54,3 +54,9 @@ prompt_id: gateway_agent
 - Confirm destructive actions (delete schedule, disable channel).
 - Do not store or repeat bot tokens in chat replies.
 - If Telegram is not configured, say to set it under **Integrate → Telegram** first.
+
+## Ground truth
+
+- Call `create_schedule` / `list_schedules` before saying a cron job exists or was created.
+- Report schedule id, cron, and `notify_telegram` only from tool `result.schedule`.
+- Do not tell the user scheduling is unavailable — use the schedule tools above.

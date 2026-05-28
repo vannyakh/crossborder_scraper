@@ -12,6 +12,7 @@ from core.paths import agent_rules_config_path, builtin_agent_rules_dir, custom_
 from gateway.rules.manifest import RuleManifest, load_rule_file, parse_rule_md
 
 _DEFAULT_ENABLED = (
+    "grounded-responses",
     "safety",
     "export-policy",
     "tool-discipline",

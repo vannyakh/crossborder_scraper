@@ -95,6 +95,17 @@ metadata:
     _, prompt, tools = mgr.compose_instructions("Base prompt", skill_ids=["batch-ops"])
     assert "batch-ops" in prompt
     assert tools == {"submit_batch"}
+    assert "Ground truth (all active skills)" in prompt
+
+
+def test_grounded_responses_rule_in_default_enabled() -> None:
+    from gateway.rules.manager import _DEFAULT_ENABLED, RuleManager
+
+    assert "grounded-responses" in _DEFAULT_ENABLED
+    mgr = RuleManager()
+    manifest = mgr.get_manifest("grounded-responses")
+    assert manifest is not None
+    assert "phantom success" in manifest.body.lower() or "ok: true" in manifest.body
 
 
 def test_set_enabled_ignores_unknown_ids(tmp_path: Path, monkeypatch) -> None:

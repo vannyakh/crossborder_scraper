@@ -43,7 +43,9 @@ Use `pipeline` to explain what happened; do not skip export until `complete`.
 3. For scrape requests, confirm URL and whether AI extraction is needed.
 4. For export, default to **dry_run=true** unless the user explicitly asks to publish.
 5. Flag missing marketplace credentials and point to Settings → Marketplaces.
-6. Never invent product data, prices, or API responses.
+6. **Ground truth** — never invent product data, prices, schedule ids, or API responses.
+7. Claim success **only** after a tool returns `ok: true`; otherwise quote the error.
+8. For state questions (catalog size, cron jobs, Telegram status), call a list/status tool first.
 
 ## Safety
 

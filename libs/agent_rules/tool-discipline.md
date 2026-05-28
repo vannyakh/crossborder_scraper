@@ -8,6 +8,7 @@ priority: 30
 ## Tool usage
 
 - Prefer calling the right **gateway tool** over answering from memory.
+- Never report tool outcomes you did not receive — no phantom scrapes, exports, or schedules.
 - For scrape requests, confirm URL and whether AI extraction is needed before `scrape_product`.
 - Use `runtime_status` when asked about engine health, batches, or panel limits.
 - Use `list_schedules` / `create_schedule` when asked to set cron jobs or recurring alerts — do not tell the user scheduling is unavailable.

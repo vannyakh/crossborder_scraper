@@ -36,7 +36,7 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
             "Create a bot with @BotFather and paste the token below.",
             "Enable Telegram and save (panel server must be running).",
             "Message your bot /start or /getid — it replies with your chat id.",
-            "Add that id to allowed chats and save. Messages sync to Agent → Chat.",
+            "Add that id to allowed chats and save. Use /commands for slash commands.",
         ],
         "fields": [
             _field("enabled", type="boolean", label="Enable Telegram bot (long-polling)"),
@@ -60,7 +60,45 @@ CHANNEL_CATALOG: dict[str, dict[str, Any]] = {
                 helper="Comma or space separated. Get ids from /start or /getid on your bot.",
             ),
             _field("prompt_id", type="prompt", label="Agent prompt"),
+            _field(
+                "bot_display_name",
+                type="text",
+                label="Bot display name",
+                placeholder="Cross-Border Assistant",
+            ),
+            _field(
+                "bot_tagline",
+                type="text",
+                label="Bot tagline",
+                placeholder="Your gateway agent for cross-border operations",
+            ),
             _field("max_reply_chars", type="number", label="Max reply length"),
+            _field(
+                "group_require_mention",
+                type="boolean",
+                label="Groups: require @mention or reply",
+                helper="When on, the bot ignores group messages unless @mentioned, replied to, "
+                "or addressed by name.",
+            ),
+            _field(
+                "agent_wake_names",
+                type="chat_ids",
+                label="Agent wake names",
+                placeholder="agent, assistant",
+                helper="Extra names that trigger the agent in groups (comma separated).",
+            ),
+            _field(
+                "confirm_before_agent",
+                type="boolean",
+                label="Confirm before agent run",
+                helper="Show Run agent / Cancel buttons before processing free-text messages.",
+            ),
+            _field(
+                "confirm_before_agent_groups_only",
+                type="boolean",
+                label="Confirm in groups only",
+                helper="When on, direct chats run immediately; groups still need confirmation.",
+            ),
         ],
     },
     "discord": {

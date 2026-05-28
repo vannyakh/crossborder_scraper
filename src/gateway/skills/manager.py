@@ -21,6 +21,16 @@ _BUILTIN_DEFAULT_ENABLED = (
     "agent-control",
 )
 
+_SKILL_GROUND_TRUTH = """
+## Ground truth (all active skills)
+
+- Report **only** fields present in the latest tool `result` — never invent ids, counts, or status.
+- Say an action **succeeded** only when the tool returned `ok: true` in this conversation turn.
+- For live state (catalog, schedules, channels, engine), **call a tool first** —
+  do not answer from memory.
+- If a tool is missing or failed, say what you could not verify and what to try next.
+"""
+
 
 @lru_cache(maxsize=1)
 def _load_config(path: Path) -> dict[str, Any]:
@@ -203,6 +213,8 @@ class SkillManager:
             if m.body:
                 sections.append(m.body.strip())
                 sections.append("")
+
+        sections.append(_SKILL_GROUND_TRUTH.strip())
 
         return resolved, "\n".join(sections).strip(), tool_names
 

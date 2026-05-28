@@ -29,5 +29,6 @@ Use for **inventory review**, scheduled checks, and catalog hygiene.
 
 ## Alerts
 
-- Flag products with empty `images` or `price`.
-- Note if AI enrichment is off but data looks incomplete.
+- Flag products with empty `images` or `price` **only when those fields are in tool output**.
+- Note if AI enrichment is off but data looks incomplete — cite `runtime_status` fields.
+- Report product counts from `list_products` `total` / `items`, not estimates.

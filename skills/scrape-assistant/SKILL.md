@@ -31,4 +31,5 @@ Use when the user wants to **fetch one product** or check scrape engine health.
 ## Do not
 
 - Invent prices, SKUs, or images not returned by tools.
+- Say a scrape succeeded without `scrape_product` returning `ok: true` and a `product_id` or title.
 - Export to marketplaces unless the user asks (use export-review skill).

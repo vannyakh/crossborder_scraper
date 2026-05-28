@@ -6,8 +6,7 @@ from gateway.integrate.runners.telegram.config import (
     normalize_telegram,
 )
 from gateway.integrate.runners.telegram.lifecycle import is_active, reload, start, stop
-from gateway.integrate.runners.telegram.runner import (
-    TelegramGatewayRunner,
+from gateway.integrate.runners.telegram.messages import (
     format_getid_reply,
     format_setup_reply,
 )

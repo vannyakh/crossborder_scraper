@@ -273,18 +273,26 @@ class GatewayService:
         skill_ids: list[str] | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
-        from gateway.chat_sessions import append_turn, get_session, history_for_llm
+        from gateway.chat_sessions import (
+            append_turn,
+            channel_context_for_session,
+            get_session,
+            history_for_llm,
+        )
         from server.manager import get_manager
 
         mgr = get_manager()
         agent = GatewayAgent(mgr.settings)
         history = None
         resolved_prompt = prompt_id
+        session_context = None
+        session = None
         if session_id:
             session = get_session(session_id)
             if session is None:
                 raise LookupError("session not found")
             history = history_for_llm(session.get("messages") or [])
+            session_context = channel_context_for_session(session)
             if not resolved_prompt:
                 resolved_prompt = session.get("prompt_id")
 
@@ -294,6 +302,7 @@ class GatewayService:
             prompt_id=resolved_prompt,
             skill_ids=skill_ids,
             history=history,
+            session_context=session_context,
         )
 
         if session_id:

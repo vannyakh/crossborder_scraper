@@ -15,6 +15,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
 _BUILTIN_IDS = frozenset(
     {
         "gateway_agent",
+        "telegram_agent",
         "catalog_monitor",
         "scrape_ops",
         "export_review",

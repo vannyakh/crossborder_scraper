@@ -46,7 +46,7 @@ def resolve_bot_session(
             platform_chat_title=platform_chat_title,
         ),
         platform_chat_title=platform_chat_title,
-        prompt_id=prompt_id or "gateway_agent",
+        prompt_id=prompt_id or ("telegram_agent" if channel_id == "telegram" else "gateway_agent"),
     )
 
 

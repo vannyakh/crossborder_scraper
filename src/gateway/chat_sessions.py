@@ -78,6 +78,17 @@ def _now_iso() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
+def channel_context_for_session(session: dict[str, Any]) -> str | None:
+    """Build optional system-prompt context from session metadata (integrate channels)."""
+    if session.get("channel_id") != "telegram":
+        return None
+    from gateway.integrate.runners.telegram.session_setup import (
+        channel_context_for_session as telegram_context,
+    )
+
+    return telegram_context(session)
+
+
 def _read_store() -> dict[str, Any]:
     path = chat_sessions_path()
     if not path.exists():
@@ -110,6 +121,9 @@ def _normalize_session(raw: dict[str, Any]) -> dict[str, Any]:
     platform_chat_title = raw.get("platform_chat_title")
     if platform_chat_title is not None:
         platform_chat_title = str(platform_chat_title).strip() or None
+    meta = raw.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
     return {
         "id": str(raw.get("id") or uuid.uuid4().hex[:12]),
         "label": str(raw.get("label") or DEFAULT_SESSION_LABEL).strip() or DEFAULT_SESSION_LABEL,
@@ -117,6 +131,7 @@ def _normalize_session(raw: dict[str, Any]) -> dict[str, Any]:
         "platform_chat_id": platform_chat_id,
         "platform_chat_title": platform_chat_title,
         "prompt_id": str(raw.get("prompt_id") or "gateway_agent").strip() or "gateway_agent",
+        "meta": meta,
         "created_at": str(raw.get("created_at") or _now_iso()),
         "updated_at": str(raw.get("updated_at") or raw.get("created_at") or _now_iso()),
         "messages": messages,
@@ -240,6 +255,9 @@ def update_session(session_id: str, patch: dict[str, Any]) -> dict[str, Any]:
                 record["label"] = title
         if "prompt_id" in patch and patch["prompt_id"] is not None:
             record["prompt_id"] = str(patch["prompt_id"]).strip() or record["prompt_id"]
+        if "meta" in patch and isinstance(patch["meta"], dict):
+            current = record.get("meta") if isinstance(record.get("meta"), dict) else {}
+            record["meta"] = {**current, **patch["meta"]}
         record["updated_at"] = _now_iso()
         store["sessions"][idx] = record
         updated = record

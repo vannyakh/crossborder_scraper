@@ -56,6 +56,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         prompt_id: str | None = None,
         skill_ids: list[str] | None = None,
         history: list[dict[str, str]] | None = None,
+        session_context: str | None = None,
         max_tool_rounds: int = 3,
     ) -> dict[str, Any]:
         if not self.enabled:
@@ -81,6 +82,9 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             prompt_with_rules,
             skill_ids=skill_ids,
         )
+        if session_context:
+            ctx = session_context.strip()
+            system_prompt = f"{system_prompt.strip()}\n\n## Session context\n{ctx}"
         allow_tools = skill_tools if skill_tools else None
         messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
         if history:
