@@ -12,8 +12,9 @@
 #   $env:CROSSBORDER_BRANCH        — default: main
 #   $env:CROSSBORDER_PORT = "8787"  — panel port (default 8787, not 8000)
 #   $env:CROSSBORDER_START = "1"    — start panel after install (default: 1)
-#   $env:CROSSBORDER_START = "0"    — skip auto-start
-#   $env:CROSSBORDER_SKIP_BROWSER = "1"
+#   $env:CROSSBORDER_START = "0"        — skip auto-start
+#   $env:CROSSBORDER_SKIP_BROWSER = "1" — skip Playwright (headless/Docker hosts)
+#   $env:CROSSBORDER_SKIP_UI_BUILD = "1" — skip pnpm build (use pnpm dev on :5173 instead)
 
 $ErrorActionPreference = "Stop"
 
@@ -145,6 +146,49 @@ set PYTHONPATH=%CROSSBORDER_HOME%\src
     Write-Host "==> global CLI: crossborder  (in $binDir)"
 }
 
+function Build-PanelUi {
+    param([string]$Root)
+    $webDir = Join-Path $Root "apps\web"
+    $distIndex = Join-Path $webDir "dist\index.html"
+
+    if (Test-Path $distIndex) {
+        Write-Host "==> panel UI already built"
+        return
+    }
+    if ($env:CROSSBORDER_SKIP_UI_BUILD -eq "1") {
+        Write-Host "==> skipping UI build (CROSSBORDER_SKIP_UI_BUILD=1)"
+        return
+    }
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        Write-Host "==> Node.js not found — API works; build UI later:"
+        Write-Host "    cd $webDir; pnpm install; pnpm build"
+        return
+    }
+
+    Write-Host "==> build panel web UI"
+    Push-Location $webDir
+    try {
+        # Ensure pnpm is available
+        if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+            Write-Host "==> installing pnpm"
+            if (Get-Command corepack -ErrorAction SilentlyContinue) {
+                corepack enable 2>$null
+                corepack prepare pnpm@9.15.9 --activate 2>$null
+            } else {
+                npm install -g pnpm@9.15.9
+            }
+        }
+        if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+            pnpm install --frozen-lockfile
+            pnpm build
+        } else {
+            Write-Host "==> pnpm not available — install Node 20+ and re-run" -ForegroundColor Yellow
+        }
+    } finally {
+        Pop-Location
+    }
+}
+
 function Run-Bootstrap {
     param([string]$Root)
     Set-Location $Root
@@ -157,6 +201,8 @@ function Run-Bootstrap {
     } else {
         python -m pip install -e .
     }
+
+    Build-PanelUi -Root $Root
 
     if ($env:CROSSBORDER_SKIP_BROWSER -ne "1") {
         Write-Host "==> install Playwright Chromium"
