@@ -330,6 +330,14 @@ function Write-InstallComplete {
     Write-Host "  CLI (any terminal):  crossborder --help"
     Write-Host "  Install dir:         $Root"
     Write-Host ""
+    Write-Host "  -- If 'crossborder' is not found in a new terminal --"
+    Write-Host "  Open a NEW PowerShell window (PATH is set per-session)."
+    Write-Host "  Or run directly from the install folder (always works):"
+    Write-Host "    cd $Root"
+    Write-Host "    .\.venv\Scripts\python.exe -m server"
+    Write-Host "    # or:"
+    Write-Host "    uv run serve"
+    Write-Host ""
 }
 
 # --- main ---

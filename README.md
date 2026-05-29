@@ -204,6 +204,100 @@ uv run serve
 
 ---
 
+## If `crossborder` command is not found
+
+This happens in a **new terminal** before your shell has loaded the updated PATH, or on first install before you restart the terminal.
+
+### Quick fix — reload your shell
+
+```bash
+# macOS / Linux (zsh)
+source ~/.zshrc
+
+# macOS / Linux (bash)
+source ~/.bashrc
+
+# Then try again
+crossborder service status
+```
+
+### Always-works fallback (no PATH needed)
+
+If the above doesn't help, use these commands directly from the install folder — they always work regardless of PATH:
+
+**macOS / Linux**
+```bash
+cd ~/crossborder-scraper        # default install dir
+# or
+cd ~/Desktop/crossborder_scraper  # if cloned manually
+
+source .venv/bin/activate
+
+# Start the panel
+python -m server
+
+# Or background (survives terminal close)
+nohup python -m server >> data/panel.log 2>&1 &
+
+# Or via uv (no venv activation needed)
+uv run serve
+```
+
+**Windows (PowerShell)**
+```powershell
+cd $HOME\crossborder-scraper    # default install dir
+
+# Start the panel
+.\.venv\Scripts\python.exe -m server
+
+# Or via uv
+uv run serve
+```
+
+**Check the panel is running:**
+```bash
+curl http://127.0.0.1:8787/health
+# → {"status":"ok",...}
+```
+
+Then open **http://127.0.0.1:8787/ui/** in your browser.
+
+### Register `crossborder` globally (one-time fix)
+
+Run this once from the repo directory — it installs a small wrapper to `~/.local/bin/crossborder`:
+
+```bash
+cd ~/crossborder-scraper    # or your install dir
+source .venv/bin/activate
+crossborder --help          # verify it works inside venv
+
+# Install global wrapper
+mkdir -p ~/.local/bin ~/.crossborder
+echo "CROSSBORDER_HOME=$(pwd)" > ~/.crossborder/install.env
+
+cat > ~/.local/bin/crossborder << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -f "${HOME}/.crossborder/install.env" ]] && source "${HOME}/.crossborder/install.env"
+_root="${CROSSBORDER_HOME:-${HOME}/crossborder-scraper}"
+cd "${_root}"
+export PYTHONPATH="${_root}/src${PYTHONPATH:+:$PYTHONPATH}"
+exec "${_root}/.venv/bin/crossborder" "$@"
+EOF
+chmod +x ~/.local/bin/crossborder
+
+# Add to PATH permanently
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Test
+crossborder service status
+```
+
+> **Windows**: The installer creates `%USERPROFILE%\.local\bin\crossborder.cmd` automatically and adds it to your User PATH. Open a **new** PowerShell window after install — it will be available.
+
+---
+
 ## Configuration
 
 ### `.env` — server bind and login
