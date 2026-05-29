@@ -25,11 +25,19 @@ export type ProjectNode = {
 
 export type ProjectEdgeKind = 'main' | 'config'
 
+/**
+ * 0 = Model (required), 1 = Memory, 2+ = Tool slots.
+ * Stored on config edges so drag-to-slot placement is preserved.
+ */
+export type AgentSlotIndex = 0 | 1 | 2
+
 export type ProjectEdge = {
   id: string
   from: string
   to: string
   kind?: ProjectEdgeKind
+  /** Which agent bottom slot this config edge occupies (0=Model, 1=Memory, 2=Tool) */
+  slotIndex?: AgentSlotIndex
 }
 
 export type ProjectEnvironment = 'production' | 'staging' | 'development'
@@ -140,8 +148,8 @@ export const SAMPLE_PROJECTS: ProjectDetail[] = [
       { id: 'e1', from: 'n0', to: 'n1', kind: 'main' },
       { id: 'e2', from: 'n1', to: 'n4', kind: 'main' },
       { id: 'e3', from: 'n4', to: 'n5', kind: 'main' },
-      { id: 'e4', from: 'n2', to: 'n1', kind: 'config' },
-      { id: 'e5', from: 'n3', to: 'n1', kind: 'config' },
+      { id: 'e4', from: 'n2', to: 'n1', kind: 'config', slotIndex: 1 },
+      { id: 'e5', from: 'n3', to: 'n1', kind: 'config', slotIndex: 2 },
     ],
   },
   {

@@ -104,6 +104,8 @@ export const km: MessageTree = {
     addNode: {
       title: 'Add node',
       hint: 'Choose a step or service for the flow canvas.',
+      pluginTitle: 'Add plugin',
+      pluginHint: 'Choose a service to wire into this agent slot.',
       close: 'Close add node panel',
       filterPlaceholder: 'Search nodes…',
       noMatches: 'No nodes match your search.',
@@ -203,6 +205,10 @@ export const km: MessageTree = {
     flow: {
       addStepAfter: 'Add next step',
       stepLinked: '{{type}} linked to the flow',
+      connected: '{{from}} connected to {{to}}',
+      entryPoint: 'Flow entry',
+      pluginLinked: '{{name}} linked as plugin',
+      addPlugin: 'Add {{slot}} plugin',
     },
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',

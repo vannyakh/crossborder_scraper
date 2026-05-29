@@ -4,12 +4,7 @@ import type { ProjectFlowEdgeData, FlowExecutionStatus } from './project-flow-ty
 import type { ProjectFlowCanvasOptions } from './project-flow-canvas-options'
 import type { ProjectDetail, ProjectEdgeKind } from './project-sample-data'
 import type { ProjectServiceEdge, ProjectServiceNode } from './project-flow-types'
-import { roleForKind } from './project-node-meta'
-
-const MAIN_HANDLE = {
-  source: 'main-out',
-  target: 'main-in',
-} as const
+import { hasMainOutgoing, MAIN_FLOW_HANDLES, nodeEmitsMainFlow } from './project-flow-connect'
 
 export function projectDetailToFlow(
   project: ProjectDetail,
@@ -26,13 +21,8 @@ export function projectDetailToFlow(
   const completed = options?.completedNodeIds ?? new Set<string>()
   const runningId = options?.runningNodeId ?? null
   const configPorts = buildAgentConfigPorts(project)
-  const mainOutConnected = new Set(
-    project.edges.filter((edge) => (edge.kind ?? 'main') === 'main').map((edge) => edge.from),
-  )
-
   const nodes: ProjectServiceNode[] = project.nodes.map((node) => {
-    const role = roleForKind(node.kind, node.role)
-    const hasMainOutput = role === 'trigger' || role === 'action' || role === 'agent'
+    const hasMainOutput = nodeEmitsMainFlow(node.kind, node.role)
     let executionStatus: FlowExecutionStatus = 'idle'
     if (completed.has(node.id)) executionStatus = 'done'
     else if (runningId === node.id) executionStatus = 'running'
@@ -48,7 +38,7 @@ export function projectDetailToFlow(
         configInputs: configPorts.get(node.id),
         showVariableRefs,
         hasMainOutput,
-        showAddStep: hasMainOutput && !mainOutConnected.has(node.id),
+        showAddStep: hasMainOutput && !hasMainOutgoing(project, node.id),
       },
     }
   })
@@ -87,8 +77,8 @@ export function projectDetailToFlow(
       id: edge.id,
       source: edge.from,
       target: edge.to,
-      sourceHandle: MAIN_HANDLE.source,
-      targetHandle: MAIN_HANDLE.target,
+      sourceHandle: MAIN_FLOW_HANDLES.source,
+      targetHandle: MAIN_FLOW_HANDLES.target,
       type: 'workflow',
       className: 'project-flow-edge--main',
       animated: runningId === edge.from,

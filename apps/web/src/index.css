@@ -1660,7 +1660,7 @@ button:focus-visible {
   opacity: 1;
 }
 
-/* Connection handles — reveal on hover / selection */
+/* Connection handles — base (hidden until hover/selection) */
 .project-flow-handle {
   width: 10px !important;
   height: 10px !important;
@@ -1686,13 +1686,232 @@ button:focus-visible {
   border-color: var(--app-accent) !important;
 }
 
-.project-flow-handle--config {
+/* Left input tab — always visible rectangular port */
+.project-flow-handle--main-in {
+  width: 6px !important;
+  height: 20px !important;
+  min-width: 6px !important;
+  min-height: 20px !important;
+  border-radius: 3px !important;
+  background: var(--project-flow-handle-border) !important;
+  border: none !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, -50%) !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.project-workflow-node-wrap--selected .project-flow-handle--main-in,
+.project-workflow-node-wrap--running .project-flow-handle--main-in {
+  background: color-mix(
+    in srgb,
+    var(--app-accent) 70%,
+    var(--project-flow-handle-border)
+  ) !important;
+}
+
+/* Occupied config slot — diamond, always visible */
+.project-flow-handle--config,
+.project-flow-handle--network {
   width: 9px !important;
   height: 9px !important;
   min-width: 9px !important;
   min-height: 9px !important;
   border-radius: 2px;
   transform: translateX(-50%) rotate(45deg);
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Empty slot — square + button, always visible, draggable target */
+.project-flow-handle--slot-empty {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border-radius: 5px !important;
+  border: 1.5px dashed var(--project-flow-handle-border) !important;
+  background: transparent !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease;
+}
+
+.project-flow-handle--slot-empty::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: color-mix(in srgb, var(--app-fg) 55%, transparent);
+  pointer-events: none;
+}
+
+.project-flow-handle--slot-empty:hover {
+  border-color: var(--app-accent) !important;
+  background: color-mix(in srgb, var(--app-accent) 10%, transparent) !important;
+}
+
+.project-flow-handle--slot-empty:hover::after {
+  color: var(--app-accent);
+}
+
+/* Config circle draggable source handle (top of node) */
+.project-flow-handle--config-src {
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  border-radius: 50% !important;
+  background: var(--project-flow-handle-bg) !important;
+  border: 2px solid var(--project-flow-handle-border) !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+  cursor: crosshair;
+  transition: border-color 0.14s ease;
+}
+
+.project-flow-handle--config-src:hover {
+  border-color: var(--app-accent) !important;
+}
+
+/* Out-rail: anchor → lead → + (always visible main-path port) */
+.project-flow-node-root--has-out-rail {
+  position: relative;
+  padding-right: 56px;
+}
+
+.project-flow-out-rail {
+  position: absolute;
+  right: 0;
+  width: 56px;
+  height: 0;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  opacity: 1;
+  z-index: 2;
+}
+
+.project-flow-out-rail__anchor {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--project-flow-handle-border);
+  border: none;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.project-flow-out-rail__lead {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 26px;
+  height: 1.5px;
+  background: color-mix(in srgb, var(--project-flow-edge) 65%, transparent);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.project-flow-out-rail__entry-label {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #fff;
+  background: color-mix(in srgb, var(--app-accent) 88%, #0f172a);
+  box-shadow: var(--flyout-shadow);
+  pointer-events: none;
+}
+
+.project-flow-out-rail__entry-label::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  margin-right: 2px;
+  border: 5px solid transparent;
+  border-right-color: color-mix(in srgb, var(--app-accent) 88%, #0f172a);
+  transform: translateY(-50%);
+}
+
+.project-flow-node-root--flow-entry {
+  padding-right: 148px !important;
+}
+
+/* Main-path “add step” port — always visible; drag to connect or click to open picker */
+.project-flow-handle--add-step {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid var(--project-flow-handle-border) !important;
+  background: var(--project-flow-node-bg) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: crosshair;
+  opacity: 1 !important;
+  pointer-events: all !important;
+  z-index: 3;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease !important;
+}
+
+.project-flow-handle--rail-end {
+  right: 0 !important;
+  left: auto !important;
+  top: 50% !important;
+  transform: translate(50%, -50%) !important;
+}
+
+.project-flow-handle--add-step::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: color-mix(in srgb, var(--app-fg) 60%, transparent);
+  pointer-events: none;
+}
+
+.project-flow-handle--add-step:hover {
+  border-color: var(--app-accent) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.13) !important;
+}
+
+.project-flow-handle--add-step:hover::after {
+  color: var(--app-accent);
+}
+
+.project-flow-canvas .react-flow__connection-path {
+  stroke: var(--project-flow-edge);
+  stroke-width: 2;
 }
 
 .project-workflow-node__port-labels {
@@ -1715,6 +1934,16 @@ button:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
+}
+
+.project-workflow-node__port-label--empty {
+  color: color-mix(in srgb, var(--app-fg) 32%, transparent);
+  font-style: italic;
+}
+
+.project-workflow-node__port-required {
+  color: color-mix(in srgb, #f97316 90%, transparent);
+  font-style: normal;
 }
 
 .project-workflow-node--agent {
@@ -1754,36 +1983,6 @@ button:focus-visible {
 
 .project-flow-node-menu__trigger:hover {
   background: color-mix(in srgb, var(--app-accent) 8%, var(--project-flow-node-bg)) !important;
-}
-
-.project-flow-node-add {
-  pointer-events: none;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition:
-    opacity 0.16s ease,
-    transform 0.16s ease;
-}
-
-.project-flow-node-add.is-visible {
-  pointer-events: all;
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.project-flow-node-add__btn {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  border-radius: 999px !important;
-  background: var(--project-flow-node-bg) !important;
-  border-color: var(--project-flow-edge) !important;
-  box-shadow: var(--flyout-shadow);
-}
-
-.project-flow-node-add__btn:hover {
-  border-color: var(--app-accent) !important;
-  color: var(--app-accent);
 }
 
 .project-flow-minimap {
@@ -1847,17 +2046,20 @@ button:focus-visible {
   background: var(--project-flow-node-bg);
   border: 1.5px solid var(--project-flow-node-border);
   box-sizing: border-box;
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.07),
+    0 0 0 0 transparent;
   transition:
     box-shadow 0.15s ease,
     border-color 0.15s ease;
 }
 
 .project-workflow-node--trigger {
-  border-radius: 36px 12px 12px 36px;
+  border-radius: 14px 14px 14px 14px;
 }
 
 .project-workflow-node--action {
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .project-workflow-node--agent {
@@ -1871,8 +2073,10 @@ button:focus-visible {
 }
 
 .project-workflow-node--selected {
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--app-accent) 22%, transparent);
-  border-color: color-mix(in srgb, var(--app-accent) 55%, var(--project-flow-node-border));
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.07),
+    0 0 0 3px color-mix(in srgb, var(--app-accent) 28%, transparent);
+  border-color: color-mix(in srgb, var(--app-accent) 65%, var(--project-flow-node-border));
 }
 
 .project-workflow-node--running {
@@ -1887,18 +2091,18 @@ button:focus-visible {
 
 .project-workflow-node__badge {
   position: absolute;
-  top: -6px;
-  left: -6px;
+  top: -7px;
+  right: -7px;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 6px;
   background: #f97316;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
 }
 
 .project-workflow-node__icon {
@@ -1911,8 +2115,9 @@ button:focus-visible {
 
 .project-workflow-node--action .project-workflow-node__icon,
 .project-workflow-node--trigger .project-workflow-node__icon {
-  width: 40px;
-  height: 40px;
+  width: auto;
+  height: auto;
+  background: transparent !important;
 }
 
 .project-workflow-node--config .project-workflow-node__icon {

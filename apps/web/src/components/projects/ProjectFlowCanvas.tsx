@@ -4,13 +4,19 @@ import { Box, Button, HStack } from '@chakra-ui/react'
 import {
   Background,
   BackgroundVariant,
+  ConnectionMode,
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
   useReactFlow,
+  type EdgeChange,
+  type IsValidConnection,
   type NodeMouseHandler,
+  type OnConnect,
+  type OnConnectEnd,
+  type OnConnectStart,
   type OnNodeDrag,
 } from '@xyflow/react'
 import { Plus } from 'lucide-react'
@@ -37,12 +43,25 @@ import {
   DEFAULT_FLOW_CANVAS_OPTIONS,
   type ProjectFlowCanvasOptions,
 } from './project-flow-canvas-options'
-import type { ProjectFlowNodeData, ProjectServiceNode } from './project-flow-types'
+import type {
+  ProjectFlowNodeData,
+  ProjectServiceEdge,
+  ProjectServiceNode,
+} from './project-flow-types'
 import { insertMainNodeAfter } from './project-flow-insert'
 import { buildMainFlowSteps } from './project-flow-run'
+import {
+  configConnectionToEdge,
+  hasMainOutgoing,
+  isValidAnyConnection,
+  isValidConfigConnection,
+  isValidMainConnection,
+  mainConnectionToEdge,
+  MAIN_FLOW_HANDLES,
+} from './project-flow-connect'
 import { projectDetailToFlow } from './project-flow-utils'
 import { createProjectNode, duplicateProjectNode } from './project-node-factory'
-import type { ProjectNode, ProjectNodeKind } from './project-sample-data'
+import type { AgentSlotIndex, ProjectNode, ProjectNodeKind } from './project-sample-data'
 
 const nodeTypes = { workflow: ProjectFlowNode }
 const edgeTypes = { workflow: ProjectFlowMainEdge, config: ProjectFlowConfigEdge }
@@ -65,9 +84,14 @@ function ProjectFlowCanvasInner() {
   )
   const [openMenu, setOpenMenu] = useState<FlowCanvasMenuId>(null)
   const [insertAfterNodeId, setInsertAfterNodeId] = useState<string | null>(null)
+  const [insertConfigSlot, setInsertConfigSlot] = useState<{
+    agentId: string
+    slotIndex: AgentSlotIndex
+  } | null>(null)
   const [completedNodeIds, setCompletedNodeIds] = useState<string[]>([])
   const layoutBaselineRef = useRef(snapshotNodePositions(project))
   const runStepRef = useRef(0)
+  const connectDragRef = useRef<{ nodeId: string; x: number; y: number } | null>(null)
 
   const configOpen = Boolean(selectedNode)
   const sidePanelOpen = configOpen || addOpen
@@ -160,11 +184,13 @@ function ProjectFlowCanvasInner() {
   const closeAdd = useCallback(() => {
     setAddOpen(false)
     setInsertAfterNodeId(null)
+    setInsertConfigSlot(null)
   }, [])
 
   const openAdd = useCallback(() => {
     closeConfig()
     setInsertAfterNodeId(null)
+    setInsertConfigSlot(null)
     setAddOpen(true)
   }, [closeConfig])
 
@@ -172,7 +198,19 @@ function ProjectFlowCanvasInner() {
     (nodeId: string) => {
       closeConfig()
       setInsertAfterNodeId(nodeId)
+      setInsertConfigSlot(null)
       setActiveNodeId(nodeId)
+      setAddOpen(true)
+    },
+    [closeConfig],
+  )
+
+  const openSlotAdd = useCallback(
+    (agentId: string, slotIndex: AgentSlotIndex) => {
+      closeConfig()
+      setInsertAfterNodeId(null)
+      setInsertConfigSlot({ agentId, slotIndex })
+      setActiveNodeId(agentId)
       setAddOpen(true)
     },
     [closeConfig],
@@ -182,6 +220,41 @@ function ProjectFlowCanvasInner() {
     (kind: ProjectNodeKind) => {
       const label = t(`projects.nodes.${kind}`)
 
+      // --- Slot add: create config node + wire it to agent slot ---
+      if (insertConfigSlot) {
+        const { agentId, slotIndex } = insertConfigSlot
+        const agentNode = project.nodes.find((n) => n.id === agentId)
+        if (agentNode) {
+          const node = createProjectNode(kind, label, project.nodes)
+          // Position below the agent, aligned to the slot
+          const slotLeftFrac = [0.22, 0.5, 0.78][slotIndex] ?? 0.5
+          const agentW = 224
+          node.x = agentNode.x + slotLeftFrac * agentW - 40
+          node.y = agentNode.y + 200
+          const edge = {
+            id: `e-cfg-${node.id}-${agentId}-s${slotIndex}`,
+            from: node.id,
+            to: agentId,
+            kind: 'config' as const,
+            slotIndex,
+          }
+          setProject((prev) => ({
+            ...prev,
+            nodes: [...prev.nodes, node],
+            edges: [...prev.edges, edge],
+            servicesTotal: prev.servicesTotal + 1,
+            previewNodes: [...prev.previewNodes, node].slice(-3),
+          }))
+          setAddOpen(false)
+          setInsertConfigSlot(null)
+          setActiveNodeId(node.id)
+          setSelectedNode(node)
+          notifySuccess(t('projects.flow.pluginLinked', { name: label }))
+          return
+        }
+      }
+
+      // --- Main-path insert after a node ---
       if (insertAfterNodeId) {
         const inserted = insertMainNodeAfter(project, insertAfterNodeId, kind, label)
         if (inserted) {
@@ -215,7 +288,92 @@ function ProjectFlowCanvasInner() {
       setSelectedNode(node)
       notifySuccess(t('projects.addNode.added', { type: label }))
     },
-    [insertAfterNodeId, project, setProject, t],
+    [insertAfterNodeId, insertConfigSlot, project, setProject, t],
+  )
+
+  const isValidConnection = useCallback<IsValidConnection<ProjectServiceEdge>>(
+    (edge) => isValidAnyConnection(edge, project),
+    [project],
+  )
+
+  const onConnect: OnConnect = useCallback(
+    (connection) => {
+      if (isValidMainConnection(connection, project)) {
+        const edge = mainConnectionToEdge(connection)
+        if (!edge) return
+        const sourceNode = project.nodes.find((n) => n.id === edge.from)
+        const targetNode = project.nodes.find((n) => n.id === edge.to)
+        if (!sourceNode || !targetNode) return
+        setProject((prev) => {
+          if (prev.edges.some((e) => e.id === edge.id)) return prev
+          return { ...prev, edges: [...prev.edges, edge] }
+        })
+        setActiveNodeId(edge.to)
+        notifySuccess(
+          t('projects.flow.connected', { from: sourceNode.label, to: targetNode.label }),
+        )
+        return
+      }
+
+      if (isValidConfigConnection(connection, project)) {
+        const edge = configConnectionToEdge(connection)
+        if (!edge) return
+        const sourceNode = project.nodes.find((n) => n.id === edge.from)
+        if (!sourceNode) return
+        setProject((prev) => {
+          if (prev.edges.some((e) => e.id === edge.id)) return prev
+          return { ...prev, edges: [...prev.edges, edge] }
+        })
+        notifySuccess(t('projects.flow.pluginLinked', { name: sourceNode.label }))
+      }
+    },
+    [project, setProject, t],
+  )
+
+  const onConnectStart: OnConnectStart = useCallback((event, { nodeId, handleId }) => {
+    if (handleId !== MAIN_FLOW_HANDLES.source || !nodeId) return
+    const pointer = 'clientX' in event ? event : event.touches[0]
+    connectDragRef.current = { nodeId, x: pointer.clientX, y: pointer.clientY }
+  }, [])
+
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event, connectionState) => {
+      const drag = connectDragRef.current
+      connectDragRef.current = null
+
+      if (!drag || connectionState.fromHandle?.id !== MAIN_FLOW_HANDLES.source) return
+      if (connectionState.isValid === true) return
+
+      const pointer = 'clientX' in event ? event : event.changedTouches[0]
+      const moved = Math.hypot(pointer.clientX - drag.x, pointer.clientY - drag.y) > 8
+
+      if (connectionState.toNode && moved) return
+
+      const source = project.nodes.find((n) => n.id === drag.nodeId)
+      if (!source || source.role === 'config') return
+      if (hasMainOutgoing(project, drag.nodeId)) return
+
+      openAddAfter(drag.nodeId)
+    },
+    [openAddAfter, project.nodes],
+  )
+
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      onEdgesChange(changes)
+
+      const removedIds = changes
+        .filter((change): change is EdgeChange & { type: 'remove' } => change.type === 'remove')
+        .map((change) => change.id)
+
+      if (removedIds.length === 0) return
+
+      setProject((prev) => ({
+        ...prev,
+        edges: prev.edges.filter((edge) => !removedIds.includes(edge.id)),
+      }))
+    },
+    [onEdgesChange, setProject],
   )
 
   const onPaneClick = useCallback(() => {
@@ -308,6 +466,7 @@ function ProjectFlowCanvasInner() {
         }
       },
       openAddAfter,
+      openSlotAdd,
       executeStep: (nodeId: string) => {
         setActiveNodeId(nodeId)
         notifySuccess(t('projects.nodeMenu.executePreview'))
@@ -349,6 +508,7 @@ function ProjectFlowCanvasInner() {
       setNodes,
       closeConfig,
       openAddAfter,
+      openSlotAdd,
       handleAutoLayout,
       t,
     ],
@@ -376,7 +536,7 @@ function ProjectFlowCanvasInner() {
               nodes={nodes}
               edges={edges}
               onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
+              onEdgesChange={handleEdgesChange}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               defaultEdgeOptions={{ type: 'workflow' }}
@@ -388,7 +548,17 @@ function ProjectFlowCanvasInner() {
               minZoom={0.35}
               maxZoom={1.5}
               proOptions={{ hideAttribution: true }}
-              nodesConnectable={false}
+              nodesConnectable
+              connectionMode={ConnectionMode.Strict}
+              isValidConnection={isValidConnection}
+              onConnect={onConnect}
+              onConnectStart={onConnectStart}
+              onConnectEnd={onConnectEnd}
+              connectOnClick={false}
+              connectionLineStyle={{
+                stroke: 'var(--project-flow-edge)',
+                strokeWidth: 2,
+              }}
               elementsSelectable
               panOnScroll
               zoomOnScroll
@@ -486,7 +656,11 @@ function ProjectFlowCanvasInner() {
                 exit={motionEnabled ? { x: '100%' } : undefined}
                 transition={panelTransition}
               >
-                <ProjectAddNodePanel onClose={closeAdd} onPick={handleAddNode} />
+                <ProjectAddNodePanel
+                  onClose={closeAdd}
+                  onPick={handleAddNode}
+                  pluginMode={Boolean(insertConfigSlot)}
+                />
               </motion.div>
             ) : null}
           </AnimatePresence>

@@ -104,6 +104,8 @@ export const zh: MessageTree = {
     addNode: {
       title: '添加节点',
       hint: '选择要放到流程画布上的步骤或服务。',
+      pluginTitle: '添加插件',
+      pluginHint: '选择一个服务连接到此 Agent 插槽。',
       close: '关闭添加节点面板',
       filterPlaceholder: '搜索节点…',
       noMatches: '没有匹配的节点。',
@@ -203,6 +205,10 @@ export const zh: MessageTree = {
     flow: {
       addStepAfter: '添加下一步',
       stepLinked: '{{type}} 已连接到流程',
+      connected: '{{from}} 已连接到 {{to}}',
+      entryPoint: '流程入口',
+      pluginLinked: '{{name}} 已连接为插件',
+      addPlugin: '添加 {{slot}} 插件',
     },
     zoomIn: '放大',
     zoomOut: '缩小',

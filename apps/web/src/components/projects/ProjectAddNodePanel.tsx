@@ -14,36 +14,42 @@ import type { ProjectNodeKind } from './project-sample-data'
 export function ProjectAddNodePanel({
   onClose,
   onPick,
+  pluginMode = false,
 }: {
   onClose: () => void
   onPick: (kind: ProjectNodeKind) => void
+  /** When true: shows only data/service nodes (for wiring to agent slots). */
+  pluginMode?: boolean
 }) {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
   const [filter, setFilter] = useState('')
-  const [category, setCategory] = useState<ProjectPaletteCategory | 'all'>('all')
+  const [category, setCategory] = useState<ProjectPaletteCategory | 'all'>(
+    pluginMode ? 'data' : 'all',
+  )
 
   const entries = useMemo(() => {
     const q = filter.trim().toLowerCase()
     return PROJECT_NODE_PALETTE.filter((item) => {
-      if (category !== 'all' && item.category !== category) return false
+      if (pluginMode && item.category !== 'data') return false
+      if (!pluginMode && category !== 'all' && item.category !== category) return false
       if (!q) return true
       const label = t(item.labelKey).toLowerCase()
       const desc = t(item.descKey).toLowerCase()
       const kind = item.kind.toLowerCase()
       return label.includes(q) || desc.includes(q) || kind.includes(q)
     })
-  }, [category, filter, t])
+  }, [category, filter, pluginMode, t])
 
   return (
     <Box className="project-add-node-panel" role="dialog" aria-label={t('projects.addNode.title')}>
       <Box className="project-add-node-panel__header">
         <Box minW={0} flex={1}>
           <Text fontWeight="semibold" fontSize="lg">
-            {t('projects.addNode.title')}
+            {pluginMode ? t('projects.addNode.pluginTitle') : t('projects.addNode.title')}
           </Text>
           <Text fontSize="sm" color="fg.muted" mt={0.5}>
-            {t('projects.addNode.hint')}
+            {pluginMode ? t('projects.addNode.pluginHint') : t('projects.addNode.hint')}
           </Text>
         </Box>
         <IconButton
@@ -56,28 +62,30 @@ export function ProjectAddNodePanel({
         </IconButton>
       </Box>
 
-      <HStack
-        className="project-add-node-panel__categories"
-        gap={1}
-        px={3}
-        py={2}
-        borderBottomWidth="1px"
-        borderColor="border.subtle"
-        overflowX="auto"
-      >
-        {PROJECT_PALETTE_CATEGORIES.map((item) => (
-          <Button
-            key={item.id}
-            size="xs"
-            variant={category === item.id ? 'subtle' : 'ghost'}
-            colorPalette={category === item.id ? accentPalette : undefined}
-            flexShrink={0}
-            onClick={() => setCategory(item.id)}
-          >
-            {t(item.labelKey)}
-          </Button>
-        ))}
-      </HStack>
+      {!pluginMode ? (
+        <HStack
+          className="project-add-node-panel__categories"
+          gap={1}
+          px={3}
+          py={2}
+          borderBottomWidth="1px"
+          borderColor="border.subtle"
+          overflowX="auto"
+        >
+          {PROJECT_PALETTE_CATEGORIES.map((item) => (
+            <Button
+              key={item.id}
+              size="xs"
+              variant={category === item.id ? 'subtle' : 'ghost'}
+              colorPalette={category === item.id ? accentPalette : undefined}
+              flexShrink={0}
+              onClick={() => setCategory(item.id)}
+            >
+              {t(item.labelKey)}
+            </Button>
+          ))}
+        </HStack>
+      ) : null}
 
       <Box px={3} py={2} borderBottomWidth="1px" borderColor="border.subtle">
         <Input

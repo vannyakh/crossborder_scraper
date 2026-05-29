@@ -45,7 +45,7 @@ export function ProjectWorkflowNode({
         .join(' ')}
       position="relative"
       pt={0}
-      pb={isAgent && configPortCount > 0 ? '18px' : 0}
+      pb={isAgent ? '22px' : 0}
     >
       <Box
         className={[
@@ -69,9 +69,12 @@ export function ProjectWorkflowNode({
 
         <Box
           className="project-workflow-node__icon"
-          style={{ background: meta.iconBg, color: meta.iconColor }}
+          style={{
+            background: isConfig || isAgent ? meta.iconBg : 'transparent',
+            color: isConfig || isAgent ? meta.iconColor : meta.iconBg,
+          }}
         >
-          <Icon size={isAgent ? 22 : isConfig ? 18 : 20} strokeWidth={1.75} />
+          <Icon size={isAgent ? 22 : isConfig ? 18 : 30} strokeWidth={isConfig ? 1.75 : 1.6} />
         </Box>
 
         {isAgent ? (
