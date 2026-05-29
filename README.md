@@ -11,10 +11,6 @@
   (1688, Taobao, AliExpress → Shopee, Lazada, TikTok Shop, Shopify).
 </p>
 
-<p align="center">
-  Python <strong>3.12+</strong> (FastAPI, Playwright) + React <strong>agent panel</strong> (<code>/ui/</code>).<br/>
-  One gateway orchestrates everything — scrape engine, marketplace export, integrate channels, and VPS operations.
-</p>
 
 ---
 
