@@ -242,6 +242,26 @@ function Get-EnvPanelPort {
     return $PanelPort
 }
 
+function Register-Autostart {
+    param([string]$Root)
+    if ($env:CROSSBORDER_AUTOSTART -eq "0") { return }
+    $py = Join-Path $Root ".venv\Scripts\python.exe"
+    if (-not (Test-Path $py)) { return }
+    Write-Host "==> registering auto-start service (Task Scheduler)"
+    try {
+        $env:PYTHONPATH = Join-Path $Root "src"
+        $result = & $py -c @"
+from deploy.autostart import autostart
+r = autostart('enable')
+print(r.message)
+if r.detail: print(r.detail)
+"@ 2>&1
+        Write-Host "    $result"
+    } catch {
+        Write-Host "==> auto-start: could not register — run: crossborder deploy autostart" -ForegroundColor Yellow
+    }
+}
+
 function Start-PanelBackground {
     param([string]$Root)
     if ($env:CROSSBORDER_START -ne "1") { return }
@@ -327,5 +347,6 @@ if ($root) {
 Ensure-Uv
 Run-Bootstrap -Root $root
 Install-GlobalCli -Root $root
+Register-Autostart -Root $root
 Start-PanelBackground -Root $root
 Write-InstallComplete -Root $root

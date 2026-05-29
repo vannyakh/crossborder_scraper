@@ -321,6 +321,35 @@ crossborder deploy setup-access
 
 ---
 
+## Auto-start on boot / login
+
+The one-liner install (`install.sh` / `install.ps1`) registers auto-start automatically. To manage it manually:
+
+```bash
+crossborder deploy autostart           # enable for current OS
+crossborder deploy autostart status    # check registration
+crossborder deploy autostart disable   # remove auto-start
+```
+
+| OS | Mechanism | What it does |
+|---|---|---|
+| **macOS** | launchd LaunchAgent | Starts panel on user login, restarts if it crashes |
+| **Linux** | systemd user/system unit | Starts on boot, `Restart=on-failure` |
+| **Windows** | Task Scheduler (ONLOGON) | Starts on login; Startup folder fallback if no admin |
+
+**macOS** — plist is written to `~/Library/LaunchAgents/com.crossborder.panel.plist`.
+
+**Linux** — user-mode unit in `~/.config/systemd/user/` (no sudo); or system unit in `/etc/systemd/system/` when running as root.
+
+**Windows** — Task Scheduler task `CrossBorder Panel` runs at logon (hidden window). Fallback: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\crossborder-panel.cmd`.
+
+To skip auto-start during install:
+```bash
+CROSSBORDER_AUTOSTART=0 bash <(curl -fsSL .../install.sh)
+```
+
+---
+
 ## Update
 
 ```bash

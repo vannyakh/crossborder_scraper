@@ -1,4 +1,4 @@
-"""Deployment templates (systemd, nginx) for self-hosted VPS."""
+"""Deployment templates (systemd, launchd, Windows task, nginx) for self-hosted installs."""
 
 from __future__ import annotations
 
@@ -73,6 +73,76 @@ server {{
         proxy_read_timeout 300s;
     }}
 }}
+"""
+
+
+def launchd_plist(
+    *,
+    working_directory: str | None = None,
+    port: int = DEFAULT_PANEL_PORT,
+    label: str = "com.crossborder.panel",
+) -> str:
+    """macOS LaunchAgent plist — auto-starts panel on user login, keeps it alive."""
+    wd = working_directory or str(repo_root())
+    venv_py = f"{wd}/.venv/bin/python"
+    log = f"{wd}/data/panel.log"
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{label}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{venv_py}</string>
+        <string>-m</string>
+        <string>server</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{wd}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PYTHONPATH</key>
+        <string>{wd}/src</string>
+        <key>UVICORN_RELOAD</key>
+        <string>0</string>
+        <key>PANEL_PORT</key>
+        <string>{port}</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{log}</string>
+    <key>StandardErrorPath</key>
+    <string>{log}</string>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>
+"""
+
+
+def windows_task_cmd(
+    *,
+    working_directory: str | None = None,
+    task_name: str = "CrossBorder Panel",
+) -> str:
+    """Windows batch script registered via Task Scheduler on user logon."""
+    wd = working_directory or str(repo_root())
+    cb = f"{wd}\\.venv\\Scripts\\crossborder.exe"
+    log = f"{wd}\\data\\panel.log"
+    return f"""@echo off
+:: Cross-Border panel — auto-start (Task Scheduler / Startup)
+setlocal
+cd /d "{wd}"
+set PYTHONPATH={wd}\\src
+set UVICORN_RELOAD=0
+if not exist "{wd}\\data" mkdir "{wd}\\data"
+start "" /b "{cb}" serve --no-reload >> "{log}" 2>&1
+endlocal
 """
 
 

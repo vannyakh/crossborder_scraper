@@ -377,6 +377,40 @@ for k, v in layout_summary().items():
   fi
 }
 
+register_autostart() {
+  local root="$1"
+  if [[ "${CROSSBORDER_AUTOSTART:-1}" == "0" ]]; then
+    return 0
+  fi
+  echo "==> registering auto-start service"
+  local py="${root}/.venv/bin/python"
+  [[ -x "${py}" ]] || return 0
+
+  local os_name
+  os_name="$(uname -s)"
+
+  if [[ "${os_name}" == "Darwin" ]]; then
+    # macOS — launchd LaunchAgent
+    PYTHONPATH="${root}/src" "${py}" -c "
+from deploy.autostart import autostart
+r = autostart('enable')
+print('   ', r.message)
+if r.detail: print('   ', r.detail)
+" 2>/dev/null && return 0
+    echo "    launchd: could not register — run: crossborder deploy autostart"
+
+  elif [[ "${os_name}" == "Linux" ]]; then
+    # Linux — systemd user service (no sudo needed)
+    PYTHONPATH="${root}/src" "${py}" -c "
+from deploy.autostart import autostart
+r = autostart('enable')
+print('   ', r.message)
+if r.detail: print('   ', r.detail)
+" 2>/dev/null && return 0
+    echo "    systemd: could not register — run: crossborder deploy autostart"
+  fi
+}
+
 maybe_start_panel() {
   local root="$1"
   if [[ "${CROSSBORDER_START}" != "1" ]]; then
@@ -525,5 +559,6 @@ ensure_uv
 run_bootstrap "${ROOT}"
 install_global_cli "${ROOT}"
 ensure_shell_path "${ROOT}"
+register_autostart "${ROOT}"
 maybe_start_panel "${ROOT}"
 print_install_complete "${ROOT}"

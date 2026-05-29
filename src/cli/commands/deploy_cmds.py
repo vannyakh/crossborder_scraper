@@ -12,6 +12,7 @@ from cli.onboard import print_onboard_banner, print_setup_progress
 from cli.theme import err, hint, ok, warn
 from config import get_settings
 from core.paths import repo_root
+from deploy.autostart import AutostartResult, autostart
 from deploy.bootstrap import run_setup
 from deploy.docker_compose import compose_down, compose_status, compose_up, docker_ready
 from deploy.platform import detect_platform
@@ -372,6 +373,45 @@ def deploy_systemd(
         subprocess.run(["systemctl", "daemon-reload"], check=True)
         subprocess.run(["systemctl", "enable", "--now", "crossborder-scraper"], check=True)
         console.print("[green]Service installed and started[/green]")
+
+
+@deploy_app.command("autostart")
+def deploy_autostart(
+    action: str = typer.Argument(
+        "enable",
+        help="enable | disable | status",
+    ),
+    port: int | None = typer.Option(None, "--port", "-p", help="Panel port (default from .env)"),
+) -> None:
+    """Register (or remove) the panel as a boot/login auto-start service.
+
+    \b
+    macOS   — launchd LaunchAgent  (~/Library/LaunchAgents/)
+    Linux   — systemd user/system service
+    Windows — Task Scheduler (ONLOGON) with Startup folder fallback
+
+    \b
+    Examples:
+      crossborder deploy autostart           # enable on current OS
+      crossborder deploy autostart status    # check registration
+      crossborder deploy autostart disable   # remove auto-start
+    """
+    if action not in ("enable", "disable", "status"):
+        console.print(err(f"Unknown action '{action}'. Use: enable | disable | status"))
+        raise typer.Exit(1)
+
+    settings = get_settings()
+    chosen_port = port or settings.panel_port
+
+    result: AutostartResult = autostart(action=action, port=chosen_port)  # type: ignore[arg-type]
+
+    tone = ok if result.ok else (warn if action == "status" else err)
+    console.print(tone(f"[{result.platform}/{result.method}] {result.message}"))
+    if result.detail:
+        console.print(hint(f"  {result.detail}"))
+
+    if not result.ok and action == "enable":
+        raise typer.Exit(1)
 
 
 @deploy_app.command("nginx")
