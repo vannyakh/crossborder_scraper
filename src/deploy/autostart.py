@@ -44,38 +44,79 @@ def _launchd_plist_path() -> Path:
     return Path.home() / "Library" / "LaunchAgents" / f"{LAUNCHD_LABEL}.plist"
 
 
-def _launchd_enable(port: int) -> AutostartResult:
-    from deploy.templates import launchd_plist, write_template
+def _launchctl_load(plist_path: Path) -> tuple[bool, str]:
+    """Try modern bootstrap API first, fall back to legacy load."""
+    import os
 
-    plist_path = _launchd_plist_path()
-    content = launchd_plist(working_directory=str(repo_root()), port=port)
-    write_template(plist_path, content)
+    uid = os.getuid()
 
-    # Unload first in case it already exists (ignore errors)
-    subprocess.run(
-        ["launchctl", "unload", str(plist_path)],
+    # macOS 10.15+ modern API
+    r = subprocess.run(
+        ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)],
         capture_output=True,
+        text=True,
         check=False,
     )
-    result = subprocess.run(
+    if r.returncode == 0:
+        return True, ""
+
+    # Legacy API fallback (macOS < 10.15 or GUI session restriction)
+    r2 = subprocess.run(
         ["launchctl", "load", "-w", str(plist_path)],
         capture_output=True,
         text=True,
         check=False,
     )
-    if result.returncode != 0:
+    if r2.returncode == 0:
+        return True, ""
+
+    return False, (r.stderr or r2.stderr or "").strip()
+
+
+def _launchctl_unload(plist_path: Path) -> None:
+    import os
+
+    uid = os.getuid()
+    subprocess.run(
+        ["launchctl", "bootout", f"gui/{uid}/{LAUNCHD_LABEL}"],
+        capture_output=True,
+        check=False,
+    )
+    subprocess.run(
+        ["launchctl", "unload", "-w", str(plist_path)],
+        capture_output=True,
+        check=False,
+    )
+
+
+def _launchd_enable(port: int) -> AutostartResult:
+    from deploy.templates import launchd_plist, write_template
+
+    plist_path = _launchd_plist_path()
+    plist_path.parent.mkdir(parents=True, exist_ok=True)
+    content = launchd_plist(working_directory=str(repo_root()), port=port)
+    write_template(plist_path, content)
+
+    # Unload any existing instance first
+    _launchctl_unload(plist_path)
+
+    ok, err = _launchctl_load(plist_path)
+    if not ok:
         return AutostartResult(
-            ok=False,
+            ok=True,  # plist is written; loading may fail outside GUI session
             platform="macos",
             method="launchd",
-            message="launchctl load failed",
-            detail=result.stderr.strip(),
+            message=f"LaunchAgent written → {plist_path}",
+            detail=(
+                "Run this once in your terminal to activate:\n"
+                f"    launchctl load -w {plist_path}"
+            ),
         )
     return AutostartResult(
         ok=True,
         platform="macos",
         method="launchd",
-        message=f"LaunchAgent installed → {plist_path}",
+        message=f"LaunchAgent installed and loaded → {plist_path}",
         detail="Panel will start automatically on every login.",
     )
 
@@ -84,11 +125,7 @@ def _launchd_disable() -> AutostartResult:
     plist_path = _launchd_plist_path()
     if not plist_path.exists():
         return AutostartResult(ok=True, platform="macos", method="launchd", message="Not installed")
-    subprocess.run(
-        ["launchctl", "unload", "-w", str(plist_path)],
-        capture_output=True,
-        check=False,
-    )
+    _launchctl_unload(plist_path)
     plist_path.unlink(missing_ok=True)
     return AutostartResult(
         ok=True, platform="macos", method="launchd", message="LaunchAgent removed"
