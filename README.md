@@ -1,8 +1,29 @@
-# Cross-Border
+<p align="center">
+  <img src="assets/images/logo.png" alt="Cross-Border" width="96" />
+</p>
 
-**Self-hosted AI agent hub** — run a gateway agent from the web panel, CLI, or chat apps; automate work with skills, cron schedules, and plugins. Built-in **scrape and catalog analysis** for cross-border e-commerce (1688, Taobao, AliExpress → Shopee, Lazada, TikTok Shop, Shopify).
+<h1 align="center">Cross-Border</h1>
 
-Python **3.12+** (FastAPI, Playwright) + React **agent panel** (`/ui/`). One gateway orchestrates everything — scrape engine, marketplace export, integrate channels, and VPS operations.
+<p align="center">
+  <strong>Self-hosted AI agent hub</strong> — run a gateway agent from the web panel, CLI, or chat apps;<br/>
+  automate work with skills, cron schedules, and plugins.<br/>
+  Built-in <strong>scrape and catalog analysis</strong> for cross-border e-commerce<br/>
+  (1688, Taobao, AliExpress → Shopee, Lazada, TikTok Shop, Shopify).
+</p>
+
+<p align="center">
+  Python <strong>3.12+</strong> (FastAPI, Playwright) + React <strong>agent panel</strong> (<code>/ui/</code>).<br/>
+  One gateway orchestrates everything — scrape engine, marketplace export, integrate channels, and VPS operations.
+</p>
+
+---
+
+<p align="center">
+  <img src="assets/images/dashbord-light.png" alt="Cross-Border dashboard — light theme" width="49%" />
+  <img src="assets/images/dashbord-dark.png" alt="Cross-Border dashboard — dark theme" width="49%" />
+</p>
+
+---
 
 ## What it is
 
