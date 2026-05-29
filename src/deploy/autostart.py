@@ -90,11 +90,28 @@ def _launchctl_unload(plist_path: Path) -> None:
 
 
 def _launchd_enable(port: int) -> AutostartResult:
-    from deploy.templates import launchd_plist, write_template
+    from deploy.templates import (
+        _launchd_safe_dir,
+        launchd_launcher_script,
+        launchd_plist,
+        write_template,
+    )
 
+    wd = str(repo_root())
     plist_path = _launchd_plist_path()
     plist_path.parent.mkdir(parents=True, exist_ok=True)
-    content = launchd_plist(working_directory=str(repo_root()), port=port)
+
+    # 1) Write the bash launcher to ~/.local/share/crossborder/ — a TCC-safe
+    #    location that launchd can always read (Desktop/Documents are blocked
+    #    by macOS privacy controls for background LaunchAgents).
+    safe_dir = Path(_launchd_safe_dir())
+    safe_dir.mkdir(parents=True, exist_ok=True)
+    launcher_path = safe_dir / "panel-launch.sh"
+    write_template(launcher_path, launchd_launcher_script(wd))
+    launcher_path.chmod(0o755)
+
+    # 2) Write plist that calls /bin/bash <launcher>
+    content = launchd_plist(working_directory=wd, port=port)
     write_template(plist_path, content)
 
     # Unload any existing instance first
@@ -109,7 +126,7 @@ def _launchd_enable(port: int) -> AutostartResult:
             message=f"LaunchAgent written → {plist_path}",
             detail=(
                 "Run this once in your terminal to activate:\n"
-                f"    launchctl load -w {plist_path}"
+                f"    launchctl bootstrap gui/$(id -u) {plist_path}"
             ),
         )
     return AutostartResult(
@@ -161,7 +178,7 @@ def _launchd_status() -> AutostartResult:
         platform="macos",
         method="launchd",
         message="Plist exists but service is not loaded",
-        detail=f"Run: launchctl load -w {plist_path}",
+        detail=f"Run: launchctl bootstrap gui/$(id -u) {plist_path}",
     )
 
 

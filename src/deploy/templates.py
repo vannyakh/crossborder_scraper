@@ -76,16 +76,53 @@ server {{
 """
 
 
+def _launchd_safe_dir() -> str:
+    """Return a TCC-safe directory for launchd launcher and log files.
+
+    macOS restricts background LaunchAgents from reading files under ~/Desktop,
+    ~/Documents, and similar protected locations.  ~/.local/share/crossborder
+    is outside these restrictions and is always writable.
+    """
+    return str(Path.home() / ".local" / "share" / "crossborder")
+
+
+def launchd_launcher_script(working_directory: str | None = None) -> str:
+    """Bash launcher script invoked by the LaunchAgent plist.
+
+    Stored in ~/.local/share/crossborder/ so launchd can read it regardless
+    of where the project lives (Desktop, Documents, etc. are TCC-restricted).
+    The script explicitly cd's into the project root before starting the server.
+    """
+    wd = working_directory or str(repo_root())
+    return f"""#!/bin/bash
+# Cross-Border panel launcher — stored in ~/.local/share to bypass macOS TCC
+ROOT="{wd}"
+export HOME="${{HOME:-/Users/$(id -un)}}"
+export USER="${{USER:-$(id -un)}}"
+export PYTHONPATH="$ROOT/src"
+export UVICORN_RELOAD=0
+export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+mkdir -p "$ROOT/data"
+cd "$ROOT"
+exec "$ROOT/.venv/bin/python" -m server
+"""
+
+
 def launchd_plist(
     *,
     working_directory: str | None = None,
     port: int = DEFAULT_PANEL_PORT,
     label: str = "com.crossborder.panel",
 ) -> str:
-    """macOS LaunchAgent plist — auto-starts panel on user login, keeps it alive."""
-    wd = working_directory or str(repo_root())
-    venv_py = f"{wd}/.venv/bin/python"
-    log = f"{wd}/data/panel.log"
+    """macOS LaunchAgent plist — auto-starts panel on user login, keeps it alive.
+
+    Launcher script and log are stored in ~/.local/share/crossborder/ to avoid
+    macOS TCC restrictions that block LaunchAgents from accessing Desktop,
+    Documents, and other protected folders.
+    """
+    safe_dir = _launchd_safe_dir()
+    launcher = f"{safe_dir}/panel-launch.sh"
+    log = f"{safe_dir}/panel.log"
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -95,31 +132,19 @@ def launchd_plist(
     <string>{label}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{venv_py}</string>
-        <string>-m</string>
-        <string>server</string>
+        <string>/bin/bash</string>
+        <string>{launcher}</string>
     </array>
-    <key>WorkingDirectory</key>
-    <string>{wd}</string>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PYTHONPATH</key>
-        <string>{wd}/src</string>
-        <key>UVICORN_RELOAD</key>
-        <string>0</string>
-        <key>PANEL_PORT</key>
-        <string>{port}</string>
-    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
     <key>StandardOutPath</key>
     <string>{log}</string>
     <key>StandardErrorPath</key>
     <string>{log}</string>
-    <key>ThrottleInterval</key>
-    <integer>10</integer>
 </dict>
 </plist>
 """
