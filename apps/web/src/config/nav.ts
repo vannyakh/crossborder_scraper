@@ -1,4 +1,14 @@
-import { Bot, Bug, Database, Home, Plug, Settings, Wrench, type LucideIcon } from 'lucide-react'
+import {
+  Bot,
+  Bug,
+  Database,
+  FolderKanban,
+  Home,
+  Plug,
+  Settings,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react'
 import { AGENT_NAV } from '../components/agent/agent-sections'
 import { DEBUG_NAV } from '../components/debug/debug-sections'
 import { INTEGRATE_CHANNELS } from '../components/integrate/integrate-sections'
@@ -125,7 +135,12 @@ function getNavLayout(): NavLayoutEntry[] {
 
   return [
     { kind: 'link', path: ROUTE_PATHS.home, labelKey: 'nav.overview', icon: Home, end: true },
-    // { kind: 'section', id: 'panel-tools', labelKey: 'nav.panel' },
+    {
+      kind: 'link',
+      path: ROUTE_PATHS.projects.base,
+      labelKey: 'nav.projects',
+      icon: FolderKanban,
+    },
     {
       kind: 'link',
       path: ROUTE_PATHS.databases.base,

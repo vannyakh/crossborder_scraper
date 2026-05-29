@@ -2,6 +2,7 @@ import {
   Bot,
   Bug,
   Database,
+  FolderKanban,
   Home,
   Play,
   Plug,
@@ -64,6 +65,11 @@ export const ROUTE_PATHS = {
   databases: {
     base: '/databases',
     engine: (engine: DatabaseEngineId = DEFAULT_DATABASE_ENGINE) => `/databases/${engine}`,
+  },
+  projects: {
+    base: '/projects',
+    detail: (id: string, section = 'flow' as const) => `/projects/${id}/${section}`,
+    section: (id: string, section: string) => `/projects/${id}/${section}`,
   },
   monitor: '/monitor',
   store: '/store',
@@ -132,6 +138,14 @@ export function databaseEnginePath(engine: DatabaseEngineId = DEFAULT_DATABASE_E
 
 export function roadmapPath(feature: RoadmapFeatureId): string {
   return ROUTE_PATHS.roadmap.feature(feature)
+}
+
+export function projectPath(id: string): string {
+  return ROUTE_PATHS.projects.detail(id, 'flow')
+}
+
+export function projectSectionPath(id: string, section: string): string {
+  return ROUTE_PATHS.projects.section(id, section)
 }
 
 /** i18n keys for agent sidebar / breadcrumb leaf labels */
@@ -282,6 +296,18 @@ const ROUTE_PATTERNS: RoutePattern[] = [
     priority: 80,
     match: (p) => p.startsWith('/workflow'),
     segments: () => [overviewCrumb(), scrapeGroupCrumb(), { labelKey: 'nav.batchQueue' }],
+  },
+  {
+    priority: 75,
+    match: (p) => p.startsWith('/projects'),
+    segments: (p) => {
+      const id = p.split('/')[2]
+      return [
+        overviewCrumb(),
+        { labelKey: 'nav.projects', path: ROUTE_PATHS.projects.base, icon: FolderKanban },
+        ...(id ? [{ label: id } satisfies BreadcrumbSegmentDef] : []),
+      ]
+    },
   },
   {
     priority: 70,

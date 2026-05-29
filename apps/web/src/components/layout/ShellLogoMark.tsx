@@ -4,13 +4,20 @@ import { useThemeStore } from '../../stores/theme-store'
 
 export function ShellLogoMark({
   collapsed,
+  layout = 'sidebar',
   label,
   onClick,
+  buttonTitle,
 }: {
   collapsed: boolean
+  /** `sidebar` centers in collapsed rail; `header` stays left-aligned in top bars */
+  layout?: 'sidebar' | 'header'
   label: string
   onClick?: () => void
+  /** Native title on the logo button; defaults to copy-URL hint in the main shell */
+  buttonTitle?: string
 }) {
+  const sidebarCompact = collapsed && layout === 'sidebar'
   const logoUrl = useThemeStore((s) => s.config.branding.logoUrl)
 
   const mark = logoUrl ? (
@@ -30,15 +37,16 @@ export function ShellLogoMark({
     <HStack
       gap={2}
       minW={0}
-      justify={collapsed ? 'center' : 'flex-start'}
-      w={collapsed ? 'full' : 'auto'}
+      justify={sidebarCompact ? 'center' : 'flex-start'}
+      w={sidebarCompact ? 'full' : 'auto'}
+      flexShrink={0}
     >
       {onClick ? (
         <button
           type="button"
           onClick={onClick}
           aria-label={label}
-          title="Copy panel URL"
+          title={buttonTitle ?? 'Copy panel URL'}
           style={{
             border: 'none',
             background: 'transparent',

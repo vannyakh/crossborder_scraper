@@ -1,11 +1,11 @@
-import { Avatar, Box, Button, Menu, Portal, Text } from '@chakra-ui/react'
+import { Avatar, Box, Button, IconButton, Menu, Portal, Text } from '@chakra-ui/react'
 import { ChevronDown, LogOut, User } from 'lucide-react'
 import { useAuth } from '../../hooks/use-auth'
 import { useHoverMenu } from '../../hooks/use-hover-menu'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 
-export function AccountMenu() {
+export function AccountMenu({ iconOnly = false }: { iconOnly?: boolean }) {
   const { username, logout } = useAuth()
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
@@ -17,29 +17,44 @@ export function AccountMenu() {
     <Menu.Root
       open={open}
       onOpenChange={(details) => setOpen(details.open)}
-      positioning={{ placement: 'bottom-end' }}
+      positioning={{ placement: iconOnly ? 'right-end' : 'bottom-end' }}
       closeOnSelect
     >
       <Box {...hoverHandlers} display="inline-flex">
         <Menu.Trigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            colorPalette={accentPalette}
-            borderRadius="var(--radius-input)"
-            px={2}
-            gap={1.5}
-            maxW="11rem"
-            _open={{ bg: 'bg.navActive' }}
-          >
-            <Avatar.Root size="xs" colorPalette={accentPalette}>
-              <Avatar.Fallback name={display}>{initial}</Avatar.Fallback>
-            </Avatar.Root>
-            <Text fontSize="sm" truncate display={{ base: 'none', sm: 'block' }}>
-              {display}
-            </Text>
-            <ChevronDown size={14} strokeWidth={2} aria-hidden />
-          </Button>
+          {iconOnly ? (
+            <IconButton
+              variant="ghost"
+              size="sm"
+              colorPalette={accentPalette}
+              borderRadius="var(--radius-input)"
+              aria-label={display}
+              _open={{ bg: 'bg.navActive' }}
+            >
+              <Avatar.Root size="xs" colorPalette={accentPalette}>
+                <Avatar.Fallback name={display}>{initial}</Avatar.Fallback>
+              </Avatar.Root>
+            </IconButton>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              colorPalette={accentPalette}
+              borderRadius="var(--radius-input)"
+              px={2}
+              gap={1.5}
+              maxW="11rem"
+              _open={{ bg: 'bg.navActive' }}
+            >
+              <Avatar.Root size="xs" colorPalette={accentPalette}>
+                <Avatar.Fallback name={display}>{initial}</Avatar.Fallback>
+              </Avatar.Root>
+              <Text fontSize="sm" truncate display={{ base: 'none', sm: 'block' }}>
+                {display}
+              </Text>
+              <ChevronDown size={14} strokeWidth={2} aria-hidden />
+            </Button>
+          )}
         </Menu.Trigger>
       </Box>
 

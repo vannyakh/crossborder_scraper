@@ -55,18 +55,61 @@ export function multiLineOption(
     series,
     yMax,
     showLegend = false,
+    legendPosition = 'top',
+    formatY,
+    fillArea = true,
+    smooth = 0.35,
+    lineWidth = 2,
+    showSymbols,
+    variant = 'default',
+    dataZoom = false,
   }: {
     labels: string[]
     series: { name: string; data: number[]; color: string }[]
     yMax?: number
     showLegend?: boolean
+    legendPosition?: 'top' | 'bottom'
+    formatY?: (value: number) => string
+    fillArea?: boolean
+    smooth?: number
+    lineWidth?: number
+    showSymbols?: boolean
+    variant?: 'default' | 'compact' | 'expanded'
+    dataZoom?: boolean
   },
 ): EChartsOption {
   const labelStep = labels.length > 18 ? Math.ceil(labels.length / 8) : labels.length > 10 ? 2 : 1
+  const legendBottom = showLegend && legendPosition === 'bottom'
+  const expanded = variant === 'expanded'
+  const compact = variant === 'compact'
+  const symbolVisible = showSymbols ?? labels.length <= 24
+  const zoomBottom = dataZoom ? 52 : legendBottom ? 36 : compact ? 4 : 8
+
   return {
     backgroundColor: 'transparent',
     animation: true,
-    grid: { left: 4, right: 16, top: showLegend ? 28 : 12, bottom: 4, containLabel: true },
+    grid: {
+      left: expanded ? 12 : compact ? 4 : 8,
+      right: expanded ? 24 : 16,
+      top: showLegend && !legendBottom ? (expanded ? 36 : 28) : expanded ? 20 : 12,
+      bottom: zoomBottom,
+      containLabel: true,
+    },
+    dataZoom: dataZoom
+      ? [
+          { type: 'inside', throttle: 50 },
+          {
+            type: 'slider',
+            height: 18,
+            bottom: 8,
+            borderColor: theme.grid,
+            backgroundColor: 'transparent',
+            fillerColor: `${theme.accent}33`,
+            handleStyle: { color: theme.accent, borderColor: theme.accent },
+            textStyle: { color: theme.muted, fontSize: 10 },
+          },
+        ]
+      : undefined,
     tooltip: {
       trigger: 'axis',
       backgroundColor: 'var(--flyout-bg)',
@@ -75,7 +118,7 @@ export function multiLineOption(
     },
     legend: showLegend
       ? {
-          top: 0,
+          ...(legendBottom ? { bottom: 0, left: 'center' } : { top: 0 }),
           textStyle: { color: theme.muted, fontSize: 11 },
           itemWidth: 10,
           itemHeight: 10,
@@ -99,30 +142,42 @@ export function multiLineOption(
       max: yMax,
       minInterval: yMax ? undefined : 1,
       splitLine: { lineStyle: { color: theme.grid, type: 'dashed' } },
-      axisLabel: { color: theme.muted, fontSize: 10 },
+      axisLabel: {
+        color: theme.muted,
+        fontSize: 10,
+        formatter: formatY ? (value: number) => formatY(Number(value)) : undefined,
+      },
     },
     series: series.map((s) => ({
       name: s.name,
       type: 'line',
-      smooth: 0.35,
-      showSymbol: s.data.length <= 24,
-      symbolSize: 6,
-      lineStyle: { width: 2, color: s.color },
+      smooth,
+      showSymbol: symbolVisible,
+      symbolSize: expanded ? 7 : 6,
+      lineStyle: { width: lineWidth, color: s.color },
       itemStyle: { color: s.color },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: `${s.color}66` },
-            { offset: 1, color: `${s.color}06` },
-          ],
-        },
+      emphasis: {
+        focus: 'series',
+        lineStyle: { width: lineWidth + 1 },
       },
+      areaStyle: fillArea
+        ? {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: `${s.color}66` },
+                { offset: 1, color: `${s.color}06` },
+              ],
+            },
+          }
+        : undefined,
       data: s.data,
     })),
   }
 }
+
+export { logHistogramOption } from '../projects/project-logs-chart'

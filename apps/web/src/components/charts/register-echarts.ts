@@ -1,5 +1,10 @@
 import { BarChart, GaugeChart, LineChart } from 'echarts/charts'
-import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
+import {
+  DataZoomComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 
@@ -14,6 +19,7 @@ export function ensureEchartsRegistered() {
     GridComponent,
     TooltipComponent,
     LegendComponent,
+    DataZoomComponent,
     CanvasRenderer,
   ])
   registered = true

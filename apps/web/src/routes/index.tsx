@@ -18,6 +18,9 @@ import { GuidesPage } from '../pages/GuidesPage'
 import { HealthPage } from '../pages/HealthPage'
 import { IntegratePage } from '../pages/IntegratePage'
 import { MonitorPage } from '../pages/MonitorPage'
+import { ProjectPage } from '../pages/ProjectPage'
+import { ProjectsPage } from '../pages/ProjectsPage'
+import { ProjectShell } from '../components/layout/project-shell'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
@@ -85,6 +88,14 @@ const router = createBrowserRouter(
       element: <AuthGuard />,
       children: [
         {
+          path: 'projects/:projectId',
+          element: <ProjectShell />,
+          children: [
+            { index: true, element: <ProjectPage /> },
+            { path: ':section', element: <ProjectPage /> },
+          ],
+        },
+        {
           path: ROUTE_PATHS.home,
           element: <AppShell />,
           children: [
@@ -106,6 +117,7 @@ const router = createBrowserRouter(
               element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.products} />,
             },
             { path: 'files', element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.files} /> },
+            { path: 'projects', element: <ProjectsPage /> },
             { path: 'monitor', element: <MonitorPage /> },
             { path: 'store', element: <StorePage /> },
             { path: 'docker', element: <DockerPage /> },
