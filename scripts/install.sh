@@ -804,9 +804,14 @@ else
   clone_or_update
   ROOT="${INSTALL_DIR}"
   finalize_vps_ownership "${ROOT}"
+  # curl | bash may hit a stale raw.githubusercontent.com cache — always bootstrap from clone.
+  if [[ "${CROSSBORDER_INSTALL_REEXEC:-}" != "1" && -f "${ROOT}/scripts/install.sh" ]]; then
+    echo "==> re-exec install from ${ROOT}/scripts/install.sh (matches cloned repo)"
+    exec env CROSSBORDER_INSTALL_REEXEC=1 bash "${ROOT}/scripts/install.sh"
+  fi
 fi
 
-# curl | bash runs the fetched script; after clone, re-exec from repo so bootstrap matches git HEAD.
+# Re-exec fallback when install was piped (BASH_SOURCE not always "-" on all platforms).
 if [[ "${CROSSBORDER_INSTALL_REEXEC:-}" != "1" && -f "${ROOT}/scripts/install.sh" ]]; then
   case "${BASH_SOURCE[0]:-}" in
     -|bash|/dev/fd/*|/proc/self/fd/*)
