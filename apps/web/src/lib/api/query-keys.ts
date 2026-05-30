@@ -59,4 +59,6 @@ export const queryKeys = {
   firewallRules: ['firewall', 'rules'] as const,
   firewallGroups: ['firewall', 'groups'] as const,
   firewallExport: ['firewall', 'export'] as const,
+  vhostStatus: ['vhost', 'status'] as const,
+  vhostSites: ['vhost', 'sites'] as const,
 }

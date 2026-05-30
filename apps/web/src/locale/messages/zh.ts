@@ -26,6 +26,8 @@ export const zh: MessageTree = {
     dockerDesc: '安装 Docker 引擎、管理容器并浏览 Hub 镜像',
     firewall: '防火墙',
     firewallDesc: 'UFW 端口规则、分组与 VPS 主机安全',
+    vhost: '虚拟主机',
+    vhostDesc: 'nginx 反向代理站点与面板 TLS',
     debug: '调试',
     debugDesc: '审计日志与网关工具目录',
     logsDesc: '面板操作、采集运行与计划任务记录',

@@ -1320,3 +1320,58 @@ export type FirewallExport = {
   rules_meta?: Record<string, unknown>
   live_rules?: FirewallRule[]
 }
+
+export type VhostStatus = {
+  installed: boolean
+  can_manage: boolean
+  certbot_installed: boolean
+  sites_available_dir: string
+  sites_enabled_dir: string
+  site_count: number
+  enabled_count: number
+  ssl_count: number
+  unhealthy_count: number
+  panel_port: number
+  panel_upstream_healthy: boolean | null
+  config_path: string
+  platform: string
+}
+
+export type VhostSite = {
+  id: string
+  filename: string
+  config_path: string
+  server_names: string[]
+  listen_ports: string[]
+  upstream_port: number | null
+  upstream_healthy: boolean | null
+  ssl: boolean
+  enabled: boolean
+  managed: boolean
+  remark: string
+  purpose: 'panel' | 'proxy' | 'other'
+}
+
+export type VhostSiteList = {
+  items: VhostSite[]
+  total: number
+}
+
+export type VhostSiteCreate = {
+  domain: string
+  upstream_port?: number
+  ssl?: boolean
+  certbot?: boolean
+  remark?: string
+  purpose?: 'panel' | 'proxy' | 'other'
+}
+
+export type VhostActionResult = {
+  ok: boolean
+  message?: string
+  messages?: string[]
+  warnings?: string[]
+  login_url?: string | null
+  status?: VhostStatus
+  sites?: VhostSiteList
+}

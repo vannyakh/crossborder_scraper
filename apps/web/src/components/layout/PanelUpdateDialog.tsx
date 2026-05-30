@@ -1,10 +1,11 @@
 import { Badge, Box, Button, HStack, Link, List, Text, VStack } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useApplyPanelUpdateMutation,
   type PanelUpdateStatus,
 } from '../../hooks/queries/use-panel-update-query'
 import { useAccentPalette } from '../../hooks/use-ui-config'
+import { withPanelPrefix } from '../../lib/api/panel-prefix'
 import { DialogContentSkeleton } from '../ui/PanelSkeleton'
 import { AgentModalPanel } from '../agent/AgentModalPanel'
 
@@ -26,6 +27,25 @@ export function PanelUpdateDialog({
   const [restarting, setRestarting] = useState(false)
 
   const applying = applyMutation.isPending
+
+  useEffect(() => {
+    if (!restarting) return undefined
+    let attempts = 0
+    const timer = window.setInterval(() => {
+      attempts += 1
+      void fetch(withPanelPrefix('/health'), { cache: 'no-store' })
+        .then((res) => {
+          if (res.ok) {
+            window.clearInterval(timer)
+            window.location.reload()
+          }
+        })
+        .catch(() => {
+          if (attempts >= 45) window.clearInterval(timer)
+        })
+    }, 2000)
+    return () => window.clearInterval(timer)
+  }, [restarting])
 
   const handleApply = async () => {
     try {
@@ -52,7 +72,9 @@ export function PanelUpdateDialog({
       ) : restarting ? (
         <VStack align="stretch" gap={3} py={2}>
           <Text fontSize="sm" color="fg.muted">
-            Update steps completed. The panel is restarting — reload this page in a few seconds.
+            Update steps completed. The panel is restarting — this page will reload automatically
+            when the API is healthy again (usually 10–30 seconds). If you use a public domain via
+            nginx, a brief 502 Bad Gateway during restart is normal.
           </Text>
           {applyMutation.data?.steps?.length ? (
             <Box

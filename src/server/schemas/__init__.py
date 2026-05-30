@@ -190,6 +190,15 @@ from .runtime import (
     RuntimeBatchInfo,
     RuntimeStatusResponse,
 )
+from .vhost import (
+    VhostActionResponse,
+    VhostCertbotRequest,
+    VhostSiteCreateRequest,
+    VhostSiteItem,
+    VhostSiteListResponse,
+    VhostSiteToggleRequest,
+    VhostStatusResponse,
+)
 
 __all__ = [
     "AgentChatSession",
@@ -374,4 +383,11 @@ __all__ = [
     "FirewallIcmpRequest",
     "FirewallImportRequest",
     "FirewallToggleRequest",
+    "VhostStatusResponse",
+    "VhostSiteListResponse",
+    "VhostSiteItem",
+    "VhostSiteCreateRequest",
+    "VhostSiteToggleRequest",
+    "VhostCertbotRequest",
+    "VhostActionResponse",
 ]

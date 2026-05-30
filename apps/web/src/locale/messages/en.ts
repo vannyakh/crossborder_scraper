@@ -26,6 +26,8 @@ export const en: MessageTree = {
     dockerDesc: 'Install Docker Engine, manage containers, and browse Hub images',
     firewall: 'Firewall',
     firewallDesc: 'UFW port rules, groups, and host security for the VPS',
+    vhost: 'Virtual hosts',
+    vhostDesc: 'nginx reverse proxy sites and TLS for the panel',
     debug: 'Debug',
     debugDesc: 'Audit logs and gateway tool catalog',
     logsDesc: 'Operation, scrape runs, and cron agent history',

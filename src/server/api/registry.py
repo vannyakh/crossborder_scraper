@@ -28,6 +28,7 @@ from server.routers import (
     service,
     store,
     system,
+    vhost,
 )
 
 
@@ -48,6 +49,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(deploy.router)
     app.include_router(docker.router)
     app.include_router(firewall.router)
+    app.include_router(vhost.router)
 
     # Plugins & App Store (infra + scrape sources)
     app.include_router(plugins.router)

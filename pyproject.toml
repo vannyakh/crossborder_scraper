@@ -27,6 +27,7 @@ dependencies = [
     "croniter>=2.0.0",
     "psutil>=6.0.0",
     "python-telegram-bot>=21.0",
+    "captcha>=0.7.1",
 ]
 
 [project.scripts]

@@ -75,6 +75,7 @@ export const ROUTE_PATHS = {
   store: '/store',
   docker: '/docker',
   firewall: '/firewall',
+  vhost: '/vhost',
   debug: {
     base: '/debug',
     section: (section: DebugSectionId = DEFAULT_DEBUG_SECTION) => `/debug/${section}`,
@@ -97,6 +98,7 @@ export const OPERATIONS_ROUTES = [
   ROUTE_PATHS.store,
   ROUTE_PATHS.docker,
   ROUTE_PATHS.firewall,
+  ROUTE_PATHS.vhost,
   ROUTE_PATHS.health,
   ROUTE_PATHS.guides,
   ROUTE_PATHS.support,
@@ -199,6 +201,7 @@ export const OPERATIONS_ROUTE_I18N: Record<OperationsRoute, string> = {
   '/store': 'nav.appStore',
   '/docker': 'nav.docker',
   '/firewall': 'nav.firewall',
+  '/vhost': 'nav.vhost',
   '/health': 'nav.health',
   '/guides': 'nav.guides',
   '/support': 'nav.support',

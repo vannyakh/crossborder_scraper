@@ -6,7 +6,7 @@ import asyncio
 import os
 from typing import Any
 
-from deploy.maintenance import MaintenanceResult, run_update
+from deploy.maintenance import MaintenanceResult, run_restart, run_update
 from deploy.version import UpdateCheckResult, check_for_update
 from server.core.constants import APP_VERSION
 
@@ -25,12 +25,14 @@ class UpdateService:
         restart: bool = True,
         branch: str | None = None,
     ) -> dict[str, Any]:
+        # Sync only — restart is deferred so nginx/Vite can receive this response
+        # before the upstream panel process stops (avoids 502 on update/apply).
         result: MaintenanceResult = await asyncio.to_thread(
             run_update,
             pull=pull,
             branch=branch,
             browser=browser,
-            restart_after=restart,
+            restart_after=False,
         )
         check = check_for_update(
             current_version=APP_VERSION,
@@ -46,6 +48,11 @@ class UpdateService:
             "latest_version": check.latest_version,
             "update_available": check.update_available,
         }
+
+    async def restart_panel(self) -> None:
+        """Restart after the HTTP response has been sent (BackgroundTasks)."""
+        await asyncio.sleep(0.75)
+        await asyncio.to_thread(run_restart)
 
 
 def _serialize_check(info: UpdateCheckResult) -> dict[str, Any]:

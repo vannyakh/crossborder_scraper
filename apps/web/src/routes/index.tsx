@@ -14,6 +14,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { DebugPage } from '../pages/DebugPage'
 import { DockerPage } from '../pages/DockerPage'
 import { FirewallPage } from '../pages/FirewallPage'
+import { VhostPage } from '../pages/VhostPage'
 import { GuidesPage } from '../pages/GuidesPage'
 import { HealthPage } from '../pages/HealthPage'
 import { IntegratePage } from '../pages/IntegratePage'
@@ -122,6 +123,7 @@ const router = createBrowserRouter(
             { path: 'store', element: <StorePage /> },
             { path: 'docker', element: <DockerPage /> },
             { path: 'firewall', element: <FirewallPage /> },
+            { path: 'vhost', element: <VhostPage /> },
             {
               path: 'databases',
               element: <Navigate to={ROUTE_PATHS.databases.engine()} replace />,

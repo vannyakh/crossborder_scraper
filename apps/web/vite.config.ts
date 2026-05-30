@@ -71,6 +71,7 @@ const API_PROXY_PATHS = [
   '/deploy',
   '/docker',
   '/firewall',
+  '/vhost',
   '/logs',
 ] as const
 

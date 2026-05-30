@@ -125,6 +125,36 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "parameters": {"type": "object", "properties": {}},
     },
     {
+        "name": "list_vhosts",
+        "description": (
+            "List nginx virtual host sites, TLS state, and reverse-proxy upstream ports "
+            "on this VPS."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "create_vhost_proxy",
+        "description": (
+            "Create or update an nginx reverse-proxy virtual host for a domain "
+            "(optional Let's Encrypt TLS via certbot). Needs root or sudo on VPS."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "domain": {"type": "string", "description": "Public domain name"},
+                "upstream_port": {
+                    "type": "integer",
+                    "description": "Local upstream port (default panel 8787)",
+                },
+                "certbot": {
+                    "type": "boolean",
+                    "description": "Request Let's Encrypt certificate when certbot is installed",
+                },
+            },
+            "required": ["domain"],
+        },
+    },
+    {
         "name": "list_database_providers",
         "description": (
             "List panel database engine providers (MySQL, PostgreSQL, MongoDB, Redis) "
@@ -362,6 +392,8 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "setup_network_access": _setup_network_access,
         "list_agent_rules": _list_agent_rules,
         "list_firewall_rules": _list_firewall_rules,
+        "list_vhosts": _list_vhosts,
+        "create_vhost_proxy": _create_vhost_proxy,
         "list_database_providers": _list_database_providers,
         "get_managed_database": _get_managed_database,
         "get_database_install_options": _get_database_install_options,
@@ -526,6 +558,34 @@ async def _list_firewall_rules(_manager: Any) -> dict[str, Any]:
         "rules": svc.list_rules(),
         "groups": svc.list_groups(),
     }
+
+
+async def _list_vhosts(_manager: Any) -> dict[str, Any]:
+    from server.services.vhost_service import get_vhost_service
+
+    svc = get_vhost_service()
+    return {
+        "status": svc.get_status(),
+        "sites": svc.list_sites(),
+    }
+
+
+async def _create_vhost_proxy(
+    _manager: Any,
+    *,
+    domain: str,
+    upstream_port: int | None = None,
+    certbot: bool | None = None,
+) -> dict[str, Any]:
+    from server.services.vhost_service import get_vhost_service
+
+    payload: dict[str, Any] = {
+        "domain": domain.strip(),
+        "upstream_port": upstream_port or 8787,
+        "certbot": bool(certbot) if certbot is not None else True,
+        "purpose": "panel",
+    }
+    return get_vhost_service().create_site(payload)
 
 
 async def _list_database_providers(_manager: Any) -> dict[str, Any]:

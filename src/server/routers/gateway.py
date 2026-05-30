@@ -1,4 +1,4 @@
-from fastapi import Depends, File, HTTPException, Query, UploadFile
+from fastapi import BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 
 from gateway.skills import SkillInstallError, get_skill_installer
 from server.auth import require_panel_auth
@@ -67,12 +67,13 @@ async def gateway_update_status() -> PanelUpdateStatusResponse:
 
 @router.post("/update/apply", response_model=PanelUpdateApplyResponse)
 async def gateway_update_apply(
+    background_tasks: BackgroundTasks,
     body: PanelUpdateApplyRequest | None = None,
 ) -> PanelUpdateApplyResponse:
     """
     Pull latest code, sync dependencies, and restart the panel.
 
-    The API may become briefly unavailable while the service restarts.
+    Restart is scheduled after the response so nginx/Vite do not 502 this request.
     """
     payload = body or PanelUpdateApplyRequest()
     result = await get_update_service().apply_update(
@@ -81,6 +82,8 @@ async def gateway_update_apply(
         restart=payload.restart,
         branch=payload.branch,
     )
+    if payload.restart:
+        background_tasks.add_task(get_update_service().restart_panel)
     return PanelUpdateApplyResponse(**result)
 
 

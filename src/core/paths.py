@@ -206,6 +206,10 @@ def firewall_config_path() -> Path:
     return config_dir() / "firewall_rules.yaml"
 
 
+def vhost_config_path() -> Path:
+    return config_dir() / "vhosts.yaml"
+
+
 def layout_summary() -> dict[str, str]:
     """Human-readable paths for install card / API."""
     root = repo_root()

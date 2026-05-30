@@ -12,6 +12,8 @@ metadata:
       - setup_network_access
       - apply_panel_firewall
       - list_firewall_rules
+      - list_vhosts
+      - create_vhost_proxy
       - list_database_providers
       - get_managed_database
       - get_database_install_options
@@ -38,6 +40,13 @@ Use when the operator asks about **panel access**, **VPS firewall**, **health ch
 3. If the host firewall blocks the panel port, ask before mutating:
    - `apply_panel_firewall` — open panel TCP port only (needs root/sudo on VPS).
    - `setup_network_access` — bind `0.0.0.0`, open firewall, detect public IP in `.env` (full setup).
+
+## Virtual hosts (nginx)
+
+1. `list_vhosts` — nginx install state, enabled sites, TLS, upstream ports.
+2. For domain + HTTPS in front of the panel, confirm DNS A record and cloud SG **80**/**443**, then:
+   - `create_vhost_proxy` with `domain` and `certbot: true` (panel stays on **127.0.0.1:8787**).
+3. Cite `login_url` from tool output when TLS succeeds — do not invent URLs.
 
 ## Database engines
 

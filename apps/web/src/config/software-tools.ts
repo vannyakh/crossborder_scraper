@@ -22,6 +22,7 @@ export const OPERATIONS_TOOL_NAV = [
   { to: '/store', label: 'App Store' },
   { to: '/docker', label: 'Docker' },
   { to: '/firewall', label: 'Firewall' },
+  { to: '/vhost', label: 'Virtual hosts' },
   { to: '/health', label: 'Health' },
   { to: '/guides', label: 'Guides' },
   { to: '/support', label: 'Support' },
