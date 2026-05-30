@@ -74,8 +74,7 @@ export function layoutFootprint(node: ProjectNode): Size {
     }
   }
 
-  const base = ROLE_DEFAULTS[role]
-  return { w: base.w, h: base.h }
+  return ROLE_DEFAULTS.action
 }
 
 function nodeRect(node: ProjectNode): Rect {

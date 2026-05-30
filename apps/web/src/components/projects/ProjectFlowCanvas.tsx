@@ -61,7 +61,7 @@ import {
 import { buildNodeConsoleLines } from './project-flow-console'
 import { ProjectFlowConsoleProvider } from './project-flow-console-context'
 import { insertMainNodeAfter, insertMainNodeBetween } from './project-flow-insert'
-import type { ProjectServiceEdge, ProjectServiceNode } from './project-flow-types'
+import type { ProjectCanvasNode, ProjectServiceEdge } from './project-flow-types'
 import {
   preserveFlowNodeUiState,
   projectDetailToFlow,
@@ -74,7 +74,12 @@ import {
   duplicateProjectNode,
   isWorkflowNode,
 } from './project-node-factory'
-import type { AgentSlotIndex, ProjectNode, ProjectNodeKind } from './project-sample-data'
+import type {
+  AgentSlotIndex,
+  ProjectNode,
+  ProjectNodeKind,
+  ProjectNodeStatus,
+} from './project-sample-data'
 import { buildFlowExecutionPlan } from './project-workflow-graph'
 import { useFlowConsole } from './use-flow-console'
 
@@ -599,7 +604,7 @@ function ProjectFlowCanvasInner() {
     setOpenMenu(null)
   }, [clearFocus, closeConfig, closeAdd])
 
-  const onNodeDragStop: OnNodeDrag<ProjectServiceNode> = useCallback(
+  const onNodeDragStop: OnNodeDrag<ProjectCanvasNode> = useCallback(
     (_event, flowNode) => {
       setProject((prev) => ({
         ...prev,
@@ -746,7 +751,7 @@ function ProjectFlowCanvasInner() {
         setProject((prev) => {
           const target = prev.nodes.find((n) => n.id === nodeId)
           if (!target || target.status === undefined) return prev
-          const nextStatus = target.status === 'offline' ? 'online' : 'offline'
+          const nextStatus: ProjectNodeStatus = target.status === 'offline' ? 'online' : 'offline'
           const nodes = prev.nodes.map((n) => (n.id === nodeId ? { ...n, status: nextStatus } : n))
           const services = nodes.filter(
             (n) => n.role !== 'config' && n.role !== 'trigger' && n.status !== undefined,

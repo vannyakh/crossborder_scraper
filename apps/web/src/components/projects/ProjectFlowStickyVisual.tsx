@@ -1,7 +1,7 @@
 import { Box } from '@chakra-ui/react'
 import { MarkdownContent } from '@/components/ui/MarkdownContent'
 import { useLocale } from '../../hooks/use-locale'
-import { useColorMode } from '../../hooks/use-ui-config'
+import { useUiConfig } from '../../hooks/use-ui-config'
 import type { ProjectNode } from './project-sample-data'
 import {
   DEFAULT_STICKY_NOTE_COLOR,
@@ -18,7 +18,7 @@ type ProjectFlowStickyVisualProps = {
 /** Read-only sticky card — rendered in the portal layer below workflow edges. */
 export function ProjectFlowStickyVisual({ node, width, height }: ProjectFlowStickyVisualProps) {
   const { t } = useLocale()
-  const colorMode = useColorMode()
+  const { resolved: colorMode } = useUiConfig()
   const color: StickyNoteColor = node.noteColor ?? DEFAULT_STICKY_NOTE_COLOR
   const colorStyle = stickyNoteStyleVars(color, colorMode)
   const hasBody = Boolean(node.noteBody?.trim())

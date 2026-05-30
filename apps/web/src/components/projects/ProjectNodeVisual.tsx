@@ -10,6 +10,7 @@ import {
   Package,
   Server,
   Split,
+  StickyNote,
 } from 'lucide-react'
 import type { ProjectNodeKind } from './project-sample-data'
 
@@ -27,6 +28,7 @@ const NODE_META: Record<
   export: { icon: Package, bg: 'teal.600', color: 'white', abbr: 'EX' },
   condition: { icon: Split, bg: 'yellow.600', color: 'white', abbr: 'IF' },
   notify: { icon: Bell, bg: 'indigo.600', color: 'white', abbr: 'NT' },
+  sticky: { icon: StickyNote, bg: 'yellow.500', color: 'gray.900', abbr: 'SN' },
 }
 
 export function ProjectNodeVisual({

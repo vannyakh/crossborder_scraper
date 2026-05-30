@@ -33,11 +33,13 @@ export type FlowExecutionStep = {
 }
 
 export class ProjectWorkflowGraph {
+  readonly project: ProjectDetail
   readonly nodes: Map<string, ProjectNode>
   readonly mainEdges: ProjectEdge[]
   readonly configEdges: ProjectEdge[]
 
-  constructor(readonly project: ProjectDetail) {
+  constructor(project: ProjectDetail) {
+    this.project = project
     this.nodes = new Map(project.nodes.map((n) => [n.id, n]))
     this.mainEdges = project.edges.filter((e) => (e.kind ?? 'main') === 'main')
     this.configEdges = project.edges.filter((e) => (e.kind ?? 'main') === 'config')

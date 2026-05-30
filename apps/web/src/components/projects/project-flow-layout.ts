@@ -132,7 +132,7 @@ export function buildAgentConfigPorts(project: ProjectDetail): Map<string, Confi
       const edge = occupiedBySlot.get(def.slotIndex)
       if (edge) {
         const source = nodeById.get(edge.from)
-        const label = source?.subtitle ?? source?.label ?? def.label
+        const label = source?.subtitle ?? source?.label ?? def.labelKey
         return {
           handleId: def.occupiedHandleId,
           label,

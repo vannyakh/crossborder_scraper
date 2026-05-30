@@ -170,4 +170,9 @@ export function publicUrlForNode(node: ProjectNode): string {
   return host.startsWith('http') ? host : `https://${host}`
 }
 
-export type { NodeConfigSchema, ProjectConfigField, ProjectConfigTabId } from './types'
+export type {
+  NodeConfigSchema,
+  ProjectConfigField,
+  ProjectConfigSection,
+  ProjectConfigTabId,
+} from './types'
