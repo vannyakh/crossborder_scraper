@@ -234,29 +234,75 @@ ensure_node() {
 }
 
 # pnpm via corepack needs root (symlinks into /usr/bin). Install user-local instead.
+pnpm_home() {
+  echo "${HOME}/.local/share/pnpm"
+}
+
+refresh_node_path() {
+  export PNPM_HOME="$(pnpm_home)"
+  export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
+}
+
+pnpm_bin() {
+  refresh_node_path
+  if [[ -x "${PNPM_HOME}/pnpm" ]]; then
+    echo "${PNPM_HOME}/pnpm"
+    return 0
+  fi
+  return 1
+}
+
+pnpm_works() {
+  local bin
+  if bin="$(pnpm_bin)"; then
+    "${bin}" -v >/dev/null 2>&1
+    return $?
+  fi
+  refresh_node_path
+  if command -v pnpm >/dev/null 2>&1 && pnpm -v >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
 ensure_pnpm() {
   if [[ "${CROSSBORDER_SKIP_UI_BUILD:-}" == "1" ]]; then
     return 0
   fi
-  export PNPM_HOME="${HOME}/.local/share/pnpm"
-  export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
-  if command -v pnpm >/dev/null 2>&1; then
+  refresh_node_path
+  if pnpm_works; then
+    local bin ver
+    bin="$(pnpm_bin 2>/dev/null || true)"
+    ver="$("${bin:-pnpm}" -v 2>/dev/null || echo ok)"
+    echo "    pnpm ${ver}"
     return 0
   fi
   if ! command -v node >/dev/null 2>&1; then
     return 0
   fi
   echo "==> installing pnpm (user-local, no sudo)"
+  # Avoid broken system corepack shims during install
+  export COREPACK_ENABLE_AUTO_PIN=0
+  export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   if curl -fsSL https://get.pnpm.io/install.sh | env PNPM_HOME="${PNPM_HOME}" SHELL="bash" sh -; then
-    export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
-    echo "    pnpm $(pnpm -v 2>/dev/null || echo ok)"
-    return 0
+    refresh_node_path
+    hash -r 2>/dev/null || true
+    if pnpm_works; then
+      local bin ver
+      bin="$(pnpm_bin)"
+      ver="$("${bin}" -v 2>/dev/null || echo ok)"
+      echo "    pnpm ${ver}"
+      return 0
+    fi
   fi
   mkdir -p "${HOME}/.local/bin"
   if npm install -g pnpm@9.15.9 --prefix "${HOME}/.local" 2>/dev/null; then
-    export PATH="${HOME}/.local/bin:${PATH}"
-    echo "    pnpm $(pnpm -v 2>/dev/null || echo ok)"
-    return 0
+    refresh_node_path
+    hash -r 2>/dev/null || true
+    if pnpm_works; then
+      echo "    pnpm $(pnpm -v 2>/dev/null || echo ok)"
+      return 0
+    fi
   fi
   echo "    pnpm install failed — UI build may be skipped"
   return 1
@@ -488,14 +534,21 @@ build_panel_ui() {
     return 0
   fi
   ensure_pnpm || true
-  export PNPM_HOME="${HOME}/.local/share/pnpm"
-  export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
+  refresh_node_path
+  export COREPACK_ENABLE_AUTO_PIN=0
+  export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   echo "==> build panel web UI"
+  local pnpm_cmd=""
+  if pnpm_cmd="$(pnpm_bin)"; then
+    :
+  elif pnpm_works; then
+    pnpm_cmd="pnpm"
+  fi
   if ! (
     cd "${root}/apps/web"
-    if command -v pnpm >/dev/null 2>&1; then
-      pnpm install --frozen-lockfile
-      pnpm build
+    if [[ -n "${pnpm_cmd}" ]]; then
+      "${pnpm_cmd}" install --frozen-lockfile
+      "${pnpm_cmd}" build
     elif command -v npx >/dev/null 2>&1; then
       npx --yes pnpm@9.15.9 install --frozen-lockfile
       npx --yes pnpm@9.15.9 build
@@ -751,6 +804,16 @@ else
   clone_or_update
   ROOT="${INSTALL_DIR}"
   finalize_vps_ownership "${ROOT}"
+fi
+
+# curl | bash runs the fetched script; after clone, re-exec from repo so bootstrap matches git HEAD.
+if [[ "${CROSSBORDER_INSTALL_REEXEC:-}" != "1" && -f "${ROOT}/scripts/install.sh" ]]; then
+  case "${BASH_SOURCE[0]:-}" in
+    -|bash|/dev/fd/*|/proc/self/fd/*)
+      echo "==> re-exec install from ${ROOT}/scripts/install.sh (matches cloned repo)"
+      exec env CROSSBORDER_INSTALL_REEXEC=1 bash "${ROOT}/scripts/install.sh"
+      ;;
+  esac
 fi
 
 ensure_uv
