@@ -43,13 +43,21 @@ def _run_setup_flow(
     )
 
     access = result["access"]
-    print_panel_credentials(
-        str(result["username"]),
-        str(result["password"]),
-        access=access,
-        mode=card_mode,
-        next_commands=default_next_commands(card_mode),
+    import os
+
+    defer_card = os.environ.get("CROSSBORDER_DEFER_ACCESS_CARD", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
     )
+    if not defer_card:
+        print_panel_credentials(
+            str(result["username"]),
+            str(result["password"]),
+            access=access,
+            mode=card_mode,
+            next_commands=default_next_commands(card_mode),
+        )
 
     print_mode_footer(mode)
 

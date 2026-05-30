@@ -668,20 +668,23 @@ EOF
 }
 
 link_system_cli() {
+  local root="$1"
   local wrapper="${HOME}/.local/bin/crossborder"
   [[ -x "${wrapper}" ]] || return 0
   if [[ -w /usr/local/bin ]] 2>/dev/null; then
     ln -sf "${wrapper}" /usr/local/bin/crossborder
     ln -sf "${wrapper}" /usr/local/bin/scraper
     echo "==> CLI available: /usr/local/bin/crossborder"
-    return 0
-  fi
-  if command -v sudo >/dev/null 2>&1; then
+  elif command -v sudo >/dev/null 2>&1; then
     if sudo ln -sf "${wrapper}" /usr/local/bin/crossborder 2>/dev/null; then
       sudo ln -sf "${wrapper}" /usr/local/bin/scraper 2>/dev/null || true
       echo "==> CLI available: /usr/local/bin/crossborder (system-wide)"
     fi
   fi
+  mkdir -p "${root}/bin"
+  ln -sf "${root}/.venv/bin/crossborder" "${root}/bin/crossborder"
+  ln -sf "${root}/.venv/bin/crossborder" "${root}/bin/scraper"
+  echo "==> CLI shortcut: ${root}/bin/crossborder --help"
 }
 
 verify_global_cli() {
@@ -769,7 +772,9 @@ run_bootstrap() {
   fi
 
   echo "==> panel setup (host, port ${PANEL_PORT}, credentials)"
+  export CROSSBORDER_DEFER_ACCESS_CARD=1
   "$(crossborder_bin "${root}")" "${setup_args[@]}"
+  unset CROSSBORDER_DEFER_ACCESS_CARD
   ensure_panel_bind_all_interfaces "${root}"
 
   if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" ]]; then
@@ -902,17 +907,27 @@ print_install_complete() {
 
   if [[ -x "${py}" && -d "${root}/src" ]]; then
     cd "${root}"
+    export PATH="${HOME}/.local/bin:${root}/bin:${PATH}"
     PYTHONPATH="${root}/src" "${py}" -c "
 from pathlib import Path
-from deploy.panel_access import build_access_from_env, print_install_finish_card
+from deploy.panel_access import build_access_from_env, print_install_access_summary
 
 info = build_access_from_env(env_path=Path('.env'))
-print_install_finish_card(info, install_dir='${root}', panel_port=${port})
-" 2>/dev/null && return 0
+print_install_access_summary(
+    info,
+    install_dir='${root}',
+    panel_port=${port},
+    legacy_card=True,
+    plain_card=True,
+)
+"
+    echo "==> reload shell for crossborder CLI:  source ~/.bashrc"
+    return 0
   fi
 
   echo ""
   echo "  Installation complete — see ${root}/.env for credentials"
+  echo "  CLI: ${root}/bin/crossborder --help"
   echo ""
 }
 
@@ -968,7 +983,7 @@ ensure_uv
 run_bootstrap "${ROOT}"
 install_global_cli "${ROOT}"
 ensure_shell_path "${ROOT}"
-link_system_cli
+link_system_cli "${ROOT}"
 verify_global_cli "${ROOT}"
 register_autostart "${ROOT}"
 _panel_port="$(read_env_port "${ROOT}")"

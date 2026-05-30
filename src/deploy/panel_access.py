@@ -189,7 +189,10 @@ def _access_table(info: PanelAccessInfo) -> Table:
             table.add_row(label, link_markup(url))
 
     if info.external_url:
-        table.add_row("Public", link_markup(info.external_url))
+        pub_login = info.login_external_url or info.external_url
+        table.add_row("Public", link_markup(pub_login))
+        if info.entrance_access_url and info.login_external_url:
+            table.add_row("Public URL", link_markup(info.entrance_access_url))
 
     table.add_row("", "")
     table.add_row("Username", user(info.username))
@@ -350,3 +353,26 @@ def print_install_finish_card(
         out.write("  Docs:        docs/INSTALL.md\n")
 
     out.write(f"\n{border}\n\n")
+
+
+def print_install_access_summary(
+    info: PanelAccessInfo,
+    *,
+    install_dir: str | None = None,
+    panel_port: int | None = None,
+    legacy_card: bool = True,
+    plain_card: bool = True,
+) -> None:
+    """Print legacy Rich access card plus plain install finish card."""
+    if legacy_card:
+        print_panel_access_card(
+            info,
+            mode="install",
+            show_quick_start=False,
+        )
+    if plain_card:
+        print_install_finish_card(
+            info,
+            install_dir=install_dir,
+            panel_port=panel_port,
+        )
