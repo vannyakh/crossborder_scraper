@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { getRouterBasename } from '../lib/api/panel-prefix'
 import {
   createBrowserRouter,
@@ -80,95 +81,104 @@ function ServiceSectionLegacyRedirect() {
   return <Navigate to={ROUTE_PATHS.home} replace />
 }
 
-const router = createBrowserRouter(
-  [
-    {
-      element: <GuestGuard />,
-      children: [{ path: ROUTE_PATHS.login, element: <LoginPage /> }],
-    },
-    {
-      element: <AuthGuard />,
-      children: [
-        {
-          path: 'projects/:projectId',
-          element: <ProjectShell />,
-          children: [
-            { index: true, element: <ProjectPage /> },
-            { path: ':section', element: <ProjectPage /> },
-          ],
-        },
-        {
-          path: ROUTE_PATHS.home,
-          element: <AppShell />,
-          children: [
-            { index: true, element: <DashboardPage /> },
-            { path: 'workflow', element: <Navigate to={ROUTE_PATHS.workflow.batches} replace /> },
-            { path: 'workflow/batches', element: <WorkflowPage /> },
-            { path: 'artifact/products/:id', element: <ProductDetailPage /> },
-            { path: 'artifact', element: <Navigate to={ROUTE_PATHS.artifact.products} replace /> },
-            { path: 'artifact/:section', element: <ArtifactPage /> },
-            { path: 'inventory/*', element: <InventoryDataLegacyRedirect /> },
-            { path: 'data/*', element: <InventoryDataLegacyRedirect /> },
-            {
-              path: 'batches',
-              element: <RedirectPreserveSearch to={ROUTE_PATHS.workflow.batches} />,
-            },
-            { path: 'products/:id', element: <ProductIdLegacyRedirect /> },
-            {
-              path: 'products',
-              element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.products} />,
-            },
-            { path: 'files', element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.files} /> },
-            { path: 'projects', element: <ProjectsPage /> },
-            { path: 'monitor', element: <MonitorPage /> },
-            { path: 'store', element: <StorePage /> },
-            { path: 'docker', element: <DockerPage /> },
-            { path: 'firewall', element: <FirewallPage /> },
-            { path: 'vhost', element: <VhostPage /> },
-            {
-              path: 'databases',
-              element: <Navigate to={ROUTE_PATHS.databases.engine()} replace />,
-            },
-            { path: 'databases/:section', element: <DatabasesPage /> },
-            {
-              path: 'logs',
-              element: <RedirectPreserveSearch to={ROUTE_PATHS.debug.section('logs')} />,
-            },
-            {
-              path: 'debug',
-              element: <Navigate to={debugPath('logs')} replace />,
-            },
-            { path: 'debug/:section?', element: <DebugPage /> },
-            { path: 'health', element: <HealthPage /> },
-            { path: 'guides', element: <GuidesPage /> },
-            { path: 'support', element: <SupportPage /> },
-            { path: 'roadmap/:feature', element: <RoadmapPage /> },
-            {
-              path: 'agent/telegram',
-              element: <Navigate to={integratePath('telegram')} replace />,
-            },
-            {
-              path: 'agent/tools',
-              element: <Navigate to={debugPath('tools')} replace />,
-            },
-            { path: 'agent/:section?', element: <AgentPage /> },
-            { path: 'integrate/:section?', element: <IntegratePage /> },
-            { path: 'service/:section', element: <ServiceSectionLegacyRedirect /> },
-            { path: 'service', element: <Navigate to={ROUTE_PATHS.home} replace /> },
-            { path: 'settings/service', element: <Navigate to={ROUTE_PATHS.health} replace /> },
-            { path: 'settings', element: <Navigate to={settingsPath()} replace /> },
-            { path: 'settings/:section?', element: <SettingsPage /> },
-            { path: '*', element: <NotFoundPage /> },
-          ],
-        },
-      ],
-    },
-    { path: '*', element: <NotFoundPage /> },
-  ],
-  { basename: getRouterBasename() },
-)
+function createAppRouter() {
+  return createBrowserRouter(
+    [
+      {
+        element: <GuestGuard />,
+        children: [{ path: ROUTE_PATHS.login, element: <LoginPage /> }],
+      },
+      {
+        element: <AuthGuard />,
+        children: [
+          {
+            path: 'projects/:projectId',
+            element: <ProjectShell />,
+            children: [
+              { index: true, element: <ProjectPage /> },
+              { path: ':section', element: <ProjectPage /> },
+            ],
+          },
+          {
+            path: ROUTE_PATHS.home,
+            element: <AppShell />,
+            children: [
+              { index: true, element: <DashboardPage /> },
+              { path: 'workflow', element: <Navigate to={ROUTE_PATHS.workflow.batches} replace /> },
+              { path: 'workflow/batches', element: <WorkflowPage /> },
+              { path: 'artifact/products/:id', element: <ProductDetailPage /> },
+              {
+                path: 'artifact',
+                element: <Navigate to={ROUTE_PATHS.artifact.products} replace />,
+              },
+              { path: 'artifact/:section', element: <ArtifactPage /> },
+              { path: 'inventory/*', element: <InventoryDataLegacyRedirect /> },
+              { path: 'data/*', element: <InventoryDataLegacyRedirect /> },
+              {
+                path: 'batches',
+                element: <RedirectPreserveSearch to={ROUTE_PATHS.workflow.batches} />,
+              },
+              { path: 'products/:id', element: <ProductIdLegacyRedirect /> },
+              {
+                path: 'products',
+                element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.products} />,
+              },
+              {
+                path: 'files',
+                element: <RedirectPreserveSearch to={ROUTE_PATHS.artifact.files} />,
+              },
+              { path: 'projects', element: <ProjectsPage /> },
+              { path: 'monitor', element: <MonitorPage /> },
+              { path: 'store', element: <StorePage /> },
+              { path: 'docker', element: <DockerPage /> },
+              { path: 'firewall', element: <FirewallPage /> },
+              { path: 'vhost', element: <VhostPage /> },
+              {
+                path: 'databases',
+                element: <Navigate to={ROUTE_PATHS.databases.engine()} replace />,
+              },
+              { path: 'databases/:section', element: <DatabasesPage /> },
+              {
+                path: 'logs',
+                element: <RedirectPreserveSearch to={ROUTE_PATHS.debug.section('logs')} />,
+              },
+              {
+                path: 'debug',
+                element: <Navigate to={debugPath('logs')} replace />,
+              },
+              { path: 'debug/:section?', element: <DebugPage /> },
+              { path: 'health', element: <HealthPage /> },
+              { path: 'guides', element: <GuidesPage /> },
+              { path: 'support', element: <SupportPage /> },
+              { path: 'roadmap/:feature', element: <RoadmapPage /> },
+              {
+                path: 'agent/telegram',
+                element: <Navigate to={integratePath('telegram')} replace />,
+              },
+              {
+                path: 'agent/tools',
+                element: <Navigate to={debugPath('tools')} replace />,
+              },
+              { path: 'agent/:section?', element: <AgentPage /> },
+              { path: 'integrate/:section?', element: <IntegratePage /> },
+              { path: 'service/:section', element: <ServiceSectionLegacyRedirect /> },
+              { path: 'service', element: <Navigate to={ROUTE_PATHS.home} replace /> },
+              { path: 'settings/service', element: <Navigate to={ROUTE_PATHS.health} replace /> },
+              { path: 'settings', element: <Navigate to={settingsPath()} replace /> },
+              { path: 'settings/:section?', element: <SettingsPage /> },
+              { path: '*', element: <NotFoundPage /> },
+            ],
+          },
+        ],
+      },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+    { basename: getRouterBasename() },
+  )
+}
 
 export function AppRouter() {
+  const router = useMemo(() => createAppRouter(), [])
   return <RouterProvider router={router} />
 }
 
