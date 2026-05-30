@@ -45,23 +45,12 @@ def nginx_site(
     server_name: str = "_",
     upstream_port: int = DEFAULT_PANEL_PORT,
     ssl: bool = False,
+    redirect_http: bool = True,
+    cert_path: str = "/etc/letsencrypt/live/{name}/fullchain.pem",
+    key_path: str = "/etc/letsencrypt/live/{name}/privkey.pem",
 ) -> str:
-    if ssl:
-        listen = (
-            "listen 443 ssl http2;\n"
-            "    ssl_certificate     /path/to/fullchain.pem;\n"
-            "    ssl_certificate_key /path/to/privkey.pem;"
-        )
-    else:
-        listen = "listen 80;"
-    return f"""# Reverse proxy for Cross-Border panel (place in sites-enabled)
-server {{
-    {listen}
-    server_name {server_name};
-
-    client_max_body_size 32m;
-
-    location / {{
+    name = server_name
+    proxy = f"""    location / {{
         proxy_pass http://127.0.0.1:{upstream_port};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -71,7 +60,41 @@ server {{
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_read_timeout 300s;
-    }}
+    }}"""
+    if ssl:
+        cert = cert_path.format(name=name)
+        key = key_path.format(name=name)
+        blocks = [
+            f"""# HTTPS — Cross-Border panel
+server {{
+    listen 443 ssl http2;
+    server_name {name};
+    ssl_certificate     {cert};
+    ssl_certificate_key {key};
+    client_max_body_size 32m;
+
+{proxy}
+}}""",
+        ]
+        if redirect_http:
+            blocks.insert(
+                0,
+                f"""# HTTP → HTTPS redirect
+server {{
+    listen 80;
+    server_name {name};
+    return 301 https://$host$request_uri;
+}}""",
+            )
+        return "\n\n".join(blocks) + "\n"
+
+    return f"""# HTTP reverse proxy — Cross-Border panel
+server {{
+    listen 80;
+    server_name {name};
+    client_max_body_size 32m;
+
+{proxy}
 }}
 """
 

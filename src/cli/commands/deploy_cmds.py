@@ -431,6 +431,61 @@ def deploy_nginx(
     console.print("[dim]Include in nginx sites-enabled, then nginx -t && reload[/dim]")
 
 
+@deploy_app.command("https")
+def deploy_https(
+    server_name: str = typer.Option(
+        ...,
+        "--server-name",
+        "-n",
+        help="Domain (DNS A record → server IP)",
+    ),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Panel upstream port (default 8787)",
+    ),
+    certbot: bool = typer.Option(
+        True,
+        "--certbot/--no-certbot",
+        help="Run certbot --nginx when certbot is installed",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Write nginx config here instead of /etc/nginx",
+    ),
+) -> None:
+    """
+    Put nginx in front of the panel for HTTPS (host-panel style: panel on :8787, TLS on :443).
+
+    Requires DNS pointing to the server and cloud security group allowing TCP 80 + 443.
+    """
+    from deploy.nginx_setup import setup_https_reverse_proxy
+
+    settings = get_settings()
+    upstream = port or settings.panel_port
+    result = setup_https_reverse_proxy(
+        server_name,
+        upstream_port=upstream,
+        certbot=certbot,
+        output_path=output,
+    )
+    for line in result.get("messages", []):
+        console.print(ok(line))
+    for line in result.get("warnings", []):
+        console.print(warn(line))
+    console.print()
+    console.print("[bold]Cloud firewall[/bold]")
+    for step in result.get("cloud_steps", []):
+        console.print(f"  • {step}")
+    console.print()
+    console.print(hint(f"Login URL: {result.get('login_url', '')}"))
+    if not result.get("ok"):
+        raise typer.Exit(1)
+
+
 def plat_writeable(path: Path) -> bool:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)

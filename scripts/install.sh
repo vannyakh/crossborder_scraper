@@ -60,6 +60,11 @@ detect_install_profile() {
     INSTALL_PROFILE="wwwroot"
     return
   fi
+  # Host panel wwwroot layout (/www/wwwroot) — same site tree as common Linux host panels
+  if [[ "$(uname -s)" == "Linux" && -d /www/wwwroot && "${CROSSBORDER_HOME_INSTALL:-}" != "1" ]]; then
+    INSTALL_PROFILE="wwwroot"
+    return
+  fi
   if [[ "${CROSSBORDER_SERVER:-}" == "1" ]]; then
     INSTALL_PROFILE="server"
     return
@@ -725,10 +730,14 @@ print(ips[0] if ips else '')
   if [[ -n "${login_public}" ]]; then
     echo "  VPS public access (if browser cannot connect):"
     echo "    1. Cloud security group: allow inbound TCP ${port} to this server"
+    echo "       (HTTPS with domain: also allow TCP 80 and TCP 443)"
     echo "    2. Host firewall: sudo ufw allow ${port}/tcp  (or: crossborder deploy firewall)"
     echo "    3. Panel binds 0.0.0.0 — check: ss -tln | grep ${port}"
     echo "    4. Test: curl -sI http://127.0.0.1:${port}/health"
     [[ -n "${ext_host}" ]] && echo "    5. From your PC: curl -sI http://${ext_host}:${port}/health"
+    echo ""
+    echo "  HTTPS (recommended for production — nginx + Let's Encrypt):"
+    echo "    crossborder deploy https -n panel.yourdomain.com"
     echo ""
   fi
   if [[ -n "${username}" && -n "${password}" ]]; then

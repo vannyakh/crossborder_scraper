@@ -95,6 +95,42 @@ If that works but your PC cannot reach the public IP:
 
 Panel: **Settings → Network & firewall**.
 
+### HTTPS with a domain (production)
+
+Same pattern as common Linux host panels: panel listens on **127.0.0.1:8787**, **nginx** terminates TLS on **443**.
+
+1. Point DNS **A record** → your server public IP
+2. Cloud security group: allow **TCP 80** and **TCP 443** (and **8787** only if you want direct HTTP access)
+3. On the server:
+
+```bash
+sudo crossborder deploy https -n panel.yourdomain.com
+```
+
+This writes an nginx site, opens host firewall ports, and runs **certbot** when installed.
+
+Manual nginx template only:
+
+```bash
+crossborder deploy nginx -n panel.yourdomain.com --ssl -o deploy/nginx-panel.conf
+```
+
+Login: `https://panel.yourdomain.com/ui/login`
+
+### wwwroot co-install (host panel servers)
+
+If `/www/wwwroot` already exists (typical on host-panel VPS), the installer auto-selects **wwwroot profile** and installs to:
+
+```text
+/www/wwwroot/crossborder_scraper/
+```
+
+Or force it:
+
+```bash
+curl -fsSL .../install.sh | sudo env CROSSBORDER_VPS=1 bash
+```
+
 ---
 
 ## Optional environment variables
