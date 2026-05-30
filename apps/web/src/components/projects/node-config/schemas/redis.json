@@ -1,0 +1,66 @@
+{
+  "kind": "redis",
+  "defaultTab": "source",
+  "tabs": [
+    { "id": "source", "labelKey": "projects.config.tabs.source" },
+    { "id": "network", "labelKey": "projects.config.tabs.network" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "source",
+      "labelKey": "projects.config.sections.source",
+      "tab": "source",
+      "fields": [
+        {
+          "id": "img",
+          "labelKey": "projects.config.sourceImage",
+          "type": "image",
+          "resolve": "image"
+        },
+        {
+          "id": "vol",
+          "labelKey": "projects.config.fields.volume",
+          "type": "mono",
+          "bind": "detail",
+          "editable": true
+        },
+        {
+          "id": "replicas",
+          "labelKey": "projects.config.fields.replicas",
+          "type": "text",
+          "optionKey": "replicas",
+          "editable": true,
+          "placeholderKey": "projects.config.replicasPlaceholder"
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "labelKey": "projects.config.sections.networking",
+      "tab": "network",
+      "fields": [
+        {
+          "id": "url",
+          "labelKey": "projects.config.publicNetworking",
+          "type": "url",
+          "bind": "host",
+          "editable": true
+        }
+      ]
+    },
+    {
+      "id": "danger",
+      "labelKey": "projects.config.sections.danger",
+      "tab": "settings",
+      "fields": [
+        {
+          "id": "hint",
+          "labelKey": "projects.config.dangerHint",
+          "type": "hint",
+          "resolve": "label"
+        }
+      ]
+    }
+  ]
+}

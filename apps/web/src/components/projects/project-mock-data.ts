@@ -85,6 +85,19 @@ function finalizeProject(
 
 const CATALOG_PIPELINE_NODES: ProjectNode[] = [
   {
+    id: 'cp-note-welcome',
+    kind: 'sticky',
+    role: 'note',
+    label: 'Workflow ready',
+    noteBody:
+      '✅ This demo workflow is ready to use\n✨ Supports **markdown**, *italic*, and lists',
+    noteColor: 'purple',
+    noteWidth: 300,
+    noteHeight: 120,
+    x: 40,
+    y: 24,
+  },
+  {
     id: 'cp-schedule',
     kind: 'schedule',
     role: 'trigger',
@@ -103,6 +116,8 @@ const CATALOG_PIPELINE_NODES: ProjectNode[] = [
     detail: 'postgres-catalog',
     host: 'gateway-tools',
     status: 'online',
+    agentPrompt:
+      'Review scraped catalog items and summarize changes for export.\nUse **batch-ops** when the operator asks for bulk actions.',
     x: 280,
     y: 180,
   },
@@ -113,6 +128,7 @@ const CATALOG_PIPELINE_NODES: ProjectNode[] = [
     label: 'Batch scrape',
     subtitle: '1688 · taobao',
     status: 'online',
+    options: { marketplace: 'both' },
     x: 560,
     y: 180,
   },
@@ -124,6 +140,7 @@ const CATALOG_PIPELINE_NODES: ProjectNode[] = [
     subtitle: 'shopee · lazada',
     host: 'export-review',
     status: 'online',
+    options: { exportTarget: 'both' },
     x: 800,
     y: 180,
   },
@@ -180,6 +197,7 @@ const TELEGRAM_OPS_NODES: ProjectNode[] = [
     subtitle: 'integrate: telegram',
     host: '/integrate/telegram/inbound',
     status: 'online',
+    options: { webhookActive: true },
     x: 40,
     y: 200,
   },

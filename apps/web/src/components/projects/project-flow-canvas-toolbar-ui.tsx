@@ -1,4 +1,5 @@
 import { Box, IconButton, Text, VStack } from '@chakra-ui/react'
+import { Tooltip } from '@/components/ui/tooltip'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useAccentPalette } from '../../hooks/use-ui-config'
@@ -150,6 +151,8 @@ export function FlowCanvasToolbarActionGroup({
     label: string
     icon: LucideIcon
     onClick: () => void
+    active?: boolean
+    badge?: number
   }>
 }) {
   return (
@@ -157,9 +160,27 @@ export function FlowCanvasToolbarActionGroup({
       {items.map((item, index) => (
         <Box key={item.key} display="contents">
           {index > 0 ? <FlowCanvasToolbarDivider /> : null}
-          <FlowCanvasToolbarButton aria-label={item.label} onClick={item.onClick}>
-            <item.icon size={16} strokeWidth={1.75} />
-          </FlowCanvasToolbarButton>
+          <Tooltip
+            content={item.label}
+            positioning={{ placement: 'top' }}
+            openDelay={200}
+            showArrow
+          >
+            <Box position="relative" display="inline-flex">
+              <FlowCanvasToolbarButton
+                aria-label={item.label}
+                active={item.active}
+                onClick={item.onClick}
+              >
+                <item.icon size={16} strokeWidth={1.75} />
+              </FlowCanvasToolbarButton>
+              {item.badge != null && item.badge > 0 ? (
+                <Box className="project-flow-console__toolbar-badge" aria-hidden>
+                  {item.badge > 99 ? '99+' : item.badge}
+                </Box>
+              ) : null}
+            </Box>
+          </Tooltip>
         </Box>
       ))}
     </FlowCanvasToolbarPill>

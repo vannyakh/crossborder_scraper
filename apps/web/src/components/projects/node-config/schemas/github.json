@@ -1,0 +1,59 @@
+{
+  "kind": "github",
+  "defaultTab": "source",
+  "tabs": [
+    { "id": "source", "labelKey": "projects.config.tabs.source" },
+    { "id": "network", "labelKey": "projects.config.tabs.network" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "source",
+      "labelKey": "projects.config.sections.source",
+      "tab": "source",
+      "fields": [
+        {
+          "id": "repo",
+          "labelKey": "projects.config.fields.repository",
+          "type": "mono",
+          "bind": "host",
+          "editable": true
+        },
+        {
+          "id": "branch",
+          "labelKey": "projects.config.fields.branch",
+          "type": "mono",
+          "bind": "subtitle",
+          "editable": true
+        }
+      ]
+    },
+    {
+      "id": "deploy",
+      "labelKey": "projects.config.sections.deploy",
+      "tab": "source",
+      "fields": [
+        {
+          "id": "img",
+          "labelKey": "projects.config.sourceImage",
+          "type": "image",
+          "resolve": "image"
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "labelKey": "projects.config.sections.networking",
+      "tab": "network",
+      "fields": [
+        {
+          "id": "url",
+          "labelKey": "projects.config.fields.siteUrl",
+          "type": "url",
+          "bind": "host",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

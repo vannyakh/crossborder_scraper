@@ -1,6 +1,6 @@
 import '@xyflow/react/dist/style.css'
 
-import { Box, Button, HStack } from '@chakra-ui/react'
+import { Box, Button } from '@chakra-ui/react'
 import {
   Background,
   BackgroundVariant,
@@ -28,11 +28,16 @@ import { useAccentPalette, useColorMode } from '../../hooks/use-ui-config'
 import { notifySuccess } from '../../lib/toast'
 import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
 import { ProjectAddNodePanel } from './ProjectAddNodePanel'
+import { ProjectFlowCanvasActionBar } from './ProjectFlowCanvasActionBar'
+import { ProjectFlowCanvasSplitter } from './ProjectFlowCanvasSplitter'
 import { ProjectFlowCanvasToolbar, type FlowCanvasMenuId } from './ProjectFlowCanvasToolbar'
 import { ProjectFlowConfigEdge } from './ProjectFlowConfigEdge'
 import { ProjectFlowExplorerPanel } from './ProjectFlowExplorerPanel'
 import { ProjectFlowMainEdge } from './ProjectFlowMainEdge'
 import { ProjectFlowNode } from './ProjectFlowNode'
+import { ProjectFlowRemoveNodeDialog } from './ProjectFlowRemoveNodeDialog'
+import { ProjectFlowStickyNode } from './ProjectFlowStickyNode'
+import { ProjectFlowStickyPortal } from './ProjectFlowStickyPortal'
 import { ProjectNodeConfigPanel } from './ProjectNodeConfigPanel'
 import { ProjectFlowActionsProvider } from './project-flow-actions-context'
 import {
@@ -53,18 +58,27 @@ import {
   isValidMainConnection,
   mainConnectionToEdge,
 } from './project-flow-connect'
-import { insertMainNodeAfter } from './project-flow-insert'
-import type {
-  ProjectFlowNodeData,
-  ProjectServiceEdge,
-  ProjectServiceNode,
-} from './project-flow-types'
-import { projectDetailToFlow } from './project-flow-utils'
-import { createProjectNode, duplicateProjectNode } from './project-node-factory'
+import { buildNodeConsoleLines } from './project-flow-console'
+import { ProjectFlowConsoleProvider } from './project-flow-console-context'
+import { insertMainNodeAfter, insertMainNodeBetween } from './project-flow-insert'
+import type { ProjectServiceEdge, ProjectServiceNode } from './project-flow-types'
+import {
+  preserveFlowNodeUiState,
+  projectDetailToFlow,
+  projectFlowOptionsSignature,
+  projectFlowStructureSignature,
+} from './project-flow-utils'
+import {
+  createProjectNode,
+  createStickyNote,
+  duplicateProjectNode,
+  isWorkflowNode,
+} from './project-node-factory'
 import type { AgentSlotIndex, ProjectNode, ProjectNodeKind } from './project-sample-data'
 import { buildFlowExecutionPlan } from './project-workflow-graph'
+import { useFlowConsole } from './use-flow-console'
 
-const nodeTypes = { workflow: ProjectFlowNode }
+const nodeTypes = { workflow: ProjectFlowNode, sticky: ProjectFlowStickyNode }
 const edgeTypes = { workflow: ProjectFlowMainEdge, config: ProjectFlowConfigEdge }
 
 function ProjectFlowCanvasInner() {
@@ -72,12 +86,18 @@ function ProjectFlowCanvasInner() {
   const accentPalette = useAccentPalette()
   const colorMode = useColorMode()
   const { project, setProject, running, setRunning } = useProjectWorkspace()
+  const flowConsole = useFlowConsole()
+  const flowConsoleRef = useRef(flowConsole)
+  useEffect(() => {
+    flowConsoleRef.current = flowConsole
+  })
   const { fitView, zoomIn, zoomOut } = useReactFlow()
   const motionEnabled = useMotionEnabled()
   const panelTransition = useMotionTransition(0.28)
   const backdropTransition = useMotionTransition(0.22)
 
-  const [selectedNode, setSelectedNode] = useState<ProjectNode | null>(null)
+  const [focusedNode, setFocusedNode] = useState<ProjectNode | null>(null)
+  const [configNode, setConfigNode] = useState<ProjectNode | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [activeNodeId, setActiveNodeId] = useState<string | null>(project.nodes[0]?.id ?? null)
   const [canvasOptions, setCanvasOptions] = useState<ProjectFlowCanvasOptions>(
@@ -85,18 +105,30 @@ function ProjectFlowCanvasInner() {
   )
   const [openMenu, setOpenMenu] = useState<FlowCanvasMenuId>(null)
   const [insertAfterNodeId, setInsertAfterNodeId] = useState<string | null>(null)
+  const [insertBetween, setInsertBetween] = useState<{
+    sourceId: string
+    targetId: string
+  } | null>(null)
   const [insertConfigSlot, setInsertConfigSlot] = useState<{
     agentId: string
     slotIndex: AgentSlotIndex
   } | null>(null)
   const [completedNodeIds, setCompletedNodeIds] = useState<string[]>([])
+  const [runSuccessNodeIds, setRunSuccessNodeIds] = useState<string[]>([])
   const [explorerOpen, setExplorerOpen] = useState(true)
   const [runningStepIndex, setRunningStepIndex] = useState<number | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<ProjectNode | null>(null)
+  const [stickyEditId, setStickyEditId] = useState<string | null>(null)
   const layoutBaselineRef = useRef(snapshotNodePositions(project))
+  const layoutSyncGenRef = useRef(0)
+  const flowSyncRef = useRef({ structure: '', options: '', layoutGen: -1 })
   const runStepRef = useRef(0)
+  const runFinishedRef = useRef(false)
+  const runWasActiveRef = useRef(false)
+  const lastLoggedStepRef = useRef<number | null>(null)
   const connectDragRef = useRef<{ nodeId: string; x: number; y: number } | null>(null)
 
-  const configOpen = Boolean(selectedNode)
+  const configOpen = Boolean(configNode)
   const sidePanelOpen = configOpen || addOpen
 
   useEffect(() => {
@@ -104,15 +136,24 @@ function ProjectFlowCanvasInner() {
   }, [project.id])
 
   const completedSet = useMemo(() => new Set(completedNodeIds), [completedNodeIds])
+  const runSuccessSet = useMemo(() => new Set(runSuccessNodeIds), [runSuccessNodeIds])
+  const displayCompletedSet = useMemo(() => {
+    if (running && completedSet.size > 0) return completedSet
+    if (!running && runSuccessSet.size > 0) return runSuccessSet
+    return undefined
+  }, [running, completedSet, runSuccessSet])
+  const runSucceeded = !running && runSuccessSet.size > 0
 
   const flowOptions = useMemo(
     () => ({
       runningNodeId: running ? activeNodeId : null,
-      completedNodeIds: running ? completedSet : undefined,
+      completedNodeIds: displayCompletedSet,
+      runSucceeded,
       canvas: canvasOptions,
       showVariableRefs: canvasOptions.showVariableRefs,
+      stickyEditId,
     }),
-    [running, activeNodeId, completedSet, canvasOptions],
+    [running, activeNodeId, displayCompletedSet, runSucceeded, canvasOptions, stickyEditId],
   )
 
   const initial = useMemo(() => projectDetailToFlow(project, flowOptions), [project, flowOptions])
@@ -121,8 +162,18 @@ function ProjectFlowCanvasInner() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges)
 
   useEffect(() => {
+    const structure = projectFlowStructureSignature(project)
+    const options = projectFlowOptionsSignature(flowOptions)
+    const layoutGen = layoutSyncGenRef.current
+    const prev = flowSyncRef.current
+
+    if (prev.structure === structure && prev.options === options && prev.layoutGen === layoutGen) {
+      return
+    }
+
+    flowSyncRef.current = { structure, options, layoutGen }
     const next = projectDetailToFlow(project, flowOptions)
-    setNodes(next.nodes)
+    setNodes((current) => preserveFlowNodeUiState(current, next.nodes))
     setEdges(next.edges)
   }, [project, flowOptions, setNodes, setEdges])
 
@@ -141,21 +192,44 @@ function ProjectFlowCanvasInner() {
 
   useEffect(() => {
     if (!running) {
-      setCompletedNodeIds([])
+      if (runWasActiveRef.current && !runFinishedRef.current) {
+        flowConsoleRef.current.appendLine(t('projects.flowConsole.runStopped'), 'warn')
+        setRunSuccessNodeIds([])
+      }
+      runWasActiveRef.current = false
+      runFinishedRef.current = false
+      lastLoggedStepRef.current = null
       runStepRef.current = 0
       runPlanRef.current = []
-      setRunningStepIndex(null)
-      return
+      const frame = window.requestAnimationFrame(() => {
+        setCompletedNodeIds([])
+        setRunningStepIndex(null)
+      })
+      return () => window.cancelAnimationFrame(frame)
     }
+
+    runWasActiveRef.current = true
+    runFinishedRef.current = false
+    lastLoggedStepRef.current = null
 
     const plan = buildFlowExecutionPlan(project)
     runPlanRef.current = plan
-    if (plan.length === 0) return
+    flowConsoleRef.current.clearConsole()
+    flowConsoleRef.current.expandConsole()
+    flowConsoleRef.current.setFilterNodeId(null)
+    flowConsoleRef.current.appendLine(t('projects.flowConsole.runStarted'))
+
+    if (plan.length === 0) {
+      flowConsoleRef.current.appendLine(t('projects.flowConsole.runEmpty'), 'warn')
+      return
+    }
 
     runStepRef.current = 0
-    setCompletedNodeIds([])
-    setRunningStepIndex(0)
-    setActiveNodeId(plan[0].nodeId)
+    const frame = window.requestAnimationFrame(() => {
+      setCompletedNodeIds([])
+      setRunningStepIndex(0)
+      setActiveNodeId(plan[0].nodeId)
+    })
 
     const timer = window.setInterval(() => {
       const index = runStepRef.current
@@ -178,40 +252,123 @@ function ProjectFlowCanvasInner() {
       }
     }, 750)
 
-    return () => window.clearInterval(timer)
-  }, [running, project])
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearInterval(timer)
+    }
+  }, [running, project, t])
+
+  useEffect(() => {
+    if (!running || runningStepIndex === null) return
+    if (lastLoggedStepRef.current === runningStepIndex) return
+    lastLoggedStepRef.current = runningStepIndex
+
+    const step = runPlanRef.current[runningStepIndex]
+    if (!step) return
+    const node = project.nodes.find((n) => n.id === step.nodeId)
+    if (node) {
+      flowConsoleRef.current.appendLines(buildNodeConsoleLines(node, step.phase))
+    }
+  }, [running, runningStepIndex, project.nodes])
+
+  useEffect(() => {
+    if (!running || runningStepIndex !== null) return
+    if (runPlanRef.current.length === 0) return
+    if (runFinishedRef.current) return
+    runFinishedRef.current = true
+    setRunSuccessNodeIds(runPlanRef.current.map((step) => step.nodeId))
+    flowConsoleRef.current.appendLine(
+      t('projects.flowConsole.runComplete', { count: String(runPlanRef.current.length) }),
+      'success',
+    )
+    setRunning(false)
+  }, [running, runningStepIndex, t, setRunning])
 
   const onNodeClick: NodeMouseHandler = useCallback((_event, flowNode) => {
-    const data = flowNode.data as ProjectFlowNodeData | undefined
+    const data = flowNode.data as { node?: ProjectNode } | undefined
     if (!data?.node) return
     setAddOpen(false)
+    setConfigNode(null)
     setActiveNodeId(flowNode.id)
-    setSelectedNode(data.node)
+    setFocusedNode(data.node)
   }, [])
 
   const closeConfig = useCallback(() => {
-    setSelectedNode(null)
+    setConfigNode(null)
+  }, [])
+
+  const clearFocus = useCallback(() => {
+    setFocusedNode(null)
   }, [])
 
   const closeAdd = useCallback(() => {
     setAddOpen(false)
     setInsertAfterNodeId(null)
+    setInsertBetween(null)
     setInsertConfigSlot(null)
   }, [])
 
   const openAdd = useCallback(() => {
+    clearFocus()
     closeConfig()
     setInsertAfterNodeId(null)
+    setInsertBetween(null)
     setInsertConfigSlot(null)
     setAddOpen(true)
-  }, [closeConfig])
+  }, [clearFocus, closeConfig])
+
+  const addStickyNote = useCallback(() => {
+    const note = createStickyNote(project.nodes, t('projects.sticky.defaultTitle'))
+    setProject((prev) => ({
+      ...prev,
+      nodes: [...prev.nodes, note],
+    }))
+    setAddOpen(false)
+    setConfigNode(null)
+    setActiveNodeId(note.id)
+    setFocusedNode(note)
+    notifySuccess(t('projects.sticky.added'))
+  }, [project.nodes, setProject, t])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 's' || !event.shiftKey || event.metaKey || event.ctrlKey) {
+        return
+      }
+      const target = event.target as HTMLElement | null
+      if (
+        target?.closest('input, textarea, [contenteditable="true"], [role="dialog"]') ||
+        addOpen ||
+        configOpen
+      ) {
+        return
+      }
+      event.preventDefault()
+      addStickyNote()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [addOpen, addStickyNote, configOpen])
 
   const openAddAfter = useCallback(
     (nodeId: string) => {
       closeConfig()
       setInsertAfterNodeId(nodeId)
+      setInsertBetween(null)
       setInsertConfigSlot(null)
       setActiveNodeId(nodeId)
+      setAddOpen(true)
+    },
+    [closeConfig],
+  )
+
+  const openAddBetween = useCallback(
+    (sourceId: string, targetId: string) => {
+      closeConfig()
+      setInsertAfterNodeId(null)
+      setInsertBetween({ sourceId, targetId })
+      setInsertConfigSlot(null)
+      setActiveNodeId(targetId)
       setAddOpen(true)
     },
     [closeConfig],
@@ -221,11 +378,25 @@ function ProjectFlowCanvasInner() {
     (agentId: string, slotIndex: AgentSlotIndex) => {
       closeConfig()
       setInsertAfterNodeId(null)
+      setInsertBetween(null)
       setInsertConfigSlot({ agentId, slotIndex })
       setActiveNodeId(agentId)
       setAddOpen(true)
     },
     [closeConfig],
+  )
+
+  const removeEdge = useCallback(
+    (edgeId: string) => {
+      const removed = project.edges.find((e) => e.id === edgeId)
+      if (!removed) return
+      setProject((prev) => ({
+        ...prev,
+        edges: prev.edges.filter((e) => e.id !== edgeId),
+      }))
+      notifySuccess(t('projects.flow.edgeRemoved'))
+    },
+    [project.edges, setProject, t],
   )
 
   const handleAddNode = useCallback(
@@ -260,8 +431,37 @@ function ProjectFlowCanvasInner() {
           setAddOpen(false)
           setInsertConfigSlot(null)
           setActiveNodeId(node.id)
-          setSelectedNode(node)
+          setFocusedNode(node)
+          setConfigNode(null)
           notifySuccess(t('projects.flow.pluginLinked', { name: label }))
+          return
+        }
+      }
+
+      // --- Main-path insert between two linked steps ---
+      if (insertBetween) {
+        const inserted = insertMainNodeBetween(
+          project,
+          insertBetween.sourceId,
+          insertBetween.targetId,
+          kind,
+          label,
+        )
+        if (inserted) {
+          const { node, edges, removeEdgeId } = inserted
+          setProject((prev) => ({
+            ...prev,
+            nodes: [...prev.nodes, node],
+            edges: [...prev.edges.filter((e) => e.id !== removeEdgeId), ...edges],
+            servicesTotal: prev.servicesTotal + 1,
+            previewNodes: [...prev.previewNodes, node].slice(-3),
+          }))
+          setAddOpen(false)
+          setInsertBetween(null)
+          setActiveNodeId(node.id)
+          setFocusedNode(node)
+          setConfigNode(null)
+          notifySuccess(t('projects.flow.stepLinked', { type: label }))
           return
         }
       }
@@ -281,7 +481,8 @@ function ProjectFlowCanvasInner() {
           setAddOpen(false)
           setInsertAfterNodeId(null)
           setActiveNodeId(node.id)
-          setSelectedNode(node)
+          setFocusedNode(node)
+          setConfigNode(null)
           notifySuccess(t('projects.flow.stepLinked', { type: label }))
           return
         }
@@ -291,16 +492,18 @@ function ProjectFlowCanvasInner() {
       setProject((prev) => ({
         ...prev,
         nodes: [...prev.nodes, node],
-        servicesTotal: prev.servicesTotal + 1,
+        servicesTotal: isWorkflowNode(node) ? prev.servicesTotal + 1 : prev.servicesTotal,
         previewNodes: [...prev.previewNodes, node].slice(-3),
       }))
       setAddOpen(false)
       setInsertAfterNodeId(null)
+      setInsertBetween(null)
       setActiveNodeId(node.id)
-      setSelectedNode(node)
+      setFocusedNode(node)
+      setConfigNode(null)
       notifySuccess(t('projects.addNode.added', { type: label }))
     },
-    [insertAfterNodeId, insertConfigSlot, project, setProject, t],
+    [insertAfterNodeId, insertBetween, insertConfigSlot, project, setProject, t],
   )
 
   const isValidConnection = useCallback<IsValidConnection<ProjectServiceEdge>>(
@@ -390,10 +593,11 @@ function ProjectFlowCanvasInner() {
 
   const onPaneClick = useCallback(() => {
     setActiveNodeId(null)
+    clearFocus()
     closeConfig()
     closeAdd()
     setOpenMenu(null)
-  }, [closeConfig, closeAdd])
+  }, [clearFocus, closeConfig, closeAdd])
 
   const onNodeDragStop: OnNodeDrag<ProjectServiceNode> = useCallback(
     (_event, flowNode) => {
@@ -408,6 +612,7 @@ function ProjectFlowCanvasInner() {
   )
 
   const handleAutoLayout = useCallback(() => {
+    layoutSyncGenRef.current += 1
     setProject((prev) => ({
       ...prev,
       nodes: applyFlowAutoLayout(prev),
@@ -419,6 +624,7 @@ function ProjectFlowCanvasInner() {
   }, [setProject, t, fitView, motionEnabled])
 
   const handleResetCanvas = useCallback(() => {
+    layoutSyncGenRef.current += 1
     setProject((prev) => ({
       ...prev,
       nodes: restoreNodePositions(prev.nodes, layoutBaselineRef.current),
@@ -443,7 +649,8 @@ function ProjectFlowCanvasInner() {
       const node = project.nodes.find((n) => n.id === nodeId)
       if (node) {
         setAddOpen(false)
-        setSelectedNode(node)
+        setConfigNode(null)
+        setFocusedNode(node)
       }
       void fitView({
         nodes: [{ id: nodeId }],
@@ -455,6 +662,33 @@ function ProjectFlowCanvasInner() {
     [project.nodes, fitView, motionEnabled],
   )
 
+  const performRemoveNode = useCallback(
+    (nodeId: string) => {
+      const removed = project.nodes.find((n) => n.id === nodeId)
+      setProject((prev) => ({
+        ...prev,
+        nodes: prev.nodes.filter((n) => n.id !== nodeId),
+        edges: prev.edges.filter((e) => e.from !== nodeId && e.to !== nodeId),
+        servicesTotal:
+          removed && isWorkflowNode(removed)
+            ? Math.max(0, prev.servicesTotal - 1)
+            : prev.servicesTotal,
+        previewNodes: prev.previewNodes.filter((n) => n.id !== nodeId),
+      }))
+      if (focusedNode?.id === nodeId) {
+        clearFocus()
+      }
+      if (configNode?.id === nodeId) {
+        closeConfig()
+      }
+      setActiveNodeId((current) => (current === nodeId ? null : current))
+      if (removed) {
+        notifySuccess(t('projects.nodeMenu.removed', { name: removed.label }))
+      }
+    },
+    [project.nodes, focusedNode?.id, configNode?.id, setProject, clearFocus, closeConfig, t],
+  )
+
   const flowActions = useMemo(
     () => ({
       openNodeConfig: (nodeId: string) => {
@@ -462,7 +696,8 @@ function ProjectFlowCanvasInner() {
         if (!node) return
         setAddOpen(false)
         setActiveNodeId(nodeId)
-        setSelectedNode(node)
+        setFocusedNode(node)
+        setConfigNode(node)
       },
       duplicateNode: (nodeId: string) => {
         const source = project.nodes.find((n) => n.id === nodeId)
@@ -475,33 +710,36 @@ function ProjectFlowCanvasInner() {
           previewNodes: [...prev.previewNodes, copy].slice(-3),
         }))
         setActiveNodeId(copy.id)
-        setSelectedNode(copy)
+        setFocusedNode(copy)
+        setConfigNode(null)
         notifySuccess(t('projects.nodeMenu.duplicated', { name: source.label }))
       },
       removeNode: (nodeId: string) => {
-        const removed = project.nodes.find((n) => n.id === nodeId)
-        setProject((prev) => ({
-          ...prev,
-          nodes: prev.nodes.filter((n) => n.id !== nodeId),
-          edges: prev.edges.filter((e) => e.from !== nodeId && e.to !== nodeId),
-          servicesTotal: Math.max(0, prev.servicesTotal - 1),
-          previewNodes: prev.previewNodes.filter((n) => n.id !== nodeId),
-        }))
-        if (selectedNode?.id === nodeId) {
-          closeConfig()
-        }
-        setActiveNodeId((current) => (current === nodeId ? null : current))
-        if (removed) {
-          notifySuccess(t('projects.nodeMenu.removed', { name: removed.label }))
-        }
+        const node = project.nodes.find((n) => n.id === nodeId)
+        if (!node) return
+        setRemoveTarget(node)
       },
       openAddAfter,
+      openAddBetween,
       openSlotAdd,
+      removeEdge,
       executeStep: (nodeId: string) => {
+        const node = project.nodes.find((n) => n.id === nodeId)
+        if (!node) return
         setActiveNodeId(nodeId)
+        flowConsoleRef.current.expandConsole()
+        flowConsoleRef.current.setFilterNodeId(null)
+        flowConsoleRef.current.appendLine(
+          t('projects.flowConsole.stepStart', { name: node.label }),
+          'info',
+          node.id,
+          node.label,
+        )
+        flowConsoleRef.current.appendLines(buildNodeConsoleLines(node, 'single'))
         notifySuccess(t('projects.nodeMenu.executePreview'))
       },
       runWorkflow: () => {
+        setRunSuccessNodeIds([])
         setRunning(true)
       },
       toggleNodeActive: (nodeId: string) => {
@@ -536,6 +774,7 @@ function ProjectFlowCanvasInner() {
       },
       clearSelection: () => {
         setActiveNodeId(null)
+        clearFocus()
         closeConfig()
         setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
       },
@@ -550,25 +789,61 @@ function ProjectFlowCanvasInner() {
         const key = previewKeys[action]
         if (key) notifySuccess(t(key))
       },
+      beginStickyEdit: (nodeId: string) => {
+        setStickyEditId(nodeId)
+        const node = project.nodes.find((n) => n.id === nodeId)
+        if (node) {
+          setFocusedNode(node)
+          setActiveNodeId(nodeId)
+        }
+      },
+      endStickyEdit: () => setStickyEditId(null),
+      focusCanvasNode: (nodeId: string, options?: { openConfig?: boolean }) => {
+        const node = project.nodes.find((n) => n.id === nodeId)
+        if (!node) return
+        setAddOpen(false)
+        setActiveNodeId(nodeId)
+        setFocusedNode(node)
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: n.id === nodeId })))
+        void fitView({
+          nodes: [{ id: nodeId }],
+          padding: sidePanelOpen ? { top: 0.12, right: 0.38, bottom: 0.12, left: 0.08 } : 0.35,
+          duration: motionEnabled ? 280 : 0,
+        })
+        if (options?.openConfig) {
+          setConfigNode(node)
+        }
+      },
     }),
     [
       project.nodes,
-      selectedNode?.id,
       setProject,
       setNodes,
       closeConfig,
+      clearFocus,
       openAddAfter,
+      openAddBetween,
       openSlotAdd,
+      removeEdge,
       handleAutoLayout,
+      fitView,
+      motionEnabled,
+      sidePanelOpen,
       t,
     ],
   )
+
+  const liveConfigNode = useMemo(() => {
+    if (!configNode) return null
+    return project.nodes.find((n) => n.id === configNode.id) ?? configNode
+  }, [configNode, project.nodes])
 
   return (
     <ProjectFlowActionsProvider value={flowActions}>
       <Box
         className="project-flow-workspace"
         data-side-panel-open={sidePanelOpen ? '' : undefined}
+        data-run-succeeded={runSucceeded ? '' : undefined}
         position="relative"
         flex={1}
         minH={0}
@@ -576,170 +851,192 @@ function ProjectFlowCanvasInner() {
         w="100%"
         overflow="hidden"
         bg="bg.panel"
+        display="flex"
+        flexDirection="column"
       >
-        <Box className="project-flow-canvas-stage" position="absolute" inset={0}>
-          <Box className="project-flow-canvas-host" position="absolute" inset={0}>
-            <ReactFlow
-              className="project-flow-canvas"
-              style={{ width: '100%', height: '100%' }}
-              colorMode={colorMode}
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={handleEdgesChange}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              defaultEdgeOptions={{ type: 'workflow' }}
-              onNodeClick={onNodeClick}
-              onNodeDragStop={onNodeDragStop}
-              onPaneClick={onPaneClick}
-              fitView
-              fitViewOptions={{ padding: 0.4, maxZoom: 1 }}
-              minZoom={0.35}
-              maxZoom={1.5}
-              proOptions={{ hideAttribution: true }}
-              nodesConnectable
-              connectionMode={ConnectionMode.Strict}
-              isValidConnection={isValidConnection}
-              onConnect={onConnect}
-              onConnectStart={onConnectStart}
-              onConnectEnd={onConnectEnd}
-              connectOnClick={false}
-              connectionLineStyle={{
-                stroke: 'var(--project-flow-edge)',
-                strokeWidth: 1.5,
-                strokeDasharray: '6 4',
-              }}
-              elementsSelectable
-              panOnScroll
-              zoomOnScroll
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={20}
-                size={1}
-                color="var(--project-flow-dot)"
-              />
-              <MiniMap
-                className="project-flow-minimap"
-                pannable
-                zoomable
-                nodeColor="var(--project-flow-node-border)"
-                maskColor="color-mix(in srgb, var(--app-canvas) 72%, transparent)"
-              />
-            </ReactFlow>
-          </Box>
+        <ProjectFlowCanvasSplitter
+          canvas={
+            <>
+              <Box className="project-flow-canvas-host" position="absolute" inset={0}>
+                <ReactFlow
+                  className="project-flow-canvas"
+                  style={{ width: '100%', height: '100%' }}
+                  colorMode={colorMode}
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={handleEdgesChange}
+                  nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
+                  defaultEdgeOptions={{ type: 'workflow' }}
+                  onNodeClick={onNodeClick}
+                  onNodeDragStop={onNodeDragStop}
+                  onPaneClick={onPaneClick}
+                  fitView
+                  fitViewOptions={{ padding: 0.4, maxZoom: 1 }}
+                  minZoom={0.35}
+                  maxZoom={1.5}
+                  proOptions={{ hideAttribution: true }}
+                  zIndexMode="manual"
+                  elevateNodesOnSelect={false}
+                  elevateEdgesOnSelect={false}
+                  nodesConnectable
+                  connectionMode={ConnectionMode.Strict}
+                  isValidConnection={isValidConnection}
+                  onConnect={onConnect}
+                  onConnectStart={onConnectStart}
+                  onConnectEnd={onConnectEnd}
+                  connectOnClick={false}
+                  connectionLineStyle={{
+                    stroke: 'var(--project-flow-edge)',
+                    strokeWidth: 1.5,
+                    strokeDasharray: '6 4',
+                  }}
+                  elementsSelectable
+                  panOnScroll
+                  zoomOnScroll
+                >
+                  <ProjectFlowStickyPortal />
+                  <Background
+                    variant={BackgroundVariant.Dots}
+                    gap={20}
+                    size={1}
+                    color="var(--project-flow-dot)"
+                  />
+                  <MiniMap
+                    className="project-flow-minimap"
+                    pannable
+                    zoomable
+                    nodeColor="var(--project-flow-node-border)"
+                    maskColor="color-mix(in srgb, var(--app-canvas) 72%, transparent)"
+                  />
+                </ReactFlow>
+              </Box>
 
-          <ProjectFlowCanvasToolbar
-            openMenu={openMenu}
-            options={canvasOptions}
-            onOpenMenu={setOpenMenu}
-            onOptionsChange={(patch) => setCanvasOptions((prev) => ({ ...prev, ...patch }))}
-            onZoomIn={() => zoomIn({ duration: motionEnabled ? 200 : 0 })}
-            onZoomOut={() => zoomOut({ duration: motionEnabled ? 200 : 0 })}
-            onFitView={handleFitView}
-            onAutoLayout={handleAutoLayout}
-            onResetCanvas={handleResetCanvas}
-          />
-
-          <ProjectFlowExplorerPanel
-            project={project}
-            open={explorerOpen}
-            onToggle={() => setExplorerOpen((v) => !v)}
-            onFocusNode={handleFocusNode}
-            runningStepIndex={running ? runningStepIndex : null}
-          />
-
-          <Button
-            className="project-flow-add-btn"
-            position="absolute"
-            top={4}
-            right={4}
-            zIndex={6}
-            size="sm"
-            colorPalette={accentPalette}
-            shadow="md"
-            onClick={openAdd}
-          >
-            <Plus size={16} />
-            {t('projects.add')}
-          </Button>
-
-          {running ? (
-            <Box
-              position="absolute"
-              top={4}
-              left="50%"
-              transform="translateX(-50%)"
-              zIndex={6}
-              px={3}
-              py={1}
-              borderRadius="full"
-              bg="green.subtle"
-              borderWidth="1px"
-              borderColor="green.muted"
-            >
-              <HStack gap={2} fontSize="xs" color="green.200">
-                <Box w="6px" h="6px" borderRadius="full" bg="green.400" className="pulse" />
-                {t('projects.flowRunning')}
-              </HStack>
-            </Box>
-          ) : null}
-
-          <AnimatePresence>
-            {sidePanelOpen ? (
-              <motion.button
-                key="side-backdrop"
-                type="button"
-                className="project-flow-config-backdrop"
-                aria-label={t('projects.config.closeBackdrop')}
-                initial={motionEnabled ? { opacity: 0 } : false}
-                animate={{ opacity: 1 }}
-                exit={motionEnabled ? { opacity: 0 } : undefined}
-                transition={backdropTransition}
-                onClick={() => {
-                  closeConfig()
-                  closeAdd()
+              <ProjectFlowCanvasToolbar
+                openMenu={openMenu}
+                options={canvasOptions}
+                onOpenMenu={setOpenMenu}
+                onOptionsChange={(patch) => setCanvasOptions((prev) => ({ ...prev, ...patch }))}
+                onZoomIn={() => zoomIn({ duration: motionEnabled ? 200 : 0 })}
+                onZoomOut={() => zoomOut({ duration: motionEnabled ? 200 : 0 })}
+                onFitView={handleFitView}
+                onAutoLayout={handleAutoLayout}
+                onResetCanvas={handleResetCanvas}
+                onAddStickyNote={addStickyNote}
+                consoleOpen={flowConsole.open}
+                consoleExpanded={flowConsole.expanded}
+                consoleLineCount={flowConsole.lines.length}
+                onToggleConsole={() => {
+                  if (!flowConsole.open) {
+                    flowConsole.expandConsole()
+                    return
+                  }
+                  if (flowConsole.expanded) {
+                    flowConsole.minimizeConsole()
+                    return
+                  }
+                  flowConsole.expandConsole()
                 }}
               />
-            ) : null}
-          </AnimatePresence>
 
-          <AnimatePresence>
-            {addOpen ? (
-              <motion.div
-                key="add-node"
-                className="project-flow-side-overlay"
-                initial={motionEnabled ? { x: '100%' } : false}
-                animate={{ x: 0 }}
-                exit={motionEnabled ? { x: '100%' } : undefined}
-                transition={panelTransition}
-              >
-                <ProjectAddNodePanel
-                  onClose={closeAdd}
-                  onPick={handleAddNode}
-                  pluginMode={Boolean(insertConfigSlot)}
-                />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+              <ProjectFlowExplorerPanel
+                project={project}
+                open={explorerOpen}
+                onToggle={() => setExplorerOpen((v) => !v)}
+                onFocusNode={handleFocusNode}
+                runningStepIndex={running ? runningStepIndex : null}
+              />
 
-          <AnimatePresence>
-            {selectedNode && !addOpen ? (
-              <motion.div
-                key={selectedNode.id}
-                className="project-flow-side-overlay"
-                initial={motionEnabled ? { x: '100%' } : false}
-                animate={{ x: 0 }}
-                exit={motionEnabled ? { x: '100%' } : undefined}
-                transition={panelTransition}
+              <Button
+                className="project-flow-add-btn"
+                position="absolute"
+                top={4}
+                right={4}
+                zIndex={6}
+                size="sm"
+                colorPalette={accentPalette}
+                shadow="md"
+                onClick={openAdd}
               >
-                <ProjectNodeConfigPanel node={selectedNode} onClose={closeConfig} />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </Box>
+                <Plus size={16} />
+                {t('projects.add')}
+              </Button>
+
+              <ProjectFlowCanvasActionBar
+                selectedNode={focusedNode}
+                running={running}
+                onDismiss={clearFocus}
+              />
+            </>
+          }
+        />
+
+        <AnimatePresence>
+          {sidePanelOpen ? (
+            <motion.button
+              key="side-backdrop"
+              type="button"
+              className="project-flow-config-backdrop"
+              aria-label={t('projects.config.closeBackdrop')}
+              initial={motionEnabled ? { opacity: 0 } : false}
+              animate={{ opacity: 1 }}
+              exit={motionEnabled ? { opacity: 0 } : undefined}
+              transition={backdropTransition}
+              onClick={() => {
+                clearFocus()
+                closeConfig()
+                closeAdd()
+              }}
+            />
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {addOpen ? (
+            <motion.div
+              key="add-node"
+              className="project-flow-side-overlay"
+              initial={motionEnabled ? { x: '100%' } : false}
+              animate={{ x: 0 }}
+              exit={motionEnabled ? { x: '100%' } : undefined}
+              transition={panelTransition}
+            >
+              <ProjectAddNodePanel
+                onClose={closeAdd}
+                onPick={handleAddNode}
+                pluginMode={Boolean(insertConfigSlot)}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {liveConfigNode && !addOpen ? (
+            <motion.div
+              key={liveConfigNode.id}
+              className="project-flow-side-overlay"
+              initial={motionEnabled ? { x: '100%' } : false}
+              animate={{ x: 0 }}
+              exit={motionEnabled ? { x: '100%' } : undefined}
+              transition={panelTransition}
+            >
+              <ProjectNodeConfigPanel node={liveConfigNode} onClose={closeConfig} />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </Box>
+
+      <ProjectFlowRemoveNodeDialog
+        node={removeTarget}
+        open={Boolean(removeTarget)}
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={() => {
+          if (!removeTarget) return
+          performRemoveNode(removeTarget.id)
+          setRemoveTarget(null)
+        }}
+      />
     </ProjectFlowActionsProvider>
   )
 }
@@ -747,7 +1044,9 @@ function ProjectFlowCanvasInner() {
 export function ProjectFlowCanvas() {
   return (
     <ReactFlowProvider>
-      <ProjectFlowCanvasInner />
+      <ProjectFlowConsoleProvider>
+        <ProjectFlowCanvasInner />
+      </ProjectFlowConsoleProvider>
     </ReactFlowProvider>
   )
 }

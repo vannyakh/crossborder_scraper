@@ -1,0 +1,87 @@
+---
+description: Project flow canvas — nodes, edges, sub-nodes, toolbars (panel UI)
+globs:
+  - "apps/web/src/components/projects/**"
+  - "apps/web/src/index.css"
+alwaysApply: false
+---
+
+# Project flow canvas
+
+React Flow workflow editor under `apps/web/src/components/projects/`. Mock/session data only until project API is wired.
+
+## Node roles
+
+| Role | Shape | Controls |
+|------|--------|----------|
+| `trigger` / `action` / `agent` | Main workflow | Bottom `ProjectFlowCanvasActionBar` on select |
+| `config` | Circular sub-node (plugin / model) | Floating `ProjectFlowSubNodeToolbar` above node — **not** bottom bar |
+| `note` | Sticky markdown card | Floating sticky toolbar + bottom bar hidden |
+
+## Sub-node profiles (`project-subnode-config.ts`)
+
+Capabilities vary by **agent slot**, not one toolbar for all config nodes:
+
+| Profile | Slot | Toolbar | Edge hover |
+|---------|------|---------|------------|
+| **model** | 0 (Chat model) | Power · Delete · More — **no Execute** | Delete only |
+| **plugin** | 1 Memory, 2 Tool, data nodes | Play · Power · Delete · More | Delete only (no insert +) |
+
+Resolve profile with `getSubNodeCapabilities(project, node)`. Add new profiles in `PROFILE_DEFS` — do not hardcode in toolbar components.
+
+## Edge hover (`ProjectFlowEdgeHover.tsx`)
+
+- **Main** edges: insert (+) + delete when `edgeHoverAllowsInsert()` is true
+- **Config** edges: delete only; model sources never get insert (+)
+
+Logic lives in `project-flow-connect.ts` + `project-subnode-config.ts`.
+
+## Key files
+
+| Piece | Path |
+|-------|------|
+| Canvas orchestration | `ProjectFlowCanvas.tsx` |
+| Flow actions context | `project-flow-actions-context.tsx` |
+| Sub-node config | `project-subnode-config.ts` |
+| Sub-node toolbar | `ProjectFlowSubNodeToolbar.tsx` |
+| Edge hover | `ProjectFlowEdgeHover.tsx`, `ProjectFlowMainEdge.tsx`, `ProjectFlowConfigEdge.tsx` |
+| Sticky notes | `ProjectFlowStickyNode.tsx`, `project-sticky-colors.ts` |
+| Styles | `apps/web/src/index.css` (`.project-flow-*`) |
+
+## Conventions
+
+- Use `@/components/ui/tooltip` for icon tooltips; theme via `.panel-tooltip`
+- i18n: `projects.flow.*`, `projects.subNode.*`, `projects.sticky.*` in **en, zh, km**
+- Match existing Chakra + CSS variable patterns; avoid bottom ActionBar for sub-nodes/stickies
+- Gateway runtime tools/skills are separate — this is **panel preview UI** only
+
+## Agent node config drawer
+
+Node config is **JSON-driven** — see `node-config/schemas/*.json` and `node-config/registry.ts`.
+
+| Piece | Path |
+|-------|------|
+| Schema JSON | `node-config/schemas/<kind>.json` |
+| Registry + field helpers | `node-config/registry.ts` |
+| Form + field renderers | `ProjectNodeConfigForm.tsx`, `ProjectNodeConfigField.tsx` |
+| Drawer shell | `ProjectNodeConfigPanel.tsx` |
+
+**Field binding:**
+
+- `bind` — writes to a top-level `ProjectNode` prop (`host`, `agentPrompt`, …)
+- `optionKey` — writes to `node.options` (selects, toggles)
+- `resolve` — read-only computed display (`status`, `image`, …)
+
+**Agent parameters:** schema `parametersLayout: "agent-slots"` + editable `agentPrompt` field in `agent.json`. Footer slot chips — `ProjectAgentSlotChips.tsx` (Model / Memory / Tool). Occupied chip → `focusCanvasNode(id, { openConfig: true })`; empty → `openSlotAdd(agentId, slotIndex)`.
+
+## Live log console
+
+Bottom **Splitter** panel — `ProjectFlowCanvasSplitter.tsx` uses Chakra `Splitter` (vertical) between canvas and logs.
+
+- Drag the handle to resize canvas vs live logs (10–55% for logs panel)
+- Opens automatically when a workflow run or single-step execute starts
+- Preview log lines from `buildNodeConsoleLines()` in `project-flow-console.ts` (mock until flow API)
+- Toolbar **Terminal** icon toggles the console
+- Node config drawer **Output** tab — `ProjectNodeConfigOutput.tsx`
+
+Context: `ProjectFlowConsoleProvider` wraps `ProjectFlowCanvasInner`.

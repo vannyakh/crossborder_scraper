@@ -1,11 +1,14 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import type { ProjectFlowEdgeData } from './project-flow-types'
+import { ProjectFlowEdgeHover } from './ProjectFlowEdgeHover'
 
 /**
  * Service / config wiring — dashed, muted, drawn under main workflow edges.
  */
 export function ProjectFlowConfigEdge({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -16,7 +19,7 @@ export function ProjectFlowConfigEdge({
 }: EdgeProps) {
   const pathOffset = (data as ProjectFlowEdgeData | undefined)?.pathOffset ?? 0
 
-  const [path] = getSmoothStepPath({
+  const [path, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     targetX,
@@ -39,6 +42,15 @@ export function ProjectFlowConfigEdge({
           stroke: 'var(--project-flow-edge-network)',
           fill: 'none',
         }}
+      />
+      <ProjectFlowEdgeHover
+        edgeId={id}
+        path={path}
+        labelX={labelX}
+        labelY={labelY}
+        variant="config"
+        source={source}
+        target={target}
       />
     </>
   )

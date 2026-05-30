@@ -115,7 +115,7 @@ function parseBlocks(source: string): Block[] {
 
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const parts: ReactNode[] = []
-  const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|\[[^\]]+\]\([^)]+\))/g
   let lastIndex = 0
   let match: RegExpExecArray | null
   let partIndex = 0
@@ -136,6 +136,12 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
       parts.push(
         <Text key={key} as="span" fontWeight="semibold">
           {token.slice(2, -2)}
+        </Text>,
+      )
+    } else if (token.startsWith('*') || token.startsWith('_')) {
+      parts.push(
+        <Text key={key} as="span" fontStyle="italic">
+          {token.slice(1, -1)}
         </Text>,
       )
     } else {
@@ -172,11 +178,24 @@ const headingSize: Record<number, string> = {
   6: 'xs',
 }
 
-export function MarkdownContent({ source }: { source: string }) {
+export function MarkdownContent({
+  source,
+  compact = false,
+}: {
+  source: string
+  compact?: boolean
+}) {
   const blocks = parseBlocks(source)
 
   return (
-    <Box className="markdown-prose" fontSize="sm" color="fg.muted" lineHeight="tall">
+    <Box
+      className={['markdown-prose', compact ? 'markdown-prose--compact' : '']
+        .filter(Boolean)
+        .join(' ')}
+      fontSize={compact ? 'xs' : 'sm'}
+      color={compact ? 'inherit' : 'fg.muted'}
+      lineHeight={compact ? '1.45' : 'tall'}
+    >
       {blocks.map((block, index) => {
         const key = `md-${index}`
         if (block.kind === 'heading') {
@@ -186,9 +205,9 @@ export function MarkdownContent({ source }: { source: string }) {
               as={`h${Math.min(block.level, 6)}` as 'h1'}
               fontSize={headingSize[block.level] ?? 'sm'}
               fontWeight="semibold"
-              color="fg"
-              mt={block.level <= 2 ? (index === 0 ? 0 : 5) : 4}
-              mb={2}
+              color={compact ? 'inherit' : 'fg'}
+              mt={compact ? (index === 0 ? 0 : 2) : block.level <= 2 ? (index === 0 ? 0 : 5) : 4}
+              mb={compact ? 1 : 2}
             >
               {renderInline(block.text, key)}
             </Text>
@@ -196,7 +215,7 @@ export function MarkdownContent({ source }: { source: string }) {
         }
         if (block.kind === 'paragraph') {
           return (
-            <Text key={key} mb={3}>
+            <Text key={key} mb={compact ? 1.5 : 3}>
               {renderInline(block.text, key)}
             </Text>
           )

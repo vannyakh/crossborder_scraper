@@ -29,6 +29,7 @@ export function nodeEmitsMainFlow(
   role?: ProjectDetail['nodes'][number]['role'],
 ): boolean {
   const r = roleForKind(kind, role)
+  if (r === 'note') return false
   return r === 'trigger' || r === 'action' || r === 'agent'
 }
 
@@ -146,4 +147,27 @@ export function configConnectionToEdge(connection: Connection): ProjectEdge | nu
 /** Combined validator — covers both main-path and config-slot connections. */
 export function isValidAnyConnection(edge: Connection | Edge, project: ProjectDetail): boolean {
   return isValidMainConnection(edge, project) || isValidConfigConnection(edge, project)
+}
+
+/** True when edge hover may show insert (+). Config/network links are delete-only. */
+export function edgeHoverAllowsInsert(
+  variant: 'main' | 'config',
+  project: ProjectDetail,
+  sourceId: string,
+  targetId: string,
+): boolean {
+  if (variant !== 'main') return false
+
+  const source = project.nodes.find((n) => n.id === sourceId)
+  const target = project.nodes.find((n) => n.id === targetId)
+  if (!source || !target) return false
+
+  const sourceRole = roleForKind(source.kind, source.role)
+  const targetRole = roleForKind(target.kind, target.role)
+  if (sourceRole === 'note' || targetRole === 'note') return false
+  if (sourceRole === 'config' || targetRole === 'config') return false
+
+  return (
+    nodeEmitsMainFlow(source.kind, source.role) && nodeAcceptsMainFlow(target.kind, target.role)
+  )
 }

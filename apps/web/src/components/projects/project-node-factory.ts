@@ -1,5 +1,10 @@
 import { roleForKind } from './project-node-meta'
 import type { ProjectNode, ProjectNodeKind } from './project-sample-data'
+import {
+  DEFAULT_STICKY_NOTE_COLOR,
+  STICKY_NOTE_DEFAULT_H,
+  STICKY_NOTE_DEFAULT_W,
+} from './project-sticky-colors'
 
 function nextNodePosition(
   nodes: ProjectNode[],
@@ -21,7 +26,13 @@ function nextNodePosition(
     }
   }
 
-  const flowNodes = nodes.filter((n) => n.role !== 'config')
+  if (role === 'note') {
+    const flowNodes = nodes.filter((n) => roleForKind(n.kind, n.role) !== 'config')
+    const anchor = flowNodes[flowNodes.length - 1] ?? nodes[nodes.length - 1]
+    return { x: (anchor?.x ?? 280) - 48, y: (anchor?.y ?? 200) + 120 }
+  }
+
+  const flowNodes = nodes.filter((n) => n.role !== 'config' && n.role !== 'note')
   const anchor = flowNodes[flowNodes.length - 1] ?? nodes[nodes.length - 1]
   return { x: anchor.x + 220, y: anchor.y + (flowNodes.length % 2 === 0 ? 0 : 90) }
 }
@@ -79,6 +90,27 @@ export function createProjectNode(
       }
     default:
       return base
+  }
+}
+
+/** True for workflow steps (excludes canvas sticky notes). */
+export function isWorkflowNode(node: Pick<ProjectNode, 'kind' | 'role'>): boolean {
+  return roleForKind(node.kind, node.role) !== 'note'
+}
+
+export function createStickyNote(existing: ProjectNode[], label: string): ProjectNode {
+  const { x, y } = nextNodePosition(existing, 'note')
+  return {
+    id: `note-${Date.now().toString(36)}`,
+    kind: 'sticky',
+    role: 'note',
+    label,
+    noteBody: '',
+    noteWidth: STICKY_NOTE_DEFAULT_W,
+    noteHeight: STICKY_NOTE_DEFAULT_H,
+    noteColor: DEFAULT_STICKY_NOTE_COLOR,
+    x: x - 40,
+    y: y + 48,
   }
 }
 

@@ -1,0 +1,59 @@
+{
+  "kind": "postgres",
+  "defaultTab": "source",
+  "tabs": [
+    { "id": "source", "labelKey": "projects.config.tabs.source" },
+    { "id": "network", "labelKey": "projects.config.tabs.network" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "source",
+      "labelKey": "projects.config.sections.source",
+      "tab": "source",
+      "fields": [
+        {
+          "id": "img",
+          "labelKey": "projects.config.sourceImage",
+          "type": "image",
+          "resolve": "image"
+        },
+        {
+          "id": "vol",
+          "labelKey": "projects.config.fields.volume",
+          "type": "mono",
+          "bind": "detail",
+          "editable": true
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "labelKey": "projects.config.sections.networking",
+      "tab": "network",
+      "fields": [
+        {
+          "id": "host",
+          "labelKey": "projects.config.fields.host",
+          "type": "mono",
+          "bind": "host",
+          "editable": true,
+          "placeholderKey": "projects.config.hostPlaceholder"
+        }
+      ]
+    },
+    {
+      "id": "danger",
+      "labelKey": "projects.config.sections.danger",
+      "tab": "settings",
+      "fields": [
+        {
+          "id": "hint",
+          "labelKey": "projects.config.dangerHint",
+          "type": "hint",
+          "resolve": "label"
+        }
+      ]
+    }
+  ]
+}

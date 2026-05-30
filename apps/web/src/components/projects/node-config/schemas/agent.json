@@ -1,0 +1,54 @@
+{
+  "kind": "agent",
+  "defaultTab": "parameters",
+  "parametersLayout": "agent-slots",
+  "tabs": [
+    { "id": "parameters", "labelKey": "projects.config.tabs.parameters" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "prompt",
+      "labelKey": "projects.config.sections.agentPrompt",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "agentPrompt",
+          "labelKey": "projects.config.agentPrompt",
+          "type": "textarea",
+          "bind": "agentPrompt",
+          "editable": true,
+          "rows": 8,
+          "placeholderKey": "projects.config.agentPromptPlaceholder",
+          "hintKey": "projects.config.agentPromptHint"
+        }
+      ]
+    },
+    {
+      "id": "agent-settings",
+      "labelKey": "projects.config.sections.overview",
+      "tab": "settings",
+      "fields": [
+        {
+          "id": "name",
+          "labelKey": "projects.config.fields.name",
+          "type": "text",
+          "bind": "label",
+          "editable": true
+        },
+        {
+          "id": "skill",
+          "labelKey": "projects.config.fields.agentType",
+          "type": "mono",
+          "resolve": "subtitle"
+        },
+        {
+          "id": "runtime",
+          "labelKey": "projects.config.fields.toolScope",
+          "type": "mono",
+          "resolve": "host"
+        }
+      ]
+    }
+  ]
+}

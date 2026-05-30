@@ -1,0 +1,36 @@
+{
+  "kind": "notify",
+  "defaultTab": "parameters",
+  "tabs": [
+    { "id": "parameters", "labelKey": "projects.config.tabs.parameters" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "trigger",
+      "labelKey": "projects.config.sections.trigger",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "channel",
+          "labelKey": "projects.config.fields.integrateChannel",
+          "type": "select",
+          "optionKey": "integrateChannel",
+          "editable": true,
+          "options": [
+            { "value": "telegram", "labelKey": "projects.config.channels.telegram" },
+            { "value": "discord", "labelKey": "projects.config.channels.discord" },
+            { "value": "email", "labelKey": "projects.config.channels.email" }
+          ]
+        },
+        {
+          "id": "host",
+          "labelKey": "projects.config.fields.host",
+          "type": "mono",
+          "bind": "host",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

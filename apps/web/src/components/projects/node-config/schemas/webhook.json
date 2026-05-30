@@ -1,0 +1,39 @@
+{
+  "kind": "webhook",
+  "defaultTab": "parameters",
+  "tabs": [
+    { "id": "parameters", "labelKey": "projects.config.tabs.parameters" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "trigger",
+      "labelKey": "projects.config.sections.trigger",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "event",
+          "labelKey": "projects.config.fields.event",
+          "type": "mono",
+          "bind": "subtitle",
+          "editable": true
+        },
+        {
+          "id": "path",
+          "labelKey": "projects.config.fields.webhookPath",
+          "type": "mono",
+          "bind": "host",
+          "editable": true,
+          "placeholderKey": "projects.config.webhookPathPlaceholder"
+        },
+        {
+          "id": "active",
+          "labelKey": "projects.config.fields.webhookActive",
+          "type": "toggle",
+          "optionKey": "webhookActive",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

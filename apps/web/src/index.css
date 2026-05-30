@@ -1324,8 +1324,187 @@ button:focus-visible {
 }
 
 .project-flow-canvas-stage {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.project-flow-splitter {
+  min-height: 0;
+  --flow-console-header-h: 2.35rem;
+  --flow-console-expanded-min: max(11rem, 18vh);
+  --flow-console-expanded-max: min(26rem, 48vh);
+}
+
+.project-flow-splitter__canvas,
+.project-flow-splitter__logs {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.project-flow-splitter__logs[data-minimized] {
+  min-height: var(--flow-console-header-h) !important;
+  max-height: var(--flow-console-header-h) !important;
+  flex-basis: var(--flow-console-header-h) !important;
+}
+
+.project-flow-splitter__logs[data-expanded] {
+  min-height: var(--flow-console-expanded-min) !important;
+  max-height: var(--flow-console-expanded-max) !important;
+}
+
+.project-flow-splitter__logs[data-hidden] {
+  flex-basis: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.project-flow-console[data-minimized] .project-flow-console__body,
+.project-flow-console[data-minimized] .project-flow-console__footer {
+  display: none;
+}
+
+.project-flow-console__header[data-clickable],
+.project-flow-console[data-minimized] .project-flow-console__header {
+  cursor: pointer;
+}
+
+.project-flow-console[data-minimized] .project-flow-console__header:hover {
+  background: color-mix(in srgb, var(--app-canvas) 22%, transparent);
+}
+
+.project-flow-splitter__handle {
+  flex-shrink: 0;
+}
+
+.project-flow-splitter__handle[data-hidden] {
+  display: none;
+}
+
+.project-flow-splitter__handle [data-part='separator'] {
+  background: var(--app-border);
+}
+
+.project-flow-splitter__handle [data-part='indicator'] {
+  background: color-mix(in srgb, var(--app-accent) 35%, var(--app-border));
+}
+
+.project-flow-console {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border-top: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--flyout-bg) 96%, var(--app-canvas));
+}
+
+.project-flow-console__toolbar-badge {
   position: absolute;
-  inset: 0;
+  top: -4px;
+  right: -4px;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1rem;
+  text-align: center;
+  color: var(--chakra-colors-fg-inverted, #fff);
+  background: var(--chakra-colors-color-palette-solid, var(--app-accent));
+  pointer-events: none;
+}
+
+.project-flow-console__icon-btn {
+  flex-shrink: 0;
+}
+
+.project-flow-console__header {
+  flex-shrink: 0;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-border) 75%, transparent);
+}
+
+.project-flow-console__search {
+  width: min(220px, 34vw);
+  font-size: 0.75rem;
+}
+
+.project-flow-console__body {
+  flex: 1;
+  min-height: 0;
+  max-height: calc(var(--flow-console-expanded-max) - var(--flow-console-header-h));
+  overflow-y: auto;
+  padding: 0.35rem 0.5rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.project-flow-console__empty {
+  padding: 1rem 0.65rem;
+}
+
+.project-flow-console__line {
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+}
+
+.project-flow-console__line:hover {
+  background: color-mix(in srgb, var(--app-canvas) 35%, transparent);
+}
+
+.project-flow-console__time,
+.project-flow-console__level,
+.project-flow-console__node {
+  flex-shrink: 0;
+  color: var(--app-muted-fg, var(--chakra-colors-fg-muted));
+}
+
+.project-flow-console__level {
+  width: 2.75rem;
+}
+
+.project-flow-console__node {
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--app-accent) 75%, var(--chakra-colors-fg));
+}
+
+.project-flow-console__message {
+  word-break: break-word;
+}
+
+.project-flow-console__line--warn .project-flow-console__level {
+  color: #f59e0b;
+}
+
+.project-flow-console__line--error .project-flow-console__level {
+  color: #ef4444;
+}
+
+.project-flow-console__line--success .project-flow-console__level {
+  color: #22c55e;
+}
+
+.project-flow-console__line--debug .project-flow-console__level,
+.project-flow-console__line--debug .project-flow-console__message {
+  opacity: 0.78;
+}
+
+.project-flow-console__badge {
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  background: color-mix(in srgb, var(--app-accent) 18%, transparent);
+}
+
+.project-flow-console__footer {
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in srgb, var(--app-border) 70%, transparent);
 }
 
 .project-flow-config-backdrop {
@@ -1456,6 +1635,25 @@ button:focus-visible {
 
 .project-node-config-panel__tabs {
   flex-shrink: 0;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.project-node-config-panel__tab {
+  border-radius: 0 !important;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--app-muted-fg, var(--chakra-colors-fg-muted));
+  font-weight: 500;
+}
+
+.project-node-config-panel__tab.is-active {
+  border-bottom-color: var(--chakra-colors-color-palette-solid);
+  color: var(--chakra-colors-fg);
+}
+
+.project-node-config-panel__filter {
+  flex-shrink: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-border) 70%, transparent);
 }
 
 .project-node-config-panel__body {
@@ -1466,7 +1664,193 @@ button:focus-visible {
 
 .project-node-config-panel__anchors {
   flex-shrink: 0;
+  width: 7.5rem;
+  padding: 0.75rem 0.35rem;
+  border-left: 1px solid var(--app-border);
   background: color-mix(in srgb, var(--app-canvas) 40%, transparent);
+}
+
+.project-node-config-panel__anchor {
+  justify-content: flex-start !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500;
+  color: var(--app-muted-fg, var(--chakra-colors-fg-muted));
+  border-radius: 6px !important;
+}
+
+.project-node-config-panel__anchor.is-active {
+  background: color-mix(
+    in srgb,
+    var(--chakra-colors-color-palette-subtle) 55%,
+    transparent
+  ) !important;
+  color: var(--chakra-colors-fg);
+}
+
+.project-config-form {
+  gap: 1.25rem;
+}
+
+.project-config-section__title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--app-muted-fg, var(--chakra-colors-fg-muted));
+  margin-bottom: 0.65rem;
+}
+
+.project-config-section[data-single] .project-config-section__fields {
+  gap: 0;
+}
+
+.project-config-field {
+  border-radius: 8px;
+}
+
+.project-config-field--readonly {
+  padding: 0.55rem 0.65rem;
+  background: color-mix(in srgb, var(--app-canvas) 32%, var(--flyout-bg));
+  border: 1px solid color-mix(in srgb, var(--app-border) 75%, transparent);
+}
+
+.project-config-field--edit .project-config-field__label,
+.project-config-field--image .project-config-field__label,
+.project-config-field--url .project-config-field__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+}
+
+.project-config-field__label--inline {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.project-config-field__value {
+  max-width: 62%;
+  word-break: break-word;
+}
+
+.project-config-field__control {
+  font-size: 0.8125rem;
+}
+
+.project-config-field--edit textarea.project-config-field__control {
+  line-height: 1.5;
+  min-height: 6.5rem;
+  border-color: color-mix(in srgb, var(--app-border) 85%, transparent) !important;
+  background: color-mix(in srgb, var(--app-canvas) 35%, var(--flyout-bg)) !important;
+}
+
+.project-config-field__hint {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  margin-top: 0.35rem;
+}
+
+.project-config-field--toggle {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--app-border) 75%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--app-canvas) 28%, var(--flyout-bg));
+}
+
+.project-config-field--url .project-config-field__url-box {
+  padding: 0.5rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+  background: color-mix(in srgb, var(--app-canvas) 35%, var(--flyout-bg));
+}
+
+.project-config-field--image .project-config-field__image-row {
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+  background: color-mix(in srgb, var(--app-canvas) 35%, var(--flyout-bg));
+}
+
+.project-config-field--hint {
+  padding: 0.35rem 0;
+}
+
+.project-agent-slot-chips {
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--app-canvas) 28%, var(--flyout-bg));
+}
+
+.project-agent-slot-chips__row {
+  align-items: stretch;
+}
+
+.project-agent-slot-chip {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.45rem;
+  height: auto !important;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.55rem !important;
+  border-radius: 9px !important;
+  border-color: color-mix(in srgb, var(--app-border) 90%, transparent) !important;
+  background: color-mix(in srgb, var(--flyout-bg) 88%, transparent) !important;
+  text-align: left;
+}
+
+.project-agent-slot-chip:hover {
+  border-color: color-mix(in srgb, var(--app-accent) 45%, var(--app-border)) !important;
+  background: color-mix(in srgb, var(--app-accent) 8%, var(--flyout-bg)) !important;
+}
+
+.project-agent-slot-chip--empty {
+  border-style: dashed !important;
+}
+
+.project-agent-slot-chip--required:not(.project-agent-slot-chip--occupied) {
+  border-color: color-mix(in srgb, #f59e0b 55%, var(--app-border)) !important;
+}
+
+.project-agent-slot-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.project-agent-slot-chip__icon--add {
+  background: color-mix(in srgb, var(--app-canvas) 55%, transparent);
+  color: color-mix(in srgb, var(--app-fg) 70%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--app-border) 90%, transparent);
+}
+
+.project-agent-slot-chip__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  max-width: 7.5rem;
+}
+
+.project-agent-slot-chip__slot {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--app-fg) 62%, transparent);
+  line-height: 1.2;
+}
+
+.project-agent-slot-chip__required {
+  color: #f59e0b;
+}
+
+.project-agent-slot-chip__value {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--app-fg);
+  line-height: 1.25;
 }
 
 .light .project-flow-workspace {
@@ -1499,6 +1883,433 @@ button:focus-visible {
 /* Bottom-left canvas toolbar (zoom, layout, display) */
 .project-flow-canvas-toolbar {
   pointer-events: none;
+  z-index: 16;
+}
+
+/* Node action bar — anchored to canvas panel (not viewport / console splitter) */
+.project-flow-canvas-stage .project-flow-action-bar {
+  position: absolute !important;
+  inset: auto 0 12px 0 !important;
+  top: auto !important;
+  z-index: 18;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  pointer-events: none;
+  transform: none !important;
+}
+
+.project-flow-canvas-stage .project-flow-action-bar > [data-part='content'],
+.project-flow-canvas-stage .project-flow-action-bar__content {
+  pointer-events: auto;
+}
+
+.project-flow-action-bar {
+  z-index: 20;
+}
+
+.project-flow-action-bar__content {
+  flex-wrap: nowrap;
+  justify-content: center;
+  max-width: min(calc(100% - 5rem), 72rem);
+  gap: 0.25rem;
+  border: 1px solid var(--app-border) !important;
+  background: color-mix(in srgb, var(--flyout-bg) 94%, transparent) !important;
+  box-shadow: var(--flyout-shadow) !important;
+  backdrop-filter: blur(10px);
+  color: var(--app-fg);
+}
+
+.project-flow-action-bar [data-part='selectionTrigger'] {
+  color: var(--app-fg);
+  border-color: var(--app-border);
+  background: color-mix(in srgb, var(--app-canvas) 35%, transparent);
+}
+
+.project-flow-action-bar [data-part='separator'] {
+  background: var(--app-border);
+}
+
+.project-flow-action-bar [data-part='closeTrigger'] {
+  color: var(--app-fg);
+  border-radius: 7px;
+}
+
+.project-flow-action-bar [data-part='closeTrigger']:hover {
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--flyout-bg));
+}
+
+.project-flow-action-bar__btn {
+  flex-shrink: 0;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 7px !important;
+  color: var(--app-fg) !important;
+}
+
+.project-flow-action-bar__btn:hover {
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--flyout-bg)) !important;
+}
+
+.project-flow-action-bar__btn[data-variant='outline'] {
+  border-color: color-mix(in srgb, var(--app-border) 85%, transparent) !important;
+  background: color-mix(in srgb, var(--app-canvas) 28%, transparent) !important;
+}
+
+.project-flow-action-bar__btn[data-variant='solid'] {
+  background: var(--app-accent) !important;
+  color: #fff !important;
+}
+
+.project-flow-action-bar__btn[data-variant='solid']:hover {
+  background: color-mix(in srgb, var(--app-accent) 88%, white) !important;
+}
+
+/* Sticky notes — resizable markdown cards (n8n-style) */
+.project-flow-sticky-portal {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.project-flow-sticky-portal__item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.project-flow-sticky-visual {
+  pointer-events: none;
+}
+
+.project-flow-sticky-wrap {
+  position: relative;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+/* RF node — transparent hit target; visual renders in portal layer */
+.project-flow-sticky-wrap--interaction:not(.project-flow-sticky-wrap--editing)
+  .project-flow-sticky-node--interaction {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.project-flow-sticky-wrap--interaction.project-flow-sticky-wrap--selected:not(
+    .project-flow-sticky-wrap--editing
+  )
+  .project-flow-sticky-node--interaction {
+  border-color: color-mix(in srgb, var(--project-flow-sticky-border) 45%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--project-flow-sticky-border) 25%, transparent) !important;
+}
+
+.project-flow-sticky-wrap--interaction.project-flow-sticky-wrap--editing {
+  z-index: 260 !important;
+}
+
+.project-flow-sticky-wrap--interaction.project-flow-sticky-wrap--editing
+  .project-flow-sticky-node--interaction {
+  background-color: var(--project-flow-sticky-bg) !important;
+  border-color: var(--project-flow-sticky-border) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--project-flow-sticky-border) 35%, transparent),
+    0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+.project-flow-sticky-wrap--resizing .project-flow-sticky-node,
+.project-flow-sticky-wrap--dragging .project-flow-sticky-node {
+  transition: none !important;
+}
+
+.project-flow-sticky-wrap:not(.project-flow-sticky-wrap--resizing):not(
+    .project-flow-sticky-wrap--dragging
+  )
+  .project-flow-sticky-node {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.15s ease;
+}
+
+.project-flow-sticky-wrap--selected .project-flow-sticky-node {
+  border-color: color-mix(in srgb, var(--project-flow-sticky-border) 85%, white);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--project-flow-sticky-border) 45%, transparent),
+    0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.project-flow-sticky-wrap--editing .project-flow-sticky-node {
+  border-color: color-mix(in srgb, var(--project-flow-sticky-border) 70%, white);
+}
+
+.project-flow-sticky-node {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--project-flow-sticky-border);
+  text-align: left;
+  color: var(--project-flow-sticky-fg);
+  background-color: var(--project-flow-sticky-bg);
+  box-sizing: border-box;
+}
+
+.project-flow-sticky-node__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--project-flow-sticky-fg);
+}
+
+.project-flow-sticky-node__body--empty {
+  opacity: 0.72;
+  font-style: italic;
+}
+
+.project-flow-sticky-node__body-input {
+  flex: 1;
+  min-height: 0;
+  height: 100% !important;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--project-flow-sticky-fg) !important;
+  border-color: color-mix(in srgb, var(--project-flow-sticky-border) 55%, transparent) !important;
+  background: color-mix(in srgb, black 12%, var(--project-flow-sticky-bg)) !important;
+}
+
+.project-flow-sticky-markdown .markdown-prose--compact p:last-child,
+.project-flow-sticky-markdown .markdown-prose--compact ul:last-child,
+.project-flow-sticky-markdown .markdown-prose--compact ol:last-child {
+  margin-bottom: 0;
+}
+
+.project-flow-sticky-markdown .markdown-prose--compact a {
+  color: color-mix(in srgb, var(--project-flow-sticky-fg) 88%, white);
+  text-decoration: underline;
+}
+
+.project-flow-sticky-toolbar {
+  position: absolute;
+  top: -2.35rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.project-flow-sticky-toolbar__inner {
+  padding: 0.15rem;
+  border-radius: 8px;
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--flyout-bg) 94%, transparent);
+  box-shadow: var(--flyout-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.project-flow-sticky-toolbar__btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 6px !important;
+  color: var(--app-fg) !important;
+}
+
+.project-flow-sticky-toolbar__btn:hover {
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--flyout-bg)) !important;
+}
+
+.project-flow-sticky-color-menu,
+.project-flow-sticky-more-menu {
+  min-width: unset !important;
+  border: 1px solid var(--app-border) !important;
+  background: var(--flyout-bg) !important;
+  box-shadow: var(--flyout-shadow) !important;
+}
+
+.project-flow-sticky-color-swatch {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem !important;
+  height: 1.65rem !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+
+.project-flow-sticky-color-swatch[data-active] {
+  box-shadow: 0 0 0 2px var(--app-accent);
+}
+
+.project-flow-sticky-color-swatch__dot {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, white 35%, transparent);
+}
+
+.project-flow-sticky-color-swatch__dot[data-color='purple'] {
+  background: #6d28d9;
+}
+
+.project-flow-sticky-color-swatch__dot[data-color='amber'] {
+  background: #d97706;
+}
+
+.project-flow-sticky-color-swatch__dot[data-color='blue'] {
+  background: #2563eb;
+}
+
+.project-flow-sticky-color-swatch__dot[data-color='green'] {
+  background: #059669;
+}
+
+.project-flow-sticky-color-swatch__dot[data-color='pink'] {
+  background: #db2777;
+}
+
+.project-flow-sticky-color-swatch__dot[data-color='gray'] {
+  background: #64748b;
+}
+
+/* Sticky color presets */
+.project-flow-sticky-wrap[data-color='purple'] {
+  --project-flow-sticky-bg: #3b0764;
+  --project-flow-sticky-border: #a855f7;
+  --project-flow-sticky-fg: #faf5ff;
+}
+
+.project-flow-sticky-wrap[data-color='amber'] {
+  --project-flow-sticky-bg: #451a03;
+  --project-flow-sticky-border: #f59e0b;
+  --project-flow-sticky-fg: #fffbeb;
+}
+
+.project-flow-sticky-wrap[data-color='blue'] {
+  --project-flow-sticky-bg: #172554;
+  --project-flow-sticky-border: #3b82f6;
+  --project-flow-sticky-fg: #eff6ff;
+}
+
+.project-flow-sticky-wrap[data-color='green'] {
+  --project-flow-sticky-bg: #052e16;
+  --project-flow-sticky-border: #22c55e;
+  --project-flow-sticky-fg: #ecfdf5;
+}
+
+.project-flow-sticky-wrap[data-color='pink'] {
+  --project-flow-sticky-bg: #500724;
+  --project-flow-sticky-border: #ec4899;
+  --project-flow-sticky-fg: #fdf2f8;
+}
+
+.project-flow-sticky-wrap[data-color='gray'] {
+  --project-flow-sticky-bg: #1e293b;
+  --project-flow-sticky-border: #94a3b8;
+  --project-flow-sticky-fg: #f8fafc;
+}
+
+.light .project-flow-sticky-wrap[data-color='purple'] {
+  --project-flow-sticky-bg: #f3e8ff;
+  --project-flow-sticky-border: #9333ea;
+  --project-flow-sticky-fg: #3b0764;
+}
+
+.light .project-flow-sticky-wrap[data-color='amber'] {
+  --project-flow-sticky-bg: #fef3c7;
+  --project-flow-sticky-border: #d97706;
+  --project-flow-sticky-fg: #451a03;
+}
+
+.light .project-flow-sticky-wrap[data-color='blue'] {
+  --project-flow-sticky-bg: #dbeafe;
+  --project-flow-sticky-border: #2563eb;
+  --project-flow-sticky-fg: #1e3a8a;
+}
+
+.light .project-flow-sticky-wrap[data-color='green'] {
+  --project-flow-sticky-bg: #d1fae5;
+  --project-flow-sticky-border: #059669;
+  --project-flow-sticky-fg: #064e3b;
+}
+
+.light .project-flow-sticky-wrap[data-color='pink'] {
+  --project-flow-sticky-bg: #fce7f3;
+  --project-flow-sticky-border: #db2777;
+  --project-flow-sticky-fg: #831843;
+}
+
+.light .project-flow-sticky-wrap[data-color='gray'] {
+  --project-flow-sticky-bg: #f1f5f9;
+  --project-flow-sticky-border: #64748b;
+  --project-flow-sticky-fg: #0f172a;
+}
+
+.project-flow-canvas .react-flow__resize-control.handle.project-flow-sticky-resize-handle {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  border: 1.5px solid var(--project-flow-sticky-border);
+  background: color-mix(in srgb, var(--project-flow-sticky-bg) 75%, white);
+}
+
+.project-flow-canvas .react-flow__resize-control.line.project-flow-sticky-resize-line {
+  border-color: color-mix(in srgb, var(--project-flow-sticky-border) 55%, transparent);
+}
+
+.project-flow-canvas .react-flow__node-sticky {
+  z-index: 0 !important;
+}
+
+.project-flow-canvas .react-flow__node-sticky.selected,
+.project-flow-canvas .react-flow__node-sticky.dragging {
+  z-index: 250 !important;
+}
+
+.project-flow-canvas .react-flow__node-sticky.react-flow__node-resizing {
+  z-index: 250 !important;
+  transition: none !important;
+}
+
+.project-flow-canvas .react-flow__node-workflow {
+  z-index: 200 !important;
+}
+
+/* Panel tooltips — match sidebar flyout / canvas toolbar tokens */
+.panel-tooltip-positioner {
+  z-index: 1500;
+}
+
+.panel-tooltip {
+  --tooltip-bg: var(--flyout-bg);
+  padding: 0.35rem 0.65rem !important;
+  border-radius: var(--radius-input) !important;
+  border: 1px solid var(--app-border) !important;
+  background: var(--flyout-bg) !important;
+  box-shadow: var(--flyout-shadow) !important;
+  color: var(--app-fg) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+}
+
+.panel-tooltip__arrow-tip {
+  border-top-color: var(--flyout-bg) !important;
+  border-bottom-color: var(--flyout-bg) !important;
 }
 
 .project-flow-canvas-toolbar > * {
@@ -1608,6 +2419,8 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   background: var(--chakra-colors-bg-panel, var(--app-canvas));
+  --project-flow-success: #22c55e;
+  --project-flow-success-glow: color-mix(in srgb, var(--project-flow-success) 32%, transparent);
 }
 
 .project-flow-canvas .react-flow__pane {
@@ -1643,13 +2456,13 @@ button:focus-visible {
   stroke-linecap: round;
 }
 
-/* Main workflow path on top; service/network wiring underneath */
+/* Main workflow path on top of stickies; service/network wiring underneath main edges */
 .project-flow-canvas .react-flow__edge.project-flow-edge--network {
-  z-index: 0 !important;
+  z-index: 50 !important;
 }
 
 .project-flow-canvas .react-flow__edge.project-flow-edge--main {
-  z-index: 1 !important;
+  z-index: 100 !important;
 }
 
 .project-flow-edge-path--network {
@@ -1659,6 +2472,67 @@ button:focus-visible {
 .project-flow-edge-path--main {
   opacity: 1;
   stroke-linecap: butt;
+}
+
+.project-flow-edge-hit {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.project-flow-edge-hover {
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 12;
+}
+
+.project-flow-edge-hover__tip {
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  color: #fff;
+  background: color-mix(in srgb, #0a0a0a 92%, var(--app-bg));
+  border: 1px solid color-mix(in srgb, var(--app-border) 45%, transparent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.project-flow-edge-hover__actions {
+  pointer-events: all;
+}
+
+.project-flow-edge-hover__btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 6px !important;
+  color: var(--app-fg) !important;
+  background: color-mix(in srgb, var(--flyout-bg) 72%, transparent) !important;
+  backdrop-filter: blur(6px);
+  border-color: color-mix(in srgb, var(--app-border) 90%, transparent) !important;
+}
+
+.project-flow-edge-hover__btn:hover {
+  background: color-mix(in srgb, var(--app-accent) 14%, var(--flyout-bg)) !important;
+}
+
+.project-flow-edge-hover--delete-only .project-flow-edge-hover__actions {
+  padding: 0.1rem;
+  border-radius: 7px;
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--flyout-bg) 92%, transparent);
+  box-shadow: var(--flyout-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.project-flow-edge-hover--delete-only .project-flow-edge-hover__btn {
+  border: none !important;
+  background: transparent !important;
 }
 
 /* Connection handles — base (hidden until hover/selection) */
@@ -2072,6 +2946,59 @@ button:focus-visible {
   color: #f87171 !important;
 }
 
+/* Config / plugin sub-node toolbar (above circular nodes) */
+.project-flow-subnode-toolbar {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.project-flow-subnode-toolbar.is-visible {
+  pointer-events: all;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.project-flow-subnode-toolbar__bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--flyout-bg) 94%, transparent);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--flyout-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.project-flow-subnode-toolbar__btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--app-fg) !important;
+}
+
+.project-flow-subnode-toolbar__btn:hover {
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--flyout-bg)) !important;
+  border-color: color-mix(in srgb, var(--app-border) 85%, transparent) !important;
+}
+
+.project-flow-subnode-toolbar__btn.is-off {
+  color: color-mix(in srgb, var(--app-fg) 42%, transparent) !important;
+}
+
+.project-flow-subnode-toolbar__btn--danger:hover {
+  background: color-mix(in srgb, #ef4444 12%, var(--flyout-bg)) !important;
+  border-color: color-mix(in srgb, #ef4444 28%, var(--app-border)) !important;
+  color: #f87171 !important;
+}
+
 .project-flow-trigger-run {
   pointer-events: none;
   opacity: 0;
@@ -2163,6 +3090,7 @@ button:focus-visible {
 }
 
 .project-workflow-node {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2179,6 +3107,13 @@ button:focus-visible {
   overflow: hidden;
 }
 
+/* Sticky notes use .project-flow-sticky-node — never workflow node chrome */
+.project-flow-sticky-wrap .project-workflow-node {
+  background: unset;
+  border: unset;
+  box-shadow: unset;
+}
+
 .project-workflow-node-wrap:hover .project-workflow-node {
   border-color: color-mix(in srgb, var(--app-fg) 22%, var(--project-flow-node-border));
 }
@@ -2186,6 +3121,19 @@ button:focus-visible {
 .project-workflow-node--trigger,
 .project-workflow-node--action {
   border-radius: 12px;
+  overflow: visible;
+}
+
+.project-workflow-node-compact-card,
+.project-workflow-node-config-card {
+  position: relative;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.project-workflow-node-wrap--trigger,
+.project-workflow-node-wrap--action {
+  overflow: visible;
 }
 
 .project-workflow-node--trigger {
@@ -2205,6 +3153,7 @@ button:focus-visible {
 
 .project-workflow-node--config {
   border-radius: 50%;
+  overflow: visible;
   box-shadow:
     0 2px 10px rgba(0, 0, 0, 0.14),
     inset 0 0 0 1px color-mix(in srgb, #fff 8%, transparent);
@@ -2215,6 +3164,7 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  overflow: visible;
 }
 
 .project-workflow-node__caption-below {
@@ -2303,13 +3253,81 @@ button:focus-visible {
 }
 
 .project-workflow-node--running {
-  border-color: color-mix(in srgb, #22c55e 70%, var(--project-flow-node-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 18%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--project-flow-success) 75%,
+    var(--project-flow-node-border)
+  );
+  box-shadow:
+    0 0 0 3px var(--project-flow-success-glow),
+    0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
+.project-workflow-node-wrap--done .project-workflow-node,
 .project-workflow-node--done {
-  border-color: color-mix(in srgb, #22c55e 45%, var(--project-flow-node-border));
-  opacity: 0.92;
+  border-color: var(--project-flow-success) !important;
+  box-shadow:
+    0 0 0 3px var(--project-flow-success-glow),
+    0 0 14px color-mix(in srgb, var(--project-flow-success) 22%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.project-workflow-node-wrap--done.project-workflow-node-wrap--config .project-workflow-node {
+  box-shadow:
+    0 0 0 3px var(--project-flow-success-glow),
+    0 0 10px color-mix(in srgb, var(--project-flow-success) 18%, transparent);
+}
+
+.project-workflow-node__exec-badge {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2.5px solid var(--project-flow-node-bg);
+  background: var(--project-flow-success);
+  color: #fff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.35),
+    0 0 0 1px color-mix(in srgb, var(--project-flow-success) 40%, transparent);
+  pointer-events: none;
+}
+
+.project-workflow-node-wrap--config .project-workflow-node__exec-badge {
+  right: -5px;
+  bottom: -5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.project-workflow-node-wrap--agent .project-workflow-node__exec-badge {
+  right: -7px;
+  bottom: -7px;
+}
+
+.project-flow-workspace[data-run-succeeded]
+  .project-flow-canvas
+  .react-flow__edge.project-flow-edge--success
+  .react-flow__edge-path {
+  stroke: var(--project-flow-success) !important;
+  stroke-width: 2.25px;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--project-flow-success) 35%, transparent));
+}
+
+.project-flow-workspace[data-run-succeeded]
+  .project-flow-canvas
+  .react-flow__edge.project-flow-edge--success
+  marker
+  path {
+  fill: var(--project-flow-success) !important;
+  stroke: var(--project-flow-success) !important;
 }
 
 .project-workflow-node__badge {
@@ -2564,4 +3582,31 @@ button:focus-visible {
 
 .project-flow-explorer__step--done {
   opacity: 0.72;
+}
+
+.project-config-output__empty {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px dashed color-mix(in srgb, var(--app-border) 80%, transparent);
+  background: color-mix(in srgb, var(--app-canvas) 28%, var(--flyout-bg));
+}
+
+.project-config-output__lines {
+  max-height: 18rem;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+  background: color-mix(in srgb, var(--app-canvas) 32%, var(--flyout-bg));
+}
+
+.project-config-output__line--success {
+  color: #22c55e;
+}
+
+.project-config-output__line--warn {
+  color: #f59e0b;
+}
+
+.project-config-output__line--error {
+  color: #ef4444;
 }

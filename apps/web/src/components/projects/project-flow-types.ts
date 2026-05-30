@@ -22,5 +22,13 @@ export type ProjectFlowEdgeData = {
   pathOffset?: number
 }
 
+export type ProjectStickyNodeData = {
+  node: ProjectNode
+  /** When true, open markdown editor (from toolbar / action bar). */
+  beginEdit?: boolean
+}
+
 export type ProjectServiceNode = Node<ProjectFlowNodeData, 'workflow'>
+export type ProjectStickyFlowNode = Node<ProjectStickyNodeData, 'sticky'>
+export type ProjectCanvasNode = ProjectServiceNode | ProjectStickyFlowNode
 export type ProjectServiceEdge = Edge

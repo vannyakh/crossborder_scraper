@@ -197,3 +197,40 @@ export function configSourceLeftPercent(agent: ProjectNode, source: ProjectNode)
   const pct = ((center - agent.x) / agentW) * 100
   return Math.round(Math.min(86, Math.max(14, pct)))
 }
+
+export type AgentSlotSource = {
+  slotIndex: AgentSlotIndex
+  labelKey: string
+  required: boolean
+  occupied: boolean
+  sourceNode: ProjectNode | null
+}
+
+/** Wired sub-nodes for each agent slot (Model / Memory / Tool). */
+export function getAgentSlotSources(project: ProjectDetail, agentId: string): AgentSlotSource[] {
+  const ports = buildAgentConfigPorts(project).get(agentId)
+  if (!ports) return []
+
+  const edges = project.edges.filter((e) => (e.kind ?? 'main') === 'config' && e.to === agentId)
+  const nodeById = new Map(project.nodes.map((n) => [n.id, n]))
+
+  return ports.map((port) => {
+    let sourceNode: ProjectNode | null = null
+    if (port.occupied) {
+      for (const edge of edges) {
+        const slot = resolveEdgeSlot(edge, edges)
+        if (slot === port.slotIndex) {
+          sourceNode = nodeById.get(edge.from) ?? null
+          break
+        }
+      }
+    }
+    return {
+      slotIndex: port.slotIndex,
+      labelKey: port.labelKey ?? AGENT_SLOT_DEFS[port.slotIndex]?.labelKey ?? '',
+      required: port.required,
+      occupied: port.occupied,
+      sourceNode,
+    }
+  })
+}

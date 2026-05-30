@@ -8,6 +8,8 @@ import {
   Plus,
   Redo2,
   RotateCcw,
+  StickyNote,
+  Terminal,
   Undo2,
   Workflow,
 } from 'lucide-react'
@@ -36,6 +38,11 @@ type ToolbarProps = {
   onFitView: () => void
   onAutoLayout: () => void
   onResetCanvas: () => void
+  onAddStickyNote: () => void
+  consoleOpen?: boolean
+  consoleExpanded?: boolean
+  consoleLineCount?: number
+  onToggleConsole?: () => void
 }
 
 export function ProjectFlowCanvasToolbar({
@@ -48,6 +55,11 @@ export function ProjectFlowCanvasToolbar({
   onFitView,
   onAutoLayout,
   onResetCanvas,
+  onAddStickyNote,
+  onToggleConsole,
+  consoleOpen = false,
+  consoleExpanded = true,
+  consoleLineCount = 0,
 }: ToolbarProps) {
   const { t } = useLocale()
 
@@ -121,6 +133,34 @@ export function ProjectFlowCanvasToolbar({
             label: t('projects.canvas.redo'),
             icon: Redo2,
             onClick: () => notifySuccess(t('projects.canvas.redoPreview')),
+          },
+        ]}
+      />
+
+      <FlowCanvasToolbarActionGroup
+        items={[
+          {
+            key: 'sticky',
+            label: t('projects.sticky.add'),
+            icon: StickyNote,
+            onClick: onAddStickyNote,
+          },
+        ]}
+      />
+
+      <FlowCanvasToolbarActionGroup
+        items={[
+          {
+            key: 'console',
+            label: !consoleOpen
+              ? t('projects.flowConsole.open')
+              : consoleExpanded
+                ? t('projects.flowConsole.minimize')
+                : t('projects.flowConsole.expand'),
+            icon: Terminal,
+            active: consoleOpen,
+            badge: consoleOpen ? undefined : consoleLineCount > 0 ? consoleLineCount : undefined,
+            onClick: () => onToggleConsole?.(),
           },
         ]}
       />

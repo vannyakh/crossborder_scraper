@@ -1,5 +1,7 @@
 /** Project flow types and mock re-exports — no API wiring yet. */
 
+import type { StickyNoteColor } from './project-sticky-colors'
+
 export type ProjectNodeKind =
   | 'github'
   | 'redis'
@@ -11,8 +13,9 @@ export type ProjectNodeKind =
   | 'export'
   | 'condition'
   | 'notify'
+  | 'sticky'
 
-export type ProjectNodeRole = 'trigger' | 'action' | 'agent' | 'config'
+export type ProjectNodeRole = 'trigger' | 'action' | 'agent' | 'config' | 'note'
 
 export type ProjectNodeStatus = 'online' | 'offline'
 
@@ -31,6 +34,16 @@ export type ProjectNode = {
   status?: ProjectNodeStatus
   /** Volume name, replica summary, etc. */
   detail?: string
+  /** Canvas sticky note body (kind sticky) — markdown supported */
+  noteBody?: string
+  noteWidth?: number
+  noteHeight?: number
+  /** Sticky card color preset */
+  noteColor?: StickyNoteColor
+  /** Gateway agent user prompt (parameters tab) */
+  agentPrompt?: string
+  /** Dynamic option values from node-config JSON schemas */
+  options?: Record<string, string | boolean | number>
 }
 
 export type ProjectEdgeKind = 'main' | 'config'

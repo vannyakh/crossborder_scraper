@@ -1,0 +1,49 @@
+{
+  "kind": "scrape",
+  "defaultTab": "parameters",
+  "tabs": [
+    { "id": "parameters", "labelKey": "projects.config.tabs.parameters" },
+    { "id": "export", "labelKey": "projects.config.tabs.export" }
+  ],
+  "sections": [
+    {
+      "id": "scrape",
+      "labelKey": "projects.config.sections.scrape",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "source",
+          "labelKey": "projects.config.fields.source",
+          "type": "select",
+          "optionKey": "marketplace",
+          "editable": true,
+          "options": [
+            { "value": "1688", "labelKey": "projects.config.marketplaces.1688" },
+            { "value": "taobao", "labelKey": "projects.config.marketplaces.taobao" },
+            { "value": "both", "labelKey": "projects.config.marketplaces.both" }
+          ]
+        },
+        {
+          "id": "status",
+          "labelKey": "projects.serviceStatus",
+          "type": "text",
+          "resolve": "status"
+        }
+      ]
+    },
+    {
+      "id": "export",
+      "labelKey": "projects.config.sections.export",
+      "tab": "export",
+      "fields": [
+        {
+          "id": "target",
+          "labelKey": "projects.config.fields.exportTarget",
+          "type": "mono",
+          "bind": "host",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

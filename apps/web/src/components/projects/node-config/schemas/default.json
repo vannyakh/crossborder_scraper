@@ -1,0 +1,40 @@
+{
+  "kind": "default",
+  "defaultTab": "parameters",
+  "tabs": [{ "id": "parameters", "labelKey": "projects.config.tabs.parameters" }],
+  "sections": [
+    {
+      "id": "overview",
+      "labelKey": "projects.config.sections.overview",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "id",
+          "labelKey": "projects.inspectorId",
+          "type": "mono",
+          "resolve": "id"
+        },
+        {
+          "id": "kind",
+          "labelKey": "projects.inspectorType",
+          "type": "text",
+          "resolve": "kind"
+        },
+        {
+          "id": "label",
+          "labelKey": "projects.config.fields.name",
+          "type": "text",
+          "bind": "label",
+          "editable": true
+        },
+        {
+          "id": "sub",
+          "labelKey": "projects.nodeSubtitle",
+          "type": "mono",
+          "bind": "subtitle",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

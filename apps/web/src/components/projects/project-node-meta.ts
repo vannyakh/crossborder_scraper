@@ -9,6 +9,7 @@ import {
   Package,
   Server,
   Split,
+  StickyNote,
   type LucideIcon,
 } from 'lucide-react'
 import type { ProjectNodeKind, ProjectNodeRole } from './project-sample-data'
@@ -30,6 +31,7 @@ export const NODE_VISUAL: Record<ProjectNodeKind, NodeVisualMeta> = {
   export: { icon: Package, iconBg: '#059669', iconColor: '#fff' },
   condition: { icon: Split, iconBg: '#ca8a04', iconColor: '#fff' },
   notify: { icon: Bell, iconBg: '#6366f1', iconColor: '#fff' },
+  sticky: { icon: StickyNote, iconBg: '#b45309', iconColor: '#fff' },
 }
 
 export const ROLE_DEFAULTS: Record<ProjectNodeRole, { w: number; h: number }> = {
@@ -37,10 +39,12 @@ export const ROLE_DEFAULTS: Record<ProjectNodeRole, { w: number; h: number }> = 
   action: { w: 108, h: 108 },
   agent: { w: 260, h: 76 },
   config: { w: 72, h: 72 },
+  note: { w: 260, h: 132 },
 }
 
 export function roleForKind(kind: ProjectNodeKind, role?: ProjectNodeRole): ProjectNodeRole {
   if (role) return role
+  if (kind === 'sticky') return 'note'
   if (kind === 'webhook' || kind === 'schedule') return 'trigger'
   if (kind === 'agent') return 'agent'
   return 'action'

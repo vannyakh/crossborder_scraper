@@ -50,6 +50,27 @@ panel_port() {
   echo "${PANEL_PORT:-8787}"
 }
 
+# Dev API bind: PANEL_PORT when free, else DEV_PANEL_PORT (default PANEL_PORT+1).
+resolve_dev_panel_port() {
+  load_dotenv
+  repo_python - <<'PY'
+import os
+
+from deploy.network import DEFAULT_PANEL_PORT, is_port_free, pick_panel_port
+
+preferred = int(os.environ.get("PANEL_PORT") or DEFAULT_PANEL_PORT)
+dev_fallback = int(os.environ.get("DEV_PANEL_PORT") or preferred + 1)
+
+for candidate in (preferred, dev_fallback):
+    if is_port_free("127.0.0.1", candidate):
+        print(candidate)
+        raise SystemExit(0)
+
+picked, _ = pick_panel_port(preferred)
+print(picked)
+PY
+}
+
 need_docker() {
   command -v docker >/dev/null 2>&1 || {
     echo "docker not found. Install Docker or use a non-docker target." >&2

@@ -6,7 +6,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { panelUiBaseRedirectPlugin } from './vite-plugin-panel-base'
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const webRoot = dirname(fileURLToPath(import.meta.url))
+const repoRoot = resolve(webRoot, '../..')
 
 /** Read a string value from repo root `.env`. */
 function envStringFromRoot(key: string): string | undefined {
@@ -28,6 +29,16 @@ function panelPortFromRootEnv(): number | undefined {
   if (!raw) return undefined
   const value = Number(raw)
   return Number.isFinite(value) && value > 0 ? value : undefined
+}
+
+function devPanelPortFromRootEnv(): number | undefined {
+  const raw = envStringFromRoot('DEV_PANEL_PORT')
+  if (raw) {
+    const value = Number(raw)
+    if (Number.isFinite(value) && value > 0) return value
+  }
+  const panel = panelPortFromRootEnv()
+  return panel ? panel + 1 : undefined
 }
 
 /** 8-char hex entrance prefix for dev proxy (matches panel URL /a1b2c3d4/ui/...). */
@@ -86,7 +97,11 @@ async function resolveApiPort(): Promise<{ port: number; live: boolean }> {
   }
 
   const fromEnv = panelPortFromRootEnv()
-  const candidates = [...new Set([8000, fromEnv, 8787].filter((p): p is number => !!p && p > 0))]
+  const devPort = devPanelPortFromRootEnv()
+  // Prefer dev overflow port first so Vite proxies to reload API when self-host also runs.
+  const candidates = [
+    ...new Set([devPort, fromEnv, 8787, 8788, 8000].filter((p): p is number => !!p && p > 0)),
+  ]
 
   for (const port of candidates) {
     if (await probeApiPort(port)) return { port, live: true }
@@ -131,6 +146,11 @@ export default defineConfig(async () => {
   return {
     plugins: [react(), tailwindcss(), panelUiBaseRedirectPlugin(API_PROXY_PATHS)],
     base: '/ui/',
+    resolve: {
+      alias: {
+        '@': resolve(webRoot, 'src'),
+      },
+    },
     server: {
       port: 5173,
       strictPort: true,

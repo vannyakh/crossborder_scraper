@@ -53,6 +53,18 @@ Default port comes from `PANEL_PORT` in `.env` (8787 in `.env.example`).
 | `http://127.0.0.1:<PANEL_PORT>/ui/` | API (proxies to Vite when `dist/` is missing) |
 | `http://127.0.0.1:5173/ui/` | Vite dev server (fastest UI iteration) |
 
+### Self-hosted panel vs dev
+
+If `crossborder service start` or `crossborder deploy autostart` is already using `PANEL_PORT`, `make run-dev` automatically binds the dev API on the next free port (default **8788**, override with `DEV_PANEL_PORT` in `.env`). Vite prefers that dev port when both panels are up.
+
+To reuse **8787** for dev instead, stop the background panel first:
+
+```bash
+crossborder service stop
+# or permanently: crossborder deploy autostart disable
+make run-dev
+```
+
 **502 on `/health`:** start `make run-dev` and restart Vite.
 
 ## Production-like local run

@@ -1,0 +1,29 @@
+{
+  "kind": "condition",
+  "defaultTab": "parameters",
+  "tabs": [{ "id": "parameters", "labelKey": "projects.config.tabs.parameters" }],
+  "sections": [
+    {
+      "id": "overview",
+      "labelKey": "projects.config.sections.overview",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "expr",
+          "labelKey": "projects.config.fields.condition",
+          "type": "textarea",
+          "bind": "subtitle",
+          "editable": true,
+          "rows": 4,
+          "placeholderKey": "projects.config.conditionPlaceholder"
+        },
+        {
+          "id": "status",
+          "labelKey": "projects.serviceStatus",
+          "type": "text",
+          "resolve": "status"
+        }
+      ]
+    }
+  ]
+}

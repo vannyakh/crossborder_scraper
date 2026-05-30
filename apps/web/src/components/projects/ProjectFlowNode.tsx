@@ -7,6 +7,7 @@ import type { ConfigInputPort } from './project-flow-layout'
 import { ProjectFlowMainOutHandle } from './ProjectFlowMainOutHandle'
 import { ProjectFlowNodeMenu } from './ProjectFlowNodeMenu'
 import { ProjectFlowOutRail } from './ProjectFlowOutRail'
+import { ProjectFlowSubNodeToolbar } from './ProjectFlowSubNodeToolbar'
 import { ProjectFlowTriggerRun } from './ProjectFlowTriggerRun'
 import { ProjectWorkflowNode } from './ProjectWorkflowNode'
 import type { ProjectFlowNodeData } from './project-flow-types'
@@ -195,6 +196,7 @@ function ProjectFlowNodeComponent({
   const role = roleForKind(data.node.kind, data.node.role)
   const isTrigger = role === 'trigger'
   const isAgent = role === 'agent'
+  const isSubNode = role === 'config'
 
   // Agents always show 3 slot rows so the body height includes slot space
   const inlineToolsStrip = isAgent && Boolean(data.configInputs?.length)
@@ -232,6 +234,16 @@ function ProjectFlowNodeComponent({
         onMenuOpenChange={setMenuOpen}
         chromeHoverHandlers={chromeHoverHandlers}
       />
+      {isSubNode ? (
+        <ProjectFlowSubNodeToolbar
+          nodeId={id}
+          node={data.node}
+          visible={visible}
+          menuOpen={menuOpen}
+          onMenuOpenChange={setMenuOpen}
+          chromeHoverHandlers={chromeHoverHandlers}
+        />
+      ) : null}
       {isTrigger ? (
         <ProjectFlowTriggerRun
           nodeId={id}

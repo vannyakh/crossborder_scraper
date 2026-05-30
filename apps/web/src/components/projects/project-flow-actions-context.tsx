@@ -7,6 +7,9 @@ export type ProjectFlowActions = {
   duplicateNode: (nodeId: string) => void
   removeNode: (nodeId: string) => void
   openAddAfter: (nodeId: string) => void
+  /** Open add panel to insert a step between two linked nodes. */
+  openAddBetween: (sourceId: string, targetId: string) => void
+  removeEdge: (edgeId: string) => void
   /** Open the add-plugin panel targeting a specific agent slot. */
   openSlotAdd: (agentId: string, slotIndex: AgentSlotIndex) => void
   executeStep: (nodeId: string) => void
@@ -17,6 +20,10 @@ export type ProjectFlowActions = {
   selectAllNodes: () => void
   clearSelection: () => void
   previewNodeAction: (action: string) => void
+  beginStickyEdit: (nodeId: string) => void
+  endStickyEdit: () => void
+  /** Pan to a canvas node and optionally open its config drawer. */
+  focusCanvasNode: (nodeId: string, options?: { openConfig?: boolean }) => void
 }
 
 const ProjectFlowActionsContext = createContext<ProjectFlowActions | null>(null)

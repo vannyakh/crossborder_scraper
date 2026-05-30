@@ -1,0 +1,32 @@
+{
+  "kind": "schedule",
+  "defaultTab": "parameters",
+  "tabs": [
+    { "id": "parameters", "labelKey": "projects.config.tabs.parameters" },
+    { "id": "settings", "labelKey": "projects.config.tabs.settings" }
+  ],
+  "sections": [
+    {
+      "id": "trigger",
+      "labelKey": "projects.config.sections.trigger",
+      "tab": "parameters",
+      "fields": [
+        {
+          "id": "cron",
+          "labelKey": "projects.config.fields.cron",
+          "type": "mono",
+          "bind": "subtitle",
+          "editable": true,
+          "placeholderKey": "projects.config.cronPlaceholder"
+        },
+        {
+          "id": "name",
+          "labelKey": "projects.config.fields.name",
+          "type": "text",
+          "bind": "label",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

@@ -85,10 +85,17 @@ def _primary_ip_via_route() -> str | None:
 
 
 def is_port_free(host: str, port: int) -> bool:
+    """Return True when nothing is accepting TCP connections on the probe address."""
     probe_host = "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.settimeout(0.4)
+            if sock.connect_ex((probe_host, port)) == 0:
+                return False
+    except OSError:
+        pass
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.bind((probe_host, port))
             return True
     except OSError:

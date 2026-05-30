@@ -138,6 +138,7 @@ When operators should **ask the agent** to do something new:
 | App Store / infra | `server/app_store/`, `deploy/drivers/` | `/store`, `/databases` |
 | Panel security | `services/panel_security.py`, `deploy/` | Settings → Network, `/firewall` |
 | Source plugins | `core/plugins/`, `plugins/` | App Store catalog |
+| Project flow canvas | — (session mock) | `components/projects/`, `.cursor/rules/project-flow-canvas.mdc` |
 
 ## Imports and paths
 

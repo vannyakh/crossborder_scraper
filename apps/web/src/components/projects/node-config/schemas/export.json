@@ -1,0 +1,36 @@
+{
+  "kind": "export",
+  "defaultTab": "export",
+  "tabs": [
+    { "id": "parameters", "labelKey": "projects.config.tabs.parameters" },
+    { "id": "export", "labelKey": "projects.config.tabs.export" }
+  ],
+  "sections": [
+    {
+      "id": "export",
+      "labelKey": "projects.config.sections.export",
+      "tab": "export",
+      "fields": [
+        {
+          "id": "target",
+          "labelKey": "projects.config.fields.exportTarget",
+          "type": "select",
+          "optionKey": "exportTarget",
+          "editable": true,
+          "options": [
+            { "value": "shopee", "labelKey": "projects.config.exportTargets.shopee" },
+            { "value": "lazada", "labelKey": "projects.config.exportTargets.lazada" },
+            { "value": "both", "labelKey": "projects.config.exportTargets.both" }
+          ]
+        },
+        {
+          "id": "host",
+          "labelKey": "projects.config.fields.host",
+          "type": "mono",
+          "bind": "host",
+          "editable": true
+        }
+      ]
+    }
+  ]
+}

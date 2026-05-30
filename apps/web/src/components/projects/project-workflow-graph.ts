@@ -67,7 +67,11 @@ export class ProjectWorkflowGraph {
   /** Nodes on the main execution path (excludes config circles). */
   get mainPathNodeIds(): Set<string> {
     return new Set(
-      this.project.nodes.filter((n) => roleForKind(n.kind, n.role) !== 'config').map((n) => n.id),
+      this.project.nodes
+        .filter(
+          (n) => roleForKind(n.kind, n.role) !== 'config' && roleForKind(n.kind, n.role) !== 'note',
+        )
+        .map((n) => n.id),
     )
   }
 
@@ -159,8 +163,8 @@ export class ProjectWorkflowGraph {
     }
 
     for (const node of this.project.nodes) {
-      if (roleForKind(node.kind, node.role) === 'config') continue
       const role = roleForKind(node.kind, node.role)
+      if (role === 'config' || role === 'note') continue
       const hasIn = this.getMainParents(node.id).length > 0
       const hasOut = this.getMainChildren(node.id).length > 0
       const isTrigger = role === 'trigger'
@@ -228,7 +232,7 @@ export class ProjectWorkflowGraph {
     }
 
     return {
-      nodeCount: this.project.nodes.length,
+      nodeCount: this.project.nodes.filter((n) => roleForKind(n.kind, n.role) !== 'note').length,
       mainEdgeCount: this.mainEdges.length,
       configEdgeCount: this.configEdges.length,
       triggerCount: this.project.nodes.filter((n) => n.role === 'trigger').length,
