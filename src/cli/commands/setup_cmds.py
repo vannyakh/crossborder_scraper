@@ -7,8 +7,9 @@ from rich.table import Table
 
 from cli.helpers import console
 from cli.onboard import print_mode_footer, print_onboard_banner, print_setup_progress
-from cli.theme import hint, warn
+from cli.theme import hint, ok, warn
 from config import get_settings
+from core.paths import repo_root
 
 
 def _run_setup_flow(
@@ -198,6 +199,82 @@ def register_setup_commands(app: typer.Typer) -> None:
         from server.__main__ import main
 
         main()
+
+    @app.command("uninstall")
+    def uninstall(
+        yes: bool = typer.Option(
+            False,
+            "--yes",
+            "-y",
+            help="Skip confirmation prompt",
+        ),
+        keep_running: bool = typer.Option(
+            False,
+            "--keep-running",
+            help="Do not stop the panel API process",
+        ),
+        keep_autostart: bool = typer.Option(
+            False,
+            "--keep-autostart",
+            help="Leave boot/login auto-start registration unchanged",
+        ),
+        systemd: bool = typer.Option(
+            False,
+            "--systemd",
+            help="Remove /etc/systemd/system/crossborder-scraper.service (Linux, needs root)",
+        ),
+        purge: bool = typer.Option(
+            False,
+            "--purge",
+            help="Delete the entire install directory (irreversible)",
+        ),
+    ) -> None:
+        """
+        Stop the panel and remove auto-start. Use --purge to delete the install folder.
+
+        \b
+        Examples:
+          crossborder uninstall
+          crossborder uninstall --yes --systemd
+          crossborder uninstall --purge --yes
+        """
+        root = repo_root()
+
+        if purge and not yes:
+            typer.confirm(
+                f"Delete install directory {root}? This cannot be undone.",
+                abort=True,
+            )
+        elif not yes:
+            typer.confirm(
+                "Stop the panel and disable auto-start?",
+                default=True,
+                abort=True,
+            )
+
+        from deploy.uninstall import run_uninstall
+
+        result = run_uninstall(
+            stop_service=not keep_running,
+            disable_autostart=not keep_autostart,
+            remove_systemd=systemd,
+            purge=purge,
+        )
+
+        for step in result.steps:
+            console.print(ok(step))
+        for warning in result.warnings:
+            console.print(warn(warning))
+
+        if purge:
+            console.print(hint("Install directory removed — shell may still be inside it."))
+        else:
+            console.print(
+                hint("Config and data under the install dir are kept (use --purge to remove)."),
+            )
+
+        if result.warnings and not result.steps:
+            raise typer.Exit(1)
 
     @app.command("plugins")
     def plugins_list(
