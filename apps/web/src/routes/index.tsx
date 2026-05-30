@@ -1,3 +1,4 @@
+import { getRouterBasename } from '../lib/api/panel-prefix'
 import {
   createBrowserRouter,
   Navigate,
@@ -164,7 +165,7 @@ const router = createBrowserRouter(
     },
     { path: '*', element: <NotFoundPage /> },
   ],
-  { basename: '/ui' },
+  { basename: getRouterBasename() },
 )
 
 export function AppRouter() {

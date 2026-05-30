@@ -18,7 +18,16 @@ def _not_found() -> JSONResponse:
 
 
 def _is_static_ui_asset(path: str) -> bool:
-    return path.startswith("/ui/assets/") or path in ("/ui/favicon.ico", "/ui/vite.svg")
+    if path.startswith("/ui/assets/"):
+        return True
+    if path.startswith("/ui/images/"):
+        return True
+    return path in (
+        "/ui/favicon.ico",
+        "/ui/favicon.svg",
+        "/ui/vite.svg",
+        "/ui/icons.svg",
+    )
 
 
 def _is_unprefixed_ui_static(path: str) -> bool:

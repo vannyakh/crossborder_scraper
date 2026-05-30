@@ -5,6 +5,12 @@ export function getPanelEntrancePrefix(): string {
   return match ? `/${match[1]}` : ''
 }
 
+/** React Router basename — includes entrance prefix when present (e.g. /a1b2c3d4/ui). */
+export function getRouterBasename(): string {
+  const prefix = getPanelEntrancePrefix()
+  return prefix ? `${prefix}/ui` : '/ui'
+}
+
 export function withPanelPrefix(path: string): string {
   const normalized = path.startsWith('/') ? path : `/${path}`
   const prefix = getPanelEntrancePrefix()

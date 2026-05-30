@@ -36,6 +36,21 @@ def test_unprefixed_ui_assets_allowed_without_entrance_prefix() -> None:
     assert res.text == "asset"
 
 
+def test_unprefixed_ui_favicon_allowed_without_entrance_prefix() -> None:
+    app = Starlette(
+        routes=[Route("/ui/favicon.svg", lambda _r: PlainTextResponse("favicon"))],
+    )
+    app.add_middleware(
+        PanelEntranceMiddleware,
+        entry_path="f10585a9",
+        access_key="test-access-key",
+    )
+    client = TestClient(app)
+    res = client.get("/ui/favicon.svg")
+    assert res.status_code == 200
+    assert res.text == "favicon"
+
+
 def test_bare_ui_login_blocked_without_entrance_prefix() -> None:
     client = TestClient(_build_app())
     res = client.get("/ui/login")
