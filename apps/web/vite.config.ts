@@ -73,39 +73,47 @@ const API_PROXY_PATHS = [
   '/firewall',
   '/vhost',
   '/logs',
+  '/projects',
 ] as const
 
-async function probeApiPort(port: number): Promise<boolean> {
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 600)
-    const res = await fetch(`http://127.0.0.1:${port}/health`, { signal: controller.signal })
-    clearTimeout(timer)
-    if (!res.ok) return false
-    const body = (await res.json()) as { status?: string }
-    return body.status === 'ok'
-  } catch {
-    return false
+async function probeApiPort(port: number, entryPath?: string): Promise<boolean> {
+  const paths = entryPath ? [`/${entryPath}/health`, '/health'] : ['/health']
+  for (const healthPath of paths) {
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 600)
+      const res = await fetch(`http://127.0.0.1:${port}${healthPath}`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      if (!res.ok) continue
+      const body = (await res.json()) as { status?: string }
+      if (body.status === 'ok') return true
+    } catch {
+      /* try next path */
+    }
   }
+  return false
 }
 
 /** Pick API port: explicit VITE_API_PORT, else first live /health among common dev ports. */
 async function resolveApiPort(): Promise<{ port: number; live: boolean }> {
   const explicit = Number(process.env.VITE_API_PORT)
   if (Number.isFinite(explicit) && explicit > 0) {
-    const live = await probeApiPort(explicit)
+    const live = await probeApiPort(explicit, panelEntryFromRootEnv())
     return { port: explicit, live }
   }
 
   const fromEnv = panelPortFromRootEnv()
   const devPort = devPanelPortFromRootEnv()
+  const panelEntry = panelEntryFromRootEnv()
   // Prefer dev overflow port first so Vite proxies to reload API when self-host also runs.
   const candidates = [
     ...new Set([devPort, fromEnv, 8787, 8788, 8000].filter((p): p is number => !!p && p > 0)),
   ]
 
   for (const port of candidates) {
-    if (await probeApiPort(port)) return { port, live: true }
+    if (await probeApiPort(port, panelEntry)) return { port, live: true }
   }
 
   return { port: fromEnv ?? 8000, live: false }
@@ -114,7 +122,7 @@ async function resolveApiPort(): Promise<{ port: number; live: boolean }> {
 function buildApiProxy(target: string, entryPath?: string) {
   const proxy: Record<string, string | { target: string; ws?: boolean }> = {}
   for (const path of API_PROXY_PATHS) {
-    const config = path === '/jobs' ? { target, ws: true } : target
+    const config = path === '/jobs' || path === '/projects' ? { target, ws: true } : target
     proxy[path] = config
     if (entryPath) {
       proxy[`/${entryPath}${path}`] = config
@@ -147,6 +155,9 @@ export default defineConfig(async () => {
   return {
     plugins: [react(), tailwindcss(), panelUiBaseRedirectPlugin(API_PROXY_PATHS)],
     base: '/ui/',
+    define: {
+      'import.meta.env.VITE_PANEL_ENTRY_PATH': JSON.stringify(panelEntry ?? ''),
+    },
     resolve: {
       alias: {
         '@': resolve(webRoot, 'src'),

@@ -61,4 +61,6 @@ export const queryKeys = {
   firewallExport: ['firewall', 'export'] as const,
   vhostStatus: ['vhost', 'status'] as const,
   vhostSites: ['vhost', 'sites'] as const,
+  projectsList: ['projects', 'list'] as const,
+  project: (id: string) => ['projects', id] as const,
 }

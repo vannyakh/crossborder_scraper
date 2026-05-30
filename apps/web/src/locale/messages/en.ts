@@ -78,7 +78,7 @@ export const en: MessageTree = {
   projects: {
     title: 'Projects',
     description:
-      'Compose and preview job flows on a canvas — sample UI only, no live execution yet.',
+      'Compose job flows on a canvas — graphs are saved to the panel server under data/projects/.',
     new: 'New',
     count: '{{count}} Projects',
     sortBy: 'Sort by',
@@ -88,8 +88,17 @@ export const en: MessageTree = {
     viewGrid: 'Grid view',
     viewList: 'List view',
     empty: 'No projects yet. Create one to open the flow canvas.',
+    loadFailed: 'Could not load projects from the server.',
+    createFailed: 'Could not create the project.',
+    notFound: 'Project not found.',
+    collaboration: {
+      live: '{{count}} editing',
+      reconnecting: 'Reconnecting…',
+      offline: 'Offline',
+      peerFocus: '{{name}} is viewing this step',
+    },
     createTitle: 'New project',
-    createHint: 'Projects are stored in this browser session only until backend wiring is added.',
+    createHint: 'Creates a starter flow (schedule trigger → gateway agent) on the server.',
     createConfirm: 'Create',
     createDone: 'Created project {{name}}',
     nameLabel: 'Project name',
@@ -660,6 +669,7 @@ export const en: MessageTree = {
   common: {
     expandSidebar: 'Expand sidebar',
     collapseSidebar: 'Collapse sidebar',
+    retry: 'Retry',
   },
   account: {
     signOut: 'Sign out',

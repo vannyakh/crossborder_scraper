@@ -23,6 +23,7 @@ from server.routers import (
     monitor,
     plugins,
     products,
+    projects,
     realtime,
     runtime,
     service,
@@ -57,6 +58,10 @@ def register_routes(app: FastAPI) -> None:
 
     # AI control plane
     app.include_router(gateway.router)
+
+    # Project flow canvas
+    app.include_router(projects.router)
+    app.include_router(projects.ws_router)
 
     # Scrape pipeline
     app.include_router(realtime.router)

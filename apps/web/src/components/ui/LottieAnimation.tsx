@@ -1,6 +1,5 @@
-import Lottie from 'lottie-react'
-import type { LottieComponentProps } from 'lottie-react'
 import { Box } from '@chakra-ui/react'
+import { useLottie, type LottieComponentProps } from 'lottie-react'
 import { useThemeConfig } from '../../hooks/use-ui-config'
 
 type LottieAnimationProps = {
@@ -18,6 +17,12 @@ export function LottieAnimation({
   size = 280,
 }: LottieAnimationProps) {
   const { reducedMotion } = useThemeConfig()
+  const { View } = useLottie({
+    animationData,
+    loop: loop && !reducedMotion,
+    autoplay: !reducedMotion,
+    style: { width: '100%', height: '100%' },
+  })
 
   return (
     <Box
@@ -29,12 +34,7 @@ export function LottieAnimation({
       aria-hidden
       pointerEvents="none"
     >
-      <Lottie
-        animationData={animationData}
-        loop={loop && !reducedMotion}
-        autoplay={!reducedMotion}
-        style={{ width: '100%', height: '100%' }}
-      />
+      {View}
     </Box>
   )
 }

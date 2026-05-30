@@ -77,7 +77,7 @@ export const zh: MessageTree = {
   },
   projects: {
     title: '项目',
-    description: '在画布上编排与预览任务流 — 当前仅为示例界面，尚未连接后端执行。',
+    description: '在画布上编排任务流 — 流程图保存在面板服务器的 data/projects/ 目录。',
     new: '新建',
     count: '{{count}} 个项目',
     sortBy: '排序',
@@ -87,8 +87,17 @@ export const zh: MessageTree = {
     viewGrid: '网格视图',
     viewList: '列表视图',
     empty: '暂无项目。创建一个以打开流程画布。',
+    loadFailed: '无法从服务器加载项目列表。',
+    createFailed: '创建项目失败。',
+    notFound: '未找到该项目。',
+    collaboration: {
+      live: '{{count}} 人正在编辑',
+      reconnecting: '正在重新连接…',
+      offline: '未连接',
+      peerFocus: '{{name}} 正在查看此步骤',
+    },
     createTitle: '新建项目',
-    createHint: '在后端接入前，项目仅保存在当前浏览器会话中。',
+    createHint: '在服务器上创建起始流程（定时触发 → 网关 agent）。',
     createConfirm: '创建',
     createDone: '已创建项目 {{name}}',
     nameLabel: '项目名称',
@@ -649,6 +658,7 @@ export const zh: MessageTree = {
   common: {
     expandSidebar: '展开侧栏',
     collapseSidebar: '收起侧栏',
+    retry: '重试',
   },
   account: {
     signOut: '退出登录',

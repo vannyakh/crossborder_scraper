@@ -1,4 +1,4 @@
-/** Project flow types and mock re-exports — no API wiring yet. */
+/** Project flow types — persisted via /projects API. */
 
 import type { StickyNoteColor } from './project-sticky-colors'
 
@@ -72,6 +72,8 @@ export type ProjectSummary = {
   servicesOnline: number
   servicesTotal: number
   updatedAt: string
+  /** Monotonic canvas revision — used for multi-user sync. */
+  flowRevision?: number
   /** Short blurb for settings and list cards */
   description?: string
   previewNodes: ProjectNode[]
@@ -82,7 +84,5 @@ export type ProjectDetail = ProjectSummary & {
   nodes: ProjectNode[]
   edges: ProjectEdge[]
 }
-
-export { SAMPLE_PROJECTS, createStarterProject, getSampleProject } from './project-mock-data'
 
 export { NODE_PALETTE } from './project-node-palette'

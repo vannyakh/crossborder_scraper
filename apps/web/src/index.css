@@ -2710,6 +2710,21 @@ button:focus-visible {
   padding-right: 52px;
 }
 
+.project-flow-node-root--remote-peer .project-workflow-node-wrap {
+  outline: 2px solid var(--remote-peer-color, var(--chakra-colors-teal-400));
+  outline-offset: 3px;
+  border-radius: 14px;
+}
+
+.project-collaborators__stack {
+  display: flex;
+  align-items: center;
+}
+
+.project-collaborators__stack > * + * {
+  margin-left: -6px;
+}
+
 .project-flow-out-rail {
   position: absolute;
   right: 0;

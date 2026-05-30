@@ -3,7 +3,11 @@ import { buildAgentConfigPorts, resolveConfigEdgeHandles } from './project-flow-
 import { hasMainOutgoing, MAIN_FLOW_HANDLES, nodeEmitsMainFlow } from './project-flow-connect'
 import { roleForKind } from './project-node-meta'
 import { STICKY_NOTE_DEFAULT_H, STICKY_NOTE_DEFAULT_W } from './project-sticky-colors'
-import type { ProjectFlowEdgeData, FlowExecutionStatus } from './project-flow-types'
+import type {
+  ProjectFlowEdgeData,
+  FlowExecutionStatus,
+  RemotePeerHighlight,
+} from './project-flow-types'
 import type { ProjectFlowCanvasOptions } from './project-flow-canvas-options'
 import type { ProjectDetail, ProjectEdgeKind, ProjectNode } from './project-sample-data'
 import type {
@@ -49,6 +53,7 @@ export type ProjectFlowSyncOptions = {
   canvas?: Pick<ProjectFlowCanvasOptions, 'showNetworkTraffic' | 'hideConnections'>
   showVariableRefs?: boolean
   stickyEditId?: string | null
+  remotePeerHighlights?: Record<string, RemotePeerHighlight>
 }
 
 export function projectFlowOptionsSignature(options: ProjectFlowSyncOptions): string {
@@ -60,6 +65,7 @@ export function projectFlowOptionsSignature(options: ProjectFlowSyncOptions): st
     canvas: options.canvas ?? null,
     showVariableRefs: options.showVariableRefs ?? true,
     stickyEditId: options.stickyEditId ?? null,
+    remotePeerHighlights: options.remotePeerHighlights ?? null,
   })
 }
 
@@ -144,6 +150,7 @@ export function projectDetailToFlow(
         showVariableRefs,
         hasMainOutput,
         showAddStep: hasMainOutput && !hasMainOutgoing(project, node.id),
+        remotePeerHighlight: options?.remotePeerHighlights?.[node.id],
       },
     })
   }

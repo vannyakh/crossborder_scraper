@@ -77,7 +77,7 @@ export const km: MessageTree = {
   },
   projects: {
     title: 'Projects',
-    description: 'Compose and preview job flows on a canvas — sample UI only.',
+    description: 'Compose job flows on a canvas — saved to the panel server under data/projects/.',
     new: 'New',
     count: '{{count}} Projects',
     sortBy: 'Sort by',
@@ -87,8 +87,17 @@ export const km: MessageTree = {
     viewGrid: 'Grid view',
     viewList: 'List view',
     empty: 'No projects yet.',
+    loadFailed: 'Could not load projects from the server.',
+    createFailed: 'Could not create the project.',
+    notFound: 'Project not found.',
+    collaboration: {
+      live: '{{count}} editing',
+      reconnecting: 'Reconnecting…',
+      offline: 'Offline',
+      peerFocus: '{{name}} is viewing this step',
+    },
     createTitle: 'New project',
-    createHint: 'Stored in this browser session only until backend wiring.',
+    createHint: 'Creates a starter flow (schedule trigger → gateway agent) on the server.',
     createConfirm: 'Create',
     createDone: 'Created project {{name}}',
     nameLabel: 'Project name',
@@ -649,6 +658,7 @@ export const km: MessageTree = {
   common: {
     expandSidebar: 'ពង្រីក sidebar',
     collapseSidebar: 'បង្រួម sidebar',
+    retry: 'ព្យាយាមម្តងទៀត',
   },
   account: {
     signOut: 'ចាកចេញ',

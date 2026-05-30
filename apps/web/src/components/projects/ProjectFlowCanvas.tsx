@@ -27,6 +27,7 @@ import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-pr
 import { useAccentPalette, useColorMode } from '../../hooks/use-ui-config'
 import { notifySuccess } from '../../lib/toast'
 import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
+import { peerAccentColor } from '../../lib/api/project-collaboration'
 import { ProjectAddNodePanel } from './ProjectAddNodePanel'
 import { ProjectFlowCanvasActionBar } from './ProjectFlowCanvasActionBar'
 import { ProjectFlowCanvasSplitter } from './ProjectFlowCanvasSplitter'
@@ -90,7 +91,7 @@ function ProjectFlowCanvasInner() {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
   const colorMode = useColorMode()
-  const { project, setProject, running, setRunning } = useProjectWorkspace()
+  const { project, setProject, running, setRunning, collaboration } = useProjectWorkspace()
   const flowConsole = useFlowConsole()
   const flowConsoleRef = useRef(flowConsole)
   useEffect(() => {
@@ -140,6 +141,10 @@ function ProjectFlowCanvasInner() {
     layoutBaselineRef.current = snapshotNodePositions(project)
   }, [project.id])
 
+  useEffect(() => {
+    collaboration.publishSelection(activeNodeId)
+  }, [activeNodeId, collaboration.publishSelection])
+
   const completedSet = useMemo(() => new Set(completedNodeIds), [completedNodeIds])
   const runSuccessSet = useMemo(() => new Set(runSuccessNodeIds), [runSuccessNodeIds])
   const displayCompletedSet = useMemo(() => {
@@ -149,6 +154,19 @@ function ProjectFlowCanvasInner() {
   }, [running, completedSet, runSuccessSet])
   const runSucceeded = !running && runSuccessSet.size > 0
 
+  const remotePeerHighlights = useMemo(() => {
+    const map: Record<string, { username: string; color: string }> = {}
+    for (const peer of collaboration.peers) {
+      if (peer.clientId === collaboration.clientId) continue
+      if (!peer.selectedNodeId) continue
+      map[peer.selectedNodeId] = {
+        username: peer.username,
+        color: peerAccentColor(peer.clientId),
+      }
+    }
+    return map
+  }, [collaboration.clientId, collaboration.peers])
+
   const flowOptions = useMemo(
     () => ({
       runningNodeId: running ? activeNodeId : null,
@@ -157,8 +175,17 @@ function ProjectFlowCanvasInner() {
       canvas: canvasOptions,
       showVariableRefs: canvasOptions.showVariableRefs,
       stickyEditId,
+      remotePeerHighlights,
     }),
-    [running, activeNodeId, displayCompletedSet, runSucceeded, canvasOptions, stickyEditId],
+    [
+      running,
+      activeNodeId,
+      displayCompletedSet,
+      runSucceeded,
+      canvasOptions,
+      stickyEditId,
+      remotePeerHighlights,
+    ],
   )
 
   const initial = useMemo(() => projectDetailToFlow(project, flowOptions), [project, flowOptions])

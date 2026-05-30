@@ -4,6 +4,11 @@ import type { ProjectNode } from './project-sample-data'
 
 export type FlowExecutionStatus = 'idle' | 'running' | 'done'
 
+export type RemotePeerHighlight = {
+  username: string
+  color: string
+}
+
 export type ProjectFlowNodeData = {
   node: ProjectNode
   running?: boolean
@@ -16,6 +21,8 @@ export type ProjectFlowNodeData = {
   hasMainOutput?: boolean
   /** Show + add-step control when main output has no downstream edge yet */
   showAddStep?: boolean
+  /** Another collaborator is focused on this node */
+  remotePeerHighlight?: RemotePeerHighlight
 }
 
 export type ProjectFlowEdgeData = {

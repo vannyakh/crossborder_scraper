@@ -1,6 +1,6 @@
 import { Box, Text } from '@chakra-ui/react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, type CSSProperties } from 'react'
 import { useLocale } from '../../hooks/use-locale'
 import { ROLE_DEFAULTS, roleForKind } from './project-node-meta'
 import type { ConfigInputPort } from './project-flow-layout'
@@ -219,11 +219,17 @@ function ProjectFlowNodeComponent({
     <Box
       className={[
         'project-flow-node-root',
+        data.remotePeerHighlight ? 'project-flow-node-root--remote-peer' : '',
         useOutRail ? 'project-flow-node-root--has-out-rail' : '',
         useOutRail && isTrigger ? 'project-flow-node-root--flow-entry' : '',
       ]
         .filter(Boolean)
         .join(' ')}
+      style={
+        data.remotePeerHighlight
+          ? ({ '--remote-peer-color': data.remotePeerHighlight.color } as CSSProperties)
+          : undefined
+      }
       {...nodeHoverHandlers}
     >
       <ProjectFlowNodeMenu
@@ -257,6 +263,7 @@ function ProjectFlowNodeComponent({
         running={data.running}
         executionStatus={data.executionStatus}
         configInputs={data.configInputs}
+        remotePeerHighlight={data.remotePeerHighlight}
       />
       {useOutRail ? (
         <ProjectFlowOutRail anchorTopPx={outRailTopPx} showEntryLabel={isTrigger} />

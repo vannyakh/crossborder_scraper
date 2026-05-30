@@ -1,4 +1,4 @@
-import { Box, Flex } from '@chakra-ui/react'
+import { Box, Flex, Spinner, VStack } from '@chakra-ui/react'
 import {
   useCallback,
   useEffect,
@@ -8,38 +8,35 @@ import {
   type SetStateAction,
 } from 'react'
 import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom'
-import { getSampleProject, type ProjectDetail } from '../../projects/project-sample-data'
+import { getOrCreateCollaborationClientId } from '../../../lib/api/project-collaboration'
+import type { ProjectDetail } from '../../projects/project-sample-data'
+import { useProjectCollaboration } from '../../projects/use-project-collaboration'
+import { useProjectFlowPersistence } from '../../projects/use-project-flow-persistence'
+import { useProjectQuery } from '../../../hooks/queries/use-projects-query'
 import { usePanelAppearance } from '../../../hooks/use-panel-appearance'
+import { useLocale } from '../../../hooks/use-locale'
 import { ROUTE_PATHS } from '../../../routes/route-config'
 import { PageTransition } from '../../motion/PageTransition'
 import { RouteProgress } from '../RouteProgress'
+import { DataListEmpty } from '../../ui/DataList'
 import { ProjectShellHeader } from './ProjectShellHeader'
 import { ProjectShellSidebar } from './ProjectShellSidebar'
 import { ProjectWorkspaceProvider } from './project-workspace-context'
 
-type ProjectLocationState = {
-  project?: ProjectDetail
-}
-
 type ProjectShellProps = {
-  /** Optional project override; falls back to router state or sample catalog */
+  /** Optional project override (tests/storybook) */
   project?: ProjectDetail
 }
 
 export function ProjectShell({ project: projectProp }: ProjectShellProps) {
   usePanelAppearance()
-  const { projectId } = useParams<{ projectId: string }>()
+  const { t } = useLocale()
+  const { projectId, section } = useParams<{ projectId: string; section?: string }>()
   const location = useLocation()
   const [running, setRunning] = useState(false)
+  const { data: loaded, isLoading, isError } = useProjectQuery(projectProp ? undefined : projectId)
 
-  const baseProject = useMemo(() => {
-    if (projectProp) return projectProp
-    const fromState = (location.state as ProjectLocationState | null)?.project
-    if (fromState && fromState.id === projectId) return fromState
-    if (!projectId) return null
-    return getSampleProject(projectId) ?? null
-  }, [projectProp, projectId, location.state])
-
+  const baseProject = projectProp ?? loaded ?? null
   const [projectDraft, setProjectDraft] = useState<ProjectDetail | null>(null)
 
   useEffect(() => {
@@ -47,6 +44,8 @@ export function ProjectShell({ project: projectProp }: ProjectShellProps) {
   }, [baseProject])
 
   const resolvedProject = projectDraft ?? baseProject
+  const flowEnabled = Boolean(resolvedProject && (!section || section === 'flow'))
+  const clientId = useMemo(() => getOrCreateCollaborationClientId(), [])
 
   const setProject = useCallback<Dispatch<SetStateAction<ProjectDetail>>>(
     (action) => {
@@ -59,12 +58,64 @@ export function ProjectShell({ project: projectProp }: ProjectShellProps) {
     [baseProject],
   )
 
-  if (!projectId || !resolvedProject) {
+  const { markRemoteRevision } = useProjectFlowPersistence(
+    projectId ?? '',
+    projectProp ? null : resolvedProject,
+    { clientId },
+  )
+
+  const handleRemoteFlow = useCallback(
+    (remote: ProjectDetail) => {
+      markRemoteRevision(remote)
+      setProject(remote)
+    },
+    [markRemoteRevision, setProject],
+  )
+
+  const collaboration = useProjectCollaboration({
+    projectId: projectId ?? '',
+    clientId,
+    enabled: flowEnabled && !projectProp,
+    flowRevision: resolvedProject?.flowRevision ?? 0,
+    onRemoteFlow: handleRemoteFlow,
+  })
+
+  const workspaceValue = useMemo(
+    () =>
+      resolvedProject
+        ? { project: resolvedProject, setProject, running, setRunning, collaboration }
+        : null,
+    [resolvedProject, setProject, running, collaboration],
+  )
+
+  if (!projectId) {
+    return <Navigate to={ROUTE_PATHS.projects.base} replace />
+  }
+
+  if (!projectProp && isLoading) {
+    return (
+      <Flex className="project-shell" align="center" justify="center" h="100dvh">
+        <Spinner size="lg" />
+      </Flex>
+    )
+  }
+
+  if (!projectProp && (isError || !resolvedProject)) {
+    return (
+      <Flex className="project-shell" align="center" justify="center" h="100dvh">
+        <VStack gap={2}>
+          <DataListEmpty>{t('projects.notFound')}</DataListEmpty>
+        </VStack>
+      </Flex>
+    )
+  }
+
+  if (!workspaceValue) {
     return <Navigate to={ROUTE_PATHS.projects.base} replace />
   }
 
   return (
-    <ProjectWorkspaceProvider value={{ project: resolvedProject, setProject, running, setRunning }}>
+    <ProjectWorkspaceProvider value={workspaceValue}>
       <Flex
         className="project-shell"
         direction="column"
@@ -89,7 +140,7 @@ export function ProjectShell({ project: projectProp }: ProjectShellProps) {
             display="flex"
             flexDirection="column"
           >
-            <PageTransition>
+            <PageTransition key={location.pathname}>
               <Outlet />
             </PageTransition>
           </Box>

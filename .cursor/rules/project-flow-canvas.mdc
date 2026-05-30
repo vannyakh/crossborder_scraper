@@ -8,7 +8,7 @@ alwaysApply: false
 
 # Project flow canvas
 
-React Flow workflow editor under `apps/web/src/components/projects/`. Mock/session data only until project API is wired.
+React Flow workflow editor under `apps/web/src/components/projects/`. Graphs persist via `/projects` API → `data/projects/` on disk. Run execution is still preview-only (mock console).
 
 ## Node roles
 

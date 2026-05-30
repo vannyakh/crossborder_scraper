@@ -176,6 +176,14 @@ from .marketplace import (
     StoreUpdateConfigRequest,
 )
 from .products import ExportRequest, ExportResponse, ProductListResponse, ProductSummary
+from .projects import (
+    ProjectCreateRequest,
+    ProjectDetail,
+    ProjectFlowUpdateRequest,
+    ProjectListResponse,
+    ProjectSummary,
+    ProjectUpdateRequest,
+)
 from .runtime import (
     HardwareCpuInfo,
     HardwareDiskInfo,
@@ -271,6 +279,12 @@ __all__ = [
     "ServiceLogListResponse",
     "MessageResponse",
     "ProductListResponse",
+    "ProjectCreateRequest",
+    "ProjectDetail",
+    "ProjectFlowUpdateRequest",
+    "ProjectListResponse",
+    "ProjectSummary",
+    "ProjectUpdateRequest",
     "RuntimeStatusResponse",
     "ScrapeSingleRequest",
     "ScrapeSingleResponse",

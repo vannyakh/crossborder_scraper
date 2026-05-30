@@ -1,5 +1,5 @@
 import type { ProjectDetail } from './project-sample-data'
-import { projectServiceNames } from './project-mock-data'
+import { projectServiceNames } from './project-utils'
 
 export type ProjectLogSeverity = 'info' | 'warn' | 'error'
 

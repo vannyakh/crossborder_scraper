@@ -1,5 +1,6 @@
 import { Badge, Box, HStack, Separator, Text } from '@chakra-ui/react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ProjectCollaborators } from '../../projects/ProjectCollaborators'
 import { isProjectSectionId } from '../../projects/project-sections'
 import type { ProjectEnvironment } from '../../projects/project-sample-data'
 import { useLocale } from '../../../hooks/use-locale'
@@ -87,6 +88,7 @@ export function ProjectShellHeader() {
 
       {showFlowMeta ? (
         <HStack className="project-shell-header__actions" gap={2} flexShrink={0}>
+          <ProjectCollaborators />
           {running ? (
             <Badge
               size="sm"

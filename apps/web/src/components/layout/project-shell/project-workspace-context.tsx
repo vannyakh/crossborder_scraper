@@ -5,6 +5,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from 'react'
+import type { ProjectCollaborationState } from '../../../lib/api/project-collaboration'
 import type { ProjectDetail } from '../../projects/project-sample-data'
 
 export type ProjectWorkspaceValue = {
@@ -12,6 +13,7 @@ export type ProjectWorkspaceValue = {
   setProject: Dispatch<SetStateAction<ProjectDetail>>
   running: boolean
   setRunning: Dispatch<SetStateAction<boolean>>
+  collaboration: ProjectCollaborationState
 }
 
 const ProjectWorkspaceContext = createContext<ProjectWorkspaceValue | null>(null)
