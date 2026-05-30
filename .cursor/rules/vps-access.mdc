@@ -1,0 +1,25 @@
+---
+description: VPS self-host install, nginx, HTTPS deploy, and public panel access troubleshooting
+globs:
+  - "scripts/install*.sh"
+  - "scripts/deploy-https.sh"
+  - "src/deploy/**"
+  - "docs/SELF_HOSTING.md"
+  - "libs/agent_rules/vps-access.md"
+alwaysApply: false
+---
+
+# VPS self-host and panel access
+
+When editing install/deploy files or fixing unreachable panels, read and follow the project skill:
+
+**`.cursor/skills/vps-access/SKILL.md`**
+
+Quick reference:
+
+- **Three layers:** panel bind → host firewall (ufw) → cloud security group
+- **HTTPS:** `scripts/deploy-https.sh` → `src/deploy/nginx_setup.py`
+- **IP-only public URL:** nginx on port **80** → panel **8787**
+- **Gateway operator policy:** `libs/agent_rules/vps-access.md` (keep in sync when behavior changes)
+
+Do not name other hosting panel products in user-facing strings — see `crossborder-product.mdc`.
