@@ -16,6 +16,7 @@ _DEFAULT_ENABLED = (
     "safety",
     "export-policy",
     "tool-discipline",
+    "vps-access",
 )
 
 

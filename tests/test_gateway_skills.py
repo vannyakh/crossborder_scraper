@@ -113,6 +113,16 @@ def test_panel_ops_skill_includes_network_tools() -> None:
     assert "panel-ops" in _BUILTIN_DEFAULT_ENABLED
 
 
+def test_vps_access_rule_in_default_enabled() -> None:
+    from gateway.rules.manager import _DEFAULT_ENABLED, RuleManager
+
+    assert "vps-access" in _DEFAULT_ENABLED
+    mgr = RuleManager()
+    manifest = mgr.get_manifest("vps-access")
+    assert manifest is not None
+    assert "cloud security group" in manifest.body.lower()
+
+
 def test_grounded_responses_rule_in_default_enabled() -> None:
     from gateway.rules.manager import _DEFAULT_ENABLED, RuleManager
 
