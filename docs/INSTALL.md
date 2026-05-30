@@ -110,7 +110,25 @@ From your PC (nginx on 80):
 curl -sI http://YOUR_VPS_IP/health
 ```
 
-Open the **Access URL** in your browser.
+Open the **Panel URL** in your browser.
+
+### CLI after install
+
+The installer adds `crossborder` to `~/.local/bin` and may link `/usr/local/bin/crossborder`.
+
+```bash
+source ~/.bashrc
+crossborder service status
+crossborder --help
+```
+
+If `crossborder: command not found` (same SSH session before install finished):
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+# or use the venv directly:
+/www/wwwroot/crossborder_scraper/.venv/bin/crossborder --help
+```
 
 ### 7. HTTPS (optional, requires domain)
 

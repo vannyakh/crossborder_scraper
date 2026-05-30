@@ -333,8 +333,14 @@ def print_install_finish_card(
     out.write("\n")
     out.write("  Save this card — credentials are not shown again.\n")
 
+    root = install_dir or str(Path(info.env_path).parent)
+    cli_bin = f"{root}/.venv/bin/crossborder"
+    out.write("\n")
+    out.write("  CLI on this server:\n")
+    out.write("    source ~/.bashrc && crossborder service status\n")
+    out.write(f"    Or: {cli_bin} --help\n")
+
     if verbose:
-        root = install_dir or str(Path(info.env_path).parent)
         out.write("\n")
         out.write(f"  Install dir: {root}\n")
         port = panel_port or info.port

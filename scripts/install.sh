@@ -551,8 +551,8 @@ confirm_reinstall_update() {
   if [[ ! -t 0 ]]; then
     echo "  Non-interactive shell — confirmation required."
     echo "  Re-run with:"
-    echo "    CROSSBORDER_YES=1 curl -fsSL ${INSTALL_URL} | bash"
-    echo "  Or SSH in and run interactively:"
+    echo "    CROSSBORDER_YES=1 curl -fsSL ${INSTALL_URL} | env CROSSBORDER_BRANCH=${BRANCH} bash"
+    echo "  Or SSH in and run interactively (recommended):"
     echo "    bash ${dir}/scripts/install.sh"
     echo ""
     exit 1
@@ -665,6 +665,35 @@ export CROSSBORDER_HOME="${root}"
 EOF
     echo "==> added crossborder to PATH in ${rc} (open a new terminal or: source ${rc})"
   done
+}
+
+link_system_cli() {
+  local wrapper="${HOME}/.local/bin/crossborder"
+  [[ -x "${wrapper}" ]] || return 0
+  if [[ -w /usr/local/bin ]] 2>/dev/null; then
+    ln -sf "${wrapper}" /usr/local/bin/crossborder
+    ln -sf "${wrapper}" /usr/local/bin/scraper
+    echo "==> CLI available: /usr/local/bin/crossborder"
+    return 0
+  fi
+  if command -v sudo >/dev/null 2>&1; then
+    if sudo ln -sf "${wrapper}" /usr/local/bin/crossborder 2>/dev/null; then
+      sudo ln -sf "${wrapper}" /usr/local/bin/scraper 2>/dev/null || true
+      echo "==> CLI available: /usr/local/bin/crossborder (system-wide)"
+    fi
+  fi
+}
+
+verify_global_cli() {
+  local root="$1"
+  export PATH="${HOME}/.local/bin:${PATH}"
+  if command -v crossborder >/dev/null 2>&1; then
+    echo "==> crossborder CLI ready ($(command -v crossborder))"
+    return 0
+  fi
+  if [[ -x "${root}/.venv/bin/crossborder" ]]; then
+    echo "==> crossborder CLI: source ~/.bashrc  or  ${root}/.venv/bin/crossborder --help"
+  fi
 }
 
 build_panel_ui() {
@@ -939,6 +968,8 @@ ensure_uv
 run_bootstrap "${ROOT}"
 install_global_cli "${ROOT}"
 ensure_shell_path "${ROOT}"
+link_system_cli
+verify_global_cli "${ROOT}"
 register_autostart "${ROOT}"
 _panel_port="$(read_env_port "${ROOT}")"
 maybe_configure_nginx "${ROOT}" "${_panel_port}"

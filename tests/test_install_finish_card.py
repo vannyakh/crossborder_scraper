@@ -28,6 +28,8 @@ def test_print_install_finish_card_security_entrance(capsys) -> None:
     assert "secret-pass" in out
     assert "Access key:" in out
     assert "Save this card" in out
+    assert "source ~/.bashrc" in out
+    assert ".venv/bin/crossborder" in out
 
 
 def test_print_install_finish_card_plain_login(capsys) -> None:
