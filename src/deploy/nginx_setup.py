@@ -77,6 +77,17 @@ def setup_https_reverse_proxy(
         else:
             warnings.append("nginx: not installed — apt install nginx or use your host panel")
 
+    if certbot and not certbot_installed() and shutil.which("apt-get"):
+        apt = _sudo(["apt-get", "update", "-qq"])
+        if apt.returncode == 0:
+            ins = _sudo(
+                ["apt-get", "install", "-y", "-qq", "certbot", "python3-certbot-nginx"],
+            )
+            if ins.returncode == 0:
+                messages.append("certbot: installed via apt")
+            else:
+                warnings.append("certbot: apt install failed — install certbot manually")
+
     ssl = False
     if certbot and certbot_installed() and nginx_installed():
         # HTTP-only first — certbot --nginx adds TLS

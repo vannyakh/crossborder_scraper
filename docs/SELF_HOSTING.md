@@ -97,25 +97,58 @@ Panel: **Settings → Network & firewall**.
 
 ### HTTPS with a domain (production)
 
-Same pattern as common Linux host panels: panel listens on **127.0.0.1:8787**, **nginx** terminates TLS on **443**.
+Host-panel style: panel on **127.0.0.1:8787**, **nginx** terminates TLS on **443**.
 
-1. Point DNS **A record** → your server public IP
-2. Cloud security group: allow **TCP 80** and **TCP 443** (and **8787** only if you want direct HTTP access)
-3. On the server:
+#### 1. Cloud security group (Tencent / other VPS)
 
-```bash
-sudo crossborder deploy https -n panel.yourdomain.com
+Inbound rules on the instance bound to **43.x.x.x** (your public IP):
+
+| Protocol | Port | Source | Purpose |
+|----------|------|--------|---------|
+| TCP | **80** | `0.0.0.0/0` | Let's Encrypt HTTP challenge |
+| TCP | **443** | `0.0.0.0/0` | HTTPS panel |
+
+You do **not** need port **8787** open to the public once HTTPS works (nginx proxies locally).
+
+#### 2. DNS
+
+Create an **A record**:
+
+```text
+panel.yourdomain.com  →  YOUR_SERVER_PUBLIC_IP
 ```
 
-This writes an nginx site, opens host firewall ports, and runs **certbot** when installed.
+Wait until it resolves (check: `dig +short panel.yourdomain.com`).
+
+#### 3. Run on the server (SSH)
+
+```bash
+cd ~/crossborder-scraper
+git pull
+sudo bash scripts/deploy-https.sh panel.yourdomain.com
+```
+
+Or the CLI directly:
+
+```bash
+sudo env HOME="$HOME" PATH="$HOME/.local/bin:$PATH" crossborder deploy https -n panel.yourdomain.com
+```
+
+This installs **nginx** + **certbot** (Ubuntu apt), writes the site config, opens ufw **80/443**, and requests a Let's Encrypt certificate.
+
+#### 4. Verify
+
+```bash
+curl -sI "https://panel.yourdomain.com/health"
+```
+
+Login: **`https://panel.yourdomain.com/ui/login`** (same username/password from install).
 
 Manual nginx template only:
 
 ```bash
 crossborder deploy nginx -n panel.yourdomain.com --ssl -o deploy/nginx-panel.conf
 ```
-
-Login: `https://panel.yourdomain.com/ui/login`
 
 ### wwwroot co-install (host panel servers)
 
@@ -175,7 +208,7 @@ Full map: [DIRECTORY_LAYOUT.md](DIRECTORY_LAYOUT.md).
 
 **Security entrance** (wwwroot only by default): secret path + access key in `.env`. Enable on any install with `PANEL_SECURITY_ENTRANCE=1`.
 
-HTTPS: `crossborder deploy nginx -n your.domain.com`
+HTTPS: `sudo bash scripts/deploy-https.sh your.domain.com`
 
 ---
 
