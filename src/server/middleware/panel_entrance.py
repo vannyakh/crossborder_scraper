@@ -21,6 +21,11 @@ def _is_static_ui_asset(path: str) -> bool:
     return path.startswith("/ui/assets/") or path in ("/ui/favicon.ico", "/ui/vite.svg")
 
 
+def _is_unprefixed_ui_static(path: str) -> bool:
+    """Vite production build uses absolute /ui/assets/ paths (no entrance prefix)."""
+    return _is_static_ui_asset(path)
+
+
 def _needs_access_gate(path: str) -> bool:
     if path == "/health":
         return False
@@ -60,6 +65,11 @@ class PanelEntranceMiddleware:
         path = scope.get("path", "")
 
         if self._local_health_bypass(request, path):
+            await self.app(scope, receive, send)
+            return
+
+        # Production UI references /ui/assets/* without the secret entrance prefix.
+        if _is_unprefixed_ui_static(path):
             await self.app(scope, receive, send)
             return
 

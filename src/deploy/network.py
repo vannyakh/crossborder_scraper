@@ -160,18 +160,20 @@ def build_panel_access_info(
     external_host: str | None = None,
     entry_path: str | None = None,
     access_key: str | None = None,
+    public_http_port: int | None = None,
 ) -> PanelAccessInfo:
     bind = normalize_bind_host(bind_host)
     lan_ips = tuple(detect_lan_ips())
     local_host = "127.0.0.1"
     ui_path = panel_ui_path(entry_path)
     login_key = access_key if credentials_generated else None
+    ext_port = public_http_port or port
 
     ext_url = login_ext = None
     if external_host and external_host not in ("127.0.0.1", "localhost"):
         host = external_host.strip()
-        ext_url = build_entrance_url(host, port, entry_path)
-        login_ext = build_login_url(host, port, entry_path, access_key=login_key)
+        ext_url = build_entrance_url(host, ext_port, entry_path)
+        login_ext = build_login_url(host, ext_port, entry_path, access_key=login_key)
 
     return PanelAccessInfo(
         bind_host=bind,

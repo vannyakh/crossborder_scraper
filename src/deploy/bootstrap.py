@@ -125,6 +125,7 @@ class ServerBootstrap:
             external_host=ext_host,
             entry_path=entry,
             access_key=access_key,
+            public_http_port=_resolve_public_http_port(env_path),
         )
         return access
 
@@ -164,6 +165,19 @@ class ServerBootstrap:
             )
         self.steps_done.append("deploy_env_example")
         return env_deploy
+
+
+def _resolve_public_http_port(env_path) -> int | None:
+    import os
+    from pathlib import Path
+
+    from config.settings import Settings
+
+    raw = os.environ.get("PANEL_PUBLIC_HTTP_PORT", "").strip()
+    if raw.isdigit():
+        return int(raw)
+    settings = Settings(_env_file=Path(env_path) if Path(env_path).is_file() else None)
+    return settings.panel_public_http_port
 
 
 def bootstrap_server(

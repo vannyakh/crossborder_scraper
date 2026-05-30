@@ -54,11 +54,34 @@ def health_path(entry_path: str | None) -> str:
     return f"{prefix}/health" if prefix else "/health"
 
 
+def format_public_host(host: str, port: int, *, https: bool = False) -> str:
+    """Host with port omitted for standard HTTP/HTTPS public URLs (nginx on 80/443)."""
+    if (https and port == 443) or (not https and port == 80):
+        return host
+    return f"{host}:{port}"
+
+
 def build_entrance_url(host: str, port: int, entry_path: str | None, *, https: bool = False) -> str:
     scheme = "https" if https else "http"
     prefix = entrance_prefix(entry_path)
     path = f"{prefix}/" if prefix else "/ui/"
-    return f"{scheme}://{host}:{port}{path}"
+    host_part = format_public_host(host, port, https=https)
+    return f"{scheme}://{host_part}{path}"
+
+
+def build_entrance_access_url(
+    host: str,
+    port: int,
+    entry_path: str,
+    *,
+    access_key: str,
+    https: bool = False,
+) -> str:
+    """Bookmark URL: /{entry}/?access_key=… — sets entrance cookie then redirects to login."""
+    scheme = "https" if https else "http"
+    host_part = format_public_host(host, port, https=https)
+    prefix = entrance_prefix(entry_path)
+    return f"{scheme}://{host_part}{prefix}/?{urlencode({'access_key': access_key})}"
 
 
 def build_login_url(
@@ -71,7 +94,8 @@ def build_login_url(
 ) -> str:
     scheme = "https" if https else "http"
     path = panel_login_path(entry_path)
-    url = f"{scheme}://{host}:{port}{path}"
+    host_part = format_public_host(host, port, https=https)
+    url = f"{scheme}://{host_part}{path}"
     if access_key:
         return f"{url}?{urlencode({'access_key': access_key})}"
     return url
@@ -110,13 +134,16 @@ def ensure_panel_entrance(
     if enable is None:
         import os
 
-        vps = os.environ.get("CROSSBORDER_VPS", "").strip() in ("1", "true", "yes")
+        vps = os.environ.get("CROSSBORDER_VPS", "").strip().lower() in ("1", "true", "yes")
+        server = os.environ.get("CROSSBORDER_SERVER", "").strip().lower() in ("1", "true", "yes")
+        profile = os.environ.get("CROSSBORDER_INSTALL_PROFILE", "").strip().lower()
         explicit = os.environ.get("PANEL_SECURITY_ENTRANCE", "").strip().lower() in (
             "1",
             "true",
             "yes",
         )
-        if not vps and not explicit and settings.panel_entry_path is None:
+        auto_server = profile in ("server", "wwwroot") or server or vps
+        if not auto_server and not explicit and settings.panel_entry_path is None:
             return None, None, False
 
     new_entry = generate_entry_path()

@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     panel_entry_path: str | None = None
     panel_access_key: str | None = None
     panel_security_entrance: bool = False
+    # Public HTTP port for access-card URLs when nginx fronts the panel (usually 80)
+    panel_public_http_port: int | None = None
 
     # Paths
     data_dir: Path = Field(default=Path("data"))

@@ -10,6 +10,7 @@ from core.paths import env_file_path
 from core.timezone import build_timezone_info, list_timezone_options
 from deploy.network_access import build_network_access_status
 from deploy.panel_security import (
+    build_entrance_access_url,
     build_entrance_url,
     build_login_url,
     generate_access_key,
@@ -30,18 +31,24 @@ def build_panel_security_status(*, port: int | None = None) -> dict[str, Any]:
     settings = get_settings()
     chosen_port = port if port is not None else settings.panel_port
     entry = normalize_entry_path(settings.panel_entry_path)
-    access_key = (settings.panel_access_key or "").strip()
     bind = get_panel_bind_info()
     host = _host_for_urls(settings, bind)
+    public_port = settings.panel_public_http_port or chosen_port
+    access_key = (settings.panel_access_key or "").strip() or None
 
     urls = {
-        "entrance": build_entrance_url(host, chosen_port, entry) if entry else None,
-        "login": build_login_url(host, chosen_port, entry)
+        "entrance": build_entrance_url(host, public_port, entry) if entry else None,
+        "entrance_access": (
+            build_entrance_access_url(host, public_port, entry, access_key=access_key)
+            if entry and access_key
+            else None
+        ),
+        "login": build_login_url(host, public_port, entry, access_key=access_key)
         if entry
         else f"http://{host}:{chosen_port}/ui/login",
         "local_login": build_login_url("127.0.0.1", chosen_port, entry),
         "bare_host_note": (
-            f"http://{host}:{chosen_port} returns 404 when security entrance is enabled"
+            f"http://{host}/ui/login returns 404 — use entrance URL with access key"
             if entry
             else f"http://{host}:{chosen_port}/ui/ — standard panel URL"
         ),
@@ -111,9 +118,16 @@ class PanelSecurityService:
             updates["PANEL_ENTRY_PATH"] = entry
             updates["PANEL_ACCESS_KEY"] = key
             updates["PANEL_SECURITY_ENTRANCE"] = "true"
+            if not settings.panel_public_http_port:
+                updates["PANEL_PUBLIC_HTTP_PORT"] = "80"
             new_access_key = key
             messages.append(f"Security entrance enabled at /{entry}/")
             restart_required = True
+        elif enable_entrance is True:
+            if not settings.panel_public_http_port:
+                updates["PANEL_PUBLIC_HTTP_PORT"] = "80"
+                messages.append("Public HTTP port set to 80 for nginx access URLs")
+                restart_required = True
 
         if regenerate_entry:
             entry = generate_entry_path()

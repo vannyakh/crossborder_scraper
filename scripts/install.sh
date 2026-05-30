@@ -86,14 +86,19 @@ detect_install_profile() {
 }
 
 apply_install_profile() {
+  export CROSSBORDER_INSTALL_PROFILE="${INSTALL_PROFILE}"
   case "${INSTALL_PROFILE}" in
     wwwroot)
       export CROSSBORDER_VPS=1
       export CROSSBORDER_WWWROOT=1
       export CROSSBORDER_OPEN_FIREWALL="${CROSSBORDER_OPEN_FIREWALL:-1}"
+      export PANEL_SECURITY_ENTRANCE=1
+      export PANEL_PUBLIC_HTTP_PORT="${PANEL_PUBLIC_HTTP_PORT:-80}"
       ;;
     server)
       export CROSSBORDER_OPEN_FIREWALL="${CROSSBORDER_OPEN_FIREWALL:-1}"
+      export PANEL_SECURITY_ENTRANCE=1
+      export PANEL_PUBLIC_HTTP_PORT="${PANEL_PUBLIC_HTTP_PORT:-80}"
       ;;
     local) ;;
   esac
@@ -707,8 +712,27 @@ print(ips[0] if ips else '')
   local login_local="http://127.0.0.1:${port}/ui/login"
   local login_lan=""
   local login_public=""
+  local entry_path access_key public_port entrance_url entrance_access
+  entry_path="$(env_val PANEL_ENTRY_PATH "${env_file}")"
+  access_key="$(env_val PANEL_ACCESS_KEY "${env_file}")"
+  public_port="$(env_val PANEL_PUBLIC_HTTP_PORT "${env_file}")"
+  [[ -z "${public_port}" ]] && public_port="${port}"
   [[ -n "${lan_ip}" ]] && login_lan="http://${lan_ip}:${port}/ui/login"
-  [[ -n "${ext_host}" ]] && login_public="http://${ext_host}:${port}/ui/login"
+  if [[ -n "${ext_host}" ]]; then
+    if [[ -n "${entry_path}" && "${entry_path}" != "off" ]]; then
+      if [[ "${public_port}" == "80" ]]; then
+        entrance_url="http://${ext_host}/${entry_path}/"
+        entrance_access="http://${ext_host}/${entry_path}/?access_key=${access_key}"
+        login_public="http://${ext_host}/${entry_path}/ui/login?access_key=${access_key}"
+      else
+        entrance_url="http://${ext_host}:${public_port}/${entry_path}/"
+        entrance_access="http://${ext_host}:${public_port}/${entry_path}/?access_key=${access_key}"
+        login_public="http://${ext_host}:${public_port}/${entry_path}/ui/login?access_key=${access_key}"
+      fi
+    else
+      login_public="http://${ext_host}:${port}/ui/login"
+    fi
+  fi
 
   echo ""
   echo "════════════════════════════════════════════════════════════════"
@@ -722,11 +746,23 @@ print(ips[0] if ips else '')
     echo "  Panel:  not started (set CROSSBORDER_START=1 or run: crossborder serve --no-reload)"
   fi
   echo ""
-  echo "  Login URL (open in browser — use port ${port}, NOT :5173):"
-  echo "    ${login_local}"
-  [[ -n "${login_lan}" ]] && echo "    ${login_lan}  (LAN)"
-  [[ -n "${login_public}" ]] && echo "    ${login_public}  (public)"
-  echo ""
+  if [[ -n "${entry_path}" && "${entry_path}" != "off" && -n "${access_key}" ]]; then
+    echo "  Security entrance (required — bare /ui/login returns 404):"
+    echo "    Access URL:  ${entrance_access}"
+    echo "    Entrance:    ${entrance_url}"
+    echo "    Login:       ${login_public}"
+    echo "    Path:        /${entry_path}/"
+    echo "    Access key:  ${access_key}"
+    echo ""
+    echo "  Blocked without entrance: http://${ext_host:-<host>}/ui/login"
+    echo ""
+  else
+    echo "  Login URL (open in browser — use port ${port}, NOT :5173):"
+    echo "    ${login_local}"
+    [[ -n "${login_lan}" ]] && echo "    ${login_lan}  (LAN)"
+    [[ -n "${login_public}" ]] && echo "    ${login_public}  (public)"
+    echo ""
+  fi
   if [[ -n "${login_public}" ]]; then
     echo "  VPS public access (if browser cannot connect):"
     echo "    1. Cloud security group: allow inbound TCP ${port} to this server"

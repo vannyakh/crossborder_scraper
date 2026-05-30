@@ -112,6 +112,22 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "setup_panel_security_entrance",
+        "description": (
+            "Enable panel security entrance: secret URL path + access key. "
+            "Direct /ui/login returns 404; operators use /{entry}/?access_key=…"
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "regenerate": {
+                    "type": "boolean",
+                    "description": "Generate new entrance path and access key",
+                },
+            },
+        },
+    },
+    {
         "name": "list_agent_rules",
         "description": (
             "List gateway agent behavior rules (RULE.md) with enabled state. "
@@ -390,6 +406,7 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "network_access_status": _network_access_status,
         "apply_panel_firewall": _apply_panel_firewall,
         "setup_network_access": _setup_network_access,
+        "setup_panel_security_entrance": _setup_panel_security_entrance,
         "list_agent_rules": _list_agent_rules,
         "list_firewall_rules": _list_firewall_rules,
         "list_vhosts": _list_vhosts,
@@ -535,6 +552,24 @@ async def _setup_network_access(
         port=port,
         enable_ufw=enable_ufw,
         username="gateway-agent",
+    )
+
+
+async def _setup_panel_security_entrance(
+    _manager: Any,
+    *,
+    regenerate: bool = False,
+) -> dict[str, Any]:
+    from server.services.panel_security import get_panel_security_service
+
+    svc = get_panel_security_service()
+    settings_before = svc.get_status()
+    has_entry = bool(settings_before.get("security_entrance_enabled"))
+    return svc.apply_update(
+        actor="gateway-agent",
+        enable_entrance=True,
+        regenerate_entry=regenerate or not has_entry,
+        regenerate_access_key=regenerate or not has_entry,
     )
 
 

@@ -30,3 +30,5 @@ def test_urls_with_entrance() -> None:
     url = build_login_url("43.163.97.69", 10782, entry, access_key="secret123")
     assert url.startswith("http://43.163.97.69:10782/c69e673c/ui/login?")
     assert "access_key=secret123" in url
+    pub = build_login_url("43.160.245.64", 80, entry, access_key="secret123")
+    assert pub == "http://43.160.245.64/c69e673c/ui/login?access_key=secret123"

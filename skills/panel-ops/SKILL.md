@@ -10,6 +10,7 @@ metadata:
       - runtime_status
       - network_access_status
       - setup_network_access
+      - setup_panel_security_entrance
       - apply_panel_firewall
       - list_firewall_rules
       - list_vhosts
@@ -40,6 +41,12 @@ Use when the operator asks about **panel access**, **VPS firewall**, **health ch
 3. If the host firewall blocks the panel port, ask before mutating:
    - `apply_panel_firewall` — open panel TCP port only (needs root/sudo on VPS).
    - `setup_network_access` — bind `0.0.0.0`, open firewall, detect public IP in `.env` (full setup).
+
+## Security entrance
+
+1. `setup_panel_security_entrance` — generate secret path (`/{8-hex}/`) + access key; direct `/ui/login` returns 404.
+2. Give operators the **access URL** from tool output: `http://<host>/{entry}/?access_key=…` (port 80 when nginx fronts the panel).
+3. After enabling, **restart the panel** if `restart_required` is true.
 
 ## Virtual hosts (nginx)
 

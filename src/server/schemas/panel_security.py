@@ -9,6 +9,7 @@ from server.schemas.network import NetworkAccessStatusResponse
 
 class PanelSecurityUrls(BaseModel):
     entrance: str | None = None
+    entrance_access: str | None = None
     login: str | None = None
     local_login: str | None = None
     bare_host_note: str = "http://<host>:<port> returns 404 when security entrance is enabled"
