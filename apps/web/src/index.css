@@ -2705,6 +2705,10 @@ button:focus-visible {
 }
 
 /* Out-rail: port circle → line → + button (always visible when no next step) */
+.project-flow-node-root {
+  position: relative;
+}
+
 .project-flow-node-root--has-out-rail {
   position: relative;
   padding-right: 52px;
@@ -2714,6 +2718,65 @@ button:focus-visible {
   outline: 2px solid var(--remote-peer-color, var(--chakra-colors-teal-400));
   outline-offset: 3px;
   border-radius: 14px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--remote-peer-color) 35%, transparent),
+    0 0 18px color-mix(in srgb, var(--remote-peer-color) 45%, transparent);
+}
+
+.project-flow-remote-peer-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 8px);
+  padding: 2px 8px 2px 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--remote-peer-color) 55%, transparent);
+  background: color-mix(in srgb, var(--remote-peer-color) 18%, var(--chakra-colors-bg-panel));
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--remote-peer-color) 25%, transparent);
+  pointer-events: auto;
+}
+
+.project-flow-remote-peer-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--remote-peer-color);
+  flex-shrink: 0;
+}
+
+.project-flow-remote-peer-badge__name {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--chakra-colors-fg);
+  max-width: 96px;
+}
+
+.project-flow-remote-peer-badge__more {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--chakra-colors-fg-muted);
+}
+
+.project-flow-remote-peer-badge__initials {
+  display: none;
+}
+
+.project-flow-sticky-wrap--remote-peer .project-flow-sticky-node {
+  outline: 2px solid var(--remote-peer-color, var(--chakra-colors-teal-400));
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--remote-peer-color) 35%, transparent),
+    0 0 16px color-mix(in srgb, var(--remote-peer-color) 40%, transparent);
+}
+
+.project-flow-sticky-wrap--remote-peer .project-flow-remote-peer-badge {
+  top: -12px;
 }
 
 .project-collaborators__stack {

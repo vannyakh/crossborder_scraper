@@ -7,12 +7,15 @@ export function ProjectNodeSampleList({
   size = 'sm',
   maxVisible = 5,
   compact = false,
+  nodeFocusColors,
 }: {
   nodes: ProjectNode[]
   size?: 'sm' | 'md'
   maxVisible?: number
   /** Tighter layout for list rows */
   compact?: boolean
+  /** Highlight preview nodes where collaborators are focused */
+  nodeFocusColors?: Map<string, string>
 }) {
   const visible = nodes.slice(0, maxVisible)
   const extra = nodes.length - visible.length
@@ -33,7 +36,13 @@ export function ProjectNodeSampleList({
       justify={compact ? 'flex-start' : 'center'}
     >
       {visible.map((node) => (
-        <ProjectNodeVisual key={node.id} kind={node.kind} label={node.label} size={size} />
+        <ProjectNodeVisual
+          key={node.id}
+          kind={node.kind}
+          label={node.label}
+          size={size}
+          focusColor={nodeFocusColors?.get(node.id)}
+        />
       ))}
       {extra > 0 ? (
         <Box pt={size === 'sm' ? 1 : 2}>

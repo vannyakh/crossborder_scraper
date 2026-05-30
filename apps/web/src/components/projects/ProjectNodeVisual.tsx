@@ -36,16 +36,25 @@ export function ProjectNodeVisual({
   label,
   size = 'md',
   selected,
+  focusColor,
 }: {
   kind: ProjectNodeKind
   label: string
   size?: 'sm' | 'md'
   selected?: boolean
+  /** Collaborator focus ring color on project card previews */
+  focusColor?: string
 }) {
   const meta = NODE_META[kind]
   const Icon = meta.icon
   const dim = size === 'sm' ? 28 : 44
   const fontSize = size === 'sm' ? '9px' : '10px'
+  const borderColor = focusColor ?? (selected ? 'accent.solid' : 'transparent')
+  const boxShadow = focusColor
+    ? `0 0 0 2px color-mix(in srgb, ${focusColor} 35%, transparent), 0 0 12px color-mix(in srgb, ${focusColor} 45%, transparent)`
+    : selected
+      ? '0 0 0 2px var(--chakra-colors-accent-muted)'
+      : 'sm'
 
   return (
     <Box textAlign="center" w={size === 'sm' ? '52px' : '72px'}>
@@ -60,8 +69,8 @@ export function ProjectNodeVisual({
         bg={meta.bg}
         color={meta.color}
         borderWidth="2px"
-        borderColor={selected ? 'accent.solid' : 'transparent'}
-        boxShadow={selected ? '0 0 0 2px var(--chakra-colors-accent-muted)' : 'sm'}
+        borderColor={borderColor}
+        boxShadow={boxShadow}
       >
         <Icon size={size === 'sm' ? 14 : 20} strokeWidth={1.75} />
       </Box>

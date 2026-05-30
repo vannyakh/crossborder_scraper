@@ -1,6 +1,6 @@
 import { Box, Textarea } from '@chakra-ui/react'
 import { NodeResizer, useReactFlow, type Node, type NodeProps } from '@xyflow/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useLocale } from '../../hooks/use-locale'
 import { useColorMode } from '../../hooks/use-ui-config'
 import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
@@ -17,6 +17,7 @@ import {
   stickyNoteStyleVars,
   type StickyNoteColor,
 } from './project-sticky-colors'
+import { ProjectRemotePeerFocusBadge } from './ProjectRemotePeerFocusBadge'
 import { ProjectFlowStickyToolbar } from './ProjectFlowStickyToolbar'
 
 function labelFromMarkdown(body: string, fallback: string): string {
@@ -43,10 +44,11 @@ export function ProjectFlowStickyNode({
 }: NodeProps<Node<ProjectStickyNodeData, 'sticky'>>) {
   const { t } = useLocale()
   const colorMode = useColorMode()
-  const { setProject } = useProjectWorkspace()
-  const { setNodes } = useReactFlow()
+  const { setProject, collaboration } = useProjectWorkspace()
+  const { setNodes, getNode } = useReactFlow()
   const actions = useProjectFlowActions()
-  const { node, beginEdit } = data
+  const { node, beginEdit, remotePeerHighlights = [] } = data
+  const primaryRemotePeer = remotePeerHighlights[0]
   const [editing, setEditing] = useState(false)
   const [resizing, setResizing] = useState(false)
   const [bodyDraft, setBodyDraft] = useState(node.noteBody ?? '')
@@ -154,6 +156,7 @@ export function ProjectFlowStickyNode({
   const wrapClass = [
     'project-flow-sticky-wrap',
     'project-flow-sticky-wrap--interaction',
+    primaryRemotePeer ? 'project-flow-sticky-wrap--remote-peer' : '',
     selected ? 'project-flow-sticky-wrap--selected' : '',
     editing ? 'project-flow-sticky-wrap--editing' : '',
     dragging ? 'project-flow-sticky-wrap--dragging' : '',
@@ -169,7 +172,12 @@ export function ProjectFlowStickyNode({
     <Box
       className={wrapClass}
       data-color={color}
-      style={colorStyle}
+      style={{
+        ...colorStyle,
+        ...(primaryRemotePeer
+          ? ({ '--remote-peer-color': primaryRemotePeer.color } as CSSProperties)
+          : {}),
+      }}
       w={`${nodeWidth}px`}
       h={`${nodeHeight}px`}
       onDoubleClick={(event) => {
@@ -177,6 +185,9 @@ export function ProjectFlowStickyNode({
         startEditing()
       }}
     >
+      {remotePeerHighlights.length > 0 ? (
+        <ProjectRemotePeerFocusBadge peers={remotePeerHighlights} />
+      ) : null}
       {selected && !editing ? (
         <ProjectFlowStickyToolbar nodeId={id} color={color} onColorChange={handleColorChange} />
       ) : null}
@@ -199,6 +210,16 @@ export function ProjectFlowStickyNode({
           const nextHeight = Math.round(params.height)
           syncFlowSize(nextWidth, nextHeight)
           persist({ noteWidth: nextWidth, noteHeight: nextHeight })
+          const flowNode = getNode(id)
+          collaboration.publishLayout([
+            {
+              id,
+              x: flowNode?.position.x ?? node.x,
+              y: flowNode?.position.y ?? node.y,
+              noteWidth: nextWidth,
+              noteHeight: nextHeight,
+            },
+          ])
         }}
       />
 

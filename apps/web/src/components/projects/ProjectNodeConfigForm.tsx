@@ -21,7 +21,7 @@ function filterSection(
   if (!query) return section.fields
   const q = query.toLowerCase()
   return section.fields.filter((field) => {
-    const label = t(field.labelKey).toLowerCase()
+    const label = (field.labelText ?? t(field.labelKey)).toLowerCase()
     const value = resolveFieldValue(node, field, t).toLowerCase()
     return label.includes(q) || value.includes(q)
   })
@@ -50,7 +50,9 @@ function SectionBlock({
       data-single={singleField ? '' : undefined}
     >
       {!singleField ? (
-        <Text className="project-config-section__title">{t(section.labelKey)}</Text>
+        <Text className="project-config-section__title">
+          {section.labelText ?? t(section.labelKey)}
+        </Text>
       ) : null}
       <VStack className="project-config-section__fields" align="stretch" gap={3}>
         {fields.map((field) => (

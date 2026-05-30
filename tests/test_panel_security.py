@@ -3,9 +3,11 @@
 from deploy.panel_security import (
     access_keys_match,
     build_login_url,
+    effective_entry_path,
     entrance_prefix,
     generate_entry_path,
     health_path,
+    is_dev_panel_runtime,
     normalize_entry_path,
     panel_login_path,
 )
@@ -39,3 +41,16 @@ def test_urls_with_entrance() -> None:
     assert "access_key=secret123" in url
     pub = build_login_url("43.160.245.64", 80, entry, access_key="secret123")
     assert pub == "http://43.160.245.64/c69e673c/ui/login?access_key=secret123"
+
+
+def test_effective_entry_path_disabled_in_dev(monkeypatch) -> None:
+    monkeypatch.setenv("UVICORN_RELOAD", "1")
+    assert is_dev_panel_runtime()
+    assert effective_entry_path("c396d7de") is None
+
+
+def test_effective_entry_path_enabled_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("UVICORN_RELOAD", "0")
+    assert not is_dev_panel_runtime()
+    assert effective_entry_path("c396d7de") == "c396d7de"
+    assert effective_entry_path("off") is None

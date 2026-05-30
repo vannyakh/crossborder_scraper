@@ -44,6 +44,10 @@ export type ProjectNode = {
   agentPrompt?: string
   /** Dynamic option values from node-config JSON schemas */
   options?: Record<string, string | boolean | number>
+  /** Source plugin id from manifest catalog */
+  pluginId?: string
+  /** Active plugin profile id (llm-model, scraper-1688, …) */
+  pluginProfile?: string
 }
 
 export type ProjectEdgeKind = 'main' | 'config'

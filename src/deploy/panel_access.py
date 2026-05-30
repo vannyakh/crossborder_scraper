@@ -138,9 +138,9 @@ def build_access_from_env(
     path = env_path or env_file_path()
     settings = get_settings()
     username, password, _generated = ensure_panel_credentials(path, force_regenerate=False)
-    from deploy.panel_security import normalize_entry_path
+    from deploy.panel_security import effective_entry_path
 
-    entry = normalize_entry_path(settings.panel_entry_path)
+    entry = effective_entry_path(settings.panel_entry_path)
     access_key = (settings.panel_access_key or "").strip() or None
     if external is not None:
         ext = persist_external_host(external, env_path=path)

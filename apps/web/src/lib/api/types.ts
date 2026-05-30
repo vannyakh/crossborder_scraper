@@ -96,7 +96,14 @@ export type SubmitJobsPayload = {
   save: boolean
 }
 
-export type LlmProviderId = 'openai' | 'anthropic' | 'google' | 'ollama' | 'qwen' | 'custom'
+export type LlmProviderId =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'deepseek'
+  | 'ollama'
+  | 'qwen'
+  | 'custom'
 
 export type LlmProviderInfo = {
   id: LlmProviderId
@@ -417,6 +424,71 @@ export type ServiceLogListResponse = {
   total: number
   limit: number
   offset: number
+}
+
+export type PluginProfileFieldType =
+  | 'text'
+  | 'textarea'
+  | 'mono'
+  | 'url'
+  | 'select'
+  | 'toggle'
+  | 'llm_provider'
+  | 'llm_model'
+  | 'source_plugin'
+  | 'variable_key'
+
+export type PluginProfileSelectOption = {
+  value: string
+  label: string
+}
+
+export type PluginProfileField = {
+  id: string
+  key: string
+  label: string
+  type: PluginProfileFieldType
+  required?: boolean
+  default?: string | boolean | number | null
+  placeholder?: string | null
+  hint?: string | null
+  options?: PluginProfileSelectOption[]
+}
+
+export type PluginProfileSection = {
+  id: string
+  label: string
+  tab: string
+  fields: PluginProfileField[]
+}
+
+export type PluginProfileTab = {
+  id: string
+  label: string
+}
+
+export type PluginVariableKey = {
+  key: string
+  label: string
+  scope: 'project' | 'shared'
+  masked?: boolean
+}
+
+export type PluginProfile = {
+  id: string
+  label: string
+  category: 'model' | 'memory' | 'tool' | 'scraper' | 'service'
+  plugin_id?: string | null
+  node_kinds: string[]
+  slot_index?: number | null
+  tabs: PluginProfileTab[]
+  sections: PluginProfileSection[]
+  variable_keys: PluginVariableKey[]
+}
+
+export type PluginProfileCatalogResponse = {
+  profiles: PluginProfile[]
+  total: number
 }
 
 export type MonitorStatus = {

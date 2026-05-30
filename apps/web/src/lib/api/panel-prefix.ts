@@ -1,5 +1,6 @@
-/** Secret entrance prefix from the current URL (e.g. /a1b2c3d4). */
+/** Secret entrance prefix from the current URL (e.g. /a1b2c3d4). Production only. */
 function entranceHexFromEnv(): string {
+  if (import.meta.env.DEV) return ''
   const raw = (import.meta.env.VITE_PANEL_ENTRY_PATH as string | undefined)?.trim().toLowerCase()
   if (!raw || raw === 'off' || raw === 'false' || raw === 'disabled') return ''
   const hex = raw.replace(/^\//, '')
@@ -7,6 +8,7 @@ function entranceHexFromEnv(): string {
 }
 
 export function getPanelEntrancePrefix(): string {
+  if (import.meta.env.DEV) return ''
   if (typeof window === 'undefined') {
     const hex = entranceHexFromEnv()
     return hex ? `/${hex}` : ''
@@ -17,8 +19,9 @@ export function getPanelEntrancePrefix(): string {
   return hex ? `/${hex}` : ''
 }
 
-/** React Router basename — URL entrance only (Vite dev uses base /ui/ without prefix in path). */
+/** React Router basename — production uses /{entrance}/ui; dev always /ui. */
 export function getRouterBasename(): string {
+  if (import.meta.env.DEV) return '/ui'
   if (typeof window === 'undefined') return '/ui'
   const match = window.location.pathname.match(/^\/([a-f0-9]{8})(?:\/|$)/)
   const prefix = match ? `/${match[1]}` : ''

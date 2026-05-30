@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from config import get_settings
-from deploy.panel_security import normalize_entry_path
+from deploy.panel_security import effective_entry_path
 from server.api.registry import register_routes
 from server.bootstrap import panel_lifespan
 from server.core.constants import APP_VERSION
@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     @application.get("/", response_model=None)
     async def root(request: Request) -> Response:
         settings = get_settings()
-        entry = normalize_entry_path(settings.panel_entry_path)
+        entry = effective_entry_path(settings.panel_entry_path)
         if entry:
             if wants_panel_html(request):
                 from starlette.responses import HTMLResponse

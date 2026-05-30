@@ -42,6 +42,8 @@ class ProjectNode(BaseModel):
     note_height: float | None = Field(default=None, alias="noteHeight")
     note_color: str | None = Field(default=None, alias="noteColor")
     agent_prompt: str | None = Field(default=None, alias="agentPrompt")
+    plugin_id: str | None = Field(default=None, alias="pluginId")
+    plugin_profile: str | None = Field(default=None, alias="pluginProfile")
     options: dict[str, Any] | None = None
 
 
@@ -76,6 +78,21 @@ class ProjectDetail(ProjectSummary):
 class ProjectListResponse(BaseModel):
     items: list[ProjectSummary]
     total: int
+
+
+class ProjectPresenceGuest(BaseModel):
+    client_id: str
+    username: str
+    selected_node_id: str | None = None
+
+
+class ProjectPresenceItem(BaseModel):
+    project_id: str
+    guests: list[ProjectPresenceGuest] = Field(default_factory=list)
+
+
+class ProjectPresenceResponse(BaseModel):
+    items: list[ProjectPresenceItem] = Field(default_factory=list)
 
 
 class ProjectCreateRequest(BaseModel):

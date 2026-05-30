@@ -84,6 +84,16 @@ PROVIDER_PRESETS: dict[str, LLMProviderPreset] = {
         api_key_hint="sk-… (DashScope API key)",
         docs_url="https://dashscope.console.aliyun.com/",
     ),
+    "deepseek": LLMProviderPreset(
+        id="deepseek",
+        label="DeepSeek",
+        base_url="https://api.deepseek.com/v1",
+        default_model="deepseek-chat",
+        api_style="openai_compatible",
+        requires_api_key=True,
+        api_key_hint="sk-…",
+        docs_url="https://platform.deepseek.com/api_keys",
+    ),
     "custom": LLMProviderPreset(
         id="custom",
         label="Custom (OpenAI-compatible)",
@@ -118,7 +128,7 @@ def parse_model_ref(ref: str) -> tuple[str, str]:
 
 
 def list_providers() -> list[dict[str, Any]]:
-    order = ("openai", "anthropic", "google", "ollama", "qwen", "custom")
+    order = ("openai", "anthropic", "google", "deepseek", "ollama", "qwen", "custom")
     return [PROVIDER_PRESETS[pid].to_dict() for pid in order if pid in PROVIDER_PRESETS]
 
 
@@ -138,6 +148,8 @@ def infer_provider_id(*, base_url: str, model: str = "") -> str:
         return "google"
     if "dashscope" in host or "qwen" in model_l:
         return "qwen"
+    if "deepseek" in host or "deepseek" in model_l:
+        return "deepseek"
     if "11434" in url_l or "ollama" in host:
         return "ollama"
     if "openai.com" in host or model_l.startswith("gpt-"):

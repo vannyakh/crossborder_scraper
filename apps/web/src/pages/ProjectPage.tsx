@@ -12,7 +12,13 @@ import { ProjectRuntimePanel } from '../components/projects/ProjectRuntimePanel'
 import { ProjectSettingsPanel } from '../components/projects/ProjectSettingsPanel'
 import { projectSectionPath } from '../routes/route-config'
 
-function ProjectSectionContent({ section }: { section: ProjectSectionId }) {
+function ProjectSectionContent({
+  section,
+  projectId,
+}: {
+  section: ProjectSectionId
+  projectId: string
+}) {
   switch (section) {
     case 'flow':
       return <ProjectCanvasPanel />
@@ -21,7 +27,7 @@ function ProjectSectionContent({ section }: { section: ProjectSectionId }) {
     case 'logs':
       return <ProjectLogsPanel />
     case 'settings':
-      return <ProjectSettingsPanel />
+      return <ProjectSettingsPanel key={projectId} />
     default:
       return null
   }
@@ -47,7 +53,7 @@ export function ProjectPage() {
 
   const isFlow = sectionParam === 'flow'
 
-  const content = <ProjectSectionContent section={sectionParam} />
+  const content = <ProjectSectionContent section={sectionParam} projectId={projectId} />
 
   return (
     <Box

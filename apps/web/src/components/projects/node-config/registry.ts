@@ -1,4 +1,9 @@
-import type { ProjectNode, ProjectNodeKind } from '../project-sample-data'
+import type { PluginProfile } from '../../../lib/api/types'
+import {
+  profileToNodeSchema,
+  resolveProfileForNode,
+} from '../../../lib/plugin-profiles/resolve-schema'
+import type { ProjectNode, ProjectNodeKind, ProjectDetail } from '../project-sample-data'
 import type { NodeConfigSchema, ProjectConfigField, ProjectConfigTabId } from './types'
 
 import agentSchema from './schemas/agent.json'
@@ -27,7 +32,14 @@ const SCHEMA_BY_KIND: Record<string, NodeConfigSchema> = {
   default: defaultSchema as NodeConfigSchema,
 }
 
-export function getNodeConfigSchema(node: ProjectNode): NodeConfigSchema {
+export function getNodeConfigSchema(
+  node: ProjectNode,
+  ctx?: { project?: ProjectDetail; profiles?: PluginProfile[] },
+): NodeConfigSchema {
+  if (ctx?.project && ctx.profiles?.length) {
+    const profile = resolveProfileForNode(ctx.project, node, ctx.profiles)
+    if (profile) return profileToNodeSchema(profile)
+  }
   if (node.role === 'config') {
     return SCHEMA_BY_KIND[node.kind] ?? SCHEMA_BY_KIND.redis
   }

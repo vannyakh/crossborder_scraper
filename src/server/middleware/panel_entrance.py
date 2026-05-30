@@ -9,8 +9,8 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from deploy.panel_security import (
     COOKIE_NAME,
     access_keys_match,
+    effective_entry_path,
     expected_entrance_cookie,
-    normalize_entry_path,
 )
 from server.middleware.panel_entrance_html import (
     panel_not_found_response,
@@ -188,7 +188,7 @@ def add_panel_entrance_middleware(app: ASGIApp) -> None:
     from config import get_settings
 
     settings = get_settings()
-    entry = normalize_entry_path(settings.panel_entry_path)
+    entry = effective_entry_path(settings.panel_entry_path)
     if not entry:
         return
     app.add_middleware(

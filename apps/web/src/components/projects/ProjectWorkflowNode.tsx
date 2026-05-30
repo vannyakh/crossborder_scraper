@@ -6,7 +6,6 @@ import { ProjectNodeIconTile } from './ProjectNodeIconTile'
 import type { ConfigInputPort } from './project-flow-layout'
 import { NODE_VISUAL, ROLE_DEFAULTS, roleForKind } from './project-node-meta'
 import type { FlowExecutionStatus } from './project-flow-types'
-import type { RemotePeerHighlight } from './project-flow-types'
 import type { ProjectNode } from './project-sample-data'
 
 const AGENT_TOOLS_H = 72
@@ -17,7 +16,6 @@ type ProjectWorkflowNodeProps = {
   running?: boolean
   executionStatus?: FlowExecutionStatus
   configInputs?: ConfigInputPort[]
-  remotePeerHighlight?: RemotePeerHighlight
 }
 
 function ExecutionDoneBadge() {

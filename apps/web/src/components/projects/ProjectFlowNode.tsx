@@ -7,6 +7,7 @@ import type { ConfigInputPort } from './project-flow-layout'
 import { ProjectFlowMainOutHandle } from './ProjectFlowMainOutHandle'
 import { ProjectFlowNodeMenu } from './ProjectFlowNodeMenu'
 import { ProjectFlowOutRail } from './ProjectFlowOutRail'
+import { ProjectRemotePeerFocusBadge } from './ProjectRemotePeerFocusBadge'
 import { ProjectFlowSubNodeToolbar } from './ProjectFlowSubNodeToolbar'
 import { ProjectFlowTriggerRun } from './ProjectFlowTriggerRun'
 import { ProjectWorkflowNode } from './ProjectWorkflowNode'
@@ -214,24 +215,27 @@ function ProjectFlowNodeComponent({
   })
 
   const useOutRail = Boolean(data.showAddStep)
+  const remotePeers = data.remotePeerHighlights ?? []
+  const primaryRemotePeer = remotePeers[0]
 
   return (
     <Box
       className={[
         'project-flow-node-root',
-        data.remotePeerHighlight ? 'project-flow-node-root--remote-peer' : '',
+        primaryRemotePeer ? 'project-flow-node-root--remote-peer' : '',
         useOutRail ? 'project-flow-node-root--has-out-rail' : '',
         useOutRail && isTrigger ? 'project-flow-node-root--flow-entry' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       style={
-        data.remotePeerHighlight
-          ? ({ '--remote-peer-color': data.remotePeerHighlight.color } as CSSProperties)
+        primaryRemotePeer
+          ? ({ '--remote-peer-color': primaryRemotePeer.color } as CSSProperties)
           : undefined
       }
       {...nodeHoverHandlers}
     >
+      {remotePeers.length > 0 ? <ProjectRemotePeerFocusBadge peers={remotePeers} /> : null}
       <ProjectFlowNodeMenu
         nodeId={id}
         node={data.node}
@@ -263,7 +267,6 @@ function ProjectFlowNodeComponent({
         running={data.running}
         executionStatus={data.executionStatus}
         configInputs={data.configInputs}
-        remotePeerHighlight={data.remotePeerHighlight}
       />
       {useOutRail ? (
         <ProjectFlowOutRail anchorTopPx={outRailTopPx} showEntryLabel={isTrigger} />

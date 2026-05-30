@@ -62,5 +62,9 @@ export const queryKeys = {
   vhostStatus: ['vhost', 'status'] as const,
   vhostSites: ['vhost', 'sites'] as const,
   projectsList: ['projects', 'list'] as const,
+  projectsPresence: ['projects', 'presence'] as const,
+  projectLogs: (projectId: string, category: string, q: string, limit: number) =>
+    ['projects', projectId, 'logs', category, q, limit] as const,
   project: (id: string) => ['projects', id] as const,
+  pluginProfiles: ['projects', 'plugin-profiles'] as const,
 }

@@ -4,6 +4,22 @@ export type ProjectCollaboratorPeer = {
   selectedNodeId: string | null
 }
 
+export type ProjectPresenceGuest = {
+  clientId: string
+  username: string
+  selectedNodeId: string | null
+}
+
+export type ProjectPresenceByProject = Map<string, ProjectPresenceGuest[]>
+
+export type ProjectNodeLayoutPatch = {
+  id: string
+  x: number
+  y: number
+  noteWidth?: number
+  noteHeight?: number
+}
+
 export type ProjectCollaborationState = {
   clientId: string
   connected: boolean
@@ -11,6 +27,7 @@ export type ProjectCollaborationState = {
   peers: ProjectCollaboratorPeer[]
   remoteSelections: Record<string, string | null>
   publishSelection: (nodeId: string | null) => void
+  publishLayout: (patches: ProjectNodeLayoutPatch[]) => void
 }
 
 export function getOrCreateCollaborationClientId(): string {
@@ -44,4 +61,28 @@ export function peerInitials(username: string): string {
     return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase()
   }
   return (username.trim().slice(0, 2) || '?').toUpperCase()
+}
+
+export function mapPresenceByProject(
+  items: Array<{
+    project_id: string
+    guests: Array<{
+      client_id: string
+      username: string
+      selected_node_id?: string | null
+    }>
+  }>,
+): ProjectPresenceByProject {
+  const map: ProjectPresenceByProject = new Map()
+  for (const item of items) {
+    map.set(
+      item.project_id,
+      item.guests.map((guest) => ({
+        clientId: guest.client_id,
+        username: guest.username,
+        selectedNodeId: guest.selected_node_id ?? null,
+      })),
+    )
+  }
+  return map
 }

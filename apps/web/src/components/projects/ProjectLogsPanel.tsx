@@ -6,14 +6,18 @@ import {
   IconButton,
   Input,
   NativeSelect,
+  Spinner,
   Table,
+  Tabs,
   Text,
 } from '@chakra-ui/react'
 import { ArrowUp, Download, FileText, Pause, Play, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useProjectLogsQuery } from '../../hooks/queries/use-project-logs-query'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
+import type { LogCategory } from '../../lib/api'
 import { notifySuccess } from '../../lib/toast'
 import { EChart } from '../charts/EChart'
 import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
@@ -24,9 +28,9 @@ import {
   logSeverityLabelKey,
 } from './project-observability-utils'
 import { logHistogramOption } from './project-logs-chart'
+import { mapServiceLogsToProjectLogs, projectLogsTimezoneLabel } from './project-logs-mapper'
 import {
   buildLogHistogram,
-  buildProjectLogs,
   filterLogsByHistogramBrush,
   filterLogsByQuery,
   filterLogsByRange,
@@ -39,14 +43,21 @@ import {
 
 const HISTOGRAM_HEIGHT = '118px'
 
+const LOG_CATEGORIES: { id: LogCategory; labelKey: string }[] = [
+  { id: 'operation', labelKey: 'projects.logs.categoryOperation' },
+  { id: 'run', labelKey: 'projects.logs.categoryRun' },
+  { id: 'cron', labelKey: 'projects.logs.categoryCron' },
+]
+
 export function ProjectLogsPanel() {
   const { t } = useLocale()
   const theme = useChartTheme()
   const accentPalette = useAccentPalette()
   const { project } = useProjectWorkspace()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const timezoneLabel = useMemo(() => projectLogsTimezoneLabel(), [])
 
-  const bundle = useMemo(() => buildProjectLogs(project), [project])
+  const [category, setCategory] = useState<LogCategory>('operation')
   const [query, setQuery] = useState('')
   const [range, setRange] = useState<LogTimeRangeId>('15m')
   const [paused, setPaused] = useState(false)
@@ -54,15 +65,21 @@ export function ProjectLogsPanel() {
   const [brush, setBrush] = useState<LogHistogramBrush | null>(null)
   const [brushPercent, setBrushPercent] = useState({ start: 0, end: 100 })
 
+  const { data, isLoading, isError, isFetching } = useProjectLogsQuery({
+    projectId: project.id,
+    category,
+    limit: 200,
+    paused,
+  })
+
+  const entries = useMemo(() => mapServiceLogsToProjectLogs(data?.items ?? []), [data?.items])
+
   useEffect(() => {
     setBrush(null)
     setBrushPercent({ start: 0, end: 100 })
-  }, [range])
+  }, [range, category])
 
-  const rangedEntries = useMemo(
-    () => filterLogsByRange(bundle.entries, range),
-    [bundle.entries, range],
-  )
+  const rangedEntries = useMemo(() => filterLogsByRange(entries, range), [entries, range])
 
   const histogram = useMemo(() => buildLogHistogram(rangedEntries, range), [rangedEntries, range])
 
@@ -121,12 +138,30 @@ export function ProjectLogsPanel() {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
+  const downloadLogs = useCallback(() => {
+    const lines = filtered.map((row) => {
+      const message = formatLogPayload(row.data)
+      return `${formatProjectLogTime(row.at)}\t${row.severity}\t${row.service}\t${message}`
+    })
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${project.id}-${category}-logs.txt`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    notifySuccess(t('projects.logs.exportDone'))
+  }, [category, filtered, project.id, t])
+
+  const live = Boolean(data) && !isError
+
   return (
     <Box className="project-logs-panel" flex={1} minH={0} display="flex" flexDirection="column">
       <ProjectObservabilityHeader
         title={t('projects.logs.title')}
         description={t('projects.logs.subtitle')}
         icon={<FileText size={20} strokeWidth={1.75} />}
+        live={live}
         stats={[
           { label: t('projects.logs.statLines'), value: String(filtered.length), tone: 'accent' },
           {
@@ -134,7 +169,7 @@ export function ProjectLogsPanel() {
             value: String(errorCount),
             tone: errorCount > 0 ? 'danger' : 'default',
           },
-          { label: t('projects.logs.statServices'), value: String(project.servicesTotal) },
+          { label: t('projects.logs.statTotal'), value: String(data?.total ?? 0) },
         ]}
       />
 
@@ -147,6 +182,20 @@ export function ProjectLogsPanel() {
         px={{ base: 3, md: 4 }}
         pb={3}
       >
+        <Tabs.Root
+          value={category}
+          onValueChange={(details) => setCategory(details.value as LogCategory)}
+          mb={3}
+        >
+          <Tabs.List className="project-logs-tabs">
+            {LOG_CATEGORIES.map((tab) => (
+              <Tabs.Trigger key={tab.id} value={tab.id} fontSize="sm">
+                {t(tab.labelKey)}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+        </Tabs.Root>
+
         <Box className="project-observe-surface project-logs-toolbar-card" mb={3}>
           <HStack gap={2} flexWrap={{ base: 'wrap', lg: 'nowrap' }} p={3}>
             <HStack className="project-logs-search" flex={{ base: '1 1 100%', lg: 1 }} minW={0}>
@@ -189,7 +238,8 @@ export function ProjectLogsPanel() {
                 aria-label={t('projects.logs.download')}
                 size="sm"
                 variant="outline"
-                onClick={() => notifySuccess(t('projects.logs.exportQueued'))}
+                disabled={filtered.length === 0}
+                onClick={downloadLogs}
               >
                 <Download size={16} />
               </IconButton>
@@ -202,6 +252,7 @@ export function ProjectLogsPanel() {
                 <Text fontSize="xs" fontWeight="medium" color="fg.muted">
                   {t('projects.logs.volumeTitle')}
                 </Text>
+                {isFetching && !isLoading ? <Spinner size="xs" color="fg.muted" /> : null}
                 {brush && brushLabel ? (
                   <Badge
                     size="sm"
@@ -278,7 +329,7 @@ export function ProjectLogsPanel() {
                     {t('projects.logs.colSeverity')}
                   </Table.ColumnHeader>
                   <Table.ColumnHeader w="10.5rem" whiteSpace="nowrap">
-                    {t('projects.logs.colTime', { tz: bundle.timezoneLabel })}
+                    {t('projects.logs.colTime', { tz: timezoneLabel })}
                   </Table.ColumnHeader>
                   <Table.ColumnHeader w="7.5rem">
                     {t('projects.logs.colService')}
@@ -287,7 +338,21 @@ export function ProjectLogsPanel() {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {filtered.length === 0 ? (
+                {isLoading ? (
+                  <Table.Row>
+                    <Table.Cell colSpan={4} py={10} textAlign="center">
+                      <Spinner size="sm" color="fg.muted" />
+                    </Table.Cell>
+                  </Table.Row>
+                ) : isError ? (
+                  <Table.Row>
+                    <Table.Cell colSpan={4} py={10} textAlign="center">
+                      <Text color="red.300" fontSize="sm">
+                        {t('projects.logs.loadFailed')}
+                      </Text>
+                    </Table.Cell>
+                  </Table.Row>
+                ) : filtered.length === 0 ? (
                   <Table.Row>
                     <Table.Cell colSpan={4} py={10} textAlign="center">
                       <Text color="fg.muted" fontSize="sm">
@@ -324,8 +389,11 @@ export function ProjectLogsPanel() {
         </Box>
 
         <Text className="project-observe-footnote" mt={2} px={0.5}>
-          {t('projects.logs.footerCount', { count: String(filtered.length) })} ·{' '}
-          {t('projects.logs.previewNote')}
+          {t('projects.logs.footerCount', { count: String(filtered.length) })}
+          {data?.total != null && data.total > filtered.length
+            ? ` · ${t('projects.logs.footerTotal', { total: String(data.total) })}`
+            : null}
+          {live ? ` · ${t('projects.logs.liveNote')}` : null}
         </Text>
       </Box>
     </Box>

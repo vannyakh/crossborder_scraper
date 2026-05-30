@@ -73,9 +73,9 @@ def configure_panel_bind(
     entry: str | None = None
     try:
         from config import get_settings
-        from deploy.panel_security import normalize_entry_path
+        from deploy.panel_security import effective_entry_path
 
-        entry = normalize_entry_path(get_settings().panel_entry_path)
+        entry = effective_entry_path(get_settings().panel_entry_path)
     except Exception:
         entry = None
 

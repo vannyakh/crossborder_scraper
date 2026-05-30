@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { useUpdateProjectFlowMutation } from '../../hooks/queries/use-projects-query'
 import type { ProjectDetail } from './project-sample-data'
-import { projectFlowStructureSignature } from './project-flow-utils'
+import { projectFlowPersistSignature } from './project-flow-utils'
 
 type UseProjectFlowPersistenceOptions = {
   clientId?: string
+  onSaved?: (saved: ProjectDetail) => void
 }
 
-/** Debounced autosave of canvas nodes/edges to the projects API. */
+/** Debounced autosave of canvas nodes/edges (including positions) to the projects API. */
 export function useProjectFlowPersistence(
   projectId: string,
   project: ProjectDetail | null,
@@ -17,17 +18,19 @@ export function useProjectFlowPersistence(
   const lastSavedRef = useRef<string | null>(null)
   const lastRevisionRef = useRef<number>(0)
   const saveFlowRef = useRef(saveFlow)
+  const onSavedRef = useRef(options?.onSaved)
   saveFlowRef.current = saveFlow
+  onSavedRef.current = options?.onSaved
 
   const markRemoteRevision = (remote: ProjectDetail) => {
-    lastSavedRef.current = projectFlowStructureSignature(remote)
+    lastSavedRef.current = projectFlowPersistSignature(remote)
     lastRevisionRef.current = remote.flowRevision ?? 0
   }
 
   useEffect(() => {
     if (!project || project.id !== projectId) return
 
-    const signature = projectFlowStructureSignature(project)
+    const signature = projectFlowPersistSignature(project)
     const revision = project.flowRevision ?? 0
 
     if (lastSavedRef.current === null) {
@@ -48,8 +51,9 @@ export function useProjectFlowPersistence(
         },
         {
           onSuccess: (saved) => {
-            lastSavedRef.current = projectFlowStructureSignature(saved)
+            lastSavedRef.current = projectFlowPersistSignature(saved)
             lastRevisionRef.current = saved.flowRevision ?? revision + 1
+            onSavedRef.current?.(saved)
           },
         },
       )

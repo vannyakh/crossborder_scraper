@@ -66,6 +66,7 @@ import type { ProjectCanvasNode, ProjectServiceEdge } from './project-flow-types
 import {
   preserveFlowNodeUiState,
   projectDetailToFlow,
+  projectFlowLayoutSignature,
   projectFlowOptionsSignature,
   projectFlowStructureSignature,
 } from './project-flow-utils'
@@ -127,7 +128,9 @@ function ProjectFlowCanvasInner() {
   const [stickyEditId, setStickyEditId] = useState<string | null>(null)
   const layoutBaselineRef = useRef(snapshotNodePositions(project))
   const layoutSyncGenRef = useRef(0)
-  const flowSyncRef = useRef({ structure: '', options: '', layoutGen: -1 })
+  const flowSyncRef = useRef({ structure: '', options: '', layout: '', layoutGen: -1 })
+  const layoutPublishTimerRef = useRef<number | null>(null)
+  const pendingLayoutPatchRef = useRef<{ id: string; x: number; y: number } | null>(null)
   const runStepRef = useRef(0)
   const runFinishedRef = useRef(false)
   const runWasActiveRef = useRef(false)
@@ -142,8 +145,9 @@ function ProjectFlowCanvasInner() {
   }, [project.id])
 
   useEffect(() => {
-    collaboration.publishSelection(activeNodeId)
-  }, [activeNodeId, collaboration.publishSelection])
+    const focusedNodeId = configNode?.id ?? activeNodeId ?? null
+    collaboration.publishSelection(focusedNodeId)
+  }, [activeNodeId, configNode?.id, collaboration.publishSelection])
 
   const completedSet = useMemo(() => new Set(completedNodeIds), [completedNodeIds])
   const runSuccessSet = useMemo(() => new Set(runSuccessNodeIds), [runSuccessNodeIds])
@@ -155,17 +159,18 @@ function ProjectFlowCanvasInner() {
   const runSucceeded = !running && runSuccessSet.size > 0
 
   const remotePeerHighlights = useMemo(() => {
-    const map: Record<string, { username: string; color: string }> = {}
+    const map: Record<string, { username: string; color: string }[]> = {}
     for (const peer of collaboration.peers) {
       if (peer.clientId === collaboration.clientId) continue
-      if (!peer.selectedNodeId) continue
-      map[peer.selectedNodeId] = {
-        username: peer.username,
-        color: peerAccentColor(peer.clientId),
-      }
+      const nodeId = collaboration.remoteSelections[peer.clientId] ?? peer.selectedNodeId
+      if (!nodeId) continue
+      const entry = { username: peer.username, color: peerAccentColor(peer.clientId) }
+      const list = map[nodeId] ?? []
+      list.push(entry)
+      map[nodeId] = list
     }
     return map
-  }, [collaboration.clientId, collaboration.peers])
+  }, [collaboration.clientId, collaboration.peers, collaboration.remoteSelections])
 
   const flowOptions = useMemo(
     () => ({
@@ -195,15 +200,21 @@ function ProjectFlowCanvasInner() {
 
   useEffect(() => {
     const structure = projectFlowStructureSignature(project)
+    const layout = projectFlowLayoutSignature(project)
     const options = projectFlowOptionsSignature(flowOptions)
     const layoutGen = layoutSyncGenRef.current
     const prev = flowSyncRef.current
 
-    if (prev.structure === structure && prev.options === options && prev.layoutGen === layoutGen) {
+    if (
+      prev.structure === structure &&
+      prev.options === options &&
+      prev.layout === layout &&
+      prev.layoutGen === layoutGen
+    ) {
       return
     }
 
-    flowSyncRef.current = { structure, options, layoutGen }
+    flowSyncRef.current = { structure, options, layout, layoutGen }
     const next = projectDetailToFlow(project, flowOptions)
     setNodes((current) => preserveFlowNodeUiState(current, next.nodes))
     setEdges(next.edges)
@@ -631,8 +642,60 @@ function ProjectFlowCanvasInner() {
     setOpenMenu(null)
   }, [clearFocus, closeConfig, closeAdd])
 
+  const publishNodeLayout = useCallback(
+    (nodeId: string, x: number, y: number, extra?: { noteWidth?: number; noteHeight?: number }) => {
+      collaboration.publishLayout([
+        {
+          id: nodeId,
+          x,
+          y,
+          ...(extra?.noteWidth !== undefined ? { noteWidth: extra.noteWidth } : {}),
+          ...(extra?.noteHeight !== undefined ? { noteHeight: extra.noteHeight } : {}),
+        },
+      ])
+    },
+    [collaboration],
+  )
+
+  const queueLayoutPublish = useCallback(
+    (nodeId: string, x: number, y: number) => {
+      pendingLayoutPatchRef.current = { id: nodeId, x, y }
+      if (layoutPublishTimerRef.current !== null) return
+      layoutPublishTimerRef.current = window.setTimeout(() => {
+        layoutPublishTimerRef.current = null
+        const patch = pendingLayoutPatchRef.current
+        pendingLayoutPatchRef.current = null
+        if (!patch) return
+        publishNodeLayout(patch.id, patch.x, patch.y)
+      }, 50)
+    },
+    [publishNodeLayout],
+  )
+
+  useEffect(
+    () => () => {
+      if (layoutPublishTimerRef.current !== null) {
+        window.clearTimeout(layoutPublishTimerRef.current)
+      }
+    },
+    [],
+  )
+
+  const onNodeDrag: OnNodeDrag<ProjectCanvasNode> = useCallback(
+    (_event, flowNode) => {
+      queueLayoutPublish(flowNode.id, flowNode.position.x, flowNode.position.y)
+    },
+    [queueLayoutPublish],
+  )
+
   const onNodeDragStop: OnNodeDrag<ProjectCanvasNode> = useCallback(
     (_event, flowNode) => {
+      if (layoutPublishTimerRef.current !== null) {
+        window.clearTimeout(layoutPublishTimerRef.current)
+        layoutPublishTimerRef.current = null
+      }
+      pendingLayoutPatchRef.current = null
+      publishNodeLayout(flowNode.id, flowNode.position.x, flowNode.position.y)
       setProject((prev) => ({
         ...prev,
         nodes: prev.nodes.map((n) =>
@@ -640,7 +703,7 @@ function ProjectFlowCanvasInner() {
         ),
       }))
     },
-    [setProject],
+    [publishNodeLayout, setProject],
   )
 
   const handleAutoLayout = useCallback(() => {
@@ -902,6 +965,7 @@ function ProjectFlowCanvasInner() {
                   edgeTypes={edgeTypes}
                   defaultEdgeOptions={{ type: 'workflow' }}
                   onNodeClick={onNodeClick}
+                  onNodeDrag={onNodeDrag}
                   onNodeDragStop={onNodeDragStop}
                   onPaneClick={onPaneClick}
                   fitView

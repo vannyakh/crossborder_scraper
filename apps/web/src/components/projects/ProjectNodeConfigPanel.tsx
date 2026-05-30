@@ -1,8 +1,10 @@
 import { Box, Button, HStack, IconButton, Input, Text, VStack } from '@chakra-ui/react'
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { usePluginProfilesQuery } from '../../hooks/queries/use-plugin-profiles-query'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
+import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
 import { ProjectAgentSlotChips } from './ProjectAgentSlotChips'
 import { countSchemaFields, getNodeConfigSchema } from './node-config/registry'
 import type { ProjectConfigSectionId, ProjectConfigTabId } from './node-config/types'
@@ -22,9 +24,18 @@ export function ProjectNodeConfigPanel({
 }) {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
+  const { project } = useProjectWorkspace()
+  const { data: profilesData } = usePluginProfilesQuery()
   const meta = NODE_VISUAL[node.kind]
   const Icon = meta.icon
-  const schema = useMemo(() => getNodeConfigSchema(node), [node])
+  const schema = useMemo(
+    () =>
+      getNodeConfigSchema(node, {
+        project,
+        profiles: profilesData?.profiles ?? [],
+      }),
+    [node, project, profilesData?.profiles],
+  )
   const tabs = useMemo(() => {
     if (schema.tabs.some((item) => item.id === 'output')) return schema.tabs
     return [...schema.tabs, OUTPUT_TAB]

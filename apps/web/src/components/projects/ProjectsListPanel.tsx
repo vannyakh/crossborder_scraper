@@ -5,6 +5,7 @@ import { DataListEmpty } from '../ui/DataList'
 import { SectionCard } from '../ui/Section'
 import { ProjectCard } from './ProjectCard'
 import { ProjectListRow } from './ProjectListRow'
+import type { ProjectPresenceByProject } from '../../lib/api/project-collaboration'
 import type { ProjectDetail } from './project-sample-data'
 import { ProjectsToolbar, type ProjectsSort, type ProjectsViewMode } from './ProjectsToolbar'
 
@@ -23,7 +24,13 @@ function sortProjects(items: ProjectDetail[], sort: ProjectsSort): ProjectDetail
   return copy.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
-export function ProjectsListPanel({ projects }: { projects: ProjectDetail[] }) {
+export function ProjectsListPanel({
+  projects,
+  presenceByProject,
+}: {
+  projects: ProjectDetail[]
+  presenceByProject?: ProjectPresenceByProject
+}) {
   const { t } = useLocale()
   const [sort, setSort] = useState<ProjectsSort>('recent')
   const [viewMode, setViewMode] = useState<ProjectsViewMode>('grid')
@@ -48,14 +55,22 @@ export function ProjectsListPanel({ projects }: { projects: ProjectDetail[] }) {
         <Box p={{ base: 3, md: 4 }}>
           <Grid templateColumns={{ base: '1fr', md: '1fr 1fr', xl: '1fr 1fr 1fr' }} gap={3}>
             {sorted.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard
+                key={project.id}
+                project={project}
+                guests={presenceByProject?.get(project.id) ?? []}
+              />
             ))}
           </Grid>
         </Box>
       ) : (
         <Box>
           {sorted.map((project) => (
-            <ProjectListRow key={project.id} project={project} />
+            <ProjectListRow
+              key={project.id}
+              project={project}
+              guests={presenceByProject?.get(project.id) ?? []}
+            />
           ))}
         </Box>
       )}

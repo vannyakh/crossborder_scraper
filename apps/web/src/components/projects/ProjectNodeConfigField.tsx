@@ -12,7 +12,10 @@ import {
 } from '@chakra-ui/react'
 import { ExternalLink } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useLlmModelsQuery } from '../../hooks/queries/use-ai-query'
+import type { LlmProviderId } from '../../lib/api/types'
 import { useLocale } from '../../hooks/use-locale'
+import { syncNodeFromPluginOptions } from '../../lib/plugin-profiles/node-options'
 import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
 import {
   isFieldEditable,
@@ -33,7 +36,7 @@ type ProjectNodeConfigFieldProps = {
 export function ProjectNodeConfigField({ node, field }: ProjectNodeConfigFieldProps) {
   const { t } = useLocale()
   const { setProject } = useProjectWorkspace()
-  const label = t(field.labelKey)
+  const label = field.labelText ?? t(field.labelKey)
   const editable = isFieldEditable(field)
 
   const persist = useCallback(
@@ -42,7 +45,8 @@ export function ProjectNodeConfigField({ node, field }: ProjectNodeConfigFieldPr
         ...prev,
         nodes: prev.nodes.map((n) => {
           if (n.id !== node.id) return n
-          return patchNodeFromField(n, field, value)
+          const patched = patchNodeFromField(n, field, value)
+          return syncNodeFromPluginOptions(patched)
         }),
       }))
     },
@@ -64,11 +68,29 @@ export function ProjectNodeConfigField({ node, field }: ProjectNodeConfigFieldPr
     return <ToggleField node={node} field={field} label={label} onPersist={persist} />
   }
 
-  if (field.type === 'select' && editable && field.options?.length) {
+  if (
+    (field.type === 'select' ||
+      field.type === 'llm_provider' ||
+      field.type === 'source_plugin' ||
+      field.type === 'variable_key') &&
+    editable &&
+    field.options?.length
+  ) {
     return <SelectField node={node} field={field} label={label} onPersist={persist} t={t} />
   }
 
-  if ((field.type === 'textarea' || field.type === 'text' || field.type === 'mono') && editable) {
+  if (field.type === 'llm_model' && editable) {
+    return <LlmModelField node={node} field={field} label={label} onPersist={persist} t={t} />
+  }
+
+  if (
+    (field.type === 'textarea' ||
+      field.type === 'text' ||
+      field.type === 'mono' ||
+      field.type === 'url' ||
+      field.type === 'variable_key') &&
+    editable
+  ) {
     return (
       <TextField
         node={node}
@@ -182,7 +204,8 @@ function TextField({
   const sharedProps = {
     className: 'project-config-field__control',
     value: draft,
-    placeholder: field.placeholderKey ? t(field.placeholderKey) : undefined,
+    placeholder:
+      field.placeholderText ?? (field.placeholderKey ? t(field.placeholderKey) : undefined),
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setDraft(event.target.value),
     onBlur: () => onPersist(draft.trim()),
@@ -202,9 +225,9 @@ function TextField({
       ) : (
         <Input {...sharedProps} size="sm" fontFamily={mono ? 'mono' : undefined} />
       )}
-      {field.hintKey ? (
+      {field.hintText || field.hintKey ? (
         <Field.HelperText className="project-config-field__hint">
-          {t(field.hintKey)}
+          {field.hintText ?? (field.hintKey ? t(field.hintKey) : '')}
         </Field.HelperText>
       ) : null}
     </Field.Root>
@@ -233,12 +256,60 @@ function SelectField({
         <NativeSelect.Field value={current} onChange={(event) => onPersist(event.target.value)}>
           {field.options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {t(opt.labelKey)}
+              {opt.label ?? t(opt.labelKey)}
             </option>
           ))}
         </NativeSelect.Field>
         <NativeSelect.Indicator />
       </NativeSelect.Root>
+    </Field.Root>
+  )
+}
+
+function LlmModelField({
+  node,
+  field,
+  label,
+  onPersist,
+  t,
+}: {
+  node: ProjectNode
+  field: ProjectConfigField
+  label: string
+  onPersist: (value: string) => void
+  t: (key: string) => string
+}) {
+  const provider = String(node.options?.llm_provider ?? 'openai') as LlmProviderId
+  const { data, isLoading } = useLlmModelsQuery({ ai_provider: provider }, true)
+  const models = data?.models ?? []
+  const current = String(readFieldValue(node, field) ?? models[0]?.id ?? '')
+
+  return (
+    <Field.Root className="project-config-field project-config-field--edit">
+      <Field.Label className="project-config-field__label">{label}</Field.Label>
+      <NativeSelect.Root
+        size="sm"
+        className="project-config-field__control"
+        disabled={isLoading && models.length === 0}
+      >
+        <NativeSelect.Field value={current} onChange={(event) => onPersist(event.target.value)}>
+          {models.length === 0 ? (
+            <option value={current}>{current || t('projects.config.modelLoading')}</option>
+          ) : (
+            models.map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.label || model.id}
+              </option>
+            ))
+          )}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+      {field.hintText || field.hintKey ? (
+        <Field.HelperText className="project-config-field__hint">
+          {field.hintText ?? (field.hintKey ? t(field.hintKey) : '')}
+        </Field.HelperText>
+      ) : null}
     </Field.Root>
   )
 }

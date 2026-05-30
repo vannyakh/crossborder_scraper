@@ -6,8 +6,10 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import { projectPath } from '../../routes/route-config'
 import { StatusBadge } from '../ui/StatusBadge'
 import { ProjectCanvasSurface } from './ProjectCanvasSurface'
+import { ProjectActiveGuests, buildPreviewNodeFocusColors } from './ProjectActiveGuests'
 import { ProjectNodeSampleList } from './ProjectNodeSampleList'
 import type { ProjectSummary } from './project-sample-data'
+import type { ProjectPresenceGuest } from '../../lib/api/project-collaboration'
 import {
   formatProjectUpdatedAt,
   projectEnvLabelKey,
@@ -15,9 +17,16 @@ import {
   projectHealthTone,
 } from './project-status-utils'
 
-export function ProjectListRow({ project }: { project: ProjectSummary }) {
+export function ProjectListRow({
+  project,
+  guests = [],
+}: {
+  project: ProjectSummary
+  guests?: ProjectPresenceGuest[]
+}) {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
+  const nodeFocusColors = buildPreviewNodeFocusColors(guests)
 
   return (
     <Link to={projectPath(project.id)} style={{ textDecoration: 'none' }}>
@@ -62,10 +71,15 @@ export function ProjectListRow({ project }: { project: ProjectSummary }) {
               status={projectHealthTone(project.servicesOnline, project.servicesTotal)}
               label={t(projectHealthLabelKey(project.servicesOnline, project.servicesTotal))}
             />
+            {guests.length > 0 ? <ProjectActiveGuests guests={guests} compact /> : null}
           </HStack>
 
           <ProjectCanvasSurface mt={2} py={2} px={2}>
-            <ProjectNodeSampleList nodes={project.previewNodes} compact />
+            <ProjectNodeSampleList
+              nodes={project.previewNodes}
+              compact
+              nodeFocusColors={nodeFocusColors}
+            />
           </ProjectCanvasSurface>
 
           <Text mt={1.5} fontSize="xs" color="fg.subtle">

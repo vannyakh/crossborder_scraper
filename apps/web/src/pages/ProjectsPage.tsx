@@ -7,7 +7,11 @@ import { ProjectsListPanel } from '../components/projects/ProjectsListPanel'
 import type { ProjectEnvironment } from '../components/projects/project-sample-data'
 import { PageHeader } from '../components/ui/PageHeader'
 import { DataListEmpty } from '../components/ui/DataList'
-import { useCreateProjectMutation, useProjectsListQuery } from '../hooks/queries/use-projects-query'
+import {
+  useCreateProjectMutation,
+  useProjectsListQuery,
+  useProjectsPresenceQuery,
+} from '../hooks/queries/use-projects-query'
 import { useLocale } from '../hooks/use-locale'
 import { useAccentPalette } from '../hooks/use-ui-config'
 import { notifyError, notifySuccess } from '../lib/toast'
@@ -19,6 +23,7 @@ export function ProjectsPage() {
   const accentPalette = useAccentPalette()
   const [createOpen, setCreateOpen] = useState(false)
   const { data, isLoading, isError, refetch } = useProjectsListQuery()
+  const { data: presenceByProject } = useProjectsPresenceQuery()
   const createProject = useCreateProjectMutation()
 
   const handleCreate = async (name: string, environment: ProjectEnvironment) => {
@@ -63,7 +68,7 @@ export function ProjectsPage() {
           </Button>
         </VStack>
       ) : (
-        <ProjectsListPanel projects={projects} />
+        <ProjectsListPanel projects={projects} presenceByProject={presenceByProject} />
       )}
 
       <ProjectCreateDialog

@@ -3,10 +3,18 @@ import type { Plugin } from 'vite'
 const ENTRANCE_PREFIX_RE = /^\/[a-f0-9]{8}(?:\/|$)/
 const VITE_INTERNAL_PREFIXES = ['/@vite', '/@fs', '/@id', '/__vite', '/node_modules', '/src']
 
+function isApiProxyPath(pathname: string, apiProxyPaths: readonly string[]): boolean {
+  for (const apiPath of apiProxyPaths) {
+    if (pathname === apiPath || pathname.startsWith(`${apiPath}/`)) return true
+  }
+  return false
+}
+
 /** API paths proxied at repo root in dev — must not be redirected to /ui. */
 export function panelUiRedirectTarget(
   pathname: string,
   apiProxyPaths: readonly string[],
+  entrancePrefix?: string,
 ): string | null {
   const path = pathname || '/'
 
@@ -18,9 +26,16 @@ export function panelUiRedirectTarget(
   if (entrance) {
     const hex = entrance[1]
     const rest = entrance[2] ?? ''
+    if (!entrancePrefix) {
+      if (rest.startsWith('/ui/') || rest === '/ui') return null
+      if (isApiProxyPath(rest, apiProxyPaths)) return null
+      if (rest === '' || rest === '/') return '/ui/'
+      return `/ui${rest}`
+    }
     if (rest === '' || rest === '/') return `/${hex}/ui/`
     if (rest === '/ui') return `/${hex}/ui/`
     if (rest.startsWith('/ui/')) return null
+    if (isApiProxyPath(rest, apiProxyPaths)) return null
     return `/${hex}/ui${rest}`
   }
 
@@ -32,16 +47,17 @@ export function panelUiRedirectTarget(
     if (path.startsWith(prefix)) return null
   }
 
-  for (const apiPath of apiProxyPaths) {
-    if (path === apiPath || path.startsWith(`${apiPath}/`)) return null
-  }
+  if (isApiProxyPath(path, apiProxyPaths)) return null
 
   if (path.startsWith('/ui')) return '/ui/'
 
   return `/ui${path}`
 }
 
-export function panelUiBaseRedirectPlugin(apiProxyPaths: readonly string[]): Plugin {
+export function panelUiBaseRedirectPlugin(
+  apiProxyPaths: readonly string[],
+  entrancePrefix?: string,
+): Plugin {
   return {
     name: 'panel-ui-base-redirect',
     configureServer(server) {
@@ -49,7 +65,7 @@ export function panelUiBaseRedirectPlugin(apiProxyPaths: readonly string[]): Plu
         const raw = req.url ?? '/'
         const q = raw.includes('?') ? raw.slice(raw.indexOf('?')) : ''
         const pathname = raw.split('?')[0] || '/'
-        const target = panelUiRedirectTarget(pathname, apiProxyPaths)
+        const target = panelUiRedirectTarget(pathname, apiProxyPaths, entrancePrefix)
         if (!target) {
           next()
           return

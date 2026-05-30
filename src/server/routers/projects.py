@@ -1,4 +1,5 @@
 import asyncio
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 
@@ -6,11 +7,14 @@ from server.auth import authenticate_websocket, require_panel_auth
 from server.core.events import ws_message
 from server.deps import protected_router
 from server.projects.collaboration import get_project_collaboration_hub
+from server.schemas import ServiceLogListResponse
+from server.schemas.plugin_profiles import PluginProfileCatalogResponse
 from server.schemas.projects import (
     ProjectCreateRequest,
     ProjectDetail,
     ProjectFlowUpdateRequest,
     ProjectListResponse,
+    ProjectPresenceResponse,
     ProjectSummary,
     ProjectUpdateRequest,
 )
@@ -20,6 +24,8 @@ from server.services.project_flow_service import get_project_flow_service
 router = protected_router(prefix="/projects", tags=["projects"])
 ws_router = APIRouter(prefix="/projects", tags=["projects"])
 
+ProjectLogCategory = Literal["operation", "run", "cron"]
+
 
 @router.get("", response_model=ProjectListResponse)
 async def list_projects() -> ProjectListResponse:
@@ -28,6 +34,31 @@ async def list_projects() -> ProjectListResponse:
         items=[ProjectSummary(**i) for i in items],
         total=len(items),
     )
+
+
+@router.get("/presence", response_model=ProjectPresenceResponse)
+async def project_presence() -> ProjectPresenceResponse:
+    """Live canvas guests per project (from collaboration WebSocket rooms)."""
+    from server.schemas.projects import ProjectPresenceGuest, ProjectPresenceItem
+
+    hub = get_project_collaboration_hub()
+    items = [
+        ProjectPresenceItem(
+            project_id=str(row["project_id"]),
+            guests=[ProjectPresenceGuest(**guest) for guest in row["guests"]],
+        )
+        for row in hub.presence_items()
+    ]
+    return ProjectPresenceResponse(items=items)
+
+
+@router.get("/plugin-profiles/catalog", response_model=PluginProfileCatalogResponse)
+async def list_plugin_profiles() -> PluginProfileCatalogResponse:
+    """Manifest-driven node config profiles (LLM model, scraper sources, agent slots)."""
+    from server.projects.plugin_profiles import build_plugin_profile_catalog
+
+    payload = build_plugin_profile_catalog()
+    return PluginProfileCatalogResponse(**payload)
 
 
 @router.post("", response_model=ProjectDetail)
@@ -50,6 +81,33 @@ async def get_project(project_id: str) -> ProjectDetail:
     if not record:
         raise HTTPException(status_code=404, detail="project not found")
     return ProjectDetail(**record)
+
+
+@router.get("/{project_id}/logs", response_model=ServiceLogListResponse)
+async def get_project_logs(
+    project_id: str,
+    category: ProjectLogCategory = Query("operation"),
+    q: str = Query(""),
+    limit: int = Query(200, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+) -> ServiceLogListResponse:
+    """Service logs scoped to this project (matches project id in log details)."""
+    from server.audit.service_logs import import_agent_runs_to_cron_logs, list_service_logs
+
+    record = get_project_flow_service().get_project(project_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="project not found")
+    if category == "cron":
+        import_agent_runs_to_cron_logs()
+    needle = q.strip() or project_id
+    items, total = list_service_logs(category, q=needle, limit=limit, offset=offset)
+    return ServiceLogListResponse(
+        category=category,
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.patch("/{project_id}", response_model=ProjectDetail)

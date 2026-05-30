@@ -1,12 +1,10 @@
 import type { ProjectDetail, ProjectEnvironment } from './project-sample-data'
 
-export type ProjectVisibility = 'private' | 'workspace'
-
 export type ProjectSettingsForm = {
   name: string
   description: string
-  displayId: string
-  visibility: ProjectVisibility
+  projectId: string
+  environment: ProjectEnvironment
 }
 
 export type ProjectMember = {
@@ -42,8 +40,8 @@ export function buildProjectSettingsForm(project: ProjectDetail): ProjectSetting
   return {
     name: project.name,
     description: project.description ?? '',
-    displayId: projectDisplayId(project.id),
-    visibility: 'private',
+    projectId: project.id,
+    environment: project.environment,
   }
 }
 

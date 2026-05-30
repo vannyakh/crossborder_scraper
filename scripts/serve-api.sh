@@ -32,6 +32,8 @@ if info.security_entrance_enabled and info.login_local_url:
     print("    Bare /ui/ returns 404 while security entrance is enabled.")
 elif info.local_url:
     print(f"    Panel UI:     {info.local_url}")
+    if os.environ.get("UVICORN_RELOAD", "1") in ("1", "true", "yes"):
+        print("    Dev mode: security entrance disabled (production-only).")
 else:
     print(f"    Panel UI:     http://127.0.0.1:{port}/ui/")
 PY

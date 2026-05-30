@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 from typing import Final
@@ -35,6 +36,18 @@ def normalize_entry_path(value: str | None) -> str | None:
     if _ENTRY_RE.fullmatch(stripped):
         return stripped
     return None
+
+
+def is_dev_panel_runtime() -> bool:
+    """True for local dev API (uvicorn reload) — security entrance stays off."""
+    return os.getenv("UVICORN_RELOAD", "").lower() in ("1", "true", "yes")
+
+
+def effective_entry_path(value: str | None) -> str | None:
+    """Entrance path when enforced at runtime; None in dev or when disabled in .env."""
+    if is_dev_panel_runtime():
+        return None
+    return normalize_entry_path(value)
 
 
 def generate_entry_path() -> str:

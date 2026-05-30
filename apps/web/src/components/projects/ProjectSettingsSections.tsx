@@ -5,7 +5,6 @@ import {
   HStack,
   IconButton,
   Input,
-  Separator,
   Table,
   Text,
   Textarea,
@@ -15,6 +14,7 @@ import { Copy } from 'lucide-react'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { notifySuccess } from '../../lib/toast'
+import { PanelSelect } from '../ui/PanelSelect'
 import { SettingsField } from '../settings/SettingsFields'
 import { fieldStyles } from '../ui/field-styles'
 import { SubtitleText } from '../ui/Section'
@@ -24,9 +24,8 @@ import {
   sampleTokens,
   sampleVariables,
   type ProjectSettingsForm,
-  type ProjectVisibility,
 } from './project-settings-sample'
-import type { ProjectDetail } from './project-sample-data'
+import type { ProjectDetail, ProjectEnvironment } from './project-sample-data'
 
 function SettingsBlock({
   title,
@@ -56,17 +55,24 @@ export function ProjectSettingsGeneralSection({
   form,
   onPatch,
   onSave,
+  saving,
 }: {
   form: ProjectSettingsForm
   onPatch: (patch: Partial<ProjectSettingsForm>) => void
   onSave: () => void
+  saving?: boolean
 }) {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
 
+  const environmentOptions = (['production', 'staging', 'development'] as const).map((value) => ({
+    value,
+    label: t(environmentLabelKey(value)),
+  }))
+
   async function copyId() {
     try {
-      await navigator.clipboard.writeText(form.displayId)
+      await navigator.clipboard.writeText(form.projectId)
       notifySuccess(t('projects.settings.copiedId'))
     } catch {
       /* clipboard blocked */
@@ -102,12 +108,21 @@ export function ProjectSettingsGeneralSection({
               {...fieldStyles}
             />
           </SettingsField>
+          <SettingsField label={t('projects.environmentLabel')}>
+            <PanelSelect
+              value={form.environment}
+              options={environmentOptions}
+              onChange={(value) => {
+                onPatch({ environment: value as ProjectEnvironment })
+              }}
+            />
+          </SettingsField>
           <SettingsField label={t('projects.settings.general.projectId')}>
             <HStack gap={1}>
               <Input
                 size="sm"
                 readOnly
-                value={form.displayId}
+                value={form.projectId}
                 fontFamily="mono"
                 fontSize="xs"
                 flex={1}
@@ -123,68 +138,18 @@ export function ProjectSettingsGeneralSection({
               </IconButton>
             </HStack>
           </SettingsField>
-          <Button size="sm" w="fit-content" colorPalette={accentPalette} onClick={onSave}>
+          <Button
+            size="sm"
+            w="fit-content"
+            colorPalette={accentPalette}
+            loading={saving}
+            onClick={onSave}
+          >
             {t('projects.settings.general.update')}
           </Button>
         </VStack>
       </SettingsBlock>
-
-      <Separator borderColor="border.subtle" />
-
-      <SettingsBlock title={t('projects.settings.general.visibilityTitle')}>
-        <Text fontSize="sm" color="fg.muted" mb={3}>
-          {t('projects.settings.general.visibilityLead')}{' '}
-          <Text as="span" fontWeight="semibold" color="fg" textTransform="uppercase">
-            {t(
-              form.visibility === 'private'
-                ? 'projects.settings.general.visibilityPrivate'
-                : 'projects.settings.general.visibilityWorkspace',
-            )}
-          </Text>
-          . {t('projects.settings.general.visibilityTail')}
-        </Text>
-        <VisibilityActions
-          visibility={form.visibility}
-          onChange={(v) => {
-            onPatch({ visibility: v })
-          }}
-        />
-      </SettingsBlock>
-
-      <Separator borderColor="border.subtle" />
-
-      <SettingsBlock
-        title={t('projects.settings.general.templateTitle')}
-        description={t('projects.settings.general.templateDesc')}
-      >
-        <Button size="sm" variant="outline" w="fit-content" disabled>
-          {t('projects.settings.general.templateAction')}
-        </Button>
-      </SettingsBlock>
     </VStack>
-  )
-}
-
-function VisibilityActions({
-  visibility,
-  onChange,
-}: {
-  visibility: ProjectVisibility
-  onChange: (v: ProjectVisibility) => void
-}) {
-  const { t } = useLocale()
-  const accentPalette = useAccentPalette()
-
-  return (
-    <Button
-      size="sm"
-      variant="outline"
-      colorPalette={accentPalette}
-      w="fit-content"
-      onClick={() => onChange(visibility === 'private' ? 'workspace' : 'private')}
-    >
-      {t('projects.settings.general.changeVisibility')}
-    </Button>
   )
 }
 
@@ -436,7 +401,17 @@ export function ProjectSettingsIntegrationsSection() {
   )
 }
 
-export function ProjectSettingsDangerSection({ projectName }: { projectName: string }) {
+export function ProjectSettingsDangerSection({
+  projectId,
+  projectName,
+  onDelete,
+  deleting,
+}: {
+  projectId: string
+  projectName: string
+  onDelete: () => void
+  deleting?: boolean
+}) {
   const { t } = useLocale()
   return (
     <Box
@@ -450,10 +425,13 @@ export function ProjectSettingsDangerSection({ projectName }: { projectName: str
       <Text fontWeight="semibold" color="red.200">
         {t('projects.settings.danger.title')}
       </Text>
-      <Text fontSize="sm" color="fg.muted" mt={1} mb={4}>
+      <Text fontSize="sm" color="fg.muted" mt={1} mb={1}>
         {t('projects.settings.danger.desc', { name: projectName })}
       </Text>
-      <Button size="sm" colorPalette="red" variant="outline" disabled>
+      <Text fontSize="xs" color="fg.subtle" fontFamily="mono" mb={4}>
+        {projectId}
+      </Text>
+      <Button size="sm" colorPalette="red" variant="outline" loading={deleting} onClick={onDelete}>
         {t('projects.settings.danger.delete')}
       </Button>
     </Box>

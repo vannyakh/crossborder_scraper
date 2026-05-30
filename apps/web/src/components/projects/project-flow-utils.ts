@@ -45,6 +45,28 @@ export function projectFlowStructureSignature(project: ProjectDetail): string {
   })
 }
 
+/** Full canvas payload for autosave — includes node positions and sticky dimensions. */
+export function projectFlowPersistSignature(project: ProjectDetail): string {
+  return JSON.stringify({
+    id: project.id,
+    nodes: project.nodes,
+    edges: project.edges,
+  })
+}
+
+/** Layout-only fingerprint — drives React Flow resync when peers move nodes. */
+export function projectFlowLayoutSignature(project: ProjectDetail): string {
+  return JSON.stringify(
+    project.nodes.map((node) => ({
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      noteWidth: node.noteWidth ?? null,
+      noteHeight: node.noteHeight ?? null,
+    })),
+  )
+}
+
 export type ProjectFlowSyncOptions = {
   runningNodeId?: string | null
   completedNodeIds?: Set<string>
@@ -53,7 +75,7 @@ export type ProjectFlowSyncOptions = {
   canvas?: Pick<ProjectFlowCanvasOptions, 'showNetworkTraffic' | 'hideConnections'>
   showVariableRefs?: boolean
   stickyEditId?: string | null
-  remotePeerHighlights?: Record<string, RemotePeerHighlight>
+  remotePeerHighlights?: Record<string, RemotePeerHighlight[]>
 }
 
 export function projectFlowOptionsSignature(options: ProjectFlowSyncOptions): string {
@@ -127,6 +149,7 @@ export function projectDetailToFlow(
         data: {
           node,
           beginEdit: options?.stickyEditId === node.id,
+          remotePeerHighlights: options?.remotePeerHighlights?.[node.id],
         },
       })
       continue
@@ -150,7 +173,7 @@ export function projectDetailToFlow(
         showVariableRefs,
         hasMainOutput,
         showAddStep: hasMainOutput && !hasMainOutgoing(project, node.id),
-        remotePeerHighlight: options?.remotePeerHighlights?.[node.id],
+        remotePeerHighlights: options?.remotePeerHighlights?.[node.id],
       },
     })
   }

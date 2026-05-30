@@ -13,11 +13,13 @@ export function ProjectObservabilityHeader({
   description,
   icon,
   stats,
+  live,
 }: {
   title: string
   description?: string
   icon?: ReactNode
   stats?: ObservabilityStat[]
+  live?: boolean
 }) {
   const { t } = useLocale()
 
@@ -35,8 +37,13 @@ export function ProjectObservabilityHeader({
               <Text fontWeight="semibold" fontSize="lg" lineHeight="1.2">
                 {title}
               </Text>
-              <Badge size="sm" variant="subtle" colorPalette="gray" textTransform="none">
-                {t('projects.observe.previewBadge')}
+              <Badge
+                size="sm"
+                variant="subtle"
+                colorPalette={live ? 'green' : 'gray'}
+                textTransform="none"
+              >
+                {t(live ? 'projects.observe.liveBadge' : 'projects.observe.previewBadge')}
               </Badge>
             </HStack>
             {description ? (

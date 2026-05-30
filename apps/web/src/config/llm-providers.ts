@@ -1,6 +1,13 @@
 /** LLM provider IDs and model ref helpers — presets come from GET /ai/providers. */
 
-export type LlmProviderId = 'openai' | 'anthropic' | 'google' | 'ollama' | 'qwen' | 'custom'
+export type LlmProviderId =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'deepseek'
+  | 'ollama'
+  | 'qwen'
+  | 'custom'
 
 /** Canonical model ref: `provider/model` (e.g. `openai/gpt-4o-mini`). */
 export function formatModelRef(providerId: string, model: string): string {

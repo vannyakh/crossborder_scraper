@@ -6,8 +6,10 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import { projectPath } from '../../routes/route-config'
 import { StatusBadge } from '../ui/StatusBadge'
 import { ProjectCanvasSurface } from './ProjectCanvasSurface'
+import { ProjectActiveGuests, buildPreviewNodeFocusColors } from './ProjectActiveGuests'
 import { ProjectNodeSampleList } from './ProjectNodeSampleList'
 import type { ProjectSummary } from './project-sample-data'
+import type { ProjectPresenceGuest } from '../../lib/api/project-collaboration'
 import {
   formatProjectUpdatedAt,
   projectEnvLabelKey,
@@ -15,9 +17,16 @@ import {
   projectHealthTone,
 } from './project-status-utils'
 
-export function ProjectCard({ project }: { project: ProjectSummary }) {
+export function ProjectCard({
+  project,
+  guests = [],
+}: {
+  project: ProjectSummary
+  guests?: ProjectPresenceGuest[]
+}) {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
+  const nodeFocusColors = buildPreviewNodeFocusColors(guests)
 
   return (
     <Link
@@ -65,6 +74,12 @@ export function ProjectCard({ project }: { project: ProjectSummary }) {
             />
           </HStack>
 
+          {guests.length > 0 ? (
+            <Box mb={3}>
+              <ProjectActiveGuests guests={guests} />
+            </Box>
+          ) : null}
+
           <ProjectCanvasSurface
             py={3}
             px={2}
@@ -73,7 +88,7 @@ export function ProjectCard({ project }: { project: ProjectSummary }) {
             alignItems="center"
             justifyContent="center"
           >
-            <ProjectNodeSampleList nodes={project.previewNodes} />
+            <ProjectNodeSampleList nodes={project.previewNodes} nodeFocusColors={nodeFocusColors} />
           </ProjectCanvasSurface>
         </Box>
 

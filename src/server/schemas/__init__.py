@@ -175,12 +175,22 @@ from .marketplace import (
     StoreProbeResponse,
     StoreUpdateConfigRequest,
 )
+from .plugin_profiles import (
+    PluginProfile,
+    PluginProfileCatalogResponse,
+    PluginProfileField,
+    PluginProfileSection,
+    PluginVariableKey,
+)
 from .products import ExportRequest, ExportResponse, ProductListResponse, ProductSummary
 from .projects import (
     ProjectCreateRequest,
     ProjectDetail,
     ProjectFlowUpdateRequest,
     ProjectListResponse,
+    ProjectPresenceGuest,
+    ProjectPresenceItem,
+    ProjectPresenceResponse,
     ProjectSummary,
     ProjectUpdateRequest,
 )
@@ -279,10 +289,18 @@ __all__ = [
     "ServiceLogListResponse",
     "MessageResponse",
     "ProductListResponse",
+    "PluginProfile",
+    "PluginProfileCatalogResponse",
+    "PluginProfileField",
+    "PluginProfileSection",
+    "PluginVariableKey",
     "ProjectCreateRequest",
     "ProjectDetail",
     "ProjectFlowUpdateRequest",
     "ProjectListResponse",
+    "ProjectPresenceGuest",
+    "ProjectPresenceItem",
+    "ProjectPresenceResponse",
     "ProjectSummary",
     "ProjectUpdateRequest",
     "RuntimeStatusResponse",

@@ -1,24 +1,20 @@
 import { Box, Flex, Spinner, VStack } from '@chakra-ui/react'
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from 'react'
+import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom'
-import { getOrCreateCollaborationClientId } from '../../../lib/api/project-collaboration'
+import { useProjectQuery } from '../../../hooks/queries/use-projects-query'
+import { useLocale } from '../../../hooks/use-locale'
+import { usePanelAppearance } from '../../../hooks/use-panel-appearance'
+import {
+  getOrCreateCollaborationClientId,
+  type ProjectNodeLayoutPatch,
+} from '../../../lib/api/project-collaboration'
+import { ROUTE_PATHS } from '../../../routes/route-config'
+import { PageTransition } from '../../motion/PageTransition'
 import type { ProjectDetail } from '../../projects/project-sample-data'
 import { useProjectCollaboration } from '../../projects/use-project-collaboration'
 import { useProjectFlowPersistence } from '../../projects/use-project-flow-persistence'
-import { useProjectQuery } from '../../../hooks/queries/use-projects-query'
-import { usePanelAppearance } from '../../../hooks/use-panel-appearance'
-import { useLocale } from '../../../hooks/use-locale'
-import { ROUTE_PATHS } from '../../../routes/route-config'
-import { PageTransition } from '../../motion/PageTransition'
-import { RouteProgress } from '../RouteProgress'
 import { DataListEmpty } from '../../ui/DataList'
+import { RouteProgress } from '../RouteProgress'
 import { ProjectShellHeader } from './ProjectShellHeader'
 import { ProjectShellSidebar } from './ProjectShellSidebar'
 import { ProjectWorkspaceProvider } from './project-workspace-context'
@@ -37,22 +33,27 @@ export function ProjectShell({ project: projectProp }: ProjectShellProps) {
   const { data: loaded, isLoading, isError } = useProjectQuery(projectProp ? undefined : projectId)
 
   const baseProject = projectProp ?? loaded ?? null
-  const [projectDraft, setProjectDraft] = useState<ProjectDetail | null>(null)
+  const [projectDraft, setProjectDraft] = useState<{
+    id: string
+    project: ProjectDetail
+  } | null>(null)
 
-  useEffect(() => {
-    if (baseProject) setProjectDraft(baseProject)
-  }, [baseProject])
-
-  const resolvedProject = projectDraft ?? baseProject
+  const resolvedProject = useMemo(() => {
+    if (!baseProject) return null
+    if (projectDraft?.id === baseProject.id) return projectDraft.project
+    return baseProject
+  }, [baseProject, projectDraft])
   const flowEnabled = Boolean(resolvedProject && (!section || section === 'flow'))
   const clientId = useMemo(() => getOrCreateCollaborationClientId(), [])
 
   const setProject = useCallback<Dispatch<SetStateAction<ProjectDetail>>>(
     (action) => {
       setProjectDraft((prev) => {
-        const current = prev ?? baseProject
-        if (!current) return prev
-        return typeof action === 'function' ? action(current) : action
+        const current =
+          prev && baseProject && prev.id === baseProject.id ? prev.project : baseProject
+        if (!current || !baseProject) return prev
+        const next = typeof action === 'function' ? action(current) : action
+        return { id: baseProject.id, project: next }
       })
     },
     [baseProject],
@@ -61,7 +62,16 @@ export function ProjectShell({ project: projectProp }: ProjectShellProps) {
   const { markRemoteRevision } = useProjectFlowPersistence(
     projectId ?? '',
     projectProp ? null : resolvedProject,
-    { clientId },
+    {
+      clientId,
+      onSaved: (saved) => {
+        setProject((prev) =>
+          prev.id === saved.id
+            ? { ...prev, flowRevision: saved.flowRevision ?? prev.flowRevision }
+            : prev,
+        )
+      },
+    },
   )
 
   const handleRemoteFlow = useCallback(
@@ -72,12 +82,34 @@ export function ProjectShell({ project: projectProp }: ProjectShellProps) {
     [markRemoteRevision, setProject],
   )
 
+  const handleRemoteLayout = useCallback(
+    (patches: ProjectNodeLayoutPatch[]) => {
+      if (patches.length === 0) return
+      setProject((prev) => ({
+        ...prev,
+        nodes: prev.nodes.map((node) => {
+          const patch = patches.find((entry) => entry.id === node.id)
+          if (!patch) return node
+          return {
+            ...node,
+            x: patch.x,
+            y: patch.y,
+            ...(patch.noteWidth !== undefined ? { noteWidth: patch.noteWidth } : {}),
+            ...(patch.noteHeight !== undefined ? { noteHeight: patch.noteHeight } : {}),
+          }
+        }),
+      }))
+    },
+    [setProject],
+  )
+
   const collaboration = useProjectCollaboration({
     projectId: projectId ?? '',
     clientId,
     enabled: flowEnabled && !projectProp,
     flowRevision: resolvedProject?.flowRevision ?? 0,
     onRemoteFlow: handleRemoteFlow,
+    onRemoteLayout: handleRemoteLayout,
   })
 
   const workspaceValue = useMemo(

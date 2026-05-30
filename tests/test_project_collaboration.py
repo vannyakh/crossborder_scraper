@@ -52,3 +52,29 @@ def test_selection_broadcast_excludes_sender() -> None:
         assert "selection" in ws_b.sent[0]
 
     asyncio.run(run())
+
+
+def test_layout_relay_excludes_sender() -> None:
+    async def run() -> None:
+        hub = ProjectCollaborationHub()
+        ws_a = FakeWebSocket()
+        ws_b = FakeWebSocket()
+
+        await hub.join("demo", client_id="a", username="alice", websocket=ws_a)  # type: ignore[arg-type]
+        await hub.join("demo", client_id="b", username="bob", websocket=ws_b)  # type: ignore[arg-type]
+
+        ws_a.sent.clear()
+        ws_b.sent.clear()
+
+        await hub.handle_message(
+            "demo",
+            client_id="a",
+            raw='{"action":"layout","nodes":[{"id":"node-1","x":120,"y":240}]}',
+        )
+
+        assert ws_a.sent == []
+        assert len(ws_b.sent) == 1
+        assert "layout" in ws_b.sent[0]
+        assert "node-1" in ws_b.sent[0]
+
+    asyncio.run(run())

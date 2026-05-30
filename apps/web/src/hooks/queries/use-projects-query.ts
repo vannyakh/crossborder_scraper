@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, queryKeys } from '../../lib/api'
+import { mapPresenceByProject } from '../../lib/api/project-collaboration'
 import {
   mapProjectDetail,
   mapProjectSummary,
@@ -21,6 +22,27 @@ export function useProjectsListQuery() {
         total: res.total,
       }
     },
+  })
+}
+
+export function useProjectsPresenceQuery() {
+  return useQuery({
+    queryKey: queryKeys.projectsPresence,
+    queryFn: async () => {
+      const res = await api<{
+        items: Array<{
+          project_id: string
+          guests: Array<{
+            client_id: string
+            username: string
+            selected_node_id?: string | null
+          }>
+        }>
+      }>('/projects/presence')
+      return mapPresenceByProject(res.items)
+    },
+    refetchInterval: 4000,
+    refetchIntervalInBackground: true,
   })
 }
 

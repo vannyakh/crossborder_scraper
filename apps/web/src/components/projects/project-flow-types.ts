@@ -22,7 +22,7 @@ export type ProjectFlowNodeData = {
   /** Show + add-step control when main output has no downstream edge yet */
   showAddStep?: boolean
   /** Another collaborator is focused on this node */
-  remotePeerHighlight?: RemotePeerHighlight
+  remotePeerHighlights?: RemotePeerHighlight[]
 }
 
 export type ProjectFlowEdgeData = {
@@ -33,6 +33,8 @@ export type ProjectStickyNodeData = {
   node: ProjectNode
   /** When true, open markdown editor (from toolbar / action bar). */
   beginEdit?: boolean
+  /** Other collaborators focused on this sticky */
+  remotePeerHighlights?: RemotePeerHighlight[]
 }
 
 export type ProjectServiceNode = Node<ProjectFlowNodeData, 'workflow'>
