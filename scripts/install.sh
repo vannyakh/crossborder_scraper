@@ -227,14 +227,39 @@ ensure_node() {
     if curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1 \
       && sudo apt-get install -y -qq nodejs >/dev/null 2>&1; then
       echo "    Node $(node -v 2>/dev/null || echo 20)"
-      if command -v corepack >/dev/null 2>&1; then
-        corepack enable 2>/dev/null || true
-        corepack prepare pnpm@9.15.9 --activate 2>/dev/null || true
-      fi
       return 0
     fi
   fi
   echo "    skipped — install Node 20+ manually or set CROSSBORDER_SKIP_UI_BUILD=1"
+}
+
+# pnpm via corepack needs root (symlinks into /usr/bin). Install user-local instead.
+ensure_pnpm() {
+  if [[ "${CROSSBORDER_SKIP_UI_BUILD:-}" == "1" ]]; then
+    return 0
+  fi
+  export PNPM_HOME="${HOME}/.local/share/pnpm"
+  export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
+  if command -v pnpm >/dev/null 2>&1; then
+    return 0
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "==> installing pnpm (user-local, no sudo)"
+  if curl -fsSL https://get.pnpm.io/install.sh | env PNPM_HOME="${PNPM_HOME}" SHELL="bash" sh -; then
+    export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
+    echo "    pnpm $(pnpm -v 2>/dev/null || echo ok)"
+    return 0
+  fi
+  mkdir -p "${HOME}/.local/bin"
+  if npm install -g pnpm@9.15.9 --prefix "${HOME}/.local" 2>/dev/null; then
+    export PATH="${HOME}/.local/bin:${PATH}"
+    echo "    pnpm $(pnpm -v 2>/dev/null || echo ok)"
+    return 0
+  fi
+  echo "    pnpm install failed — UI build may be skipped"
+  return 1
 }
 
 prepare_server_prereqs() {
@@ -242,6 +267,7 @@ prepare_server_prereqs() {
   [[ "$(uname -s)" == "Linux" ]] || return 0
   ensure_apt_basics
   ensure_node
+  ensure_pnpm || true
 }
 
 prepare_vps_prereqs() {
@@ -422,6 +448,8 @@ WRAPPER
   export CROSSBORDER_HOME="${root}"
 }
 
+export PATH="${HOME}/.local/share/pnpm:${HOME}/.local/bin:${PATH}"
+
 ensure_shell_path() {
   local root="$1"
   local bin_dir="${HOME}/.local/bin"
@@ -437,7 +465,7 @@ ensure_shell_path() {
     cat >>"${rc}" <<EOF
 
 ${marker}
-export PATH="\${HOME}/.local/bin:\${PATH}"
+export PATH="\${HOME}/.local/share/pnpm:\${HOME}/.local/bin:\${PATH}"
 export CROSSBORDER_HOME="${root}"
 EOF
     echo "==> added crossborder to PATH in ${rc} (open a new terminal or: source ${rc})"
@@ -459,24 +487,26 @@ build_panel_ui() {
     echo "    cd ${root}/apps/web && pnpm install && pnpm build"
     return 0
   fi
+  ensure_pnpm || true
+  export PNPM_HOME="${HOME}/.local/share/pnpm"
+  export PATH="${PNPM_HOME}:${HOME}/.local/bin:${PATH}"
   echo "==> build panel web UI"
-  (
+  if ! (
     cd "${root}/apps/web"
-    if command -v corepack >/dev/null 2>&1; then
-      corepack enable 2>/dev/null || true
-      corepack prepare pnpm@9.15.9 --activate 2>/dev/null || true
-    fi
-    if ! command -v pnpm >/dev/null 2>&1; then
-      npm install -g pnpm@9.15.9 2>/dev/null || true
-    fi
     if command -v pnpm >/dev/null 2>&1; then
       pnpm install --frozen-lockfile
       pnpm build
+    elif command -v npx >/dev/null 2>&1; then
+      npx --yes pnpm@9.15.9 install --frozen-lockfile
+      npx --yes pnpm@9.15.9 build
     else
-      echo "==> pnpm not available — install Node 20+ or run bash scripts/dev-ui.sh" >&2
-      return 1
+      exit 1
     fi
-  )
+  ); then
+    echo "==> panel UI build failed — API still works; retry later:"
+    echo "    cd ${root}/apps/web && pnpm install && pnpm build"
+    return 0
+  fi
 }
 
 run_bootstrap() {
