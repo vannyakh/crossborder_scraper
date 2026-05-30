@@ -165,7 +165,15 @@ crossborder tools update
 **Re-run installer** (updates code + UI, keeps `.env` and data):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
+cd ~/crossborder-scraper
+bash scripts/install.sh
+# prompts: Continue with update? [y/N]
+```
+
+Non-interactive:
+
+```bash
+CROSSBORDER_YES=1 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 ```
 
 ---

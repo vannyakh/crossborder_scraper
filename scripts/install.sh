@@ -28,6 +28,7 @@
 #   CROSSBORDER_SITE_NAME       folder under /www/wwwroot (default: crossborder_scraper)
 #   CROSSBORDER_NGINX=1         install/configure nginx HTTP proxy on port 80 (server/VPS)
 #   CROSSBORDER_SKIP_NGINX=1    skip nginx setup even when nginx is already installed
+#   CROSSBORDER_YES=1           skip reinstall confirmation (required for curl | bash non-TTY)
 #
 set -euo pipefail
 
@@ -149,6 +150,7 @@ Cross-Border — self-host installer
     CROSSBORDER_VPS=1             /www/wwwroot layout + security entrance
     CROSSBORDER_NGINX=1           install nginx + HTTP proxy on port 80
     CROSSBORDER_SKIP_NGINX=1      skip nginx setup
+    CROSSBORDER_YES=1             skip reinstall confirm (non-interactive / curl | bash)
     CROSSBORDER_SKIP_FIREWALL=1   skip ufw on cloud VMs
     CROSSBORDER_START=0           do not start panel after install
     CROSSBORDER_HELP=1            show this help
@@ -482,6 +484,96 @@ sync_to_origin() {
   fi
 }
 
+read_pyproject_version() {
+  local file="$1"
+  [[ -f "${file}" ]] || return 0
+  grep -E '^version\s*=' "${file}" 2>/dev/null | head -1 \
+    | sed -E 's/^version\s*=\s*"([^"]+)".*/\1/' \
+    | sed -E 's/^version\s*=\s'\''([^'\'']+)'\''.*/\1/'
+}
+
+read_installed_version() {
+  local root="$1"
+  read_pyproject_version "${root}/pyproject.toml"
+}
+
+peek_target_version() {
+  local dir="$1"
+  local ver=""
+  if [[ -d "${dir}/.git" ]]; then
+    git -C "${dir}" fetch --depth 1 origin "${BRANCH}" 2>/dev/null \
+      || git -C "${dir}" fetch origin "${BRANCH}" 2>/dev/null \
+      || true
+    ver="$(git -C "${dir}" show "origin/${BRANCH}:pyproject.toml" 2>/dev/null \
+      | grep -E '^version\s*=' | head -1 \
+      | sed -E 's/^version\s*=\s*"([^"]+)".*/\1/')"
+  fi
+  if [[ -z "${ver}" ]]; then
+    ver="${BRANCH}"
+  fi
+  echo "${ver}"
+}
+
+is_existing_install() {
+  local dir="$1"
+  [[ -d "${dir}/.git" ]] || [[ -f "${dir}/.env" ]]
+}
+
+confirm_reinstall_update() {
+  local dir="$1"
+  is_existing_install "${dir}" || return 0
+  if [[ "${CROSSBORDER_YES:-}" == "1" || "${CROSSBORDER_CONFIRMED:-}" == "1" ]]; then
+    return 0
+  fi
+
+  local current target
+  current="$(read_installed_version "${dir}")"
+  [[ -z "${current}" ]] && current="(unknown)"
+  target="$(peek_target_version "${dir}")"
+
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "  Existing Cross-Border installation"
+  echo "════════════════════════════════════════════════════════════════"
+  echo ""
+  echo "  Install path:     ${dir}"
+  echo "  Current version:  ${current}"
+  echo "  Target version:   ${target}  (origin/${BRANCH})"
+  echo ""
+  echo "  Re-install will:"
+  echo "    • Replace application code with origin/${BRANCH}"
+  echo "    • Refresh Python deps and rebuild the panel UI"
+  echo "    • Restart the panel"
+  echo ""
+  echo "  Preserved: .env credentials, security entrance, data/, config/"
+  echo ""
+
+  if [[ ! -t 0 ]]; then
+    echo "  Non-interactive shell — confirmation required."
+    echo "  Re-run with:"
+    echo "    CROSSBORDER_YES=1 curl -fsSL ${INSTALL_URL} | bash"
+    echo "  Or SSH in and run interactively:"
+    echo "    bash ${dir}/scripts/install.sh"
+    echo ""
+    exit 1
+  fi
+
+  local reply
+  read -r -p "  Continue with update? [y/N]: " reply
+  case "${reply}" in
+    y | Y | yes | Yes | YES)
+      export CROSSBORDER_CONFIRMED=1
+      echo ""
+      return 0
+      ;;
+    *)
+      echo ""
+      echo "  Update cancelled — no changes made."
+      exit 0
+      ;;
+  esac
+}
+
 clone_or_update() {
   ensure_git
   if [[ -d "${INSTALL_DIR}/.git" ]]; then
@@ -775,156 +867,23 @@ maybe_start_panel() {
 
 print_install_complete() {
   local root="$1"
-  local env_file="${root}/.env"
-  local port username password ext_host lan_ip
+  local port
   port="$(read_env_port "${root}")"
-  username="$(env_val PANEL_USERNAME "${env_file}")"
-  password="$(env_val PANEL_PASSWORD "${env_file}")"
-  ext_host="$(env_val PANEL_EXTERNAL_HOST "${env_file}")"
-  [[ -z "${ext_host}" ]] && ext_host="$(detect_public_ip)"
-  lan_ip=""
-  if [[ -x "${root}/.venv/bin/python" ]]; then
-    lan_ip="$(
-      cd "${root}" && PYTHONPATH="${root}/src" "${root}/.venv/bin/python" -c "
-from deploy.network import detect_lan_ips
-ips = detect_lan_ips()
-print(ips[0] if ips else '')
-" 2>/dev/null || true
-    )"
-  fi
+  local py="${root}/.venv/bin/python"
 
-  local login_local="http://127.0.0.1:${port}/ui/login"
-  local login_lan=""
-  local login_public=""
-  local entry_path access_key public_port entrance_url entrance_access
-  entry_path="$(env_val PANEL_ENTRY_PATH "${env_file}")"
-  access_key="$(env_val PANEL_ACCESS_KEY "${env_file}")"
-  public_port="$(env_val PANEL_PUBLIC_HTTP_PORT "${env_file}")"
-  [[ -z "${public_port}" ]] && public_port="${port}"
-  [[ -n "${lan_ip}" ]] && login_lan="http://${lan_ip}:${port}/ui/login"
-  if [[ -n "${ext_host}" ]]; then
-    if [[ -n "${entry_path}" && "${entry_path}" != "off" ]]; then
-      if [[ "${public_port}" == "80" ]]; then
-        entrance_url="http://${ext_host}/${entry_path}/"
-        entrance_access="http://${ext_host}/${entry_path}/?access_key=${access_key}"
-        login_public="http://${ext_host}/${entry_path}/ui/login?access_key=${access_key}"
-      else
-        entrance_url="http://${ext_host}:${public_port}/${entry_path}/"
-        entrance_access="http://${ext_host}:${public_port}/${entry_path}/?access_key=${access_key}"
-        login_public="http://${ext_host}:${public_port}/${entry_path}/ui/login?access_key=${access_key}"
-      fi
-    else
-      login_public="http://${ext_host}:${port}/ui/login"
-    fi
+  if [[ -x "${py}" && -d "${root}/src" ]]; then
+    cd "${root}"
+    PYTHONPATH="${root}/src" "${py}" -c "
+from pathlib import Path
+from deploy.panel_access import build_access_from_env, print_install_finish_card
+
+info = build_access_from_env(env_path=Path('.env'))
+print_install_finish_card(info, install_dir='${root}', panel_port=${port})
+" 2>/dev/null && return 0
   fi
 
   echo ""
-  echo "════════════════════════════════════════════════════════════════"
-  echo "  INSTALL COMPLETE — panel ready"
-  echo "════════════════════════════════════════════════════════════════"
-  echo ""
-  if [[ "${CROSSBORDER_START}" == "1" ]]; then
-    echo "  Panel:  running in background (port ${port})"
-    echo "  Logs:   ${root}/data/panel.log"
-  else
-    echo "  Panel:  not started (set CROSSBORDER_START=1 or run: crossborder serve --no-reload)"
-  fi
-  echo ""
-  if [[ -n "${entry_path}" && "${entry_path}" != "off" && -n "${access_key}" ]]; then
-    echo "  Security entrance (required — bare /ui/login returns 404):"
-    echo "    Access URL:  ${entrance_access}"
-    echo "    Entrance:    ${entrance_url}"
-    echo "    Login:       ${login_public}"
-    echo "    Path:        /${entry_path}/"
-    echo "    Access key:  ${access_key}"
-    echo ""
-    echo "  Blocked without entrance: http://${ext_host:-<host>}/ui/login"
-    echo ""
-  else
-    echo "  Login URL (open in browser — use port ${port}, NOT :5173):"
-    echo "    ${login_local}"
-    [[ -n "${login_lan}" ]] && echo "    ${login_lan}  (LAN)"
-    [[ -n "${login_public}" ]] && echo "    ${login_public}  (public)"
-    echo ""
-  fi
-  if [[ -n "${login_public}" ]]; then
-    local health_public=""
-    if [[ "${public_port}" == "80" ]]; then
-      health_public="http://${ext_host}/health"
-    else
-      health_public="http://${ext_host}:${port}/health"
-    fi
-    echo "  VPS public access (if browser cannot connect):"
-    if [[ "${public_port}" == "80" ]]; then
-      echo "    1. Cloud security group: allow inbound TCP 80 (and 443 for HTTPS)"
-      echo "    2. nginx on :80 → panel :${port} — or open ${port} for direct access"
-    else
-      echo "    1. Cloud security group: allow inbound TCP ${port}"
-      echo "       (nginx on port 80: also allow TCP 80 and TCP 443)"
-    fi
-    echo "    3. Host firewall: crossborder deploy firewall"
-    echo "    4. Test locally:  curl -sI http://127.0.0.1:${port}/health"
-    [[ -n "${ext_host}" ]] && echo "    5. Test remotely: curl -sI ${health_public}"
-    echo ""
-    if [[ "${public_port}" == "80" ]]; then
-      echo "  nginx (port 80, no domain):"
-      echo "    CROSSBORDER_NGINX=1 curl -fsSL ${INSTALL_URL} | bash"
-      echo "    Or: crossborder deploy nginx -o deploy/nginx-panel.conf"
-    fi
-    echo "  HTTPS (recommended for production — nginx + Let's Encrypt):"
-    echo "    sudo bash scripts/deploy-https.sh panel.yourdomain.com"
-    echo ""
-  fi
-  if [[ -n "${username}" && -n "${password}" ]]; then
-    echo "  Username:  ${username}"
-    echo "  Password:  ${password}"
-  else
-    echo "  Credentials:  see access card above or ${env_file}"
-  fi
-  echo ""
-  echo "  CLI (any terminal — no cd, no uv run):"
-  echo "    crossborder --help"
-  echo "    crossborder service status"
-  echo "    crossborder gateway              # agent hub status"
-  echo "    crossborder chat                 # interactive agent"
-  echo "    crossborder agent \"list schedules\""
-  echo "    crossborder schedules list"
-  echo "    crossborder skills list"
-  echo "    crossborder integrate list       # Telegram, Discord, …"
-  echo "    crossborder service start        # background panel"
-  echo "    crossborder serve --no-reload    # foreground panel"
-  echo ""
-  echo "  Install dir:  ${root}"
-  if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" ]]; then
-    echo ""
-    echo "  Runtime layout (mutable — backup this tree):"
-    echo "    ${root}/var/data/      scrape DB, cookies, output"
-    echo "    ${root}/var/plugins/   uploaded scrape plugins (ZIP)"
-    echo "    ${root}/var/skills/    uploaded agent skills (ZIP)"
-    echo "    ${root}/var/uploads/   panel file uploads"
-    echo "    ${root}/var/logs/       operation / cron logs"
-    echo "    ${root}/config/        panel settings (ui_config.json)"
-  fi
-  echo "  Update:       crossborder tools update"
-  echo "  Re-install:   curl -fsSL ${INSTALL_URL} | bash  (keeps .env + data)"
-  echo "  Docs:         ${DOCS_INSTALL}"
-  echo "  Help:         CROSSBORDER_HELP=1 curl -fsSL ${INSTALL_URL} | bash"
-  echo ""
-  echo "  Stop panel:   kill \$(lsof -t -i:${port})   # macOS/Linux"
-  echo ""
-  echo "  New shell?     source ~/.zshrc   (or open a new terminal for crossborder on PATH)"
-  echo ""
-  echo "  ── If 'crossborder' command is not found ──────────────────"
-  echo "  Run from the install directory (always works, no PATH needed):"
-  echo "    cd ${root}"
-  echo "    source .venv/bin/activate"
-  echo "    python -m server                      # foreground"
-  echo "    nohup python -m server >> data/panel.log 2>&1 &  # background"
-  echo "  Or without activating the venv:"
-  echo "    uv run serve"
-  echo "  ────────────────────────────────────────────────────────────"
-  echo ""
-  echo "════════════════════════════════════════════════════════════════"
+  echo "  Installation complete — see ${root}/.env for credentials"
   echo ""
 }
 
@@ -944,18 +903,25 @@ ROOT=""
 if ROOT="$(detect_local_root)"; then
   echo "==> using existing repo: ${ROOT}"
   [[ -f "${ROOT}/.env" ]] && INSTALL_WAS_UPDATE=1
+  confirm_reinstall_update "${ROOT}"
+  if is_existing_install "${ROOT}" && [[ -d "${ROOT}/.git" ]]; then
+    INSTALL_WAS_UPDATE=1
+    echo "==> updating ${ROOT} (existing install — .env and data preserved)"
+    sync_to_origin "${ROOT}"
+  fi
   prepare_server_prereqs
 else
   prepare_server_prereqs
   prepare_vps_prereqs "${INSTALL_DIR}"
   prepare_wwwroot_install_access "${INSTALL_DIR}"
+  confirm_reinstall_update "${INSTALL_DIR}"
   clone_or_update
   ROOT="${INSTALL_DIR}"
   finalize_vps_ownership "${ROOT}"
   # curl | bash may hit a stale raw.githubusercontent.com cache — always bootstrap from clone.
   if [[ "${CROSSBORDER_INSTALL_REEXEC:-}" != "1" && -f "${ROOT}/scripts/install.sh" ]]; then
     echo "==> re-exec install from ${ROOT}/scripts/install.sh (matches cloned repo)"
-    exec env CROSSBORDER_INSTALL_REEXEC=1 bash "${ROOT}/scripts/install.sh"
+    exec env CROSSBORDER_INSTALL_REEXEC=1 CROSSBORDER_CONFIRMED="${CROSSBORDER_CONFIRMED:-1}" bash "${ROOT}/scripts/install.sh"
   fi
 fi
 
@@ -964,7 +930,7 @@ if [[ "${CROSSBORDER_INSTALL_REEXEC:-}" != "1" && -f "${ROOT}/scripts/install.sh
   case "${BASH_SOURCE[0]:-}" in
     -|bash|/dev/fd/*|/proc/self/fd/*)
       echo "==> re-exec install from ${ROOT}/scripts/install.sh (matches cloned repo)"
-      exec env CROSSBORDER_INSTALL_REEXEC=1 bash "${ROOT}/scripts/install.sh"
+      exec env CROSSBORDER_INSTALL_REEXEC=1 CROSSBORDER_CONFIRMED="${CROSSBORDER_CONFIRMED:-1}" bash "${ROOT}/scripts/install.sh"
       ;;
   esac
 fi

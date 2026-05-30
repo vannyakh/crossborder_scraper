@@ -133,7 +133,7 @@ def build_access_from_env(
     from config import get_settings
     from config.credentials import ensure_panel_credentials
     from core.paths import env_file_path
-    from deploy.network import build_panel_access_info
+    from deploy.network import build_panel_access_info, resolve_external_host
 
     path = env_path or env_file_path()
     settings = get_settings()
@@ -147,6 +147,10 @@ def build_access_from_env(
     else:
         stored = settings.panel_external_host
         ext = stored.strip() if stored else None
+        if not ext:
+            ext = resolve_external_host("auto")
+            if ext:
+                persist_external_host(ext, env_path=path)
     return build_panel_access_info(
         username=username,
         password=password,
@@ -157,6 +161,7 @@ def build_access_from_env(
         external_host=ext,
         entry_path=entry,
         access_key=access_key,
+        public_http_port=settings.panel_public_http_port,
     )
 
 
@@ -170,7 +175,8 @@ def _access_table(info: PanelAccessInfo) -> Table:
         table.add_row("Entrance", hint(f"/{info.entry_path}/  (IP:port alone returns 404)"))
         if info.access_key:
             table.add_row("Access key", secret(info.access_key))
-    table.add_row("Panel", link_markup(info.primary_access_url))
+        if info.entrance_access_url:
+            table.add_row("Panel URL", link_markup(info.entrance_access_url))
     table.add_row("Login", link_markup(info.primary_login_url))
     table.add_row("Local", link_markup(info.local_url))
 
@@ -284,3 +290,57 @@ def default_next_commands(mode: str) -> list[str]:
     if mode == "server":
         return [serve, cmd("crossborder gateway"), agent]
     return [serve, cmd("crossborder --help")]
+
+
+def print_install_finish_card(
+    info: PanelAccessInfo,
+    *,
+    install_dir: str | None = None,
+    panel_port: int | None = None,
+) -> None:
+    """Plain-text install finish — panel URL, access key, username, password."""
+    import os
+    import sys
+
+    verbose = os.environ.get("CROSSBORDER_INSTALL_VERBOSE", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    width = 76
+    border = "=" * width
+    out = sys.stdout
+
+    out.write("\n")
+    out.write(f"{border}\n")
+    out.write(f"{'Cross-Border — Installation complete':^{width}}\n")
+    out.write(f"{border}\n\n")
+
+    if info.security_entrance_enabled and info.entrance_access_url:
+        out.write(f"  Panel URL:   {info.entrance_access_url}\n")
+        out.write(f"  Login URL:   {info.primary_login_url}\n")
+        if info.access_key:
+            out.write(f"  Access key:  {info.access_key}\n")
+        out.write("\n")
+        out.write("  Direct /ui/login without the entrance path returns 404.\n")
+    else:
+        panel_url = info.external_url or info.local_url
+        out.write(f"  Panel URL:   {panel_url}\n")
+        out.write(f"  Login URL:   {info.primary_login_url}\n")
+
+    out.write(f"  Username:    {info.username}\n")
+    out.write(f"  Password:    {info.password}\n")
+    out.write("\n")
+    out.write("  Save this card — credentials are not shown again.\n")
+
+    if verbose:
+        root = install_dir or str(Path(info.env_path).parent)
+        out.write("\n")
+        out.write(f"  Install dir: {root}\n")
+        port = panel_port or info.port
+        out.write(f"  Panel port:  {port}\n")
+        out.write(f"  Logs:        {root}/data/panel.log\n")
+        out.write("  Update:      crossborder tools update\n")
+        out.write("  Docs:        docs/INSTALL.md\n")
+
+    out.write(f"\n{border}\n\n")

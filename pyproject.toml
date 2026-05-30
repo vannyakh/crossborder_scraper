@@ -1,6 +1,6 @@
 [project]
 name = "crossborder-scraper"
-version = "0.1.2"
+version = "0.1.3"
 description = "Scrape 1688/Taobao/AliExpress and export to Shopee, Lazada, TikTok Shop, Shopify"
 readme = "README.md"
 requires-python = ">=3.12"

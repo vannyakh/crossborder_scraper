@@ -40,10 +40,10 @@ CROSSBORDER_HELP=1 curl -fsSL .../install.sh | bash
 | `CROSSBORDER_NGINX=1` | Install nginx + HTTP proxy on 80 |
 | `CROSSBORDER_SKIP_NGINX=1` | Skip nginx setup |
 | `CROSSBORDER_VPS=1` | `/www/wwwroot` layout |
-| `CROSSBORDER_KEEP_LOCAL=1` | Keep local commits on re-run |
+| `CROSSBORDER_YES=1` | Skip reinstall confirmation |
 | `CROSSBORDER_START=0` | Skip auto-start |
 
-Re-run on an existing install updates code and **restarts** the panel; `.env` and `data/` are preserved.
+Re-run on an existing install updates code and **restarts** the panel; `.env` and `data/` are preserved. Prompts **`Continue with update? [y/N]`** unless `CROSSBORDER_YES=1`.
 
 ---
 

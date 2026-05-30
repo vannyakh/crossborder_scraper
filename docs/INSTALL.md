@@ -73,17 +73,27 @@ curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/s
 
 ### 5. Save the install access card
 
-Copy URLs and credentials before closing the terminal.
+The installer ends with a compact card — copy it before closing the terminal:
 
 ```text
-Security entrance (required — bare /ui/login returns 404):
-  Access URL:  http://YOUR_IP/f10585a9/?access_key=YOUR_KEY
-  Login:       http://YOUR_IP/f10585a9/ui/login?access_key=YOUR_KEY
+============================================================================
+                   Cross-Border — Installation complete
+============================================================================
+
+  Panel URL:   http://YOUR_IP/f10585a9/?access_key=YOUR_KEY
+  Login URL:   http://YOUR_IP/f10585a9/ui/login?access_key=YOUR_KEY
+  Access key:  YOUR_KEY
   Username:    scraper_xxxxx
   Password:    ...
+
+  Save this card — credentials are not shown again.
 ```
 
-Bookmark the **Access URL**.
+Bookmark the **Panel URL**. For logs path and update commands:
+
+```bash
+CROSSBORDER_INSTALL_VERBOSE=1 curl -fsSL .../install.sh | bash
+```
 
 ### 6. Verify
 
@@ -141,6 +151,30 @@ Panel stays on **127.0.0.1:8787**; nginx proxies **80 → 8787**. Set `PANEL_PUB
 ---
 
 ## Re-run installer without losing data
+
+When an existing install is detected, the script **asks for confirmation** before updating:
+
+```text
+  Current version:  0.1.2
+  Target version:   0.1.3  (origin/main)
+
+  Continue with update? [y/N]:
+```
+
+Type **`y`** to proceed. Credentials and data in `.env` / `data/` are kept.
+
+**Non-interactive** (e.g. `curl | bash` on a server that already has Cross-Border):
+
+```bash
+CROSSBORDER_YES=1 curl -fsSL .../install.sh | bash
+```
+
+Or SSH in first and run interactively:
+
+```bash
+cd ~/crossborder-scraper
+bash scripts/install.sh
+```
 
 When `~/crossborder-scraper/.git` exists, the installer **updates in place**.
 
@@ -283,6 +317,7 @@ crossborder service restart
 | `CROSSBORDER_NGINX=1` | Install nginx + HTTP proxy on 80 |
 | `CROSSBORDER_SKIP_NGINX=1` | Skip nginx setup |
 | `CROSSBORDER_VPS=1` | wwwroot layout + security entrance |
+| `CROSSBORDER_YES=1` | Skip reinstall confirmation (non-interactive) |
 | `CROSSBORDER_KEEP_LOCAL=1` | Keep local git commits on re-run |
 | `CROSSBORDER_START=0` | Do not auto-start panel |
 | `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright |

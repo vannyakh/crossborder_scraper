@@ -29,6 +29,7 @@ class PanelAccessInfo:
     port_auto_adjusted: bool = False
     entry_path: str | None = None
     access_key: str | None = None
+    entrance_access_url: str | None = None
 
     @property
     def security_entrance_enabled(self) -> bool:
@@ -42,12 +43,14 @@ class PanelAccessInfo:
 
     @property
     def primary_login_url(self) -> str:
+        if self.login_external_url:
+            return self.login_external_url
         if self.lan_ips:
             return build_login_url(
                 self.lan_ips[0],
                 self.port,
                 self.entry_path,
-                access_key=self.access_key if self.credentials_generated else None,
+                access_key=self.access_key,
             )
         return self.login_local_url
 
@@ -166,14 +169,20 @@ def build_panel_access_info(
     lan_ips = tuple(detect_lan_ips())
     local_host = "127.0.0.1"
     ui_path = panel_ui_path(entry_path)
-    login_key = access_key if credentials_generated else None
+    login_key = access_key
     ext_port = public_http_port or port
 
-    ext_url = login_ext = None
+    ext_url = login_ext = entrance_access = None
     if external_host and external_host not in ("127.0.0.1", "localhost"):
         host = external_host.strip()
+        from deploy.panel_security import build_entrance_access_url
+
         ext_url = build_entrance_url(host, ext_port, entry_path)
         login_ext = build_login_url(host, ext_port, entry_path, access_key=login_key)
+        if entry_path and access_key:
+            entrance_access = build_entrance_access_url(
+                host, ext_port, entry_path, access_key=access_key
+            )
 
     return PanelAccessInfo(
         bind_host=bind,
@@ -189,5 +198,6 @@ def build_panel_access_info(
         login_external_url=login_ext,
         port_auto_adjusted=port_auto_adjusted,
         entry_path=entry_path,
-        access_key=access_key if credentials_generated else None,
+        access_key=access_key,
+        entrance_access_url=entrance_access,
     )
