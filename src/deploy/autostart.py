@@ -231,12 +231,22 @@ def _systemd_enable(port: int, system: bool = False) -> AutostartResult:
                 detail=r.stderr.strip(),
             )
     scope_label = "system" if system else "user"
+    linger_note = ""
+    if not system:
+        linger = subprocess.run(
+            ["loginctl", "enable-linger", user],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if linger.returncode == 0:
+            linger_note = " User linger enabled — panel survives logout and reboot."
     return AutostartResult(
         ok=True,
         platform="linux",
         method="systemd",
         message=f"systemd {scope_label} service enabled → {unit_path}",
-        detail="Panel will start automatically on every boot/login.",
+        detail=f"Panel will start automatically on every boot/login.{linger_note}",
     )
 
 

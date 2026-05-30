@@ -68,10 +68,13 @@ Open **Agent** in the sidebar for chat, cron schedules, and skills. Copy `config
 
 ## Self-hosting one-liner
 
+Same command for **local machine, LAN server, and cloud VPS**:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 ```
 
-Windows: see [SELF_HOSTING.md](SELF_HOSTING.md).
+Production VPS: add `env CROSSBORDER_BRANCH=v0.1.1` before `bash`.
+Windows + full guide: [SELF_HOSTING.md](SELF_HOSTING.md)
 
-Maintain: `crossborder tools update` · `crossborder tools reset credentials` · `crossborder deploy status`
+After install: `crossborder service status` · `crossborder tools update` · `crossborder deploy status`

@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# VPS one-liner — installs under /www/wwwroot/crossborder_scraper
+# Optional wwwroot wrapper — most VPS installs use the main one-liner instead:
+#   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 #
+# This script forces /www/wwwroot layout + security entrance (run as root):
 #   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | sudo bash
-#
-# Or from a cloned repo:
-#   sudo CROSSBORDER_SITE_NAME=my_scraper bash scripts/install-vps.sh
 #
 set -eo pipefail
 

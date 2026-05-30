@@ -45,17 +45,22 @@
 
 ## Install — one liner
 
-### macOS / Linux
+**Same command for Mac, Linux desktop, home server, and cloud VPS:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 ```
 
-VPS (opens port 8787 in firewall, uses `/www/wwwroot/crossborder_scraper`):
+Installs everything, starts the panel on port **8787**, and prints your login URL + credentials. On Linux servers it auto-detects the environment (firewall, public IP, systemd auto-start).
+
+Pin a release on production servers:
 
 ```bash
-CROSSBORDER_VPS=1 bash <(curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh)
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
+  env CROSSBORDER_BRANCH=v0.1.1 bash
 ```
+
+Full guide: [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) · Help: `CROSSBORDER_HELP=1 curl -fsSL …/install.sh | bash`
 
 ### Windows (PowerShell — Run as Administrator)
 

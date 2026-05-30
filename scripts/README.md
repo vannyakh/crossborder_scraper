@@ -4,7 +4,7 @@ Run from repository root (scripts resolve `ROOT` automatically).
 
 | Script | Purpose |
 |--------|---------|
-| `install.sh` | **One-liner (Linux/macOS)** — clone or use repo, uv, Playwright, panel access card |
+| `install.sh` | **One-liner (Linux/macOS)** — local, LAN server, or cloud VPS; uv, Node, Playwright, panel UI, credentials, auto-start |
 | `install.ps1` | **One-liner (Windows)** — same via PowerShell (`irm … \| iex`) |
 | `setup.sh` | From clone: `uv sync`, Playwright, `crossborder setup` |
 | `serve-api.sh` | FastAPI panel with reload (`uv run serve`) |

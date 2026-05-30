@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
-# Cross-Border — self-host one-liner
+# Cross-Border — self-host one-liner (local machine, LAN server, cloud VPS)
 #
-# Linux / macOS (from repo):
-#   bash scripts/install.sh
-#
-# Remote one-liner (clone + install + panel credentials):
+# Same command everywhere:
 #   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 #
+# From repo:
+#   bash scripts/install.sh
+#
+# Help:
+#   CROSSBORDER_HELP=1 curl -fsSL .../install.sh | bash
+#
 # Options (environment):
-#   CROSSBORDER_INSTALL_DIR   install path (default: ~/crossborder-scraper)
+#   CROSSBORDER_INSTALL_DIR   install path (default: ~/crossborder-scraper, or wwwroot when CROSSBORDER_VPS=1)
 #   CROSSBORDER_REPO            git URL (override for forks)
-#   CROSSBORDER_BRANCH          git branch (default: main)
-#   CROSSBORDER_PORT            panel port (default: 8787 — avoids 8000 conflicts)
+#   CROSSBORDER_BRANCH          git branch or tag (default: main; use v0.1.1 for a release)
+#   CROSSBORDER_OPEN_FIREWALL=1 open ufw / firewalld for panel port
+#   CROSSBORDER_SKIP_FIREWALL=1 skip auto firewall on cloud VMs
+#   CROSSBORDER_PORT            panel port (default: 8787)
 #   CROSSBORDER_START=1         start panel after install (default: 1)
 #   CROSSBORDER_START=0         skip auto-start
 #   CROSSBORDER_SKIP_BROWSER=1  skip Playwright (Docker-only hosts)
-#   CROSSBORDER_SKIP_UI_BUILD=1 skip apps/web build (use dev-ui.sh on :5173 instead)
+#   CROSSBORDER_SKIP_UI_BUILD=1 skip apps/web build
 #   CROSSBORDER_KEEP_LOCAL=1    keep local git commits (fail instead of reset)
-#   CROSSBORDER_VPS=1           Linux VPS: /www/wwwroot/crossborder_scraper + open firewall
-#   CROSSBORDER_WWWROOT=1       same as CROSSBORDER_VPS (wwwroot site layout)
-#   CROSSBORDER_SITE_NAME       site folder under /www/wwwroot (default: crossborder_scraper)
+#   CROSSBORDER_VPS=1           force /www/wwwroot layout + security entrance
+#   CROSSBORDER_WWWROOT=1       same as CROSSBORDER_VPS=1
+#   CROSSBORDER_SERVER=1        force server profile (firewall, bind 0.0.0.0, autostart)
+#   CROSSBORDER_SITE_NAME       folder under /www/wwwroot (default: crossborder_scraper)
 #
 set -euo pipefail
+
+INSTALL_URL="${CROSSBORDER_INSTALL_URL:-https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh}"
+INSTALL_PROFILE="${CROSSBORDER_INSTALL_PROFILE:-local}"
 
 resolve_install_dir() {
   if [[ -n "${CROSSBORDER_INSTALL_DIR:-}" ]]; then
@@ -36,7 +45,104 @@ resolve_install_dir() {
   echo "${HOME}/crossborder-scraper"
 }
 
-INSTALL_DIR="$(resolve_install_dir)"
+detect_public_ip() {
+  if ! command -v curl >/dev/null 2>&1; then
+    return 0
+  fi
+  curl -4 -s --max-time 4 ifconfig.me 2>/dev/null \
+    || curl -4 -s --max-time 4 icanhazip.com 2>/dev/null \
+    || true
+}
+
+# Auto-detect: local desktop, cloud/LAN server (home dir), or wwwroot VPS layout.
+detect_install_profile() {
+  if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" || "${CROSSBORDER_AAPANEL:-}" == "1" ]]; then
+    INSTALL_PROFILE="wwwroot"
+    return
+  fi
+  if [[ "${CROSSBORDER_SERVER:-}" == "1" ]]; then
+    INSTALL_PROFILE="server"
+    return
+  fi
+  if [[ "$(uname -s)" == "Linux" ]]; then
+    local pub_ip
+    pub_ip="$(detect_public_ip)"
+    if [[ -n "${pub_ip}" ]]; then
+      INSTALL_PROFILE="server"
+      return
+    fi
+    # Headless Linux (SSH session, no desktop) — typical LAN/VPS without metadata IP
+    if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+      INSTALL_PROFILE="server"
+      return
+    fi
+  fi
+  INSTALL_PROFILE="local"
+}
+
+apply_install_profile() {
+  case "${INSTALL_PROFILE}" in
+    wwwroot)
+      export CROSSBORDER_VPS=1
+      export CROSSBORDER_WWWROOT=1
+      export CROSSBORDER_OPEN_FIREWALL="${CROSSBORDER_OPEN_FIREWALL:-1}"
+      ;;
+    server)
+      export CROSSBORDER_OPEN_FIREWALL="${CROSSBORDER_OPEN_FIREWALL:-1}"
+      ;;
+    local) ;;
+  esac
+}
+
+profile_label() {
+  case "${INSTALL_PROFILE}" in
+    wwwroot) echo "VPS wwwroot (/www/wwwroot)" ;;
+    server) echo "server (cloud or LAN — home dir, full network setup)" ;;
+    local) echo "local machine" ;;
+    *) echo "${INSTALL_PROFILE}" ;;
+  esac
+}
+
+print_install_help() {
+  cat <<EOF
+
+Cross-Border — self-host installer
+
+  One command for your laptop, home server, and cloud VPS:
+
+    curl -fsSL ${INSTALL_URL} | bash
+
+  What it does:
+    • Clone or update into ~/crossborder-scraper (or wwwroot with CROSSBORDER_VPS=1)
+    • Install Python (uv), Node.js on Linux servers, Playwright, panel web UI
+    • Create panel login credentials and write .env
+    • Bind panel to 0.0.0.0:8787
+    • Register auto-start (systemd on Linux, launchd on macOS)
+    • Start the panel and print login URL + username + password
+
+  Auto-detect on Linux:
+    • Public IP or headless SSH → server profile (firewall, LAN/public URLs)
+    • Desktop session → local profile
+
+  Pin a release (recommended on production VPS):
+
+    curl -fsSL ${INSTALL_URL} | env CROSSBORDER_BRANCH=v0.1.1 bash
+
+  Optional overrides:
+    CROSSBORDER_BRANCH=v0.1.1     git tag or branch
+    CROSSBORDER_INSTALL_DIR=…     custom install path
+    CROSSBORDER_PORT=8787         panel TCP port
+    CROSSBORDER_VPS=1             /www/wwwroot layout + security entrance
+    CROSSBORDER_SKIP_FIREWALL=1   skip ufw on cloud VMs
+    CROSSBORDER_START=0           do not start panel after install
+    CROSSBORDER_HELP=1            show this help
+
+  Docs: docs/SELF_HOSTING.md
+
+EOF
+}
+
+INSTALL_DIR=""
 REPO_URL="${CROSSBORDER_REPO:-https://github.com/vannyakh/crossborder_scraper.git}"
 BRANCH="${CROSSBORDER_BRANCH:-main}"
 PANEL_PORT="${CROSSBORDER_PORT:-8787}"
@@ -45,8 +151,12 @@ CROSSBORDER_START="${CROSSBORDER_START:-1}"
 banner() {
   echo ""
   echo "  Cross-Border — self-host install"
-  echo "  Works on Linux, macOS, and Windows (use install.ps1)."
-  echo "  Default panel port: ${PANEL_PORT} (set CROSSBORDER_PORT to override)"
+  echo "  One command: local machine · LAN server · cloud VPS"
+  echo ""
+  echo "  Profile:   $(profile_label)"
+  echo "  Install:   ${INSTALL_DIR}"
+  echo "  Branch:    ${BRANCH}"
+  echo "  Port:      ${PANEL_PORT}"
   echo ""
 }
 
@@ -95,9 +205,43 @@ ensure_apt_basics() {
   if ! command -v apt-get >/dev/null 2>&1; then
     return 0
   fi
-  echo "==> optional apt packages"
+  echo "==> apt packages (git, curl, build tools)"
   sudo apt-get update -qq || true
   sudo apt-get install -y -qq curl ca-certificates git build-essential || true
+}
+
+ensure_node() {
+  if [[ "${CROSSBORDER_SKIP_UI_BUILD:-}" == "1" ]]; then
+    return 0
+  fi
+  if command -v node >/dev/null 2>&1; then
+    local major
+    major="$(node -v 2>/dev/null | sed 's/^v//' | cut -d. -f1)"
+    if [[ "${major:-0}" -ge 18 ]]; then
+      return 0
+    fi
+  fi
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  echo "==> installing Node.js 20 (panel web UI build)"
+  if command -v apt-get >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
+    if curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - >/dev/null 2>&1 \
+      && sudo apt-get install -y -qq nodejs >/dev/null 2>&1; then
+      echo "    Node $(node -v 2>/dev/null || echo 20)"
+      if command -v corepack >/dev/null 2>&1; then
+        corepack enable 2>/dev/null || true
+        corepack prepare pnpm@9.15.9 --activate 2>/dev/null || true
+      fi
+      return 0
+    fi
+  fi
+  echo "    skipped — install Node 20+ manually or set CROSSBORDER_SKIP_UI_BUILD=1"
+}
+
+prepare_server_prereqs() {
+  [[ "${INSTALL_PROFILE}" == "server" || "${INSTALL_PROFILE}" == "wwwroot" ]] || return 0
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  ensure_apt_basics
+  ensure_node
 }
 
 prepare_vps_prereqs() {
@@ -153,14 +297,26 @@ ensure_panel_bind_all_interfaces() {
 
 configure_linux_firewall() {
   local port="$1"
+  local root="${2:-${INSTALL_DIR}}"
   [[ "$(uname -s)" == "Linux" ]] || return 0
-  if [[ "${CROSSBORDER_VPS:-}" != "1" && "${CROSSBORDER_WWWROOT:-}" != "1" && "${CROSSBORDER_AAPANEL:-}" != "1" && "${CROSSBORDER_OPEN_FIREWALL:-}" != "1" ]]; then
-    return 0
+  local should_open=0
+  if [[ "${CROSSBORDER_VPS:-}" == "1" || "${CROSSBORDER_WWWROOT:-}" == "1" || "${CROSSBORDER_AAPANEL:-}" == "1" || "${CROSSBORDER_OPEN_FIREWALL:-}" == "1" ]]; then
+    should_open=1
   fi
+  # Cloud VM: auto-open host firewall when a public IP is reachable (skip with CROSSBORDER_SKIP_FIREWALL=1)
+  if [[ "${CROSSBORDER_SKIP_FIREWALL:-}" != "1" && "${should_open}" -eq 0 ]]; then
+    local pub_ip
+    pub_ip="$(detect_public_ip)"
+    if [[ -n "${pub_ip}" ]]; then
+      should_open=1
+      echo "==> cloud VM detected (public IP ${pub_ip}) — opening host firewall for port ${port}"
+    fi
+  fi
+  [[ "${should_open}" -eq 1 ]] || return 0
   echo "==> network access (host firewall + panel bind)"
-  local py="${INSTALL_DIR}/.venv/bin/python"
-  if [[ -x "${py}" && -d "${INSTALL_DIR}/src" ]]; then
-    PYTHONPATH="${INSTALL_DIR}/src" "${py}" -c "
+  local py="${root}/.venv/bin/python"
+  if [[ -x "${py}" && -d "${root}/src" ]]; then
+    PYTHONPATH="${root}/src" "${py}" -c "
 from deploy.network_access import run_full_access_setup
 r = run_full_access_setup(${port}, ensure_bind=True, enable_ufw=True, open_firewall=True, persist_external=True)
 for line in r.get('messages', []):
@@ -212,15 +368,6 @@ clone_or_update() {
     mkdir -p "$(dirname "${INSTALL_DIR}")"
     git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${INSTALL_DIR}"
   fi
-}
-
-detect_public_ip() {
-  if ! command -v curl >/dev/null 2>&1; then
-    return 0
-  fi
-  curl -4 -s --max-time 4 ifconfig.me 2>/dev/null \
-    || curl -4 -s --max-time 4 icanhazip.com 2>/dev/null \
-    || true
 }
 
 env_val() {
@@ -434,7 +581,7 @@ maybe_start_panel() {
   nohup "${cb}" serve --no-reload >>"${log}" 2>&1 &
   local pid=$!
   echo "    PID ${pid}"
-  configure_linux_firewall "${port}"
+  configure_linux_firewall "${port}" "${root}"
 
   local i
   for i in 1 2 3 4 5 6 7 8 9 10; do
@@ -531,7 +678,8 @@ print(ips[0] if ips else '')
     echo "    ${root}/var/logs/       operation / cron logs"
     echo "    ${root}/config/        panel settings (ui_config.json)"
   fi
-  echo "  Re-install:   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash"
+  echo "  Re-install:   curl -fsSL ${INSTALL_URL} | bash"
+  echo "  Help:         CROSSBORDER_HELP=1 curl -fsSL ${INSTALL_URL} | bash"
   echo ""
   echo "  Stop panel:   kill \$(lsof -t -i:${port})   # macOS/Linux"
   echo ""
@@ -552,13 +700,23 @@ print(ips[0] if ips else '')
 }
 
 # --- main ---
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" || "${CROSSBORDER_HELP:-}" == "1" ]]; then
+  print_install_help
+  exit 0
+fi
+
+detect_install_profile
+apply_install_profile
+INSTALL_DIR="$(resolve_install_dir)"
+
 banner
 
 ROOT=""
 if ROOT="$(detect_local_root)"; then
   echo "==> using existing repo: ${ROOT}"
+  prepare_server_prereqs
 else
-  ensure_apt_basics
+  prepare_server_prereqs
   prepare_vps_prereqs "${INSTALL_DIR}"
   clone_or_update
   ROOT="${INSTALL_DIR}"

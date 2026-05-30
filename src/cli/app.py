@@ -20,7 +20,9 @@ def build_app() -> typer.Typer:
         help=(
             "[bold bright_blue]Cross-Border[/] — self-hosted AI agent hub: panel, "
             "gateway agent, integrate channels, scrape & export.\n\n"
-            "[bold]Install:[/]   curl …/scripts/install.sh | bash\n"
+            "[bold]Install:[/]   curl -fsSL "
+            "https://raw.githubusercontent.com/vannyakh/crossborder_scraper/"
+            "main/scripts/install.sh | bash\n"
             "[bold]Service:[/]  [cyan]crossborder service start[/]  "
             '[bold]Agent:[/]    [cyan]crossborder chat[/]  ·  [cyan]crossborder agent "…"[/]'
         ),

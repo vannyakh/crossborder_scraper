@@ -1,25 +1,36 @@
 # Self-hosting guide
 
-Deploy Cross-Border on your own VPS, Docker host, or Windows server.
+Deploy Cross-Border on your laptop, home server, or cloud VPS — **one install command** for all of them.
 
-## Requirements
-
-| Component | Minimum |
-|-----------|---------|
-| OS | Linux (Ubuntu 22.04+), macOS, Windows Server |
-| RAM | 4 GB (8 GB+ for Playwright + batches) |
-| Disk | 10 GB + scrape output |
-| Python | 3.12+ (or use Docker only) |
-| Docker | Optional but recommended for production |
-
-## Quick install (one-liner)
-
-Works on **macOS, Linux, and Windows**. Installs Python (via [uv](https://docs.astral.sh/uv/)), Playwright, and prints the **panel access card** (URL, server IP, username, password).
-
-### macOS & Linux
+## Install (one-liner)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
+```
+
+That single command:
+
+| Step | What happens |
+|------|----------------|
+| Clone | Into `~/crossborder-scraper` (default) |
+| Dependencies | Python (uv), Node.js on Linux servers, Playwright, panel web UI |
+| Setup | Panel credentials, `.env`, bind `0.0.0.0:8787` |
+| Auto-start | systemd (Linux) or launchd (macOS) — survives reboot |
+| Start | Panel runs in background; prints **login URL, username, password** |
+
+Open the printed **Login URL** in your browser (port **8787**, not Vite `:5173`).
+
+**Production VPS** — pin a release tag:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
+  env CROSSBORDER_BRANCH=v0.1.1 bash
+```
+
+**Help** — full options list:
+
+```bash
+CROSSBORDER_HELP=1 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 ```
 
 ### Windows
@@ -28,243 +39,163 @@ curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/s
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.ps1 | iex"
 ```
 
-Environment (optional):
+### Where it works
 
-| Variable | Effect |
-|----------|--------|
-| `CROSSBORDER_INSTALL_DIR` | Install path (default `~/crossborder-scraper`) |
-| `CROSSBORDER_REPO` | Git URL (forks / private mirrors) |
-| `CROSSBORDER_PORT` | Panel port (default **8787** — avoids conflicts with port 8000) |
-| `CROSSBORDER_START=1` | Start panel after install (default **on**) |
-| `CROSSBORDER_START=0` | Do not auto-start the panel |
-| `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright (Docker-only hosts) |
-| `CROSSBORDER_VPS=1` | Install under `/www/wwwroot/crossborder_scraper` |
-| `CROSSBORDER_WWWROOT=1` | Same as `CROSSBORDER_VPS=1` |
-| `CROSSBORDER_SITE_NAME` | Folder name under `/www/wwwroot` (default `crossborder_scraper`) |
-| `CROSSBORDER_OPEN_FIREWALL=1` | Run `ufw` / `firewalld` allow for panel port |
+| Target | Command | Install dir | Notes |
+|--------|---------|-------------|-------|
+| **Mac / Linux desktop** | same one-liner | `~/crossborder-scraper` | Local + LAN access |
+| **Cloud VPS** (Ubuntu, etc.) | same one-liner | `~/crossborder-scraper` | Auto-detects server: firewall, public IP URLs |
+| **wwwroot production** | add `CROSSBORDER_VPS=1` | `/www/wwwroot/crossborder_scraper` | See [Advanced](#advanced-wwwroot-layout) |
 
-### VPS / public IP
+The installer **auto-detects Linux servers** (public IP or headless SSH) and applies the server profile: bind all interfaces, open host firewall when possible, print LAN + public login URLs.
 
-Use the **VPS installer** (creates `/www/wwwroot/crossborder_scraper`, binds `0.0.0.0`, opens host firewall when possible):
+---
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | sudo bash
-```
+## Requirements
 
-If `install-vps.sh` is not yet on `main`, use the main installer directly:
+| Component | Minimum |
+|-----------|---------|
+| OS | Linux (Ubuntu 22.04+), macOS, Windows Server |
+| RAM | 4 GB (8 GB+ for Playwright + batches) |
+| Disk | 10 GB + scrape output |
+| Python | 3.12+ (installed automatically via uv) |
+| Docker | Optional — see [Docker](#docker) below |
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
-  sudo env CROSSBORDER_VPS=1 CROSSBORDER_WWWROOT=1 CROSSBORDER_OPEN_FIREWALL=1 bash
-```
+---
 
-After install, open **TCP 8787** in your cloud **security group** (inbound rule). Local `curl http://127.0.0.1:8787/health` can work while the public IP fails if the security group blocks the port.
-
-```bash
-crossborder deploy status           # listen addresses + public URL
-crossborder deploy access           # network checklist (bind, ufw, cloud SG)
-crossborder deploy setup-access     # full setup: 0.0.0.0 bind + ufw + public IP
-crossborder deploy firewall           # open panel port in ufw / firewalld
-crossborder deploy firewall --enable-ufw   # enable ufw (SSH + panel port)
-```
-
-In the panel: **Settings → Network & firewall** (status, apply host firewall, cloud security group rule).
-Gateway agent tools: `network_access_status`, `apply_panel_firewall`, `setup_network_access`.
-
-**wwwroot layout**
-
-| Path | Purpose |
-|------|---------|
-| `/www/wwwroot/crossborder_scraper/` | **App root** — code, `.venv`, `config/`, `.env` |
-| `/www/wwwroot/crossborder_scraper/var/data/` | Scrape DB, cookies, output, panel log |
-| `/www/wwwroot/crossborder_scraper/var/plugins/` | Uploaded scrape plugins (ZIP) |
-| `/www/wwwroot/crossborder_scraper/var/skills/` | Uploaded agent skills (ZIP) |
-| `/www/wwwroot/crossborder_scraper/var/uploads/` | File uploads |
-| `/www/wwwroot/crossborder_scraper/var/logs/` | Panel audit logs |
-| User `crossborder` | Optional service user when install runs as `root` |
-
-Full map: [DIRECTORY_LAYOUT.md](DIRECTORY_LAYOUT.md).
-
-Put **nginx** in front for HTTPS: `crossborder deploy nginx -n your.domain.com`
-
-### After install
-
-The one-liner **starts the panel in the background** and prints the **access card**: **Login URL** (secret entrance path + access key), **username**, and **password**. Open the **Login URL** in your browser — not bare `http://<ip>:<port>` (that returns **404** when security entrance is enabled).
-
-**Security entrance** (enabled on VPS install): random path prefix (e.g. `http://203.0.113.10:8787/a1b2c3d4/ui/login?access_key=…`) plus username/password. Values live in `.env` as `PANEL_ENTRY_PATH` and `PANEL_ACCESS_KEY`. Disable with `PANEL_ENTRY_PATH=off` and restart the panel.
-
-Global CLI (any terminal):
+## After install
 
 ```bash
 crossborder --help
-crossborder deploy status
-crossborder serve --no-reload    # foreground, if you stopped the background panel
+crossborder service status
+crossborder gateway              # agent hub status
+crossborder chat                 # interactive agent
+crossborder tools update         # pull + sync + restart
+crossborder deploy status        # listen addresses + public URL
 ```
 
-If `crossborder: command not found`, open a **new terminal** or run `source ~/.zshrc` (installer adds `~/.local/bin` to PATH).
+If `crossborder: command not found`: `source ~/.bashrc` or open a new terminal.
 
-Install path: `~/crossborder-scraper` (or `CROSSBORDER_INSTALL_DIR`).
+**Logs:** `~/crossborder-scraper/data/panel.log` (or your install dir).
 
-### From git clone
+### Cloud VPS — if browser cannot connect
+
+Local health check on the server:
+
+```bash
+curl -sI http://127.0.0.1:8787/health
+```
+
+If that works but your PC cannot reach the public IP:
+
+1. **Cloud security group** — allow inbound **TCP 8787**
+2. **Host firewall** — `sudo ufw allow 8787/tcp` or `crossborder deploy firewall`
+3. **Verify bind** — `ss -tln | grep 8787` (should show `0.0.0.0:8787`)
+4. **Test remotely** — `curl -sI http://YOUR_PUBLIC_IP:8787/health`
+
+Panel: **Settings → Network & firewall**.
+
+---
+
+## Optional environment variables
+
+| Variable | Effect |
+|----------|--------|
+| `CROSSBORDER_BRANCH` | Git branch or tag (default `main`; use `v0.1.1` for releases) |
+| `CROSSBORDER_INSTALL_DIR` | Custom install path |
+| `CROSSBORDER_PORT` | Panel port (default **8787**) |
+| `CROSSBORDER_START=0` | Do not auto-start panel |
+| `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright |
+| `CROSSBORDER_SKIP_FIREWALL=1` | Skip auto ufw on cloud VMs |
+| `CROSSBORDER_VPS=1` | Force `/www/wwwroot` layout + security entrance |
+| `PANEL_SECURITY_ENTRANCE=1` | Secret login path + access key |
+
+---
+
+## Advanced: wwwroot layout
+
+For production hosts that use `/www/wwwroot` (optional — most VPS installs use home dir):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
+  sudo env CROSSBORDER_VPS=1 CROSSBORDER_BRANCH=v0.1.1 bash
+```
+
+Or the wrapper script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | \
+  sudo env CROSSBORDER_BRANCH=v0.1.1 bash
+```
+
+| Path | Purpose |
+|------|---------|
+| `/www/wwwroot/crossborder_scraper/` | App root |
+| `var/data/` | Scrape DB, cookies, output |
+| `var/plugins/` | Scrape plugins (ZIP) |
+| `var/skills/` | Agent skills (ZIP) |
+
+Full map: [DIRECTORY_LAYOUT.md](DIRECTORY_LAYOUT.md).
+
+**Security entrance** (wwwroot only by default): secret path + access key in `.env`. Enable on any install with `PANEL_SECURITY_ENTRANCE=1`.
+
+HTTPS: `crossborder deploy nginx -n your.domain.com`
+
+---
+
+## From git clone
 
 ```bash
 git clone https://github.com/vannyakh/crossborder_scraper.git
 cd crossborder_scraper
 bash scripts/install.sh
-# or: uv run crossborder install
 ```
 
-Or with CLI only:
+---
+
+## Docker
+
+Published image (every release):
 
 ```bash
-uv sync
-uv run scraper setup --server
+docker pull ghcr.io/vannyakh/crossborder_scraper:0.1.1
+docker run -d --name crossborder \
+  -p 8787:8787 \
+  -v crossborder-data:/app/data \
+  -v crossborder-config:/app/config \
+  --env-file .env \
+  --restart unless-stopped \
+  ghcr.io/vannyakh/crossborder_scraper:0.1.1
 ```
 
-Setup prints the **panel access card**: panel URL, server IP(s), username, and password (also saved to `.env`).
-
-```bash
-uv run crossborder setup --server --external auto        # auto-detect public IP in access card
-uv run crossborder setup --server --external 203.0.113.10
-uv run crossborder setup --port 8080
-uv run crossborder setup --fixed-port                    # keep 8787 even if busy
-```
-
-### Run panel (TCP server + auto public IP)
-
-```bash
-cd ~/crossborder-scraper
-
-# First time (bootstrap + start on 0.0.0.0:8787):
-uv run crossborder deploy run --setup
-
-# Already installed — refresh public IP and start:
-uv run crossborder deploy run
-
-# Foreground dev reload:
-uv run crossborder deploy run --reload
-```
-
-Same as `uv run crossborder serve --no-reload` after setup; `deploy run` also writes `PANEL_EXTERNAL_HOST` and prints LAN/public login URLs.
-
-## Setup modes (`scraper setup`)
-
-| Flag | Use case |
-|------|----------|
-| *(default)* | Panel login + seed `config/` only |
-| `--server` | Full bare-metal: deps, Playwright, data dirs |
-| `--docker` | Prepare configs for container deploy (no local browser) |
-| `--host` | Bind address (default `0.0.0.0`) |
-| `--port` / `-p` | Panel TCP port (default **8787**; auto-picks next free if taken) |
-| `--external` / `-e` | Public IP or domain shown in the summary |
-
-## Software tools (`scraper tools`)
-
-Maintain the installed panel after setup (update / restart):
-
-```bash
-uv run scraper tools sync              # git pull + uv sync
-uv run scraper tools update            # sync + Playwright + restart panel
-uv run scraper tools restart           # Docker / systemd / process on panel port
-uv run scraper tools reset credentials # new panel username/password
-uv run scraper tools reset config -y   # restore example configs (*.bak backup)
-uv run scraper tools reset data -y     # clear output, cookies, products.db
-uv run scraper tools reset all -y      # credentials + config + data + cache
-```
-
-Shell wrapper: `bash scripts/tools.sh update`
-
-**Web UI:** header **update** icon (arrow) shows a green dot when a newer version is available. Confirm in the modal to pull, sync, and restart.
-
-| API | Method | Description |
-|-----|--------|-------------|
-| `/gateway/update/status` | GET | Current vs latest version, git behind count |
-| `/gateway/update/apply` | POST | Run update (body: `pull`, `browser`, `restart`) |
-
-| Command | What it does |
-|---------|----------------|
-| `sync` | Pull git (if repo), `uv sync`, optional `--browser`, `--docker-rebuild` |
-| `update` | `sync` + update Playwright + **restart** panel |
-| `restart` | `docker compose restart`, `systemctl restart crossborder-scraper`, or stop process on `PANEL_PORT` |
-| `reset` | Scoped reset; destructive scopes need `--yes` |
-
-## Deploy commands (`scraper deploy`)
-
-CLI for operations:
-
-```bash
-uv run scraper deploy setup          # same as setup --server
-uv run scraper deploy status           # OS, Docker, API health
-uv run scraper deploy up               # docker compose up -d --build
-uv run scraper deploy down
-uv run scraper deploy ps
-uv run scraper deploy systemd          # write deploy/crossborder-scraper.service
-uv run scraper deploy nginx -n scraper.example.com
-```
-
-### Docker (recommended)
+From clone:
 
 ```bash
 cp .env.example .env
-uv run scraper setup --docker
-uv run scraper deploy up
+uv run crossborder setup --docker
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-Uses `docker-compose.yml` + `docker-compose.prod.yml` (healthcheck, volumes for `data/`, `config/`, plugins, skills).
-
-Open: `http://YOUR_SERVER_IP:8787/ui/` (or the port shown in setup)
-
-### systemd (always-on service)
-
-```bash
-uv run scraper setup --server
-uv run scraper deploy systemd -o /tmp/crossborder-scraper.service
-sudo cp /tmp/crossborder-scraper.service /etc/systemd/system/
-sudo systemctl enable --now crossborder-scraper
-```
-
-### nginx reverse proxy (HTTPS)
-
-1. Run the panel on `127.0.0.1:8787` (Docker or systemd).
-2. Generate nginx config:
-
-```bash
-uv run scraper deploy nginx -n scraper.yourdomain.com -o /etc/nginx/sites-available/crossborder-scraper.conf
-```
-
-3. Enable the site, add TLS (certbot or your host panel), then `nginx -t && reload`.
-
-WebSocket paths (`/jobs/.../ws`) are proxied for the live monitor.
-
-### Windows
-
-```powershell
-.\scripts\setup.ps1
-uv run scraper serve --no-reload
-```
-
-## What gets created
-
-| Path | Purpose |
-|------|---------|
-| `.env` | Panel username/password, bind host/port |
-| `config/ui_config.json` | AI, marketplaces, engine (from UI) |
-| `config/agent_skills.yaml` | Enabled agent skills |
-| `data/` | Cookies, SQLite, scrape output |
-| `installed_plugins/` | ZIP scrape plugins |
-| `installed_skills/` | ZIP agent skills |
+---
 
 ## Updating
 
 ```bash
-git pull
-uv sync
-uv run scraper deploy up --build    # Docker
-# or restart systemd service
+cd ~/crossborder-scraper
+crossborder tools update
 ```
+
+Or re-run the one-liner (updates in place):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
+```
+
+---
 
 ## Security checklist
 
-- Change default panel password after first login (`scraper setup --regenerate`).
-- Put nginx TLS in front; do not expose the panel port publicly without auth.
+- Save the install access card — credentials are not shown again.
+- Change password after first login: `crossborder tools reset credentials`.
+- Use nginx + TLS for public internet access.
 - Keep `.env` out of git.
