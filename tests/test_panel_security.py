@@ -1,6 +1,7 @@
 """Panel security entrance helpers."""
 
 from deploy.panel_security import (
+    access_keys_match,
     build_login_url,
     entrance_prefix,
     generate_entry_path,
@@ -8,6 +9,12 @@ from deploy.panel_security import (
     normalize_entry_path,
     panel_login_path,
 )
+
+
+def test_access_keys_match_rejects_non_ascii() -> None:
+    assert not access_keys_match("\u2026", "ascii-key-only")
+    assert access_keys_match("test-access-key", "test-access-key")
+    assert not access_keys_match("wrong", "test-access-key")
 
 
 def test_normalize_entry_path() -> None:

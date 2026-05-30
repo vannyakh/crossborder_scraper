@@ -12,7 +12,11 @@ import {
 } from '@chakra-ui/react'
 import { type FormEvent, type ReactNode, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { LoginCaptcha } from '../components/auth/LoginCaptcha'
 import { FadeIn } from '../components/motion/FadeIn'
+import { ServerErrorState } from '../components/ui/ServerErrorState'
+import type { CaptchaChallenge } from '../lib/api/auth'
+import { LoginRequestError } from '../lib/api/auth'
 import { BrandVersionBadge } from '../components/layout/ShellChrome'
 import { ShellLogoMark } from '../components/layout/ShellLogoMark'
 import { fieldStyles } from '../components/ui/field-styles'
@@ -105,9 +109,16 @@ type LoginFormCardProps = {
   isConnecting: boolean
   needsSetup: boolean
   apiOffline: boolean
+  apiError: unknown
+  onRetryHealth: () => void
+  healthRetrying: boolean
   onUsernameChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onSubmit: () => void
+  captchaRequired: boolean
+  captchaAnswer: string
+  onCaptchaAnswerChange: (value: string) => void
+  onCaptchaChallengeChange: (challenge: CaptchaChallenge | null) => void
 }
 
 function LoginFormCard({
@@ -116,9 +127,16 @@ function LoginFormCard({
   isConnecting,
   needsSetup,
   apiOffline,
+  apiError,
+  onRetryHealth,
+  healthRetrying,
   onUsernameChange,
   onPasswordChange,
   onSubmit,
+  captchaRequired,
+  captchaAnswer,
+  onCaptchaAnswerChange,
+  onCaptchaChallengeChange,
   version,
 }: LoginFormCardProps & { version?: string }) {
   const accentPalette = useAccentPalette()
@@ -126,6 +144,7 @@ function LoginFormCard({
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!username || !password || isConnecting) return
+    if (captchaRequired && !captchaAnswer.trim()) return
     onSubmit()
   }
 
@@ -145,21 +164,26 @@ function LoginFormCard({
           </Text>
         </VStack>
 
-        <VStack align="stretch" gap={3} mb={4}>
-          {needsSetup ? (
-            <LoginNotice tone="muted">
-              Run <code className="login-page__code">scraper setup</code> to generate credentials.
-            </LoginNotice>
-          ) : null}
-          {apiOffline ? (
-            <LoginNotice tone="warning">
-              API offline — start the server with{' '}
-              <code className="login-page__code">uv run serve</code>
-            </LoginNotice>
-          ) : null}
-        </VStack>
+        {apiOffline ? (
+          <Box mb={4}>
+            <ServerErrorState
+              compact
+              error={apiError}
+              onRetry={onRetryHealth}
+              retrying={healthRetrying}
+            />
+          </Box>
+        ) : (
+          <VStack align="stretch" gap={3} mb={4}>
+            {needsSetup ? (
+              <LoginNotice tone="muted">
+                Run <code className="login-page__code">scraper setup</code> to generate credentials.
+              </LoginNotice>
+            ) : null}
+          </VStack>
+        )}
 
-        <Box as="form" onSubmit={handleSubmit}>
+        <Box as="form" onSubmit={handleSubmit} hidden={apiOffline}>
           <VStack align="stretch" gap={4}>
             <Field.Root required>
               <Field.Label fontSize="xs" color="fg.muted">
@@ -189,6 +213,15 @@ function LoginFormCard({
               />
             </Field.Root>
 
+            {captchaRequired ? (
+              <LoginCaptcha
+                answer={captchaAnswer}
+                onAnswerChange={onCaptchaAnswerChange}
+                onChallengeChange={onCaptchaChallengeChange}
+                disabled={isConnecting}
+              />
+            ) : null}
+
             <Button
               type="submit"
               w="full"
@@ -196,7 +229,7 @@ function LoginFormCard({
               colorPalette={accentPalette}
               borderRadius="var(--radius-input)"
               loading={isConnecting}
-              disabled={!username || !password}
+              disabled={!username || !password || (captchaRequired && !captchaAnswer.trim())}
             >
               Sign in
             </Button>
@@ -220,17 +253,22 @@ export function LoginPage() {
   const location = useLocation()
   const { connect, isConnecting } = useAuth()
   const { data: authStatus } = useAuthStatusQuery()
-  const { data: health } = usePublicHealthQuery()
+  const healthQuery = usePublicHealthQuery()
+  const { data: health } = healthQuery
   const appVersion = health?.version
   const { resolved } = useUiConfig()
   const loginBackground = useThemeStore((s) => s.config.loginPage.background)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [captchaForced, setCaptchaForced] = useState(false)
+  const [captchaAnswer, setCaptchaAnswer] = useState('')
+  const [captchaChallenge, setCaptchaChallenge] = useState<CaptchaChallenge | null>(null)
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
-  const apiOffline = Boolean((location.state as { apiOffline?: boolean } | null)?.apiOffline)
+  const apiOffline = healthQuery.isError
   const needsSetup = Boolean(authStatus && !authStatus.auth_configured)
+  const captchaRequired = Boolean(authStatus?.captcha_required) || captchaForced
 
   const loginBgUrl = loginBackground.enabled
     ? resolveLoginBackgroundImageUrl(loginBackground, resolved)
@@ -238,9 +276,24 @@ export function LoginPage() {
 
   async function handleConnect() {
     try {
-      await connect({ username, password })
+      await connect({
+        username,
+        password,
+        ...(captchaRequired && captchaChallenge
+          ? {
+              captcha_id: captchaChallenge.captcha_id,
+              captcha_answer: captchaAnswer.trim(),
+            }
+          : {}),
+      })
+      setCaptchaForced(false)
+      setCaptchaAnswer('')
+      setCaptchaChallenge(null)
       void navigate(from, { replace: true })
     } catch (err) {
+      if (err instanceof LoginRequestError && err.captcha_required) {
+        setCaptchaForced(true)
+      }
       notifyError(err)
     }
   }
@@ -289,8 +342,15 @@ export function LoginPage() {
               isConnecting={isConnecting}
               needsSetup={needsSetup}
               apiOffline={apiOffline}
+              apiError={healthQuery.error}
+              onRetryHealth={() => void healthQuery.refetch()}
+              healthRetrying={healthQuery.isFetching}
               onUsernameChange={setUsername}
               onPasswordChange={setPassword}
+              captchaRequired={captchaRequired}
+              captchaAnswer={captchaAnswer}
+              onCaptchaAnswerChange={setCaptchaAnswer}
+              onCaptchaChallengeChange={setCaptchaChallenge}
               onSubmit={() => void handleConnect()}
             />
           </FadeIn>

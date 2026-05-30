@@ -26,6 +26,7 @@ import { ProjectsPage } from '../pages/ProjectsPage'
 import { ProjectShell } from '../components/layout/project-shell'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
+import { PublicServerErrorPage } from '../pages/ServerErrorPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
 import { RoadmapPage } from '../pages/RoadmapPage'
 import { SettingsPage } from '../pages/SettingsPage'
@@ -86,7 +87,10 @@ function createAppRouter() {
     [
       {
         element: <GuestGuard />,
-        children: [{ path: ROUTE_PATHS.login, element: <LoginPage /> }],
+        children: [
+          { path: ROUTE_PATHS.login, element: <LoginPage /> },
+          { path: ROUTE_PATHS.serverError, element: <PublicServerErrorPage /> },
+        ],
       },
       {
         element: <AuthGuard />,
@@ -181,12 +185,3 @@ export function AppRouter() {
   const router = useMemo(() => createAppRouter(), [])
   return <RouterProvider router={router} />
 }
-
-export {
-  ROUTE_PATHS,
-  agentPath,
-  debugPath,
-  integratePath,
-  settingsPath,
-  roadmapPath,
-} from './route-config'

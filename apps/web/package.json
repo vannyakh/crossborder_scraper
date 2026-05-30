@@ -1,7 +1,7 @@
 {
   "name": "public",
   "private": true,
-  "version": "0.1.6",
+  "version": "0.1.7",
   "packageManager": "pnpm@9.15.9",
   "type": "module",
   "scripts": {
@@ -19,6 +19,7 @@
     "@tanstack/react-query": "^5.100.14",
     "@xyflow/react": "^12.10.2",
     "echarts": "^6.1.0",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^1.16.0",
     "motion": "^12.40.0",
     "nprogress": "^0.2.0",

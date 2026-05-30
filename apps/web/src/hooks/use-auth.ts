@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchAuthStatus, loginRequest } from '../lib/api/client'
+import {
+  LoginRequestError,
+  fetchAuthStatus,
+  loginRequest,
+  type LoginPayload,
+} from '../lib/api/auth'
 import { useAuthStore } from '../stores/auth-store'
 
 export function useAuthStatusQuery() {
@@ -23,8 +28,8 @@ export function useAuth() {
   }
 
   const connectMutation = useMutation({
-    mutationFn: async (payload: { username: string; password: string }) => {
-      const resp = await loginRequest(payload.username, payload.password)
+    mutationFn: async (payload: LoginPayload) => {
+      const resp = await loginRequest(payload)
       login({ username: resp.username, password: payload.password })
     },
   })
@@ -36,5 +41,6 @@ export function useAuth() {
     connect: connectMutation.mutateAsync,
     isConnecting: connectMutation.isPending,
     connectError: connectMutation.error,
+    isLoginCaptchaError: (err: unknown) => err instanceof LoginRequestError,
   }
 }

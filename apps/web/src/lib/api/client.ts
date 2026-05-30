@@ -13,6 +13,10 @@ export function formatApiDetail(detail: unknown): string {
       .join('; ')
   }
   if (detail && typeof detail === 'object') {
+    const row = detail as { message?: string }
+    if (typeof row.message === 'string' && row.message.trim()) {
+      return row.message
+    }
     try {
       return JSON.stringify(detail)
     } catch {
@@ -26,6 +30,7 @@ export type AuthStatus = {
   auth_enabled: boolean
   auth_configured: boolean
   login_required: boolean
+  captcha_required?: boolean
 }
 
 export type LoginResponse = {
@@ -116,26 +121,5 @@ export async function checkHealth(): Promise<{
   return publicApi('/health')
 }
 
-export async function fetchAuthStatus(): Promise<AuthStatus> {
-  return publicApi<AuthStatus>('/auth/status')
-}
-
-export async function loginRequest(username: string, password: string): Promise<LoginResponse> {
-  const res = await fetch(withPanelPrefix('/auth/login'), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  })
-  const ct = res.headers.get('content-type') || ''
-  const data = ct.includes('application/json') ? await res.json() : await res.text()
-
-  if (!res.ok) {
-    const detail = formatApiDetail(
-      typeof data === 'object' && data !== null && 'detail' in data
-        ? (data as { detail: unknown }).detail
-        : data,
-    )
-    throw new Error(detail || 'Sign in failed')
-  }
-  return data as LoginResponse
-}
+export { fetchAuthStatus, loginRequest } from './auth'
+export type { CaptchaChallenge, LoginPayload } from './auth'

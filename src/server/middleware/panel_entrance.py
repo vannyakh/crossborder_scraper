@@ -2,25 +2,30 @@
 
 from __future__ import annotations
 
-import secrets
-
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import RedirectResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from deploy.panel_security import COOKIE_NAME, expected_entrance_cookie, normalize_entry_path
+from deploy.panel_security import (
+    COOKIE_NAME,
+    access_keys_match,
+    expected_entrance_cookie,
+    normalize_entry_path,
+)
+from server.middleware.panel_entrance_html import (
+    panel_not_found_response,
+    panel_server_error_response,
+)
 
 _LOCAL_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
-
-
-def _not_found() -> JSONResponse:
-    return JSONResponse({"detail": "Not Found"}, status_code=404)
 
 
 def _is_static_ui_asset(path: str) -> bool:
     if path.startswith("/ui/assets/"):
         return True
     if path.startswith("/ui/images/"):
+        return True
+    if path.startswith("/ui/lottie/"):
         return True
     return path in (
         "/ui/favicon.ico",
@@ -73,6 +78,20 @@ class PanelEntranceMiddleware:
         request = Request(scope, receive)
         path = scope.get("path", "")
 
+        try:
+            await self._handle_http(request, scope, path, receive, send)
+        except Exception:
+            response = panel_server_error_response(request, entry_prefix=self._prefix)
+            await response(scope, receive, send)
+
+    async def _handle_http(
+        self,
+        request: Request,
+        scope: Scope,
+        path: str,
+        receive: Receive,
+        send: Send,
+    ) -> None:
         if self._local_health_bypass(request, path):
             await self.app(scope, receive, send)
             return
@@ -83,7 +102,8 @@ class PanelEntranceMiddleware:
             return
 
         if path in ("", "/") or (not path.startswith(self._prefix + "/") and path != self._prefix):
-            await _not_found()(scope, receive, send)
+            response = panel_not_found_response(request, entry_prefix=self._prefix)
+            await response(scope, receive, send)
             return
 
         inner_scope = self._scope_with_stripped_path(scope, path)
@@ -91,7 +111,8 @@ class PanelEntranceMiddleware:
 
         if self.access_key and _needs_access_gate(inner_path):
             if not self._has_entrance_access(request):
-                await _not_found()(scope, receive, send)
+                response = panel_not_found_response(request, entry_prefix=self._prefix)
+                await response(scope, receive, send)
                 return
 
         if inner_path in ("", "/") and self._has_entrance_access(request):
@@ -116,8 +137,6 @@ class PanelEntranceMiddleware:
         inner = dict(scope)
         inner["path"] = new_path
         inner["raw_path"] = new_path.encode("utf-8")
-        root_path = scope.get("root_path", "")
-        inner["root_path"] = root_path + self._prefix
         return inner
 
     def _client_host(self, request: Request) -> str:
@@ -132,14 +151,10 @@ class PanelEntranceMiddleware:
         if not self.access_key:
             return True
         query_key = request.query_params.get("access_key", "")
-        if query_key and secrets.compare_digest(query_key, self.access_key):
+        if access_keys_match(query_key, self.access_key):
             return True
         cookie = request.cookies.get(COOKIE_NAME, "")
-        if (
-            cookie
-            and self._cookie_expected
-            and secrets.compare_digest(cookie, self._cookie_expected)
-        ):
+        if cookie and self._cookie_expected and access_keys_match(cookie, self._cookie_expected):
             return True
         auth = request.headers.get("authorization", "")
         if auth.lower().startswith("basic "):
@@ -150,7 +165,7 @@ class PanelEntranceMiddleware:
         if not self.access_key:
             return False
         key = request.query_params.get("access_key", "")
-        return bool(key and secrets.compare_digest(key, self.access_key))
+        return access_keys_match(key, self.access_key)
 
     async def _app_with_cookie(self, scope: Scope, receive: Receive, send: Send) -> None:
         cookie_value = self._cookie_expected or ""

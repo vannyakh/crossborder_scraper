@@ -17,7 +17,24 @@ if [[ "$port" != "$preferred" ]]; then
   echo "   Or disable autostart: crossborder deploy autostart disable" >&2
 fi
 
-echo "==> Cross-Border API (reload=${UVICORN_RELOAD}) → http://127.0.0.1:${port}/ui/"
+repo_python - <<PY
+import os
+
+from deploy.panel_access import build_access_from_env
+
+port = int(os.environ.get("PANEL_PORT", "8787"))
+info = build_access_from_env()
+print(f"==> Cross-Border API (reload={os.environ.get('UVICORN_RELOAD', '1')}) on port {port}")
+if info.security_entrance_enabled and info.login_local_url:
+    print(f"    Panel login:  {info.login_local_url}")
+    if info.entrance_access_url:
+        print(f"    Bookmark:     {info.entrance_access_url}")
+    print("    Bare /ui/ returns 404 while security entrance is enabled.")
+elif info.local_url:
+    print(f"    Panel UI:     {info.local_url}")
+else:
+    print(f"    Panel UI:     http://127.0.0.1:{port}/ui/")
+PY
 
 if command -v uv >/dev/null 2>&1; then
   exec uv run serve

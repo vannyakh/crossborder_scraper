@@ -63,3 +63,37 @@ def test_prefixed_ui_login_requires_access_key() -> None:
     assert blocked.status_code == 404
     ok = client.get("/f10585a9/ui/login?access_key=test-access-key")
     assert ok.status_code == 200
+
+
+def test_non_ascii_access_key_returns_404_not_500() -> None:
+    """Truncated copy (Unicode ellipsis) must not crash compare_digest."""
+    client = TestClient(_build_app())
+    res = client.get(
+        "/f10585a9/ui/error/server",
+        params={"access_key": "\u2026"},
+        headers={"accept": "text/html"},
+    )
+    assert res.status_code == 404
+    assert "Page not found" in res.text
+
+
+def test_bare_root_returns_html_for_browsers() -> None:
+    client = TestClient(_build_app())
+    res = client.get("/", headers={"accept": "text/html"})
+    assert res.status_code == 404
+    assert res.headers["content-type"].startswith("text/html")
+    assert "panel-error-lottie" in res.text
+    assert "c396d7de" not in res.text
+    assert "access_key" not in res.text.lower()
+
+
+def test_wrong_access_key_ui_returns_html_with_lottie() -> None:
+    client = TestClient(_build_app())
+    res = client.get(
+        "/f10585a9/ui/login",
+        params={"access_key": "wrong"},
+        headers={"accept": "text/html"},
+    )
+    assert res.status_code == 404
+    assert "panel-error-lottie" in res.text
+    assert "Open sign in" not in res.text

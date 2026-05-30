@@ -8,9 +8,10 @@ repos:
       - id: trailing-whitespace
         exclude: ^apps/web/pnpm-lock\.yaml$
       - id: end-of-file-fixer
-        exclude: ^apps/web/pnpm-lock\.yaml$
+        exclude: ^(apps/web/pnpm-lock\.yaml|(.*/)?lottie/.*\.json)$
       - id: check-yaml
       - id: check-json
+        exclude: ^(.*/)?lottie/.*\.json$
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=2048]
@@ -31,6 +32,6 @@ repos:
         language: node
         entry: prettier --write --log-level warn
         files: ^apps/web/.*\.(ts|tsx|js|jsx|json|css|md|html|yaml|yml)$
-        exclude: ^apps/web/(dist|node_modules)/
+        exclude: ^apps/web/(dist|node_modules|public/lottie)/
         additional_dependencies:
           - prettier@3.8.3

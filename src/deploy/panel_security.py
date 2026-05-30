@@ -13,6 +13,18 @@ _DISABLED = frozenset({"", "off", "false", "0", "disabled", "-", "none"})
 COOKIE_NAME: Final = "crossborder_entrance"
 
 
+def access_keys_match(provided: str, expected: str) -> bool:
+    """Constant-time access key compare; rejects non-ASCII without raising."""
+    if not provided or not expected:
+        return False
+    try:
+        a = provided.encode("ascii")
+        b = expected.encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    return secrets.compare_digest(a, b)
+
+
 def normalize_entry_path(value: str | None) -> str | None:
     """Return validated 8-char hex entrance path, or None when disabled."""
     if value is None:

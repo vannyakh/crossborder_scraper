@@ -86,6 +86,7 @@ export const ROUTE_PATHS = {
   guides: '/guides',
   support: '/support',
   login: '/login',
+  serverError: '/error/server',
   roadmap: {
     base: '/roadmap',
     feature: (id: RoadmapFeatureId) => `/roadmap/${id}`,

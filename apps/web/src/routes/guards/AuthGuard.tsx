@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { PageBootSkeleton } from '../../components/ui/PanelSkeleton'
+import { AuthServerErrorPage } from '../../pages/ServerErrorPage'
 import { useHealthQuery } from '../../hooks/queries/use-health-query'
 import { useAuthStore } from '../../stores/auth-store'
 
@@ -17,7 +18,7 @@ export function AuthGuard() {
   }
 
   if (healthQuery.isError) {
-    return <Navigate to="/login" replace state={{ from: location.pathname, apiOffline: true }} />
+    return <AuthServerErrorPage />
   }
 
   return <Outlet />
