@@ -26,11 +26,15 @@
 #   CROSSBORDER_WWWROOT=1       same as CROSSBORDER_VPS=1
 #   CROSSBORDER_SERVER=1        force server profile (firewall, bind 0.0.0.0, autostart)
 #   CROSSBORDER_SITE_NAME       folder under /www/wwwroot (default: crossborder_scraper)
+#   CROSSBORDER_NGINX=1         install/configure nginx HTTP proxy on port 80 (server/VPS)
+#   CROSSBORDER_SKIP_NGINX=1    skip nginx setup even when nginx is already installed
 #
 set -euo pipefail
 
 INSTALL_URL="${CROSSBORDER_INSTALL_URL:-https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh}"
 INSTALL_PROFILE="${CROSSBORDER_INSTALL_PROFILE:-local}"
+INSTALL_WAS_UPDATE=0
+DOCS_INSTALL="docs/INSTALL.md"
 
 resolve_install_dir() {
   if [[ -n "${CROSSBORDER_INSTALL_DIR:-}" ]]; then
@@ -143,11 +147,13 @@ Cross-Border — self-host installer
     CROSSBORDER_INSTALL_DIR=…     custom install path
     CROSSBORDER_PORT=8787         panel TCP port
     CROSSBORDER_VPS=1             /www/wwwroot layout + security entrance
+    CROSSBORDER_NGINX=1           install nginx + HTTP proxy on port 80
+    CROSSBORDER_SKIP_NGINX=1      skip nginx setup
     CROSSBORDER_SKIP_FIREWALL=1   skip ufw on cloud VMs
     CROSSBORDER_START=0           do not start panel after install
     CROSSBORDER_HELP=1            show this help
 
-  Docs: docs/SELF_HOSTING.md
+  Docs: ${DOCS_INSTALL} · docs/SELF_HOSTING.md
 
 EOF
 }
@@ -358,8 +364,48 @@ finalize_vps_ownership() {
   [[ -d "${dir}" ]] || return 0
   if [[ "$(id -u)" -eq 0 ]] && id crossborder >/dev/null 2>&1; then
     chown -R crossborder:crossborder "${dir}" 2>/dev/null || true
-  elif [[ -n "${SUDO_USER:-}" ]] && command -v sudo >/dev/null 2>&1; then
-    sudo chown -R "${SUDO_USER}:${SUDO_USER}" "${dir}" 2>/dev/null || true
+  elif command -v sudo >/dev/null 2>&1; then
+    local target_user="${SUDO_USER:-$(id -un)}"
+    sudo chown -R "${target_user}:${target_user}" "${dir}" 2>/dev/null || true
+  fi
+}
+
+# Git refuses repos owned by another user (common on /www/wwwroot after sudo install).
+ensure_git_repo_access() {
+  local dir="$1"
+  [[ -d "${dir}" ]] || return 0
+  local me owner
+  me="$(id -un)"
+  owner="$(stat -c '%U' "${dir}" 2>/dev/null || stat -f '%Su' "${dir}" 2>/dev/null || echo "")"
+  if [[ -n "${owner}" && "${owner}" != "${me}" ]]; then
+    echo "==> wwwroot repo owned by ${owner}; aligning for ${me}"
+    if [[ "$(id -u)" -eq 0 ]]; then
+      chown -R "${me}:${me}" "${dir}" 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1 && sudo chown -R "${me}:${me}" "${dir}" 2>/dev/null; then
+      echo "    chown ${dir} → ${me}"
+    else
+      echo "    registering git safe.directory (or run: sudo chown -R ${me}:${me} ${dir})"
+    fi
+  fi
+  if [[ -d "${dir}/.git" ]]; then
+    git config --global --add safe.directory "${dir}" 2>/dev/null || true
+  fi
+}
+
+prepare_wwwroot_install_access() {
+  local dir="$1"
+  [[ "${INSTALL_PROFILE}" == "wwwroot" ]] || return 0
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  local me
+  me="$(id -un)"
+  if [[ ! -d "$(dirname "${dir}")" ]] && command -v sudo >/dev/null 2>&1; then
+    sudo mkdir -p "$(dirname "${dir}")" 2>/dev/null || true
+  fi
+  if [[ -d "${dir}" ]]; then
+    ensure_git_repo_access "${dir}"
+  elif [[ "$(id -u)" -ne 0 ]] && command -v sudo >/dev/null 2>&1; then
+    sudo mkdir -p "${dir}" 2>/dev/null || true
+    sudo chown -R "${me}:${me}" "${dir}" 2>/dev/null || true
   fi
 }
 
@@ -439,7 +485,8 @@ sync_to_origin() {
 clone_or_update() {
   ensure_git
   if [[ -d "${INSTALL_DIR}/.git" ]]; then
-    echo "==> updating ${INSTALL_DIR}"
+    echo "==> updating ${INSTALL_DIR} (existing install — .env and data preserved)"
+    INSTALL_WAS_UPDATE=1
     sync_to_origin "${INSTALL_DIR}"
   else
     if [[ -d "${INSTALL_DIR}" ]]; then
@@ -651,6 +698,36 @@ if r.detail: print('   ', r.detail)
   fi
 }
 
+maybe_configure_nginx() {
+  local root="$1"
+  local port="$2"
+  [[ "${INSTALL_PROFILE}" == "server" || "${INSTALL_PROFILE}" == "wwwroot" ]] || return 0
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  [[ "${CROSSBORDER_SKIP_NGINX:-}" == "1" ]] && return 0
+
+  local do_nginx=0
+  local install_nginx=0
+  if [[ "${CROSSBORDER_NGINX:-}" == "1" ]]; then
+    do_nginx=1
+    install_nginx=1
+  elif command -v nginx >/dev/null 2>&1; then
+    do_nginx=1
+  fi
+  [[ "${do_nginx}" -eq 1 ]] || return 0
+
+  echo "==> nginx reverse proxy (port 80 → panel :${port})"
+  local py="${root}/.venv/bin/python"
+  [[ -x "${py}" && -d "${root}/src" ]] || return 0
+  PYTHONPATH="${root}/src" "${py}" -c "
+from deploy.nginx_setup import setup_http_panel_proxy
+r = setup_http_panel_proxy(upstream_port=${port}, install_nginx=${install_nginx})
+for line in r.get('messages', []):
+    print('   ', line)
+for line in r.get('warnings', []):
+    print('    warn:', line)
+" 2>/dev/null || echo "    nginx: skipped (sudo may be required — see ${DOCS_INSTALL})"
+}
+
 maybe_start_panel() {
   local root="$1"
   if [[ "${CROSSBORDER_START}" != "1" ]]; then
@@ -661,20 +738,27 @@ maybe_start_panel() {
   local log="${root}/data/panel.log"
   local port
   port="$(read_env_port "${root}")"
-
-  if command -v lsof >/dev/null 2>&1 && lsof -i ":${port}" -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "==> panel already listening on port ${port}"
-    return 0
-  fi
-
-  echo "==> starting panel on port ${port} (log: ${log})"
   local cb
   cb="$(crossborder_bin "${root}")"
   export PATH="${HOME}/.local/bin:${PATH}"
-  nohup "${cb}" serve --no-reload >>"${log}" 2>&1 &
-  local pid=$!
-  echo "    PID ${pid}"
+
+  if [[ "${INSTALL_WAS_UPDATE}" -eq 1 ]]; then
+    echo "==> restarting panel after update (port ${port}, log: ${log})"
+    "${cb}" service restart 2>/dev/null || "${cb}" service start 2>/dev/null || true
+  elif command -v lsof >/dev/null 2>&1 && lsof -i ":${port}" -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "==> panel already listening on port ${port}"
+    return 0
+  else
+    echo "==> starting panel on port ${port} (log: ${log})"
+    "${cb}" service start 2>/dev/null || nohup "${cb}" serve --no-reload >>"${log}" 2>&1 &
+  fi
+
   configure_linux_firewall "${port}" "${root}"
+  local public_port
+  public_port="$(env_val PANEL_PUBLIC_HTTP_PORT "${root}/.env")"
+  if [[ "${public_port}" == "80" ]] || [[ -n "${CROSSBORDER_NGINX:-}" ]] || command -v nginx >/dev/null 2>&1; then
+    configure_linux_firewall 80 "${root}"
+  fi
 
   local i
   for i in 1 2 3 4 5 6 7 8 9 10; do
@@ -686,7 +770,7 @@ maybe_start_panel() {
     fi
   done
   echo "==> panel not responding yet — check: tail -f ${log}"
-  echo "    restart: crossborder serve --no-reload"
+  echo "    restart: crossborder service restart"
 }
 
 print_install_complete() {
@@ -764,16 +848,31 @@ print(ips[0] if ips else '')
     echo ""
   fi
   if [[ -n "${login_public}" ]]; then
+    local health_public=""
+    if [[ "${public_port}" == "80" ]]; then
+      health_public="http://${ext_host}/health"
+    else
+      health_public="http://${ext_host}:${port}/health"
+    fi
     echo "  VPS public access (if browser cannot connect):"
-    echo "    1. Cloud security group: allow inbound TCP ${port} to this server"
-    echo "       (HTTPS with domain: also allow TCP 80 and TCP 443)"
-    echo "    2. Host firewall: sudo ufw allow ${port}/tcp  (or: crossborder deploy firewall)"
-    echo "    3. Panel binds 0.0.0.0 — check: ss -tln | grep ${port}"
-    echo "    4. Test: curl -sI http://127.0.0.1:${port}/health"
-    [[ -n "${ext_host}" ]] && echo "    5. From your PC: curl -sI http://${ext_host}:${port}/health"
+    if [[ "${public_port}" == "80" ]]; then
+      echo "    1. Cloud security group: allow inbound TCP 80 (and 443 for HTTPS)"
+      echo "    2. nginx on :80 → panel :${port} — or open ${port} for direct access"
+    else
+      echo "    1. Cloud security group: allow inbound TCP ${port}"
+      echo "       (nginx on port 80: also allow TCP 80 and TCP 443)"
+    fi
+    echo "    3. Host firewall: crossborder deploy firewall"
+    echo "    4. Test locally:  curl -sI http://127.0.0.1:${port}/health"
+    [[ -n "${ext_host}" ]] && echo "    5. Test remotely: curl -sI ${health_public}"
     echo ""
+    if [[ "${public_port}" == "80" ]]; then
+      echo "  nginx (port 80, no domain):"
+      echo "    CROSSBORDER_NGINX=1 curl -fsSL ${INSTALL_URL} | bash"
+      echo "    Or: crossborder deploy nginx -o deploy/nginx-panel.conf"
+    fi
     echo "  HTTPS (recommended for production — nginx + Let's Encrypt):"
-    echo "    crossborder deploy https -n panel.yourdomain.com"
+    echo "    sudo bash scripts/deploy-https.sh panel.yourdomain.com"
     echo ""
   fi
   if [[ -n "${username}" && -n "${password}" ]]; then
@@ -806,7 +905,9 @@ print(ips[0] if ips else '')
     echo "    ${root}/var/logs/       operation / cron logs"
     echo "    ${root}/config/        panel settings (ui_config.json)"
   fi
-  echo "  Re-install:   curl -fsSL ${INSTALL_URL} | bash"
+  echo "  Update:       crossborder tools update"
+  echo "  Re-install:   curl -fsSL ${INSTALL_URL} | bash  (keeps .env + data)"
+  echo "  Docs:         ${DOCS_INSTALL}"
   echo "  Help:         CROSSBORDER_HELP=1 curl -fsSL ${INSTALL_URL} | bash"
   echo ""
   echo "  Stop panel:   kill \$(lsof -t -i:${port})   # macOS/Linux"
@@ -842,10 +943,12 @@ banner
 ROOT=""
 if ROOT="$(detect_local_root)"; then
   echo "==> using existing repo: ${ROOT}"
+  [[ -f "${ROOT}/.env" ]] && INSTALL_WAS_UPDATE=1
   prepare_server_prereqs
 else
   prepare_server_prereqs
   prepare_vps_prereqs "${INSTALL_DIR}"
+  prepare_wwwroot_install_access "${INSTALL_DIR}"
   clone_or_update
   ROOT="${INSTALL_DIR}"
   finalize_vps_ownership "${ROOT}"
@@ -871,5 +974,7 @@ run_bootstrap "${ROOT}"
 install_global_cli "${ROOT}"
 ensure_shell_path "${ROOT}"
 register_autostart "${ROOT}"
+_panel_port="$(read_env_port "${ROOT}")"
+maybe_configure_nginx "${ROOT}" "${_panel_port}"
 maybe_start_panel "${ROOT}"
 print_install_complete "${ROOT}"

@@ -5,6 +5,10 @@
 # This script forces /www/wwwroot layout + security entrance (run as root):
 #   curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | sudo bash
 #
+# With nginx on port 80:
+#   curl -fsSL .../install-vps.sh | sudo env CROSSBORDER_NGINX=1 bash
+#
+# Docs: docs/INSTALL.md
 set -eo pipefail
 
 export CROSSBORDER_VPS=1

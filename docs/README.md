@@ -3,6 +3,7 @@
 | Guide | Contents |
 |-------|----------|
 | [Quick start](QUICK_START.md) | Install, configure, scrape, export, self-host one-liner |
+| [Panel install](INSTALL.md) | Step-by-step VPS install, update, security entrance |
 | [CLI reference](CLI.md) | `scraper` / `crossborder` commands |
 | [Scraping engine](SCRAPING.md) | Workers, proxies, cookies, AI fallback, production tips |
 | [Web API](API.md) | FastAPI endpoints, jobs, products, curl examples |

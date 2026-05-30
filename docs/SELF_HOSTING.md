@@ -1,33 +1,42 @@
 # Self-hosting guide
 
-Deploy Cross-Border on your laptop, home server, or cloud VPS — **one install command** for all of them.
+Deploy Cross-Border on your laptop, home server, or cloud VPS.
 
-## Install (one-liner)
+**Step-by-step install walkthrough:** [INSTALL.md](INSTALL.md)
+
+---
+
+## Quick install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 ```
 
-That single command:
-
 | Step | What happens |
 |------|----------------|
-| Clone | Into `~/crossborder-scraper` (default) |
+| Clone / update | `~/crossborder-scraper` (default) |
 | Dependencies | Python (uv), Node.js on Linux servers, Playwright, panel web UI |
 | Setup | Panel credentials, `.env`, bind `0.0.0.0:8787` |
-| Auto-start | systemd (Linux) or launchd (macOS) — survives reboot |
-| Start | Panel runs in background; prints **login URL, username, password** |
+| Security | Server/VPS profile: secret entrance path + access key |
+| Auto-start | systemd (Linux) or launchd (macOS) |
+| nginx (optional) | Auto-configures when nginx is already installed; use `CROSSBORDER_NGINX=1` to install |
+| Start | Panel runs in background; prints **install access card** |
 
-Open the printed **Login URL** in your browser (port **8787**, not Vite `:5173`).
-
-**Production VPS** — pin a release tag:
+**Production VPS** — pin a release:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
-  env CROSSBORDER_BRANCH=v0.1.1 bash
+  env CROSSBORDER_BRANCH=main bash
 ```
 
-**Help** — full options list:
+**Public IP on port 80** (nginx reverse proxy):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
+  env CROSSBORDER_NGINX=1 bash
+```
+
+**Help:**
 
 ```bash
 CROSSBORDER_HELP=1 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
@@ -39,15 +48,15 @@ CROSSBORDER_HELP=1 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossbo
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.ps1 | iex"
 ```
 
-### Where it works
+### Install profiles
 
-| Target | Command | Install dir | Notes |
-|--------|---------|-------------|-------|
-| **Mac / Linux desktop** | same one-liner | `~/crossborder-scraper` | Local + LAN access |
-| **Cloud VPS** (Ubuntu, etc.) | same one-liner | `~/crossborder-scraper` | Auto-detects server: firewall, public IP URLs |
-| **wwwroot production** | add `CROSSBORDER_VPS=1` | `/www/wwwroot/crossborder_scraper` | See [Advanced](#advanced-wwwroot-layout) |
+| Target | Command | Install dir | Security entrance |
+|--------|---------|-------------|-------------------|
+| Mac / Linux desktop | one-liner | `~/crossborder-scraper` | Optional |
+| Cloud VPS | one-liner | `~/crossborder-scraper` | On (server profile) |
+| wwwroot production | `CROSSBORDER_VPS=1` | `/www/wwwroot/crossborder_scraper` | On |
 
-The installer **auto-detects Linux servers** (public IP or headless SSH) and applies the server profile: bind all interfaces, open host firewall when possible, print LAN + public login URLs.
+The installer auto-detects Linux servers (public IP or headless SSH) and applies the **server profile**: bind all interfaces, open host firewall when possible, security entrance, `PANEL_PUBLIC_HTTP_PORT=80`.
 
 ---
 
@@ -59,109 +68,104 @@ The installer **auto-detects Linux servers** (public IP or headless SSH) and app
 | RAM | 4 GB (8 GB+ for Playwright + batches) |
 | Disk | 10 GB + scrape output |
 | Python | 3.12+ (installed automatically via uv) |
-| Docker | Optional — see [Docker](#docker) below |
+| Docker | Optional — see [Docker](#docker) |
 
 ---
 
 ## After install
 
 ```bash
-crossborder --help
 crossborder service status
-crossborder gateway              # agent hub status
-crossborder chat                 # interactive agent
-crossborder tools update         # pull + sync + restart
-crossborder deploy status        # listen addresses + public URL
+crossborder tools update            # pull + sync + restart
+crossborder deploy status           # listen addresses + public URL
+crossborder gateway                 # agent hub status
 ```
+
+**Logs:** `~/crossborder-scraper/data/panel.log`
 
 If `crossborder: command not found`: `source ~/.bashrc` or open a new terminal.
 
-**Logs:** `~/crossborder-scraper/data/panel.log` (or your install dir).
+---
 
-### Cloud VPS — if browser cannot connect
+## Public access
 
-Local health check on the server:
+### Direct panel port (8787)
 
 ```bash
-curl -sI http://127.0.0.1:8787/health
+curl -sI http://127.0.0.1:8787/health          # on server
+curl -sI http://YOUR_PUBLIC_IP:8787/health     # from your PC
 ```
 
-If that works but your PC cannot reach the public IP:
+Open **cloud security group** TCP **8787** and **host firewall** if needed.
 
-1. **Cloud security group** — allow inbound **TCP 8787**
-2. **Host firewall** — `sudo ufw allow 8787/tcp` or `crossborder deploy firewall`
-3. **Verify bind** — `ss -tln | grep 8787` (should show `0.0.0.0:8787`)
-4. **Test remotely** — `curl -sI http://YOUR_PUBLIC_IP:8787/health`
+### nginx on port 80 (recommended for VPS)
 
-Panel: **Settings → Network & firewall**.
+Panel listens on **127.0.0.1:8787**; nginx proxies **80 → 8787**.
 
-### HTTPS with a domain (production)
+- **Auto:** re-run install when nginx is already on the server — installer writes the site config
+- **Install nginx too:** `CROSSBORDER_NGINX=1` on the install one-liner
+- **Manual:** `crossborder deploy nginx -o deploy/nginx-panel.conf`
 
-Host-panel style: panel on **127.0.0.1:8787**, **nginx** terminates TLS on **443**.
+Open cloud security group TCP **80** (and **443** for HTTPS).
 
-#### 1. Cloud security group (Tencent / other VPS)
+Test:
 
-Inbound rules on the instance bound to **43.x.x.x** (your public IP):
-
-| Protocol | Port | Source | Purpose |
-|----------|------|--------|---------|
-| TCP | **80** | `0.0.0.0/0` | Let's Encrypt HTTP challenge |
-| TCP | **443** | `0.0.0.0/0` | HTTPS panel |
-
-You do **not** need port **8787** open to the public once HTTPS works (nginx proxies locally).
-
-#### 2. DNS
-
-Create an **A record**:
-
-```text
-panel.yourdomain.com  →  YOUR_SERVER_PUBLIC_IP
+```bash
+curl -sI http://YOUR_PUBLIC_IP/health
 ```
 
-Wait until it resolves (check: `dig +short panel.yourdomain.com`).
+Use the **Access URL** from the install card when security entrance is enabled.
 
-#### 3. Run on the server (SSH)
+### HTTPS with a domain
+
+1. **DNS** — A record: `panel.yourdomain.com → YOUR_SERVER_IP`
+2. **Cloud security group** — allow TCP **80** and **443**
+3. **On the server:**
 
 ```bash
 cd ~/crossborder-scraper
-git pull
 sudo bash scripts/deploy-https.sh panel.yourdomain.com
 ```
 
-Or the CLI directly:
+4. **Verify:**
 
 ```bash
-sudo env HOME="$HOME" PATH="$HOME/.local/bin:$PATH" crossborder deploy https -n panel.yourdomain.com
+curl -sI https://panel.yourdomain.com/health
 ```
 
-This installs **nginx** + **certbot** (Ubuntu apt), writes the site config, opens ufw **80/443**, and requests a Let's Encrypt certificate.
+Login: `https://panel.yourdomain.com/{entry}/ui/login?access_key=…` (same credentials from install).
 
-#### 4. Verify
+---
+
+## Security entrance
+
+Enabled by default on **server** and **wwwroot** profiles.
+
+| URL | Result |
+|-----|--------|
+| `http://IP/ui/login` | **404** |
+| `http://IP/{entry}/?access_key=KEY` | Sets cookie → login |
+| `http://IP/{entry}/ui/login?access_key=KEY` | Login page |
+
+See [INSTALL.md — Security entrance](INSTALL.md#security-entrance).
+
+---
+
+## Updating
+
+See [INSTALL.md — Re-run without losing data](INSTALL.md#re-run-installer-without-losing-data).
+
+**Recommended:**
 
 ```bash
-curl -sI "https://panel.yourdomain.com/health"
+cd ~/crossborder-scraper
+crossborder tools update
 ```
 
-Login: **`https://panel.yourdomain.com/ui/login`** (same username/password from install).
-
-Manual nginx template only:
+**Re-run installer** (updates code + UI, keeps `.env` and data):
 
 ```bash
-crossborder deploy nginx -n panel.yourdomain.com --ssl -o deploy/nginx-panel.conf
-```
-
-### wwwroot co-install (host panel servers)
-
-If `/www/wwwroot` already exists (typical on host-panel VPS), the installer auto-selects **wwwroot profile** and installs to:
-
-```text
-/www/wwwroot/crossborder_scraper/
-```
-
-Or force it:
-
-```bash
-curl -fsSL .../install.sh | sudo env CROSSBORDER_VPS=1 bash
+curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
 ```
 
 ---
@@ -170,12 +174,15 @@ curl -fsSL .../install.sh | sudo env CROSSBORDER_VPS=1 bash
 
 | Variable | Effect |
 |----------|--------|
-| `CROSSBORDER_BRANCH` | Git branch or tag (default `main`; use `v0.1.1` for releases) |
+| `CROSSBORDER_BRANCH` | Git branch or tag (default `main`) |
 | `CROSSBORDER_INSTALL_DIR` | Custom install path |
 | `CROSSBORDER_PORT` | Panel port (default **8787**) |
+| `CROSSBORDER_NGINX=1` | Install nginx + HTTP proxy on port 80 |
+| `CROSSBORDER_SKIP_NGINX=1` | Skip nginx setup |
 | `CROSSBORDER_START=0` | Do not auto-start panel |
 | `CROSSBORDER_SKIP_BROWSER=1` | Skip Playwright |
 | `CROSSBORDER_SKIP_FIREWALL=1` | Skip auto ufw on cloud VMs |
+| `CROSSBORDER_KEEP_LOCAL=1` | Keep local git commits on re-run |
 | `CROSSBORDER_VPS=1` | Force `/www/wwwroot` layout + security entrance |
 | `PANEL_SECURITY_ENTRANCE=1` | Secret login path + access key |
 
@@ -183,19 +190,12 @@ curl -fsSL .../install.sh | sudo env CROSSBORDER_VPS=1 bash
 
 ## Advanced: wwwroot layout
 
-For production hosts that use `/www/wwwroot` (optional — most VPS installs use home dir):
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | \
-  sudo env CROSSBORDER_VPS=1 CROSSBORDER_BRANCH=v0.1.1 bash
+  sudo env CROSSBORDER_VPS=1 bash
 ```
 
-Or the wrapper script:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install-vps.sh | \
-  sudo env CROSSBORDER_BRANCH=v0.1.1 bash
-```
+Or [`scripts/install-vps.sh`](../scripts/install-vps.sh).
 
 | Path | Purpose |
 |------|---------|
@@ -205,10 +205,6 @@ curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/s
 | `var/skills/` | Agent skills (ZIP) |
 
 Full map: [DIRECTORY_LAYOUT.md](DIRECTORY_LAYOUT.md).
-
-**Security entrance** (wwwroot only by default): secret path + access key in `.env`. Enable on any install with `PANEL_SECURITY_ENTRANCE=1`.
-
-HTTPS: `sudo bash scripts/deploy-https.sh your.domain.com`
 
 ---
 
@@ -224,7 +220,7 @@ bash scripts/install.sh
 
 ## Docker
 
-Published image (every release):
+Published image:
 
 ```bash
 docker pull ghcr.io/vannyakh/crossborder_scraper:0.1.1
@@ -247,24 +243,19 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ---
 
-## Updating
-
-```bash
-cd ~/crossborder-scraper
-crossborder tools update
-```
-
-Or re-run the one-liner (updates in place):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/scripts/install.sh | bash
-```
-
----
-
 ## Security checklist
 
 - Save the install access card — credentials are not shown again.
 - Change password after first login: `crossborder tools reset credentials`.
 - Use nginx + TLS for public internet access.
 - Keep `.env` out of git.
+
+---
+
+## Related docs
+
+| Doc | Contents |
+|-----|----------|
+| [INSTALL.md](INSTALL.md) | Step-by-step VPS install, update, troubleshooting |
+| [DIRECTORY_LAYOUT.md](DIRECTORY_LAYOUT.md) | Install paths on a VPS |
+| [CLI.md](CLI.md) | `crossborder` commands |

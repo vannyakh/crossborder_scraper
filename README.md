@@ -60,7 +60,7 @@ curl -fsSL https://raw.githubusercontent.com/vannyakh/crossborder_scraper/main/s
   env CROSSBORDER_BRANCH=v0.1.1 bash
 ```
 
-Full guide: [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) · Help: `CROSSBORDER_HELP=1 curl -fsSL …/install.sh | bash`
+Full guide: [docs/INSTALL.md](docs/INSTALL.md) · [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) · Help: `CROSSBORDER_HELP=1 curl -fsSL …/install.sh | bash`
 
 ### Windows (PowerShell — Run as Administrator)
 

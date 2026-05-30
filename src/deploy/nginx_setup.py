@@ -40,6 +40,85 @@ def https_cloud_steps(*, domain: str) -> list[str]:
     ]
 
 
+def setup_http_panel_proxy(
+    *,
+    upstream_port: int = DEFAULT_PANEL_PORT,
+    server_name: str = "_",
+    install_nginx: bool = False,
+    output_path: Path | None = None,
+) -> dict[str, Any]:
+    """
+    HTTP reverse proxy on port 80 — public IP VPS without a domain.
+
+    Panel stays on 127.0.0.1:upstream_port; nginx listens on :80.
+    """
+    messages: list[str] = []
+    warnings: list[str] = []
+    name = server_name.strip() or "_"
+
+    if install_nginx and not nginx_installed():
+        if shutil.which("apt-get"):
+            apt = _sudo(["apt-get", "update", "-qq"])
+            if apt.returncode == 0:
+                ins = _sudo(["apt-get", "install", "-y", "-qq", "nginx"])
+                if ins.returncode == 0:
+                    messages.append("nginx: installed via apt")
+                else:
+                    warnings.append("nginx: apt install failed — install nginx manually")
+            else:
+                warnings.append("nginx: apt update failed")
+        else:
+            warnings.append("nginx: not installed — apt install nginx or use your host panel")
+
+    if not nginx_installed() and install_nginx is False:
+        return {
+            "ok": False,
+            "messages": messages,
+            "warnings": warnings
+            + ["nginx: not installed — set install_nginx=True or apt install nginx"],
+        }
+
+    content = nginx_site(server_name=name, upstream_port=upstream_port, ssl=False)
+    slug = "panel" if name == "_" else name.replace(".", "-")
+    out = output_path or Path(f"/etc/nginx/sites-available/crossborder-{slug}")
+
+    if os.geteuid() == 0 or out.parent.exists():
+        try:
+            write_template(out, content)
+            messages.append(f"nginx config: {out}")
+            enabled = Path(f"/etc/nginx/sites-enabled/{out.name}")
+            if out.parent == Path("/etc/nginx/sites-available") and not enabled.exists():
+                _sudo(["ln", "-sf", str(out), str(enabled)])
+                messages.append(f"nginx enabled: {enabled}")
+            test = _sudo(["nginx", "-t"])
+            if test.returncode == 0:
+                _sudo(["systemctl", "reload", "nginx"])
+                messages.append("nginx: reloaded")
+            else:
+                warnings.append(f"nginx -t failed: {(test.stderr or test.stdout or '').strip()}")
+        except OSError as exc:
+            fallback = Path.cwd() / "deploy" / f"nginx-{slug}.conf"
+            write_template(fallback, content)
+            messages.append(f"nginx config (local): {fallback}")
+            warnings.append(f"Could not write {out}: {exc} — copy config and reload nginx")
+    else:
+        fallback = Path.cwd() / "deploy" / f"nginx-{slug}.conf"
+        write_template(fallback, content)
+        messages.append(f"nginx config (local): {fallback}")
+        warnings.append("Run with sudo to install under /etc/nginx/sites-available")
+
+    for port in (80, upstream_port):
+        messages.extend(run_host_firewall_setup(port, enable_ufw=False))
+
+    return {
+        "ok": bool(messages),
+        "server_name": name,
+        "upstream_port": upstream_port,
+        "messages": messages,
+        "warnings": warnings,
+    }
+
+
 def setup_https_reverse_proxy(
     server_name: str,
     *,
