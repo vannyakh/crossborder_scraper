@@ -316,6 +316,99 @@ const GITHUB_SCHEMA = schema(
   ],
 )
 
+const SCHEDULE_SCHEMA = schema(
+  'parameters',
+  [
+    { id: 'parameters', labelKey: 'projects.config.tabs.parameters' },
+    { id: 'settings', labelKey: 'projects.config.tabs.settings' },
+  ],
+  [
+    {
+      id: 'trigger',
+      labelKey: 'projects.config.sections.trigger',
+      tab: 'parameters',
+      fields: [
+        {
+          id: 'cron',
+          labelKey: 'projects.config.fields.cron',
+          type: 'mono',
+          resolve: 'subtitle',
+        },
+        { id: 'name', labelKey: 'projects.config.fields.name', type: 'text', resolve: 'label' },
+      ],
+    },
+  ],
+)
+
+const EXPORT_NODE_SCHEMA = schema(
+  'parameters',
+  [
+    { id: 'parameters', labelKey: 'projects.config.tabs.parameters' },
+    { id: 'export', labelKey: 'projects.config.tabs.export' },
+  ],
+  [
+    {
+      id: 'export',
+      labelKey: 'projects.config.sections.export',
+      tab: 'export',
+      fields: [
+        {
+          id: 'target',
+          labelKey: 'projects.config.fields.exportTarget',
+          type: 'mono',
+          resolve: 'subtitle',
+        },
+        { id: 'host', labelKey: 'projects.config.fields.host', type: 'mono', resolve: 'host' },
+      ],
+    },
+  ],
+)
+
+const CONDITION_SCHEMA = schema(
+  'parameters',
+  [{ id: 'parameters', labelKey: 'projects.config.tabs.parameters' }],
+  [
+    {
+      id: 'overview',
+      labelKey: 'projects.config.sections.overview',
+      tab: 'parameters',
+      fields: [
+        {
+          id: 'expr',
+          labelKey: 'projects.config.fields.condition',
+          type: 'mono',
+          resolve: 'subtitle',
+        },
+        { id: 'status', labelKey: 'projects.serviceStatus', type: 'text', resolve: 'status' },
+      ],
+    },
+  ],
+)
+
+const NOTIFY_SCHEMA = schema(
+  'parameters',
+  [
+    { id: 'parameters', labelKey: 'projects.config.tabs.parameters' },
+    { id: 'settings', labelKey: 'projects.config.tabs.settings' },
+  ],
+  [
+    {
+      id: 'trigger',
+      labelKey: 'projects.config.sections.trigger',
+      tab: 'parameters',
+      fields: [
+        {
+          id: 'channel',
+          labelKey: 'projects.config.fields.integrateChannel',
+          type: 'mono',
+          resolve: 'subtitle',
+        },
+        { id: 'host', labelKey: 'projects.config.fields.host', type: 'mono', resolve: 'host' },
+      ],
+    },
+  ],
+)
+
 const GENERIC_ACTION_SCHEMA = schema(
   'parameters',
   [{ id: 'parameters', labelKey: 'projects.config.tabs.parameters' }],
@@ -340,6 +433,10 @@ const SCHEMA_BY_KIND: Record<ProjectNodeKind, NodeConfigSchema> = {
   webhook: WEBHOOK_SCHEMA,
   scrape: SCRAPE_SCHEMA,
   github: GITHUB_SCHEMA,
+  schedule: SCHEDULE_SCHEMA,
+  export: EXPORT_NODE_SCHEMA,
+  condition: CONDITION_SCHEMA,
+  notify: NOTIFY_SCHEMA,
 }
 
 export function getNodeConfigSchema(node: ProjectNode): NodeConfigSchema {
@@ -370,6 +467,14 @@ export function defaultImageForKind(kind: ProjectNodeKind): string {
       return 'cross-border/gateway-agent:latest'
     case 'webhook':
       return 'cross-border/webhook-receiver:latest'
+    case 'schedule':
+      return 'cross-border/scheduler:latest'
+    case 'export':
+      return 'cross-border/export-engine:latest'
+    case 'condition':
+      return 'cross-border/flow-runtime:latest'
+    case 'notify':
+      return 'cross-border/integrate-notify:latest'
     default:
       return 'cross-border/runtime:latest'
   }

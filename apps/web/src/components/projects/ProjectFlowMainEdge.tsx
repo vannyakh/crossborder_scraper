@@ -19,7 +19,7 @@ export function ProjectFlowMainEdge({
     targetY,
     sourcePosition,
     targetPosition,
-    borderRadius: 20,
+    borderRadius: 14,
   })
 
   return (
@@ -30,7 +30,7 @@ export function ProjectFlowMainEdge({
       className="project-flow-edge-path project-flow-edge-path--main"
       style={{
         ...style,
-        strokeWidth: 2.5,
+        strokeWidth: 1.5,
         stroke: 'var(--project-flow-edge)',
       }}
     />

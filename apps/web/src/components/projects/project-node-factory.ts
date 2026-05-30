@@ -40,6 +40,19 @@ export function createProjectNode(
   switch (kind) {
     case 'webhook':
       return { ...base, subtitle: 'HTTP trigger', status: 'online' }
+    case 'schedule':
+      return { ...base, subtitle: 'cron: 0 * * * *', status: 'online' }
+    case 'export':
+      return { ...base, subtitle: 'marketplace export', host: 'export-review', status: 'online' }
+    case 'condition':
+      return { ...base, subtitle: 'if …', status: 'online' }
+    case 'notify':
+      return {
+        ...base,
+        subtitle: 'integrate: telegram',
+        host: 'integrate-notify',
+        status: 'online',
+      }
     case 'agent':
       return { ...base, subtitle: 'Tools agent', host: 'gateway-tools', status: 'online' }
     case 'scrape':

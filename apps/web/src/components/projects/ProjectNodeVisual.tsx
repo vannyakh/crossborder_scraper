@@ -1,5 +1,16 @@
 import { Box, Text } from '@chakra-ui/react'
-import { Bot, Database, GitBranch, Globe, Layers, Server } from 'lucide-react'
+import {
+  Bell,
+  Bot,
+  Clock,
+  Database,
+  GitBranch,
+  Globe,
+  Layers,
+  Package,
+  Server,
+  Split,
+} from 'lucide-react'
 import type { ProjectNodeKind } from './project-sample-data'
 
 const NODE_META: Record<
@@ -12,6 +23,10 @@ const NODE_META: Record<
   scrape: { icon: Layers, bg: 'green.600', color: 'white', abbr: 'SC' },
   agent: { icon: Bot, bg: 'purple.600', color: 'white', abbr: 'AI' },
   webhook: { icon: Globe, bg: 'orange.600', color: 'white', abbr: 'WH' },
+  schedule: { icon: Clock, bg: 'cyan.600', color: 'white', abbr: 'CR' },
+  export: { icon: Package, bg: 'teal.600', color: 'white', abbr: 'EX' },
+  condition: { icon: Split, bg: 'yellow.600', color: 'white', abbr: 'IF' },
+  notify: { icon: Bell, bg: 'indigo.600', color: 'white', abbr: 'NT' },
 }
 
 export function ProjectNodeVisual({

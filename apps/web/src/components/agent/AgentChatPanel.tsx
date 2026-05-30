@@ -25,6 +25,25 @@ import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-pr
 import type { AgentChatSession, GatewayAgentResponse, GatewayPrompt } from '../../lib/api'
 import { ChatPanelSkeleton } from '../ui/PanelSkeleton'
 import { AgentToolTrace } from './AgentToolTrace'
+import { AgentThinkToggle } from './AgentThinkToggle'
+
+const AGENT_THINK_STORAGE_KEY = 'crossborder.agent-chat.think'
+
+function readThinkPref(): boolean {
+  try {
+    return localStorage.getItem(AGENT_THINK_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeThinkPref(enabled: boolean) {
+  try {
+    localStorage.setItem(AGENT_THINK_STORAGE_KEY, enabled ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+}
 
 const MotionBox = motion.create(Box)
 
@@ -511,6 +530,7 @@ export function AgentChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [expandedToolId, setExpandedToolId] = useState<string | null>(null)
   const [fullscreen, setFullscreen] = useState(false)
+  const [thinkEnabled, setThinkEnabled] = useState(readThinkPref)
 
   const runtime = gatewayQuery.data?.runtime
   const aiEnabled = runtime?.ai?.ai_enabled
@@ -632,6 +652,7 @@ export function AgentChatPanel() {
         message: text,
         prompt_id: promptId,
         session_id: sessionId,
+        think: thinkEnabled,
       })
       setMessages((prev) => [
         ...prev,
@@ -713,15 +734,16 @@ export function AgentChatPanel() {
             <span className="agent-chat__vdivider" aria-hidden />
 
             {canRun ? (
-              <IconButton
-                size="sm"
-                variant="solid"
-                colorPalette="green"
-                borderRadius="input"
-                aria-label="AI ready"
-              >
-                <Brain size={16} />
-              </IconButton>
+              <AgentThinkToggle
+                enabled={thinkEnabled}
+                onToggle={() => {
+                  setThinkEnabled((prev) => {
+                    const next = !prev
+                    writeThinkPref(next)
+                    return next
+                  })
+                }}
+              />
             ) : (
               <IconButton
                 asChild
@@ -877,6 +899,7 @@ export function AgentChatPanel() {
           </div>
           {gatewayQuery.data ? (
             <Text mt={2} fontSize="xs" color="fg.subtle">
+              {thinkEnabled ? 'Think mode on · ' : ''}
               {gatewayQuery.data.tools_count} tools · {gatewayQuery.data.workflows_count} workflows
               {activeSession
                 ? ` · ${sessionDisplayName(activeSession)}${activeSession.platform_chat_id ? ` (${activeSession.platform_chat_id})` : ''}`

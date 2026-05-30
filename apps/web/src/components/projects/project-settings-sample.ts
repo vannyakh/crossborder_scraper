@@ -41,7 +41,7 @@ export function projectDisplayId(projectId: string): string {
 export function buildProjectSettingsForm(project: ProjectDetail): ProjectSettingsForm {
   return {
     name: project.name,
-    description: project.id === 'tv-camtube' ? 'Catalog and deploy pipeline for CamTube.' : '',
+    description: project.description ?? '',
     displayId: projectDisplayId(project.id),
     visibility: 'private',
   }
@@ -75,7 +75,7 @@ export function sampleVariables(project: ProjectDetail): ProjectVariable[] {
     { key: 'CROSSBORDER_WWWROOT', scope: 'shared', masked: false },
     { key: 'DATABASE_URL', scope: 'project', masked: true },
   ]
-  if (project.id === 'tv-camtube') {
+  if (project.id === 'telegram-ops') {
     base.push({ key: 'TELEGRAM_BOT_TOKEN', scope: 'project', masked: true })
   }
   return base

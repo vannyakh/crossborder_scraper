@@ -27,6 +27,12 @@ export const PROJECT_NODE_PALETTE: ProjectPaletteEntry[] = [
     category: 'workflow',
   },
   {
+    kind: 'schedule',
+    labelKey: 'projects.nodes.schedule',
+    descKey: 'projects.addNode.desc.schedule',
+    category: 'workflow',
+  },
+  {
     kind: 'agent',
     labelKey: 'projects.nodes.agent',
     descKey: 'projects.addNode.desc.agent',
@@ -36,6 +42,24 @@ export const PROJECT_NODE_PALETTE: ProjectPaletteEntry[] = [
     kind: 'scrape',
     labelKey: 'projects.nodes.scrape',
     descKey: 'projects.addNode.desc.scrape',
+    category: 'workflow',
+  },
+  {
+    kind: 'export',
+    labelKey: 'projects.nodes.export',
+    descKey: 'projects.addNode.desc.export',
+    category: 'workflow',
+  },
+  {
+    kind: 'condition',
+    labelKey: 'projects.nodes.condition',
+    descKey: 'projects.addNode.desc.condition',
+    category: 'workflow',
+  },
+  {
+    kind: 'notify',
+    labelKey: 'projects.nodes.notify',
+    descKey: 'projects.addNode.desc.notify',
     category: 'workflow',
   },
   {

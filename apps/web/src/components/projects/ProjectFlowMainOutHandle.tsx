@@ -15,7 +15,11 @@ export function ProjectFlowMainOutHandle({
   className = '',
 }: ProjectFlowMainOutHandleProps) {
   const { t } = useLocale()
-  const classes = [HANDLE_CLASS, showAddStep ? 'project-flow-handle--add-step' : '', className]
+  const classes = [
+    HANDLE_CLASS,
+    showAddStep ? 'project-flow-handle--add-step' : 'project-flow-handle--main-out',
+    className,
+  ]
     .filter(Boolean)
     .join(' ')
 

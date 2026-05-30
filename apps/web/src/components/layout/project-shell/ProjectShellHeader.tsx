@@ -1,10 +1,8 @@
-import { Badge, Box, Button, HStack, Separator, Text } from '@chakra-ui/react'
-import { Play, Square } from 'lucide-react'
+import { Badge, Box, HStack, Separator, Text } from '@chakra-ui/react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { isProjectSectionId } from '../../projects/project-sections'
 import type { ProjectEnvironment } from '../../projects/project-sample-data'
 import { useLocale } from '../../../hooks/use-locale'
-import { useAccentPalette } from '../../../hooks/use-ui-config'
 import { ROUTE_PATHS } from '../../../routes/route-config'
 import { ShellHeaderRow, ShellLogoMark } from '../ShellChrome'
 import { useProjectWorkspace } from './project-workspace-context'
@@ -22,9 +20,8 @@ export function ProjectShellHeader() {
   const { section } = useParams<{ section?: string }>()
   const { t } = useLocale()
   const navigate = useNavigate()
-  const accentPalette = useAccentPalette()
-  const { project, running, setRunning } = useProjectWorkspace()
-  const showFlowActions = !section || section === 'flow' || !isProjectSectionId(section)
+  const { project, running } = useProjectWorkspace()
+  const showFlowMeta = !section || section === 'flow' || !isProjectSectionId(section)
   const env = ENV_BADGE[project.environment]
 
   const servicesLabel = t('projects.servicesOnline', {
@@ -88,8 +85,19 @@ export function ProjectShellHeader() {
         </Box>
       </HStack>
 
-      {showFlowActions ? (
+      {showFlowMeta ? (
         <HStack className="project-shell-header__actions" gap={2} flexShrink={0}>
+          {running ? (
+            <Badge
+              size="sm"
+              variant="subtle"
+              colorPalette="green"
+              textTransform="none"
+              fontWeight="medium"
+            >
+              {t('projects.flowRunning')}
+            </Badge>
+          ) : null}
           <Text
             fontSize="xs"
             color="fg.muted"
@@ -106,17 +114,6 @@ export function ProjectShellHeader() {
           >
             {servicesShort}
           </Text>
-          <Button
-            size="sm"
-            variant={running ? 'outline' : 'solid'}
-            colorPalette={running ? undefined : accentPalette}
-            onClick={() => setRunning((v) => !v)}
-          >
-            {running ? <Square size={14} /> : <Play size={14} />}
-            <Box as="span" display={{ base: 'none', sm: 'inline' }}>
-              {running ? t('projects.stopFlow') : t('projects.runFlow')}
-            </Box>
-          </Button>
         </HStack>
       ) : null}
     </ShellHeaderRow>

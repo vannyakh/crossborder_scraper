@@ -1,94 +1,100 @@
-import { Box, HStack, Text } from '@chakra-ui/react'
+import { Badge, Box, HStack, Text } from '@chakra-ui/react'
+import { Workflow } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useLocale } from '../../hooks/use-locale'
+import { useAccentPalette } from '../../hooks/use-ui-config'
 import { projectPath } from '../../routes/route-config'
+import { StatusBadge } from '../ui/StatusBadge'
+import { ProjectCanvasSurface } from './ProjectCanvasSurface'
+import { ProjectNodeSampleList } from './ProjectNodeSampleList'
 import type { ProjectSummary } from './project-sample-data'
-import { ProjectCanvasEdges } from './ProjectCanvasEdges'
-import { ProjectNodeVisual } from './ProjectNodeVisual'
-
-function statusColor(online: number, total: number): string {
-  if (total === 0) return 'gray.400'
-  if (online >= total) return 'green.400'
-  if (online > 0) return 'yellow.400'
-  return 'red.400'
-}
+import {
+  formatProjectUpdatedAt,
+  projectEnvLabelKey,
+  projectHealthLabelKey,
+  projectHealthTone,
+} from './project-status-utils'
 
 export function ProjectCard({ project }: { project: ProjectSummary }) {
-  const healthy = project.servicesOnline >= project.servicesTotal && project.servicesTotal > 0
-  const previewScale = 1.15
+  const { t } = useLocale()
+  const accentPalette = useAccentPalette()
 
   return (
-    <Link to={projectPath(project.id)} style={{ textDecoration: 'none' }}>
+    <Link
+      to={projectPath(project.id)}
+      style={{ textDecoration: 'none', display: 'block', height: '100%' }}
+    >
       <Box
+        display="flex"
+        flexDirection="column"
+        h="full"
         borderWidth="1px"
         borderColor="border.subtle"
         borderRadius="var(--radius-panel)"
         bg="bg.elevated"
         overflow="hidden"
-        transition="border-color 0.15s, box-shadow 0.15s"
-        _hover={{ borderColor: 'border.emphasized', boxShadow: 'md' }}
-        h="full"
-        display="flex"
-        flexDirection="column"
+        transition="border-color var(--motion-duration), box-shadow var(--motion-duration)"
+        _hover={{ borderColor: 'border.default', boxShadow: 'sm' }}
       >
-        <Box px={4} pt={3} pb={2}>
-          <Text fontWeight="semibold" fontSize="sm">
-            {project.name}
-          </Text>
-        </Box>
+        <Box p={4} flex={1}>
+          <HStack justify="space-between" align="start" gap={3} mb={3}>
+            <HStack align="start" gap={3} minW={0}>
+              <Box
+                p={2}
+                borderRadius="var(--radius-card)"
+                colorPalette={accentPalette}
+                bg="colorPalette.subtle"
+                color="colorPalette.fg"
+                flexShrink={0}
+                aria-hidden
+              >
+                <Workflow size={18} strokeWidth={2} />
+              </Box>
+              <Box minW={0}>
+                <Text fontWeight="semibold" lineClamp={1}>
+                  {project.name}
+                </Text>
+                <Text fontSize="xs" color="fg.muted" lineClamp={1} mt={0.5}>
+                  {t(projectEnvLabelKey(project.environment))}
+                </Text>
+              </Box>
+            </HStack>
+            <StatusBadge
+              status={projectHealthTone(project.servicesOnline, project.servicesTotal)}
+              label={t(projectHealthLabelKey(project.servicesOnline, project.servicesTotal))}
+            />
+          </HStack>
 
-        <Box
-          position="relative"
-          mx={3}
-          mb={3}
-          flex={1}
-          minH="120px"
-          borderRadius="var(--radius-input)"
-          bg="bg.panel"
-          borderWidth="1px"
-          borderColor="border.subtle"
-          overflow="hidden"
-          backgroundImage="radial-gradient(circle, var(--chakra-colors-border-subtle) 1px, transparent 1px)"
-          backgroundSize="12px 12px"
-        >
-          <ProjectCanvasEdges
-            nodes={project.previewNodes}
-            edges={project.previewEdges}
-            scale={previewScale}
-            size="sm"
-          />
-          {project.previewNodes.map((node) => (
-            <Box
-              key={node.id}
-              position="absolute"
-              left={`${node.x}%`}
-              top={`${node.y}%`}
-              transform="translate(-50%, -50%)"
-            >
-              <ProjectNodeVisual kind={node.kind} label={node.label} size="sm" />
-            </Box>
-          ))}
+          <ProjectCanvasSurface
+            py={3}
+            px={2}
+            minH="88px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <ProjectNodeSampleList nodes={project.previewNodes} />
+          </ProjectCanvasSurface>
         </Box>
 
         <HStack
           px={4}
-          py={2.5}
+          py={3}
           borderTopWidth="1px"
           borderColor="border.subtle"
+          bg="bg.panelHover"
+          justify="space-between"
           gap={2}
-          fontSize="xs"
-          color="fg.muted"
+          flexWrap="wrap"
         >
-          <Box
-            w="6px"
-            h="6px"
-            borderRadius="full"
-            bg={statusColor(project.servicesOnline, project.servicesTotal)}
-            flexShrink={0}
-          />
-          <Text textTransform="lowercase">{project.environment}</Text>
-          <Text color="fg.subtle">·</Text>
-          <Text color={healthy ? 'fg.muted' : 'orange.300'}>
-            {project.servicesOnline}/{project.servicesTotal}
+          <Badge size="sm" variant="outline" textTransform="none">
+            {t('projects.servicesShort', {
+              online: String(project.servicesOnline),
+              total: String(project.servicesTotal),
+            })}
+          </Badge>
+          <Text fontSize="xs" color="fg.subtle" whiteSpace="nowrap">
+            {formatProjectUpdatedAt(project.updatedAt)}
           </Text>
         </HStack>
       </Box>

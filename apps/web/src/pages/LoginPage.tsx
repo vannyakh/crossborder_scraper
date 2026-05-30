@@ -20,6 +20,7 @@ import { Panel, PanelBody } from '../components/ui/Panel'
 import { ThemeSettingsButton } from '../components/theme/ThemeSettingsDrawer'
 import { useAccentPalette, useUiConfig } from '../hooks/use-ui-config'
 import { useAuth, useAuthStatusQuery, usePublicHealthQuery } from '../hooks'
+import { notifyError } from '../lib/toast'
 import { usePanelAppearance } from '../hooks/use-panel-appearance'
 import { useThemeStore } from '../stores/theme-store'
 import { resolveLoginBackgroundImageUrl } from '../theme/panel-appearance'
@@ -102,7 +103,6 @@ type LoginFormCardProps = {
   username: string
   password: string
   isConnecting: boolean
-  connectError: unknown
   needsSetup: boolean
   apiOffline: boolean
   onUsernameChange: (value: string) => void
@@ -114,7 +114,6 @@ function LoginFormCard({
   username,
   password,
   isConnecting,
-  connectError,
   needsSetup,
   apiOffline,
   onUsernameChange,
@@ -190,12 +189,6 @@ function LoginFormCard({
               />
             </Field.Root>
 
-            {connectError ? (
-              <LoginNotice tone="danger">
-                {String((connectError as Error).message || connectError)}
-              </LoginNotice>
-            ) : null}
-
             <Button
               type="submit"
               w="full"
@@ -225,7 +218,7 @@ export function LoginPage() {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const { connect, isConnecting, connectError } = useAuth()
+  const { connect, isConnecting } = useAuth()
   const { data: authStatus } = useAuthStatusQuery()
   const { data: health } = usePublicHealthQuery()
   const appVersion = health?.version
@@ -247,8 +240,8 @@ export function LoginPage() {
     try {
       await connect({ username, password })
       void navigate(from, { replace: true })
-    } catch {
-      /* connectError from hook */
+    } catch (err) {
+      notifyError(err)
     }
   }
 
@@ -294,7 +287,6 @@ export function LoginPage() {
               username={username}
               password={password}
               isConnecting={isConnecting}
-              connectError={connectError}
               needsSetup={needsSetup}
               apiOffline={apiOffline}
               onUsernameChange={setUsername}

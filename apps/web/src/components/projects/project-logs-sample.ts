@@ -1,4 +1,5 @@
 import type { ProjectDetail } from './project-sample-data'
+import { projectServiceNames } from './project-mock-data'
 
 export type ProjectLogSeverity = 'info' | 'warn' | 'error'
 
@@ -33,10 +34,7 @@ export function formatProjectLogTime(at: number): string {
 }
 
 function servicesForProject(project: ProjectDetail): string[] {
-  if (project.id === 'tv-camtube') {
-    return ['Rsync_YT', 'CamTube-DB', 'CamTube', 'cache_db']
-  }
-  return project.nodes.map((n) => n.subtitle?.split(':').pop()?.trim() || n.label).slice(0, 4)
+  return projectServiceNames(project)
 }
 
 function telegramPayload(status: number): string {

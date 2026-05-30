@@ -302,7 +302,7 @@ export function ProjectSettingsVariablesSection({ project }: { project: ProjectD
 
 export function ProjectSettingsWebhooksSection({ project }: { project: ProjectDetail }) {
   const { t } = useLocale()
-  const hooks = project.nodes.filter((n) => n.kind === 'webhook')
+  const hooks = project.nodes.filter((n) => n.kind === 'webhook' || n.kind === 'schedule')
   return (
     <SettingsBlock
       title={t('projects.settings.webhooks.title')}

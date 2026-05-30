@@ -24,8 +24,8 @@ export function ProjectFlowOutRail({
         .join(' ')}
       style={{ top: `${anchorTopPx}px` }}
     >
-      <Box className="project-flow-out-rail__anchor" />
-      <Box className="project-flow-out-rail__lead" />
+      <Box className="project-flow-out-rail__port" aria-hidden />
+      <Box className="project-flow-out-rail__line" aria-hidden />
       {showEntryLabel ? (
         <Box className="project-flow-out-rail__entry-label">{t('projects.flow.entryPoint')}</Box>
       ) : null}

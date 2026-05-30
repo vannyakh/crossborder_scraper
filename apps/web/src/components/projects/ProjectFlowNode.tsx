@@ -7,6 +7,7 @@ import type { ConfigInputPort } from './project-flow-layout'
 import { ProjectFlowMainOutHandle } from './ProjectFlowMainOutHandle'
 import { ProjectFlowNodeMenu } from './ProjectFlowNodeMenu'
 import { ProjectFlowOutRail } from './ProjectFlowOutRail'
+import { ProjectFlowTriggerRun } from './ProjectFlowTriggerRun'
 import { ProjectWorkflowNode } from './ProjectWorkflowNode'
 import type { ProjectFlowNodeData } from './project-flow-types'
 import type { AgentSlotIndex, ProjectNodeRole } from './project-sample-data'
@@ -50,7 +51,9 @@ function AgentSlotHandle({ port, agentId }: { port: ConfigInputPort; agentId: st
         e.stopPropagation()
         actions?.openSlotAdd(agentId, port.slotIndex as AgentSlotIndex)
       }}
-      aria-label={t('projects.flow.addPlugin', { slot: port.label })}
+      aria-label={t('projects.flow.addPlugin', {
+        slot: port.labelKey ? t(port.labelKey) : port.label,
+      })}
     />
   )
 }
@@ -59,17 +62,21 @@ function AgentConfigHandles({
   ports,
   showLabels,
   agentId,
+  inlineToolsStrip,
 }: {
   ports: ConfigInputPort[]
   showLabels: boolean
   agentId: string
+  inlineToolsStrip?: boolean
 }) {
+  const { t } = useLocale()
+
   return (
     <>
       {ports.map((port) => (
         <AgentSlotHandle key={port.handleId} port={port} agentId={agentId} />
       ))}
-      {showLabels ? (
+      {showLabels && !inlineToolsStrip ? (
         <Box className="project-workflow-node__port-labels" aria-hidden>
           {ports.map((port) => (
             <Text
@@ -83,7 +90,7 @@ function AgentConfigHandles({
                 .join(' ')}
               style={{ left: `${port.leftPercent}%` }}
             >
-              {port.label}
+              {port.occupied ? port.label : port.labelKey ? t(port.labelKey) : port.label}
               {port.required ? (
                 <Text as="span" className="project-workflow-node__port-required">
                   {' *'}
@@ -109,6 +116,7 @@ function handlesForRole(
     showAddStep?: boolean
     hideMainOut?: boolean
     nodeId: string
+    inlineToolsStrip?: boolean
   },
 ) {
   const {
@@ -117,6 +125,7 @@ function handlesForRole(
     showAddStep = false,
     hideMainOut = false,
     nodeId,
+    inlineToolsStrip = false,
   } = options
 
   const mainOut = hideMainOut ? null : <ProjectFlowMainOutHandle showAddStep={showAddStep} />
@@ -152,6 +161,7 @@ function handlesForRole(
               ports={configInputs}
               showLabels={showVariableRefs}
               agentId={nodeId}
+              inlineToolsStrip={inlineToolsStrip}
             />
           ) : null}
         </>
@@ -187,7 +197,7 @@ function ProjectFlowNodeComponent({
   const isAgent = role === 'agent'
 
   // Agents always show 3 slot rows so the body height includes slot space
-  const configPortCount = isAgent ? (data.configInputs?.length ?? 3) : 0
+  const inlineToolsStrip = isAgent && Boolean(data.configInputs?.length)
 
   const outRailTopPx = useMemo(() => {
     // Rail anchors at the center of the node body (not including slot area below)
@@ -222,12 +232,19 @@ function ProjectFlowNodeComponent({
         onMenuOpenChange={setMenuOpen}
         chromeHoverHandlers={chromeHoverHandlers}
       />
+      {isTrigger ? (
+        <ProjectFlowTriggerRun
+          nodeId={id}
+          visible={visible}
+          chromeHoverHandlers={chromeHoverHandlers}
+        />
+      ) : null}
       <ProjectWorkflowNode
         node={data.node}
         selected={selected}
         running={data.running}
         executionStatus={data.executionStatus}
-        configPortCount={configPortCount}
+        configInputs={data.configInputs}
       />
       {useOutRail ? (
         <ProjectFlowOutRail anchorTopPx={outRailTopPx} showEntryLabel={isTrigger} />
@@ -238,6 +255,7 @@ function ProjectFlowNodeComponent({
         showAddStep: data.showAddStep,
         hideMainOut: useOutRail,
         nodeId: id,
+        inlineToolsStrip,
       })}
     </Box>
   )

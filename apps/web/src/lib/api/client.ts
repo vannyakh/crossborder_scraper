@@ -121,8 +121,21 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
 }
 
 export async function loginRequest(username: string, password: string): Promise<LoginResponse> {
-  return publicApi<LoginResponse>('/auth/login', {
+  const res = await fetch(withPanelPrefix('/auth/login'), {
     method: 'POST',
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ username, password }),
   })
+  const ct = res.headers.get('content-type') || ''
+  const data = ct.includes('application/json') ? await res.json() : await res.text()
+
+  if (!res.ok) {
+    const detail = formatApiDetail(
+      typeof data === 'object' && data !== null && 'detail' in data
+        ? (data as { detail: unknown }).detail
+        : data,
+    )
+    throw new Error(detail || 'Sign in failed')
+  }
+  return data as LoginResponse
 }

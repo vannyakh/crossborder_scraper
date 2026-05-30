@@ -16,6 +16,10 @@ class GatewayAgentRequest(BaseModel):
         default=None,
         description="Optional skill ids; omit to use config/agent_skills.yaml enabled set",
     )
+    think: bool = Field(
+        default=False,
+        description="When true, agent reasons step-by-step before acting (extra tool rounds).",
+    )
 
 
 class GatewayAgentResponse(BaseModel):

@@ -30,38 +30,39 @@ import { useProjectWorkspace } from '../layout/project-shell/project-workspace-c
 import { ProjectAddNodePanel } from './ProjectAddNodePanel'
 import { ProjectFlowCanvasToolbar, type FlowCanvasMenuId } from './ProjectFlowCanvasToolbar'
 import { ProjectFlowConfigEdge } from './ProjectFlowConfigEdge'
+import { ProjectFlowExplorerPanel } from './ProjectFlowExplorerPanel'
 import { ProjectFlowMainEdge } from './ProjectFlowMainEdge'
 import { ProjectFlowNode } from './ProjectFlowNode'
 import { ProjectNodeConfigPanel } from './ProjectNodeConfigPanel'
+import { ProjectFlowActionsProvider } from './project-flow-actions-context'
 import {
   applyFlowAutoLayout,
   restoreNodePositions,
   snapshotNodePositions,
 } from './project-flow-auto-layout'
-import { ProjectFlowActionsProvider } from './project-flow-actions-context'
 import {
   DEFAULT_FLOW_CANVAS_OPTIONS,
   type ProjectFlowCanvasOptions,
 } from './project-flow-canvas-options'
-import type {
-  ProjectFlowNodeData,
-  ProjectServiceEdge,
-  ProjectServiceNode,
-} from './project-flow-types'
-import { insertMainNodeAfter } from './project-flow-insert'
-import { buildMainFlowSteps } from './project-flow-run'
 import {
+  MAIN_FLOW_HANDLES,
   configConnectionToEdge,
   hasMainOutgoing,
   isValidAnyConnection,
   isValidConfigConnection,
   isValidMainConnection,
   mainConnectionToEdge,
-  MAIN_FLOW_HANDLES,
 } from './project-flow-connect'
+import { insertMainNodeAfter } from './project-flow-insert'
+import type {
+  ProjectFlowNodeData,
+  ProjectServiceEdge,
+  ProjectServiceNode,
+} from './project-flow-types'
 import { projectDetailToFlow } from './project-flow-utils'
 import { createProjectNode, duplicateProjectNode } from './project-node-factory'
 import type { AgentSlotIndex, ProjectNode, ProjectNodeKind } from './project-sample-data'
+import { buildFlowExecutionPlan } from './project-workflow-graph'
 
 const nodeTypes = { workflow: ProjectFlowNode }
 const edgeTypes = { workflow: ProjectFlowMainEdge, config: ProjectFlowConfigEdge }
@@ -70,7 +71,7 @@ function ProjectFlowCanvasInner() {
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
   const colorMode = useColorMode()
-  const { project, setProject, running } = useProjectWorkspace()
+  const { project, setProject, running, setRunning } = useProjectWorkspace()
   const { fitView, zoomIn, zoomOut } = useReactFlow()
   const motionEnabled = useMotionEnabled()
   const panelTransition = useMotionTransition(0.28)
@@ -89,6 +90,8 @@ function ProjectFlowCanvasInner() {
     slotIndex: AgentSlotIndex
   } | null>(null)
   const [completedNodeIds, setCompletedNodeIds] = useState<string[]>([])
+  const [explorerOpen, setExplorerOpen] = useState(true)
+  const [runningStepIndex, setRunningStepIndex] = useState<number | null>(null)
   const layoutBaselineRef = useRef(snapshotNodePositions(project))
   const runStepRef = useRef(0)
   const connectDragRef = useRef<{ nodeId: string; x: number; y: number } | null>(null)
@@ -134,37 +137,46 @@ function ProjectFlowCanvasInner() {
     return () => window.cancelAnimationFrame(id)
   }, [sidePanelOpen, fitView, motionEnabled, nodes.length])
 
+  const runPlanRef = useRef<ReturnType<typeof buildFlowExecutionPlan>>([])
+
   useEffect(() => {
     if (!running) {
       setCompletedNodeIds([])
       runStepRef.current = 0
+      runPlanRef.current = []
+      setRunningStepIndex(null)
       return
     }
 
-    const steps = buildMainFlowSteps(project)
-    if (steps.length === 0) return
+    const plan = buildFlowExecutionPlan(project)
+    runPlanRef.current = plan
+    if (plan.length === 0) return
 
     runStepRef.current = 0
     setCompletedNodeIds([])
-    setActiveNodeId(steps[0])
+    setRunningStepIndex(0)
+    setActiveNodeId(plan[0].nodeId)
 
     const timer = window.setInterval(() => {
       const index = runStepRef.current
+      const steps = runPlanRef.current
       if (index >= steps.length) {
         window.clearInterval(timer)
+        setRunningStepIndex(null)
         return
       }
 
-      setCompletedNodeIds(steps.slice(0, index + 1))
+      setCompletedNodeIds(steps.slice(0, index + 1).map((s) => s.nodeId))
       const nextIndex = index + 1
       runStepRef.current = nextIndex
+      setRunningStepIndex(nextIndex < steps.length ? nextIndex : null)
 
       if (nextIndex < steps.length) {
-        setActiveNodeId(steps[nextIndex])
+        setActiveNodeId(steps[nextIndex].nodeId)
       } else {
         window.clearInterval(timer)
       }
-    }, 900)
+    }, 750)
 
     return () => window.clearInterval(timer)
   }, [running, project])
@@ -228,7 +240,7 @@ function ProjectFlowCanvasInner() {
           const node = createProjectNode(kind, label, project.nodes)
           // Position below the agent, aligned to the slot
           const slotLeftFrac = [0.22, 0.5, 0.78][slotIndex] ?? 0.5
-          const agentW = 224
+          const agentW = 260
           node.x = agentNode.x + slotLeftFrac * agentW - 40
           node.y = agentNode.y + 200
           const edge = {
@@ -425,6 +437,24 @@ function ProjectFlowCanvasInner() {
     })
   }, [fitView, sidePanelOpen, motionEnabled])
 
+  const handleFocusNode = useCallback(
+    (nodeId: string) => {
+      setActiveNodeId(nodeId)
+      const node = project.nodes.find((n) => n.id === nodeId)
+      if (node) {
+        setAddOpen(false)
+        setSelectedNode(node)
+      }
+      void fitView({
+        nodes: [{ id: nodeId }],
+        padding: 0.85,
+        duration: motionEnabled ? 280 : 0,
+        maxZoom: 1,
+      })
+    },
+    [project.nodes, fitView, motionEnabled],
+  )
+
   const flowActions = useMemo(
     () => ({
       openNodeConfig: (nodeId: string) => {
@@ -470,6 +500,26 @@ function ProjectFlowCanvasInner() {
       executeStep: (nodeId: string) => {
         setActiveNodeId(nodeId)
         notifySuccess(t('projects.nodeMenu.executePreview'))
+      },
+      runWorkflow: () => {
+        setRunning(true)
+      },
+      toggleNodeActive: (nodeId: string) => {
+        setProject((prev) => {
+          const target = prev.nodes.find((n) => n.id === nodeId)
+          if (!target || target.status === undefined) return prev
+          const nextStatus = target.status === 'offline' ? 'online' : 'offline'
+          const nodes = prev.nodes.map((n) => (n.id === nodeId ? { ...n, status: nextStatus } : n))
+          const services = nodes.filter(
+            (n) => n.role !== 'config' && n.role !== 'trigger' && n.status !== undefined,
+          )
+          return {
+            ...prev,
+            nodes,
+            servicesOnline: services.filter((n) => n.status === 'online').length,
+            servicesTotal: services.length,
+          }
+        })
       },
       copyNode: (nodeId: string) => {
         const source = project.nodes.find((n) => n.id === nodeId)
@@ -557,7 +607,8 @@ function ProjectFlowCanvasInner() {
               connectOnClick={false}
               connectionLineStyle={{
                 stroke: 'var(--project-flow-edge)',
-                strokeWidth: 2,
+                strokeWidth: 1.5,
+                strokeDasharray: '6 4',
               }}
               elementsSelectable
               panOnScroll
@@ -589,6 +640,14 @@ function ProjectFlowCanvasInner() {
             onFitView={handleFitView}
             onAutoLayout={handleAutoLayout}
             onResetCanvas={handleResetCanvas}
+          />
+
+          <ProjectFlowExplorerPanel
+            project={project}
+            open={explorerOpen}
+            onToggle={() => setExplorerOpen((v) => !v)}
+            onFocusNode={handleFocusNode}
+            runningStepIndex={running ? runningStepIndex : null}
           />
 
           <Button

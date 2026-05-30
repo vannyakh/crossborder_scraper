@@ -315,6 +315,7 @@ export function useRunAgentMutation() {
       prompt_id?: string
       skill_ids?: string[]
       session_id?: string
+      think?: boolean
     }) =>
       api<GatewayAgentResponse>('/gateway/agent/run', {
         method: 'POST',

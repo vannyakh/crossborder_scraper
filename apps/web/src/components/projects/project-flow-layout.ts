@@ -7,10 +7,10 @@ import type { AgentSlotIndex, ProjectDetail, ProjectEdge, ProjectNode } from './
 
 export type AgentSlotDef = {
   slotIndex: AgentSlotIndex
-  /** i18n label shown below the slot handle */
-  label: string
+  /** i18n key for empty slot label */
+  labelKey: string
   required: boolean
-  /** % from left of agent card (224 px wide) */
+  /** % from left of agent card */
   leftPercent: number
   /** React Flow handle id when slot is empty */
   emptyHandleId: string
@@ -21,7 +21,7 @@ export type AgentSlotDef = {
 export const AGENT_SLOT_DEFS: AgentSlotDef[] = [
   {
     slotIndex: 0,
-    label: 'Model',
+    labelKey: 'projects.flow.slots.model',
     required: true,
     leftPercent: 22,
     emptyHandleId: 'config-in-0',
@@ -29,7 +29,7 @@ export const AGENT_SLOT_DEFS: AgentSlotDef[] = [
   },
   {
     slotIndex: 1,
-    label: 'Memory',
+    labelKey: 'projects.flow.slots.memory',
     required: false,
     leftPercent: 50,
     emptyHandleId: 'config-in-1',
@@ -37,7 +37,7 @@ export const AGENT_SLOT_DEFS: AgentSlotDef[] = [
   },
   {
     slotIndex: 2,
-    label: 'Tool',
+    labelKey: 'projects.flow.slots.tool',
     required: false,
     leftPercent: 78,
     emptyHandleId: 'config-in-2',
@@ -51,8 +51,10 @@ export const AGENT_SLOT_DEFS: AgentSlotDef[] = [
 
 export type ConfigInputPort = {
   handleId: string
-  /** Display label (slot name when empty, node subtitle/label when occupied) */
+  /** Display label when occupied (source node name) */
   label: string
+  /** i18n key for empty slot */
+  labelKey?: string
   leftPercent: number
   slotIndex: AgentSlotIndex
   required: boolean
@@ -134,6 +136,7 @@ export function buildAgentConfigPorts(project: ProjectDetail): Map<string, Confi
         return {
           handleId: def.occupiedHandleId,
           label,
+          labelKey: def.labelKey,
           leftPercent: def.leftPercent,
           slotIndex: def.slotIndex,
           required: def.required,
@@ -142,7 +145,8 @@ export function buildAgentConfigPorts(project: ProjectDetail): Map<string, Confi
       }
       return {
         handleId: def.emptyHandleId,
-        label: def.label,
+        label: def.labelKey,
+        labelKey: def.labelKey,
         leftPercent: def.leftPercent,
         slotIndex: def.slotIndex,
         required: def.required,

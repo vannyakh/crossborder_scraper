@@ -347,6 +347,7 @@ async def agent_run(body: GatewayAgentRequest) -> GatewayAgentResponse:
             prompt_id=body.prompt_id,
             skill_ids=body.skill_ids,
             session_id=body.session_id,
+            think=body.think,
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

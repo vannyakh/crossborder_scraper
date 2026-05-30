@@ -1,7 +1,8 @@
-import { Box, ButtonGroup, HStack, IconButton, Text } from '@chakra-ui/react'
+import { Box, HStack, IconButton, Text } from '@chakra-ui/react'
 import { LayoutGrid, List, SlidersHorizontal } from 'lucide-react'
-import { PanelSelect } from '../ui/PanelSelect'
 import { useLocale } from '../../hooks/use-locale'
+import { useAccentPalette } from '../../hooks/use-ui-config'
+import { PanelSelect } from '../ui/PanelSelect'
 
 export type ProjectsViewMode = 'grid' | 'list'
 export type ProjectsSort = 'recent' | 'name' | 'status'
@@ -20,19 +21,34 @@ export function ProjectsToolbar({
   onViewModeChange: (mode: ProjectsViewMode) => void
 }) {
   const { t } = useLocale()
+  const accentPalette = useAccentPalette()
 
   return (
-    <HStack justify="space-between" flexWrap="wrap" gap={3} mb={4}>
-      <HStack gap={2} color="fg.muted" fontSize="sm">
-        <LayoutGrid size={16} />
-        <Text>{t('projects.count', { count: String(count) })}</Text>
+    <HStack
+      justify="space-between"
+      align="center"
+      flexWrap="wrap"
+      gap={3}
+      px={{ base: 3, md: 4 }}
+      py={3}
+      borderBottomWidth="1px"
+      borderColor="border.subtle"
+      bg="bg.panelHover"
+    >
+      <HStack gap={2} color="fg.muted" fontSize="sm" minW={0}>
+        <LayoutGrid size={16} strokeWidth={2} />
+        <Text fontWeight="medium" color="fg">
+          {t('projects.count', { count: String(count) })}
+        </Text>
       </HStack>
 
-      <HStack gap={2} flexWrap="wrap">
+      <HStack gap={2} flexWrap="wrap" justify="flex-end">
         <HStack gap={1.5} fontSize="sm" color="fg.muted">
-          <SlidersHorizontal size={14} />
-          <Text whiteSpace="nowrap">{t('projects.sortBy')}</Text>
-          <Box minW="160px">
+          <SlidersHorizontal size={14} strokeWidth={2} />
+          <Text whiteSpace="nowrap" display={{ base: 'none', sm: 'block' }}>
+            {t('projects.sortBy')}
+          </Text>
+          <Box minW={{ base: '140px', sm: '160px' }}>
             <PanelSelect
               size="sm"
               value={sort}
@@ -46,22 +62,30 @@ export function ProjectsToolbar({
           </Box>
         </HStack>
 
-        <ButtonGroup size="sm" variant="outline" attached>
+        <HStack gap={1} flexShrink={0}>
           <IconButton
             aria-label={t('projects.viewGrid')}
-            bg={viewMode === 'grid' ? 'bg.panelHover' : undefined}
+            size="sm"
+            variant={viewMode === 'grid' ? 'solid' : 'outline'}
+            colorPalette={viewMode === 'grid' ? accentPalette : 'gray'}
+            borderColor="border.subtle"
+            borderRadius="input"
             onClick={() => onViewModeChange('grid')}
           >
-            <LayoutGrid size={14} />
+            <LayoutGrid size={16} />
           </IconButton>
           <IconButton
             aria-label={t('projects.viewList')}
-            bg={viewMode === 'list' ? 'bg.panelHover' : undefined}
+            size="sm"
+            variant={viewMode === 'list' ? 'solid' : 'outline'}
+            colorPalette={viewMode === 'list' ? accentPalette : 'gray'}
+            borderColor="border.subtle"
+            borderRadius="input"
             onClick={() => onViewModeChange('list')}
           >
-            <List size={14} />
+            <List size={16} />
           </IconButton>
-        </ButtonGroup>
+        </HStack>
       </HStack>
     </HStack>
   )

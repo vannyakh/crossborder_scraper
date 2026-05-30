@@ -29,6 +29,14 @@ def tool_outcome_for_log(outcome: Any) -> Any:
     return json.loads(json.dumps(outcome, ensure_ascii=False, default=_json_default))
 
 
+_THINK_MODE_APPEND = """
+
+## Think mode
+Reason step-by-step before acting. Prefer calling tools to verify facts;
+explain trade-offs briefly when helpful.
+"""
+
+
 class GatewayAgent:
     """
     Tool-using agent bound to the scrape gateway.
@@ -58,6 +66,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         history: list[dict[str, str]] | None = None,
         session_context: str | None = None,
         max_tool_rounds: int = 3,
+        think: bool = False,
     ) -> dict[str, Any]:
         if not self.enabled:
             return {
@@ -85,6 +94,9 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         if session_context:
             ctx = session_context.strip()
             system_prompt = f"{system_prompt.strip()}\n\n## Session context\n{ctx}"
+        if think:
+            system_prompt = f"{system_prompt.strip()}{_THINK_MODE_APPEND}"
+            max_tool_rounds = max(max_tool_rounds, 5)
         allow_tools = skill_tools if skill_tools else None
         messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
         if history:

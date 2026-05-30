@@ -10,6 +10,8 @@ export type ProjectFlowActions = {
   /** Open the add-plugin panel targeting a specific agent slot. */
   openSlotAdd: (agentId: string, slotIndex: AgentSlotIndex) => void
   executeStep: (nodeId: string) => void
+  runWorkflow: () => void
+  toggleNodeActive: (nodeId: string) => void
   copyNode: (nodeId: string) => void
   tidyWorkflow: () => void
   selectAllNodes: () => void

@@ -1,10 +1,10 @@
-import { Box, Grid, HStack, Text, VStack } from '@chakra-ui/react'
+import { Box, Grid } from '@chakra-ui/react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useLocale } from '../../hooks/use-locale'
-import { projectPath } from '../../routes/route-config'
 import { DataListEmpty } from '../ui/DataList'
+import { SectionCard } from '../ui/Section'
 import { ProjectCard } from './ProjectCard'
+import { ProjectListRow } from './ProjectListRow'
 import type { ProjectDetail } from './project-sample-data'
 import { ProjectsToolbar, type ProjectsSort, type ProjectsViewMode } from './ProjectsToolbar'
 
@@ -31,7 +31,7 @@ export function ProjectsListPanel({ projects }: { projects: ProjectDetail[] }) {
   const sorted = useMemo(() => sortProjects(projects, sort), [projects, sort])
 
   return (
-    <>
+    <SectionCard p={0} mt={4} overflow="hidden">
       <ProjectsToolbar
         count={projects.length}
         sort={sort}
@@ -41,56 +41,24 @@ export function ProjectsListPanel({ projects }: { projects: ProjectDetail[] }) {
       />
 
       {!projects.length ? (
-        <DataListEmpty>{t('projects.empty')}</DataListEmpty>
+        <Box p={{ base: 4, md: 6 }}>
+          <DataListEmpty>{t('projects.empty')}</DataListEmpty>
+        </Box>
       ) : viewMode === 'grid' ? (
-        <Grid templateColumns={{ base: '1fr', sm: '1fr 1fr', xl: '1fr 1fr 1fr 1fr' }} gap={4}>
-          {sorted.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </Grid>
+        <Box p={{ base: 3, md: 4 }}>
+          <Grid templateColumns={{ base: '1fr', md: '1fr 1fr', xl: '1fr 1fr 1fr' }} gap={3}>
+            {sorted.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </Grid>
+        </Box>
       ) : (
-        <VStack align="stretch" gap={2}>
+        <Box>
           {sorted.map((project) => (
             <ProjectListRow key={project.id} project={project} />
           ))}
-        </VStack>
-      )}
-    </>
-  )
-}
-
-function ProjectListRow({ project }: { project: ProjectDetail }) {
-  const { t } = useLocale()
-  const ratio = project.servicesTotal > 0 ? project.servicesOnline / project.servicesTotal : 0
-
-  return (
-    <Link to={projectPath(project.id)} style={{ textDecoration: 'none' }}>
-      <HStack
-        px={4}
-        py={3}
-        borderWidth="1px"
-        borderColor="border.subtle"
-        borderRadius="var(--radius-input)"
-        bg="bg.elevated"
-        justify="space-between"
-        _hover={{ borderColor: 'border.emphasized', bg: 'bg.panelHover' }}
-      >
-        <Box minW={0}>
-          <Text fontWeight="semibold" fontSize="sm">
-            {project.name}
-          </Text>
-          <Text fontSize="xs" color="fg.muted" mt={0.5}>
-            {project.environment} ·{' '}
-            {t('projects.servicesShort', {
-              online: String(project.servicesOnline),
-              total: String(project.servicesTotal),
-            })}
-          </Text>
         </Box>
-        <Text fontSize="xs" color={ratio >= 1 ? 'green.300' : 'orange.300'}>
-          {Math.round(ratio * 100)}%
-        </Text>
-      </HStack>
-    </Link>
+      )}
+    </SectionCard>
   )
 }

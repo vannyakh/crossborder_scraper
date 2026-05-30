@@ -1,4 +1,5 @@
 import type { ProjectDetail } from './project-sample-data'
+import { projectServiceNames } from './project-mock-data'
 
 export type RuntimeMetricId = 'cpu' | 'memory' | 'network' | 'disk'
 
@@ -19,13 +20,11 @@ export type ProjectRuntimeMetrics = {
 
 const SERIES_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#a855f7', '#06b6d4', '#f97316']
 
-const TV_CAMTUBE_SERVICES = [
-  { id: 'camtube', name: 'CamTube', color: SERIES_COLORS[0] },
-  { id: 'cache_db', name: 'cache_db', color: SERIES_COLORS[1] },
-  { id: 'db_yt', name: 'DB_YT', color: SERIES_COLORS[2] },
-  { id: 'rsync_yt', name: 'Rsync_YT', color: SERIES_COLORS[3] },
-  { id: 'camtube_db', name: 'CamTube-DB', color: SERIES_COLORS[4] },
-]
+type RuntimeService = {
+  id: string
+  name: string
+  color: string
+}
 
 function hashSeed(input: string): number {
   let h = 0
@@ -47,21 +46,18 @@ function timeLabels(count: number): string[] {
   })
 }
 
-function servicesForProject(project: ProjectDetail) {
-  if (project.id === 'tv-camtube') return TV_CAMTUBE_SERVICES
-
-  const online = project.nodes.filter((n) => n.status !== 'offline')
-  const picked = (online.length ? online : project.nodes).slice(0, 5)
-  return picked.map((node, index) => ({
-    id: node.id,
-    name: node.subtitle?.split(':').pop()?.trim() || node.label,
+function servicesForProject(project: ProjectDetail): RuntimeService[] {
+  const names = projectServiceNames(project)
+  return names.map((name, index) => ({
+    id: `${project.id}-svc-${index}`,
+    name,
     color: SERIES_COLORS[index % SERIES_COLORS.length],
   }))
 }
 
 function cpuSeries(
   seed: number,
-  services: typeof TV_CAMTUBE_SERVICES,
+  services: RuntimeService[],
   count: number,
 ): RuntimeServiceSeries[] {
   return services.map((svc, sIdx) => ({
@@ -76,43 +72,38 @@ function cpuSeries(
 
 function memorySeries(
   seed: number,
-  services: typeof TV_CAMTUBE_SERVICES,
-  count: number,
-): RuntimeServiceSeries[] {
-  return services.map((svc, sIdx) => {
-    const isMain = svc.id === 'camtube' || sIdx === 0
-    const isFlatHigh = svc.id === 'rsync_yt'
-    return {
-      ...svc,
-      values: Array.from({ length: count }, (_, i) => {
-        if (isFlatHigh) return 600
-        if (isMain) {
-          const step = Math.floor(i / 4) % 2 === 0 ? 280 : 520
-          return step + Math.round(pseudo(i, seed) * 40)
-        }
-        return 40 + sIdx * 18 + Math.round(pseudo(i, seed + sIdx) * 12)
-      }),
-    }
-  })
-}
-
-function networkSeries(
-  seed: number,
-  services: typeof TV_CAMTUBE_SERVICES,
+  services: RuntimeService[],
   count: number,
 ): RuntimeServiceSeries[] {
   return services.map((svc, sIdx) => ({
     ...svc,
     values: Array.from({ length: count }, (_, i) => {
-      const spike = svc.id === 'rsync_yt' && (i === 8 || i === 15)
-      if (spike) return 12 + pseudo(i, seed) * 2
-      if (svc.id === 'camtube' && (i === 8 || i === 15)) return 4 + pseudo(i, seed) * 1.5
+      const isMain = sIdx === 0
+      if (isMain) {
+        const step = Math.floor(i / 4) % 2 === 0 ? 280 : 520
+        return step + Math.round(pseudo(i, seed) * 40)
+      }
+      return 40 + sIdx * 18 + Math.round(pseudo(i, seed + sIdx) * 12)
+    }),
+  }))
+}
+
+function networkSeries(
+  seed: number,
+  services: RuntimeService[],
+  count: number,
+): RuntimeServiceSeries[] {
+  return services.map((svc, sIdx) => ({
+    ...svc,
+    values: Array.from({ length: count }, (_, i) => {
+      const spike = sIdx === 0 && (i === 8 || i === 15)
+      if (spike) return 4 + pseudo(i, seed) * 1.5
       return Math.round(pseudo(i, seed + sIdx) * 180) / 100
     }),
   }))
 }
 
-function diskSeries(services: typeof TV_CAMTUBE_SERVICES): RuntimeServiceSeries[] {
+function diskSeries(services: RuntimeService[]): RuntimeServiceSeries[] {
   const levels = [1.05, 0.26, 0.04, 0.62, 0.12]
   return services.map((svc, sIdx) => ({
     ...svc,

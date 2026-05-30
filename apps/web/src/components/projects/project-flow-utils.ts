@@ -84,12 +84,12 @@ export function projectDetailToFlow(
       animated: runningId === edge.from,
       style: {
         stroke: 'var(--project-flow-edge)',
-        strokeWidth: 2.5,
+        strokeWidth: 1.5,
       },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: 14,
-        height: 14,
+        width: 10,
+        height: 10,
         color: 'var(--project-flow-edge)',
       },
     }
