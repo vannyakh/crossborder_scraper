@@ -1,0 +1,43 @@
+{
+  "id": "gateway-agent-starter",
+  "name": "Gateway agent starter",
+  "summary": "Hourly cron trigger wired to the gateway tools agent — a blank automation canvas.",
+  "description": "Start with a schedule trigger and gateway agent node. Add scrape, export, or notify steps from the node palette.",
+  "category": "agent",
+  "category_label": "Gateway agent",
+  "tags": ["agent", "schedule", "starter"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "tpl-schedule-1",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "Hourly check",
+      "subtitle": "cron: 0 * * * *",
+      "status": "online",
+      "x": 120,
+      "y": 160
+    },
+    {
+      "id": "tpl-agent-1",
+      "kind": "agent",
+      "role": "agent",
+      "label": "Gateway agent",
+      "subtitle": "Tools agent",
+      "host": "gateway-tools",
+      "status": "online",
+      "agentPrompt": "Run the enabled gateway tools for this project.",
+      "x": 360,
+      "y": 160
+    }
+  ],
+  "edges": [
+    {
+      "id": "tpl-e-schedule-agent",
+      "from": "tpl-schedule-1",
+      "to": "tpl-agent-1",
+      "kind": "main"
+    }
+  ]
+}

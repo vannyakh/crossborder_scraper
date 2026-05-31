@@ -20,9 +20,14 @@ from server.routers import (
     guides,
     jobs,
     logs,
+    modules,
     monitor,
     plugins,
     products,
+    project_observability,
+    project_settings,
+    project_templates,
+    project_ws,
     projects,
     realtime,
     runtime,
@@ -47,6 +52,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(logs.router)
     app.include_router(service.router)
     app.include_router(guides.router)
+    app.include_router(modules.router)
     app.include_router(deploy.router)
     app.include_router(docker.router)
     app.include_router(firewall.router)
@@ -59,9 +65,12 @@ def register_routes(app: FastAPI) -> None:
     # AI control plane
     app.include_router(gateway.router)
 
-    # Project flow canvas
+    # Project flow canvas (template routes before /{project_id} paths)
+    app.include_router(project_templates.router)
     app.include_router(projects.router)
-    app.include_router(projects.ws_router)
+    app.include_router(project_settings.router)
+    app.include_router(project_observability.router)
+    app.include_router(project_ws.ws_router)
 
     # Scrape pipeline
     app.include_router(realtime.router)

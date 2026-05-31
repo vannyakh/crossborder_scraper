@@ -5,6 +5,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 ProjectEnvironment = Literal["production", "staging", "development"]
+ProjectVisibility = Literal["private", "workspace"]
+VariableScope = Literal["project", "shared"]
 ProjectNodeKind = Literal[
     "github",
     "redis",
@@ -107,7 +109,130 @@ class ProjectUpdateRequest(BaseModel):
     description: str | None = Field(default=None, max_length=500)
 
 
+class ProjectSettingsGeneral(BaseModel):
+    name: str
+    description: str = ""
+    environment: ProjectEnvironment
+    visibility: ProjectVisibility = "private"
+
+
+class ProjectSettingsUsage(BaseModel):
+    services_online: int = 0
+    services_total: int = 0
+    nodes: int = 0
+    environment: ProjectEnvironment = "development"
+    flow_revision: int = 0
+    updated_at: str = ""
+
+
+class ProjectSettingsVariable(BaseModel):
+    key: str
+    scope: VariableScope = "project"
+    masked: bool = False
+    value: str = ""
+
+
+class ProjectSettingsWebhook(BaseModel):
+    node_id: str
+    label: str
+    subtitle: str | None = None
+    kind: str
+    status: str = "online"
+
+
+class ProjectSettingsMember(BaseModel):
+    id: str
+    name: str
+    role: str
+    username: str | None = None
+
+
+class ProjectSettingsToken(BaseModel):
+    id: str
+    label: str
+    prefix: str
+    created_at: str
+
+
+class ProjectSettingsIntegration(BaseModel):
+    id: str
+    label: str
+    linked: bool = False
+    configured: bool = False
+    runtime_active: bool = False
+
+
+class ProjectSettingsResponse(BaseModel):
+    project_id: str
+    general: ProjectSettingsGeneral
+    usage: ProjectSettingsUsage
+    variables: list[ProjectSettingsVariable] = Field(default_factory=list)
+    webhooks: list[ProjectSettingsWebhook] = Field(default_factory=list)
+    members: list[ProjectSettingsMember] = Field(default_factory=list)
+    tokens: list[ProjectSettingsToken] = Field(default_factory=list)
+    integrations: list[ProjectSettingsIntegration] = Field(default_factory=list)
+    tokens_preview: bool = False
+
+
+class ProjectSettingsPatchRequest(BaseModel):
+    visibility: ProjectVisibility | None = None
+    variables: list[ProjectSettingsVariable] | None = None
+
+
+class ProjectTokenCreateRequest(BaseModel):
+    label: str = Field(default="API token", min_length=1, max_length=120)
+
+
+class ProjectTokenCreateResponse(BaseModel):
+    token: ProjectSettingsToken
+    secret: str
+    message: str = "Copy this token now — it will not be shown again."
+
+
 class ProjectFlowUpdateRequest(BaseModel):
     nodes: list[dict[str, Any]]
     edges: list[dict[str, Any]]
     client_id: str | None = Field(default=None, max_length=64)
+
+
+class ProjectRuntimeServiceSeries(BaseModel):
+    id: str
+    name: str
+    color: str
+    values: list[float] = Field(default_factory=list)
+
+
+class ProjectRuntimeMetricsBlock(BaseModel):
+    labels: list[str] = Field(default_factory=list)
+    cpu: list[ProjectRuntimeServiceSeries] = Field(default_factory=list)
+    memory: list[ProjectRuntimeServiceSeries] = Field(default_factory=list)
+    network: list[ProjectRuntimeServiceSeries] = Field(default_factory=list)
+    disk: list[ProjectRuntimeServiceSeries] = Field(default_factory=list)
+
+
+class ProjectRuntimeState(BaseModel):
+    services_online: int = 0
+    services_total: int = 0
+    nodes: int = 0
+    flow_revision: int = 0
+    host_cpu_percent: float = 0.0
+    host_memory_percent: float = 0.0
+    host_disk_percent: float = 0.0
+    collected_at: str = ""
+
+
+class ProjectRuntimeRecentLog(BaseModel):
+    id: str
+    level: str
+    message: str
+    node_label: str | None = None
+    created_at: str
+
+
+class ProjectRuntimeResponse(BaseModel):
+    project_id: str
+    live: bool = True
+    simulated: bool = False
+    state: ProjectRuntimeState
+    metrics: ProjectRuntimeMetricsBlock
+    recent_logs: list[ProjectRuntimeRecentLog] = Field(default_factory=list)

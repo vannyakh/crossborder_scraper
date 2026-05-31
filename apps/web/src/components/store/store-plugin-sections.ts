@@ -1,4 +1,5 @@
 export type StorePluginSectionId =
+  | 'guide'
   | 'service'
   | 'specification'
   | 'domains'
@@ -14,6 +15,7 @@ export type StorePluginSection = {
 }
 
 export const STORE_SERVICE_SECTIONS: StorePluginSection[] = [
+  { id: 'guide', label: 'Guide' },
   { id: 'service', label: 'Service' },
   { id: 'port', label: 'Port' },
   { id: 'connection', label: 'Connection' },
@@ -23,6 +25,7 @@ export const STORE_SERVICE_SECTIONS: StorePluginSection[] = [
 ]
 
 export const STORE_DATABASE_SECTIONS: StorePluginSection[] = [
+  { id: 'guide', label: 'Guide' },
   { id: 'service', label: 'Service' },
   { id: 'port', label: 'Port' },
   { id: 'connection', label: 'Connection' },
@@ -32,6 +35,7 @@ export const STORE_DATABASE_SECTIONS: StorePluginSection[] = [
 ]
 
 export const STORE_SOURCE_SECTIONS: StorePluginSection[] = [
+  { id: 'guide', label: 'Guide' },
   { id: 'specification', label: 'E-commerce spec' },
   { id: 'domains', label: 'Domains' },
   { id: 'service', label: 'Status' },
@@ -39,13 +43,18 @@ export const STORE_SOURCE_SECTIONS: StorePluginSection[] = [
 
 export function sectionsForPlugin(
   kind?: string,
-  options?: { isDatabase?: boolean },
+  options?: { isDatabase?: boolean; hasGuide?: boolean },
 ): StorePluginSection[] {
+  let sections: StorePluginSection[]
   if (kind === 'source' || kind === 'site') {
-    return STORE_SOURCE_SECTIONS
+    sections = STORE_SOURCE_SECTIONS
+  } else if (options?.isDatabase) {
+    sections = STORE_DATABASE_SECTIONS
+  } else {
+    sections = STORE_SERVICE_SECTIONS
   }
-  if (options?.isDatabase) {
-    return STORE_DATABASE_SECTIONS
+  if (!options?.hasGuide) {
+    sections = sections.filter((section) => section.id !== 'guide')
   }
-  return STORE_SERVICE_SECTIONS
+  return sections
 }

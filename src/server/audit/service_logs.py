@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-LogCategory = Literal["operation", "run", "cron"]
+LogCategory = Literal["operation", "run", "cron", "runtime"]
 
 MAX_LOGS = 500
 
@@ -86,24 +86,58 @@ def count_service_logs() -> dict[str, int]:
     return counts
 
 
+def _entry_matches_needle(entry: dict[str, Any], needle: str) -> bool:
+    meta = entry.get("meta") or {}
+    meta_text = json.dumps(meta, ensure_ascii=False).lower()
+    return (
+        needle in str(entry.get("user", "")).lower()
+        or needle in str(entry.get("operation_type", "")).lower()
+        or needle in str(entry.get("details", "")).lower()
+        or needle in meta_text
+    )
+
+
+def _entry_since(entry: dict[str, Any], since_ms: int) -> bool:
+    created_at = str(entry.get("created_at") or "")
+    try:
+        at_ms = int(datetime.fromisoformat(created_at.replace("Z", "+00:00")).timestamp() * 1000)
+    except ValueError:
+        return True
+    return at_ms >= since_ms
+
+
 def list_service_logs(
     category: LogCategory,
     *,
     q: str = "",
+    project_id: str = "",
+    since: str | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     ensure_logs_file()
     needle = q.strip().lower()
+    project_needle = project_id.strip()
+    since_ms: int | None = None
+    if since:
+        try:
+            since_ms = int(datetime.fromisoformat(since.replace("Z", "+00:00")).timestamp() * 1000)
+        except ValueError:
+            since_ms = None
+
     filtered = [e for e in _read_logs() if e.get("category") == category]
-    if needle:
+    if project_needle:
         filtered = [
             e
             for e in filtered
-            if needle in str(e.get("user", "")).lower()
-            or needle in str(e.get("operation_type", "")).lower()
-            or needle in str(e.get("details", "")).lower()
+            if (e.get("meta") or {}).get("project_id") == project_needle
+            or project_needle in str(e.get("details") or "")
+            or project_needle in str(e.get("operation_type") or "")
         ]
+    if since_ms is not None:
+        filtered = [e for e in filtered if _entry_since(e, since_ms)]
+    if needle:
+        filtered = [e for e in filtered if _entry_matches_needle(e, needle)]
     total = len(filtered)
     page = filtered[offset : offset + limit]
     return page, total

@@ -105,6 +105,11 @@ class GatewaySkillInfo(BaseModel):
     registry_url: str = ""
     installed_at: str = ""
     registry_version: str = ""
+    has_guide: bool = False
+    guide_summary: str = ""
+    category_label: str = ""
+    icon: str = ""
+    module_kind: str | None = None
 
 
 class GatewaySkillListResponse(BaseModel):

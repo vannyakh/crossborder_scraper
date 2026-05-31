@@ -5,13 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from server.projects.derive import bump_flow_revision
-from server.projects.store import (
+from server.projects.flow_store import (
     delete_project,
+    ensure_projects_dir,
     load_all_projects,
     load_project,
     new_project_id,
     save_project,
-    seed_projects_if_empty,
     starter_flow_nodes,
 )
 from server.schemas.projects import (
@@ -24,17 +24,14 @@ from server.schemas.projects import (
 
 
 class ProjectFlowService:
-    def ensure_store(self) -> int:
-        return seed_projects_if_empty()
-
     def list_projects(self) -> list[dict[str, Any]]:
-        self.ensure_store()
+        ensure_projects_dir()
         items = load_all_projects()
         items.sort(key=lambda p: p.get("updated_at") or "", reverse=True)
         return [self._to_summary(p) for p in items]
 
     def get_project(self, project_id: str) -> dict[str, Any] | None:
-        self.ensure_store()
+        ensure_projects_dir()
         record = load_project(project_id)
         if not record:
             return None
@@ -42,15 +39,59 @@ class ProjectFlowService:
 
     def create_project(self, body: ProjectCreateRequest) -> dict[str, Any]:
         nodes, edges = starter_flow_nodes()
+        return self._create_project_record(
+            name=body.name.strip(),
+            environment=body.environment,
+            description=(body.description or "").strip(),
+            nodes=nodes,
+            edges=edges,
+            template_id=None,
+        )
+
+    def create_project_from_flow(
+        self,
+        *,
+        name: str,
+        environment: str,
+        description: str,
+        nodes: list[dict[str, Any]],
+        edges: list[dict[str, Any]],
+        template_id: str | None = None,
+    ) -> dict[str, Any]:
+        return self._create_project_record(
+            name=name,
+            environment=environment,
+            description=description,
+            nodes=nodes,
+            edges=edges,
+            template_id=template_id,
+        )
+
+    def _create_project_record(
+        self,
+        *,
+        name: str,
+        environment: str,
+        description: str,
+        nodes: list[dict[str, Any]],
+        edges: list[dict[str, Any]],
+        template_id: str | None,
+    ) -> dict[str, Any]:
+        from server.projects.settings_store import ensure_project_settings
+
         record: dict[str, Any] = {
-            "id": new_project_id(body.name),
-            "name": body.name.strip(),
-            "environment": body.environment,
-            "description": (body.description or "").strip(),
+            "id": new_project_id(name),
+            "name": name,
+            "environment": environment,
+            "description": description,
             "nodes": nodes,
             "edges": edges,
         }
+        if template_id:
+            record["template_id"] = template_id
+            record["template_source"] = "community"
         saved = save_project(record)
+        ensure_project_settings(saved["id"])
         return self._to_detail(saved)
 
     def update_project(self, project_id: str, body: ProjectUpdateRequest) -> dict[str, Any]:
@@ -67,6 +108,8 @@ class ProjectFlowService:
         return self._to_detail(saved)
 
     def update_flow(self, project_id: str, body: ProjectFlowUpdateRequest) -> dict[str, Any]:
+        from server.services.project_settings_service import sync_inferred_variables
+
         record = load_project(project_id)
         if not record:
             raise ValueError(f"unknown project: {project_id}")
@@ -74,10 +117,21 @@ class ProjectFlowService:
         record["edges"] = body.edges
         record = bump_flow_revision(record)
         saved = save_project(record)
+        sync_inferred_variables(saved)
         return self._to_detail(saved)
 
     def delete_project(self, project_id: str) -> bool:
-        return delete_project(project_id)
+        from server.projects.runtime_log_store import delete_project_runtime_logs
+        from server.projects.runtime_metrics_store import delete_project_runtime_metrics
+        from server.projects.settings_store import delete_project_settings
+
+        ok = delete_project(project_id)
+        if not ok:
+            return False
+        delete_project_settings(project_id)
+        delete_project_runtime_logs(project_id)
+        delete_project_runtime_metrics(project_id)
+        return True
 
     def _to_summary(self, record: dict[str, Any]) -> dict[str, Any]:
         return ProjectSummary(

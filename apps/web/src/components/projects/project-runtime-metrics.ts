@@ -1,5 +1,4 @@
-import type { ProjectDetail } from './project-sample-data'
-import { projectServiceNames } from './project-utils'
+import type { ProjectRuntimeMetricsBlock } from '../../lib/api/types'
 
 export type RuntimeMetricId = 'cpu' | 'memory' | 'network' | 'disk'
 
@@ -18,111 +17,13 @@ export type ProjectRuntimeMetrics = {
   disk: RuntimeServiceSeries[]
 }
 
-const SERIES_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#a855f7', '#06b6d4', '#f97316']
-
-type RuntimeService = {
-  id: string
-  name: string
-  color: string
-}
-
-function hashSeed(input: string): number {
-  let h = 0
-  for (let i = 0; i < input.length; i += 1) h = (h * 31 + input.charCodeAt(i)) | 0
-  return Math.abs(h)
-}
-
-function pseudo(i: number, seed: number): number {
-  const x = Math.sin((i + 1) * 12.9898 + seed * 78.233) * 43758.5453
-  return x - Math.floor(x)
-}
-
-function timeLabels(count: number): string[] {
-  const now = Date.now()
-  const stepMs = 5 * 60 * 1000
-  return Array.from({ length: count }, (_, i) => {
-    const t = now - (count - 1 - i) * stepMs
-    return new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  })
-}
-
-function servicesForProject(project: ProjectDetail): RuntimeService[] {
-  const names = projectServiceNames(project)
-  return names.map((name, index) => ({
-    id: `${project.id}-svc-${index}`,
-    name,
-    color: SERIES_COLORS[index % SERIES_COLORS.length],
-  }))
-}
-
-function cpuSeries(
-  seed: number,
-  services: RuntimeService[],
-  count: number,
-): RuntimeServiceSeries[] {
-  return services.map((svc, sIdx) => ({
-    ...svc,
-    values: Array.from({ length: count }, (_, i) => {
-      const base = 0.05 + sIdx * 0.04
-      const wave = pseudo(i, seed + sIdx) * 0.12
-      return Math.round((base + wave) * 100) / 100
-    }),
-  }))
-}
-
-function memorySeries(
-  seed: number,
-  services: RuntimeService[],
-  count: number,
-): RuntimeServiceSeries[] {
-  return services.map((svc, sIdx) => ({
-    ...svc,
-    values: Array.from({ length: count }, (_, i) => {
-      const isMain = sIdx === 0
-      if (isMain) {
-        const step = Math.floor(i / 4) % 2 === 0 ? 280 : 520
-        return step + Math.round(pseudo(i, seed) * 40)
-      }
-      return 40 + sIdx * 18 + Math.round(pseudo(i, seed + sIdx) * 12)
-    }),
-  }))
-}
-
-function networkSeries(
-  seed: number,
-  services: RuntimeService[],
-  count: number,
-): RuntimeServiceSeries[] {
-  return services.map((svc, sIdx) => ({
-    ...svc,
-    values: Array.from({ length: count }, (_, i) => {
-      const spike = sIdx === 0 && (i === 8 || i === 15)
-      if (spike) return 4 + pseudo(i, seed) * 1.5
-      return Math.round(pseudo(i, seed + sIdx) * 180) / 100
-    }),
-  }))
-}
-
-function diskSeries(services: RuntimeService[]): RuntimeServiceSeries[] {
-  const levels = [1.05, 0.26, 0.04, 0.62, 0.12]
-  return services.map((svc, sIdx) => ({
-    ...svc,
-    values: Array.from({ length: 24 }, () => levels[sIdx % levels.length]),
-  }))
-}
-
-export function buildProjectRuntimeMetrics(project: ProjectDetail): ProjectRuntimeMetrics {
-  const seed = hashSeed(project.id)
-  const services = servicesForProject(project)
-  const count = 24
-  const labels = timeLabels(count)
-
+export function mapProjectRuntimeMetrics(block: ProjectRuntimeMetricsBlock): ProjectRuntimeMetrics {
   return {
-    labels,
-    cpu: cpuSeries(seed, services, count),
-    memory: memorySeries(seed, services, count),
-    network: networkSeries(seed, services, count),
-    disk: diskSeries(services),
+    labels: block.labels,
+    cpu: block.cpu,
+    memory: block.memory,
+    network: block.network,
+    disk: block.disk,
   }
 }
 

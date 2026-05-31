@@ -24,6 +24,20 @@ class PluginProfileSelectOption(BaseModel):
     label: str
 
 
+PluginProfileFieldBind = Literal["label", "subtitle", "host", "detail", "agentPrompt"]
+PluginProfileFieldResolve = Literal[
+    "label",
+    "subtitle",
+    "host",
+    "detail",
+    "id",
+    "kind",
+    "role",
+    "status",
+    "image",
+]
+
+
 class PluginProfileField(BaseModel):
     id: str
     key: str
@@ -33,6 +47,9 @@ class PluginProfileField(BaseModel):
     default: Any | None = None
     placeholder: str | None = None
     hint: str | None = None
+    bind: PluginProfileFieldBind | None = None
+    resolve: PluginProfileFieldResolve | None = None
+    rows: int | None = None
     options: list[PluginProfileSelectOption] = Field(default_factory=list)
 
 
@@ -62,6 +79,7 @@ class PluginProfile(BaseModel):
     plugin_id: str | None = None
     node_kinds: list[str] = Field(default_factory=list)
     slot_index: int | None = None
+    parameters_layout: Literal["default", "agent-slots"] | None = None
     tabs: list[PluginProfileTab] = Field(default_factory=list)
     sections: list[PluginProfileSection] = Field(default_factory=list)
     variable_keys: list[PluginVariableKey] = Field(default_factory=list)

@@ -40,6 +40,8 @@ export const queryKeys = {
   serviceSupport: ['service', 'support'] as const,
   panelGuides: (category?: string) => ['guides', category ?? 'all'] as const,
   panelGuide: (id: string) => ['guides', id] as const,
+  moduleMeta: ['modules', 'meta'] as const,
+  moduleProfile: (id: string) => ['modules', id] as const,
   networkAccess: ['deploy', 'network'] as const,
   panelSecurity: ['deploy', 'security'] as const,
   proxyStatus: ['config', 'proxy', 'status'] as const,
@@ -63,8 +65,12 @@ export const queryKeys = {
   vhostSites: ['vhost', 'sites'] as const,
   projectsList: ['projects', 'list'] as const,
   projectsPresence: ['projects', 'presence'] as const,
-  projectLogs: (projectId: string, category: string, q: string, limit: number) =>
-    ['projects', projectId, 'logs', category, q, limit] as const,
+  projectLogs: (projectId: string, category: string, q: string, limit: number, since?: string) =>
+    ['projects', projectId, 'logs', category, q, limit, since ?? ''] as const,
   project: (id: string) => ['projects', id] as const,
+  projectTemplates: (category?: string) => ['projects', 'templates', category ?? 'all'] as const,
+  projectTemplate: (id: string) => ['projects', 'templates', id] as const,
+  projectRuntime: (projectId: string) => ['projects', projectId, 'runtime'] as const,
+  projectSettings: (projectId: string) => ['projects', projectId, 'settings'] as const,
   pluginProfiles: ['projects', 'plugin-profiles'] as const,
 }

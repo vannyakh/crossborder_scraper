@@ -1,0 +1,103 @@
+{
+  "id": "batch-scrape-pipeline",
+  "name": "Batch scrape pipeline",
+  "summary": "Schedule trigger → batch scrape URLs → condition gate → export or notify.",
+  "description": "Submit a URL batch on a schedule, branch on success, then export listings or send a failure alert.",
+  "category": "scrape",
+  "category_label": "Scrape pipeline",
+  "tags": ["batch", "scrape", "condition", "export"],
+  "author": "Cross-Border",
+  "featured": false,
+  "nodes": [
+    {
+      "id": "tpl-schedule-1",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "Nightly batch",
+      "subtitle": "cron: 0 2 * * *",
+      "status": "online",
+      "x": 60,
+      "y": 200
+    },
+    {
+      "id": "tpl-scrape-1",
+      "kind": "scrape",
+      "role": "action",
+      "label": "Batch scrape",
+      "subtitle": "Taobao",
+      "pluginId": "taobao",
+      "pluginProfile": "scraper-taobao",
+      "status": "online",
+      "options": {
+        "plugin_id": "taobao",
+        "batch_mode": true,
+        "ai_extraction": true
+      },
+      "x": 260,
+      "y": 200
+    },
+    {
+      "id": "tpl-condition-1",
+      "kind": "condition",
+      "role": "action",
+      "label": "Batch OK?",
+      "subtitle": "success rate > 80%",
+      "status": "online",
+      "x": 460,
+      "y": 200
+    },
+    {
+      "id": "tpl-export-1",
+      "kind": "export",
+      "role": "action",
+      "label": "Export winners",
+      "subtitle": "Marketplace dry-run",
+      "status": "online",
+      "options": {
+        "dryRun": true
+      },
+      "x": 660,
+      "y": 120
+    },
+    {
+      "id": "tpl-notify-1",
+      "kind": "notify",
+      "role": "action",
+      "label": "Alert on failure",
+      "subtitle": "Telegram alert",
+      "status": "online",
+      "options": {
+        "channel": "telegram",
+        "level": "error"
+      },
+      "x": 660,
+      "y": 280
+    }
+  ],
+  "edges": [
+    {
+      "id": "tpl-e-schedule-scrape",
+      "from": "tpl-schedule-1",
+      "to": "tpl-scrape-1",
+      "kind": "main"
+    },
+    {
+      "id": "tpl-e-scrape-condition",
+      "from": "tpl-scrape-1",
+      "to": "tpl-condition-1",
+      "kind": "main"
+    },
+    {
+      "id": "tpl-e-condition-export",
+      "from": "tpl-condition-1",
+      "to": "tpl-export-1",
+      "kind": "main"
+    },
+    {
+      "id": "tpl-e-condition-notify",
+      "from": "tpl-condition-1",
+      "to": "tpl-notify-1",
+      "kind": "main"
+    }
+  ]
+}

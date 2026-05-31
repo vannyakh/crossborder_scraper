@@ -22,32 +22,53 @@ import { notifySuccess } from '../../lib/toast'
 import { EChart } from '../charts/EChart'
 import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
 import { ProjectObservabilityHeader } from './ProjectObservabilityHeader'
+import { ProjectLogsPanelSkeleton } from './project-observe-skeletons'
 import {
-  countLogSeverity,
+  countLogErrors,
   formatLogPayload,
   logSeverityLabelKey,
 } from './project-observability-utils'
 import { logHistogramOption } from './project-logs-chart'
-import { mapServiceLogsToProjectLogs, projectLogsTimezoneLabel } from './project-logs-mapper'
+import {
+  mapServiceLogsToProjectLogs,
+  projectLogsTimezoneLabel,
+  sinceIsoForLogRange,
+} from './project-logs-mapper'
 import {
   buildLogHistogram,
   filterLogsByHistogramBrush,
-  filterLogsByQuery,
-  filterLogsByRange,
   formatHistogramBrushLabel,
   formatProjectLogTime,
+  LOG_TIME_RANGE_MS,
   type LogHistogramBrush,
   type LogTimeRangeId,
   type ProjectLogEntry,
+  type ProjectLogSeverity,
 } from './project-logs-sample'
 
 const HISTOGRAM_HEIGHT = '118px'
+const SEARCH_DEBOUNCE_MS = 350
 
 const LOG_CATEGORIES: { id: LogCategory; labelKey: string }[] = [
+  { id: 'runtime', labelKey: 'projects.logs.categoryRuntime' },
   { id: 'operation', labelKey: 'projects.logs.categoryOperation' },
   { id: 'run', labelKey: 'projects.logs.categoryRun' },
   { id: 'cron', labelKey: 'projects.logs.categoryCron' },
 ]
+
+function severityPalette(severity: ProjectLogSeverity): string {
+  if (severity === 'error') return 'red'
+  if (severity === 'warn') return 'orange'
+  if (severity === 'success') return 'green'
+  if (severity === 'debug') return 'gray'
+  return 'blue'
+}
+
+function rowClass(severity: ProjectLogSeverity): string | undefined {
+  if (severity === 'error') return 'project-logs-row--error'
+  if (severity === 'warn') return 'project-logs-row--warn'
+  return undefined
+}
 
 export function ProjectLogsPanel() {
   const { t } = useLocale()
@@ -57,40 +78,50 @@ export function ProjectLogsPanel() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const timezoneLabel = useMemo(() => projectLogsTimezoneLabel(), [])
 
-  const [category, setCategory] = useState<LogCategory>('operation')
+  const [category, setCategory] = useState<LogCategory>('runtime')
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [range, setRange] = useState<LogTimeRangeId>('15m')
   const [paused, setPaused] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [brush, setBrush] = useState<LogHistogramBrush | null>(null)
   const [brushPercent, setBrushPercent] = useState({ start: 0, end: 100 })
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query)
+      setBrush(null)
+      setBrushPercent({ start: 0, end: 100 })
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(timer)
+  }, [query])
+
+  const since = useMemo(() => sinceIsoForLogRange(LOG_TIME_RANGE_MS[range]), [range])
+
   const { data, isLoading, isError, isFetching } = useProjectLogsQuery({
     projectId: project.id,
     category,
+    q: debouncedQuery,
+    since,
     limit: 200,
     paused,
   })
 
-  const entries = useMemo(() => mapServiceLogsToProjectLogs(data?.items ?? []), [data?.items])
+  const entries = useMemo(
+    () => mapServiceLogsToProjectLogs(data?.items ?? [], category),
+    [category, data?.items],
+  )
 
-  useEffect(() => {
-    setBrush(null)
-    setBrushPercent({ start: 0, end: 100 })
-  }, [range, category])
-
-  const rangedEntries = useMemo(() => filterLogsByRange(entries, range), [entries, range])
-
-  const histogram = useMemo(() => buildLogHistogram(rangedEntries, range), [rangedEntries, range])
+  const histogram = useMemo(() => buildLogHistogram(entries, range), [entries, range])
 
   const brushFiltered = useMemo(() => {
-    if (!brush || histogram.length === 0) return rangedEntries
-    return filterLogsByHistogramBrush(rangedEntries, histogram, brush)
-  }, [brush, histogram, rangedEntries])
+    if (!brush || histogram.length === 0) return entries
+    return filterLogsByHistogramBrush(entries, histogram, brush)
+  }, [brush, entries, histogram])
 
-  const filtered = useMemo(() => filterLogsByQuery(brushFiltered, query), [brushFiltered, query])
+  const filtered = brushFiltered
 
-  const errorCount = useMemo(() => countLogSeverity(filtered, 'error'), [filtered])
+  const errorCount = useMemo(() => countLogErrors(filtered), [filtered])
   const infoCount = filtered.length - errorCount
 
   const brushLabel = useMemo(() => {
@@ -154,6 +185,12 @@ export function ProjectLogsPanel() {
   }, [category, filtered, project.id, t])
 
   const live = Boolean(data) && !isError
+  const serviceColumnKey =
+    category === 'runtime' ? 'projects.logs.colNode' : 'projects.logs.colService'
+
+  if (isLoading) {
+    return <ProjectLogsPanelSkeleton label={t('projects.logs.loading')} />
+  }
 
   return (
     <Box className="project-logs-panel" flex={1} minH={0} display="flex" flexDirection="column">
@@ -184,7 +221,10 @@ export function ProjectLogsPanel() {
       >
         <Tabs.Root
           value={category}
-          onValueChange={(details) => setCategory(details.value as LogCategory)}
+          onValueChange={(details) => {
+            setCategory(details.value as LogCategory)
+            clearBrush()
+          }}
           mb={3}
         >
           <Tabs.List className="project-logs-tabs">
@@ -214,7 +254,10 @@ export function ProjectLogsPanel() {
             <NativeSelect.Root size="sm" width={{ base: 'full', sm: '9.5rem' }} flexShrink={0}>
               <NativeSelect.Field
                 value={range}
-                onChange={(e) => setRange(e.target.value as LogTimeRangeId)}
+                onChange={(e) => {
+                  setRange(e.target.value as LogTimeRangeId)
+                  clearBrush()
+                }}
               >
                 <option value="15m">{t('projects.logs.range15m')}</option>
                 <option value="1h">{t('projects.logs.range1h')}</option>
@@ -331,20 +374,12 @@ export function ProjectLogsPanel() {
                   <Table.ColumnHeader w="10.5rem" whiteSpace="nowrap">
                     {t('projects.logs.colTime', { tz: timezoneLabel })}
                   </Table.ColumnHeader>
-                  <Table.ColumnHeader w="7.5rem">
-                    {t('projects.logs.colService')}
-                  </Table.ColumnHeader>
+                  <Table.ColumnHeader w="7.5rem">{t(serviceColumnKey)}</Table.ColumnHeader>
                   <Table.ColumnHeader>{t('projects.logs.colData')}</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {isLoading ? (
-                  <Table.Row>
-                    <Table.Cell colSpan={4} py={10} textAlign="center">
-                      <Spinner size="sm" color="fg.muted" />
-                    </Table.Cell>
-                  </Table.Row>
-                ) : isError ? (
+                {isError ? (
                   <Table.Row>
                     <Table.Cell colSpan={4} py={10} textAlign="center">
                       <Text color="red.300" fontSize="sm">
@@ -402,22 +437,15 @@ export function ProjectLogsPanel() {
 
 function LogRow({ row }: { row: ProjectLogEntry }) {
   const { t } = useLocale()
-  const isError = row.severity === 'error'
-  const isWarn = row.severity === 'warn'
   const message = formatLogPayload(row.data)
 
   return (
-    <Table.Row
-      className={
-        isError ? 'project-logs-row--error' : isWarn ? 'project-logs-row--warn' : undefined
-      }
-      verticalAlign="top"
-    >
+    <Table.Row className={rowClass(row.severity)} verticalAlign="top">
       <Table.Cell py={2}>
         <Badge
           size="sm"
           variant="subtle"
-          colorPalette={isError ? 'red' : isWarn ? 'orange' : 'blue'}
+          colorPalette={severityPalette(row.severity)}
           textTransform="none"
         >
           {t(logSeverityLabelKey(row.severity))}

@@ -6,11 +6,14 @@ import asyncio
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import WebSocket
 
 from server.core.events import ws_message
+
+if TYPE_CHECKING:
+    from server.projects.collaboration_redis import RedisCollaborationRelay
 
 
 @dataclass
@@ -29,9 +32,13 @@ class ProjectRoom:
 class ProjectCollaborationHub:
     """One room per project id — broadcasts flow updates and selection presence."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, redis_relay: RedisCollaborationRelay | None = None) -> None:
         self._rooms: dict[str, ProjectRoom] = {}
         self._lock = asyncio.Lock()
+        self._redis_relay = redis_relay
+
+    def attach_redis_relay(self, relay: RedisCollaborationRelay) -> None:
+        self._redis_relay = relay
 
     def _room(self, project_id: str) -> ProjectRoom:
         return self._rooms.setdefault(project_id, ProjectRoom())
@@ -59,6 +66,37 @@ class ProjectCollaborationHub:
             if room.clients
         ]
 
+    async def presence_items_merged(self) -> list[dict[str, Any]]:
+        """Local rooms merged with Redis presence when a relay is configured."""
+        merged: dict[str, dict[str, dict[str, Any]]] = {}
+        for row in self.presence_items():
+            project_id = str(row["project_id"])
+            bucket = merged.setdefault(project_id, {})
+            for guest in row["guests"]:
+                client_id = str(guest.get("client_id") or "")
+                if client_id:
+                    bucket[client_id] = guest
+
+        if self._redis_relay:
+            for row in await self._redis_relay.remote_presence_items():
+                project_id = str(row["project_id"])
+                bucket = merged.setdefault(project_id, {})
+                for guest in row.get("guests") or []:
+                    client_id = str(guest.get("client_id") or "")
+                    if client_id and client_id not in bucket:
+                        bucket[client_id] = guest
+
+        return [
+            {"project_id": project_id, "guests": list(guests.values())}
+            for project_id, guests in merged.items()
+            if guests
+        ]
+
+    async def _sync_presence(self, project_id: str) -> None:
+        if not self._redis_relay:
+            return
+        await self._redis_relay.sync_presence(project_id, self.peers_payload(project_id))
+
     async def join(
         self,
         project_id: str,
@@ -74,6 +112,7 @@ class ProjectCollaborationHub:
                 username=username,
                 websocket=websocket,
             )
+        await self._sync_presence(project_id)
         await self.broadcast(project_id, "peers", {"peers": self.peers_payload(project_id)})
 
     async def leave(self, project_id: str, client_id: str) -> None:
@@ -82,9 +121,12 @@ class ProjectCollaborationHub:
             if not room:
                 return
             room.clients.pop(client_id, None)
-            if not room.clients:
+            empty = not room.clients
+            if empty:
                 self._rooms.pop(project_id, None)
-                return
+        await self._sync_presence(project_id)
+        if empty:
+            return
         await self.broadcast(project_id, "peers", {"peers": self.peers_payload(project_id)})
 
     async def set_selection(
@@ -103,6 +145,7 @@ class ProjectCollaborationHub:
                 return
             client.selected_node_id = node_id
             username = client.username
+        await self._sync_presence(project_id)
         await self.broadcast(
             project_id,
             "selection",
@@ -148,7 +191,45 @@ class ProjectCollaborationHub:
             exclude_client_id=client_id,
         )
 
+    async def deliver_remote(
+        self,
+        project_id: str,
+        event_type: str,
+        data: dict[str, Any],
+        *,
+        exclude_client_id: str | None = None,
+    ) -> None:
+        """Apply an event from another panel instance without re-publishing to Redis."""
+        await self._broadcast_local(
+            project_id,
+            event_type,
+            data,
+            exclude_client_id=exclude_client_id,
+        )
+
     async def broadcast(
+        self,
+        project_id: str,
+        event_type: str,
+        data: dict[str, Any],
+        *,
+        exclude_client_id: str | None = None,
+    ) -> None:
+        await self._broadcast_local(
+            project_id,
+            event_type,
+            data,
+            exclude_client_id=exclude_client_id,
+        )
+        if self._redis_relay:
+            await self._redis_relay.publish(
+                project_id,
+                event_type,
+                data,
+                exclude_client_id=exclude_client_id,
+            )
+
+    async def _broadcast_local(
         self,
         project_id: str,
         event_type: str,
@@ -225,6 +306,7 @@ class ProjectCollaborationHub:
 
 
 _hub: ProjectCollaborationHub | None = None
+_redis_relay: RedisCollaborationRelay | None = None
 
 
 def get_project_collaboration_hub() -> ProjectCollaborationHub:
@@ -232,6 +314,33 @@ def get_project_collaboration_hub() -> ProjectCollaborationHub:
     if _hub is None:
         _hub = ProjectCollaborationHub()
     return _hub
+
+
+async def start_project_collaboration_hub() -> None:
+    """Attach Redis pub/sub relay when ``CROSSBORDER_PROJECT_COLLAB_REDIS_URL`` is set."""
+    global _redis_relay
+    from config import get_settings
+
+    settings = get_settings()
+    url = (settings.project_collab_redis_url or "").strip()
+    if not url or _redis_relay is not None:
+        return
+
+    from server.projects.collaboration_redis import create_redis_relay
+
+    hub = get_project_collaboration_hub()
+    relay = create_redis_relay(url, hub)
+    hub.attach_redis_relay(relay)
+    await relay.start()
+    _redis_relay = relay
+
+
+async def stop_project_collaboration_hub() -> None:
+    global _redis_relay
+    if _redis_relay is None:
+        return
+    await _redis_relay.stop()
+    _redis_relay = None
 
 
 def new_client_id() -> str:

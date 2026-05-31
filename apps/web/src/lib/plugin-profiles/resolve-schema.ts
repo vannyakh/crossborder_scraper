@@ -50,14 +50,24 @@ function mapProfileField(field: PluginProfileField): ProjectConfigField {
     labelKey: `pluginProfile.field.${field.key}`,
     labelText: field.label,
     type: mapFieldType(field.type),
-    optionKey: field.key,
-    editable: true,
+    editable: !field.resolve,
+  }
+  if (field.bind) {
+    mapped.bind = field.bind
+  } else if (!field.resolve) {
+    mapped.optionKey = field.key
+  }
+  if (field.resolve) {
+    mapped.resolve = field.resolve
   }
   if (field.placeholder) {
     mapped.placeholderText = field.placeholder
   }
   if (field.hint) {
     mapped.hintText = field.hint
+  }
+  if (field.rows) {
+    mapped.rows = field.rows
   }
   if (field.options?.length) {
     mapped.options = field.options.map((opt) => ({
@@ -73,6 +83,7 @@ export function profileToNodeSchema(profile: PluginProfile): NodeConfigSchema {
   const defaultTab = (profile.tabs[0]?.id ?? 'parameters') as ProjectConfigTabId
   return {
     defaultTab,
+    parametersLayout: profile.parameters_layout ?? undefined,
     tabs: profile.tabs.map((tab) => ({
       id: tab.id as ProjectConfigTabId,
       labelKey: PROFILE_TAB_LABEL_KEYS[tab.id] ?? 'projects.config.tabs.parameters',
@@ -109,6 +120,18 @@ export function resolvePluginProfileId(
     }
     return 'scraper-source'
   }
+
+  if (node.kind === 'agent' && slot === null) {
+    return 'flow-agent'
+  }
+
+  const flowProfile = profiles.find(
+    (profile) =>
+      profile.slot_index == null &&
+      profile.node_kinds.includes(node.kind) &&
+      profile.id.startsWith('flow-'),
+  )
+  if (flowProfile) return flowProfile.id
 
   return null
 }

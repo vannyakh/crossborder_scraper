@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+_DERIVED_KEYS = frozenset({"preview_nodes", "preview_edges", "services_online", "services_total"})
+
 
 def count_service_health(nodes: list[dict[str, Any]]) -> dict[str, int]:
     services = [n for n in nodes if n.get("role") not in ("config", "trigger")]
@@ -69,13 +71,23 @@ def build_preview(
     return {"preview_nodes": preview_nodes, "preview_edges": preview_edges}
 
 
-def finalize_project(record: dict[str, Any]) -> dict[str, Any]:
+def apply_derived_fields(record: dict[str, Any]) -> dict[str, Any]:
+    """Compute preview + service health at read time (not required on disk)."""
     nodes = record.get("nodes") or []
     edges = record.get("edges") or []
     health = count_service_health(nodes)
     preview = build_preview(nodes, edges)
     revision = int(record.get("flow_revision") or 0)
     return {**record, **health, **preview, "flow_revision": revision}
+
+
+def strip_derived_fields(record: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in record.items() if key not in _DERIVED_KEYS}
+
+
+def finalize_project(record: dict[str, Any]) -> dict[str, Any]:
+    """Return record with derived fields for API responses."""
+    return apply_derived_fields(record)
 
 
 def bump_flow_revision(record: dict[str, Any]) -> dict[str, Any]:

@@ -21,6 +21,7 @@ from deploy.drivers import install as driver_install
 from deploy.drivers.registry import docker_image_for, get_driver_spec
 from server.app_store import catalog, docker, probes, state
 from server.app_store.catalog import StorePluginDefinition, get_plugin, list_catalog
+from server.module_profiles import enrich_catalog_row
 
 
 def _port_free(port: int, host: str = "127.0.0.1") -> bool:
@@ -70,14 +71,13 @@ class StoreManager:
         for entry in list_catalog():
             pid = entry["id"]
             inst = installed.get(pid)
-            items.append(
-                {
-                    **entry,
-                    "installed": inst is not None,
-                    "status": inst.get("status") if inst else "not_installed",
-                    "mode": inst.get("mode") if inst else None,
-                }
-            )
+            row = {
+                **entry,
+                "installed": inst is not None,
+                "status": inst.get("status") if inst else "not_installed",
+                "mode": inst.get("mode") if inst else None,
+            }
+            items.append(enrich_catalog_row(row, expected_kind="store_service"))
         for entry in list_source_catalog(installed_ids=set(installed.keys())):
             pid = entry["id"]
             inst = installed.get(pid)
@@ -85,7 +85,7 @@ class StoreManager:
             if inst:
                 row["status"] = inst.get("status") or row.get("status")
                 row["mode"] = inst.get("mode")
-            items.append(row)
+            items.append(enrich_catalog_row(row, expected_kind="source_plugin"))
         return items
 
     def list_installed(self) -> list[dict[str, Any]]:
@@ -101,7 +101,7 @@ class StoreManager:
             if inst:
                 installation = self._public_installed(plugin_id, inst)
                 catalog_row = {**catalog_row, "installation": installation}
-            return catalog_row
+            return enrich_catalog_row(catalog_row, expected_kind="source_plugin")
 
         installed_spec = get_installed_spec(plugin_id)
         if installed_spec:
@@ -113,7 +113,7 @@ class StoreManager:
             row["domains"] = list(installed_spec.manifest.domains)
             if inst:
                 row["installation"] = self._public_installed(plugin_id, inst)
-            return row
+            return enrich_catalog_row(row)
 
         source = get_source_spec(plugin_id)
         if source:
@@ -126,7 +126,7 @@ class StoreManager:
             catalog_item["installed"] = inst is not None
             if inst:
                 catalog_item["installation"] = self._public_installed(plugin_id, inst)
-            return catalog_item
+            return enrich_catalog_row(catalog_item, expected_kind="source_plugin")
 
         plugin = self._require_plugin(plugin_id)
         inst = state.get_installed(plugin_id)
@@ -134,7 +134,7 @@ class StoreManager:
         catalog_item["installed"] = inst is not None
         if inst:
             catalog_item["installation"] = self._public_installed(plugin_id, inst)
-        return catalog_item
+        return enrich_catalog_row(catalog_item, expected_kind="store_service")
 
     async def enable_source(self, plugin_id: str) -> dict[str, Any]:
         spec = get_source_spec(plugin_id)

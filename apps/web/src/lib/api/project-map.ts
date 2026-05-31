@@ -23,6 +23,39 @@ export type ApiProjectList = {
   total: number
 }
 
+export type ApiProjectTemplateSummary = {
+  id: string
+  name: string
+  summary: string
+  category: string
+  category_label: string
+  tags: string[]
+  author: string
+  featured: boolean
+  node_count: number
+  preview_nodes: ProjectDetail['previewNodes']
+  preview_edges: ProjectDetail['previewEdges']
+  source_path: string
+}
+
+export type ApiProjectTemplateDetail = ApiProjectTemplateSummary & {
+  description: string
+  nodes: ProjectDetail['nodes']
+  edges: ProjectDetail['edges']
+}
+
+export type ApiProjectTemplateList = {
+  items: ApiProjectTemplateSummary[]
+  categories: Array<{ id: string; label: string; count: number }>
+  total: number
+}
+
+export type ApiProjectTemplateUseResponse = {
+  template_id: string
+  template_name: string
+  project: ApiProjectDetail
+}
+
 export function mapProjectDetail(raw: ApiProjectDetail): ProjectDetail {
   return {
     id: raw.id,

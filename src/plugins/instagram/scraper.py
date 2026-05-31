@@ -1,16 +1,6 @@
 from core.models import SourcePlatform
-from core.plugins import PLUGIN_SPECS, SocialPageScraper, SourcePluginManifest
-
-MANIFEST = SourcePluginManifest(
-    id="instagram",
-    name="Instagram",
-    category="social",
-    description="Scrape public Instagram posts and reels via Open Graph metadata.",
-    version="0.1.0",
-    domains=("instagram.com",),
-    tags=("social", "meta", "og"),
-    scrape_spec=PLUGIN_SPECS["instagram"],
-)
+from core.plugins.base import SocialPageScraper
+from plugins.instagram.manifest import MANIFEST
 
 
 class InstagramScraper(SocialPageScraper):

@@ -1,3 +1,6 @@
-from plugins.taobao.plugin import MANIFEST, TaobaoScraper
+from plugins.taobao.manifest import FLOW_NODE, MANIFEST, SCRAPE_SPEC
+from plugins.taobao.scraper import TaobaoScraper
 
-__all__ = ["TaobaoScraper", "MANIFEST"]
+SCRAPER = TaobaoScraper
+
+__all__ = ["FLOW_NODE", "MANIFEST", "SCRAPE_SPEC", "SCRAPER", "TaobaoScraper"]

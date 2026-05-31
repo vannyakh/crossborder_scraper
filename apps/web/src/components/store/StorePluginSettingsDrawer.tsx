@@ -31,6 +31,7 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { PluginScrapeSpecPanel } from './PluginScrapeSpecPanel'
 import { sectionsForPlugin, type StorePluginSectionId } from './store-plugin-sections'
 import { pluginIcon, statusTone } from './store-utils'
+import { ModuleGuidePanel } from '../modules/ModuleGuidePanel'
 
 function isDatabaseService(item?: StoreCatalogItem | null): boolean {
   if (!item) return false
@@ -111,15 +112,22 @@ export function StorePluginSettingsDrawer({
   const kind = merged?.kind
   const scrapePlugin = isScrapePlugin(merged)
   const isDbService = isDatabaseService(merged)
-  const navSections = sectionsForPlugin(kind, { isDatabase: isDbService })
+  const navSections = sectionsForPlugin(kind, {
+    isDatabase: isDbService,
+    hasGuide: merged?.has_guide,
+  })
   const managedQuery = useManagedDatabaseQuery(pluginId, open && isDbService)
-  const defaultSection: StorePluginSectionId = scrapePlugin ? 'specification' : 'service'
+  const defaultSection: StorePluginSectionId = merged?.has_guide
+    ? 'guide'
+    : scrapePlugin
+      ? 'specification'
+      : 'service'
   const [section, setSection] = useState<StorePluginSectionId>(defaultSection)
   const [watchDaemon, setWatchDaemon] = useState(true)
 
   const installation = detail.data?.installation
   const name = merged?.name ?? installation?.name ?? pluginId ?? 'Plugin'
-  const Icon = pluginIcon(pluginId ?? '')
+  const Icon = pluginIcon(pluginId ?? '', merged?.icon)
   const busy = lifecycleMutation.isPending || refreshMutation.isPending
   const isManaged = installation?.mode === 'docker' || installation?.mode === 'native'
   const status = installation?.status ?? merged?.status ?? 'unknown'
@@ -131,13 +139,13 @@ export function StorePluginSettingsDrawer({
 
   useEffect(() => {
     if (open && pluginId) {
-      setSection(scrapePlugin ? 'specification' : 'service')
+      setSection(merged?.has_guide ? 'guide' : scrapePlugin ? 'specification' : 'service')
       if (!scrapePlugin) {
         void refreshMutation.mutateAsync(pluginId)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when drawer opens (services only)
-  }, [open, pluginId, scrapePlugin])
+  }, [open, pluginId, scrapePlugin, merged?.has_guide])
 
   async function runLifecycle(action: 'start' | 'stop' | 'restart') {
     if (!pluginId) return
@@ -151,6 +159,9 @@ export function StorePluginSettingsDrawer({
     }
 
     switch (section) {
+      case 'guide':
+        return <ModuleGuidePanel moduleId={pluginId} />
+
       case 'specification':
         if (!scrapeSpec) {
           return <DataListEmpty>No scrape specification for this plugin.</DataListEmpty>

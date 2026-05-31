@@ -1,6 +1,7 @@
 import { Avatar, Badge, HStack, Text } from '@chakra-ui/react'
 import { Tooltip } from '@/components/ui/tooltip'
 import {
+  formatCollaboratorDisplayName,
   peerAccentColor,
   peerInitials,
   type ProjectPresenceGuest,
@@ -31,29 +32,32 @@ export function ProjectActiveGuests({ guests, compact = false }: ProjectActiveGu
         {t('projects.collaboration.guestsActive', { count: String(guests.length) })}
       </Badge>
       <HStack className="project-collaborators__stack" gap={0}>
-        {visible.map((guest) => (
-          <Tooltip
-            key={guest.clientId}
-            content={t('projects.collaboration.peerFocus', { name: guest.username })}
-          >
-            <Avatar.Root
-              size="2xs"
-              borderWidth="2px"
-              borderColor={peerAccentColor(guest.clientId)}
-              aria-label={guest.username}
+        {visible.map((guest) => {
+          const displayName = formatCollaboratorDisplayName(guest.username)
+          return (
+            <Tooltip
+              key={guest.clientId}
+              content={t('projects.collaboration.peerFocus', { name: displayName })}
             >
-              <Avatar.Fallback
-                name={guest.username}
-                bg={peerAccentColor(guest.clientId)}
-                color="white"
-                fontSize="2xs"
-                fontWeight="bold"
+              <Avatar.Root
+                size="2xs"
+                borderWidth="2px"
+                borderColor={peerAccentColor(guest.clientId)}
+                aria-label={displayName}
               >
-                {peerInitials(guest.username)}
-              </Avatar.Fallback>
-            </Avatar.Root>
-          </Tooltip>
-        ))}
+                <Avatar.Fallback
+                  name={displayName}
+                  bg={peerAccentColor(guest.clientId)}
+                  color="white"
+                  fontSize="2xs"
+                  fontWeight="bold"
+                >
+                  {peerInitials(displayName)}
+                </Avatar.Fallback>
+              </Avatar.Root>
+            </Tooltip>
+          )
+        })}
         {extra > 0 ? (
           <Text fontSize="2xs" color="fg.muted" pl={0.5}>
             +{extra}

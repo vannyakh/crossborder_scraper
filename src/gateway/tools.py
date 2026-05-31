@@ -73,6 +73,79 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "parameters": {"type": "object", "properties": {}},
     },
     {
+        "name": "project_runtime_status",
+        "description": (
+            "Get live runtime metrics, service health, and recent flow logs for a project canvas."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "project_id": {
+                    "type": "string",
+                    "description": "Project id (slug from /projects list)",
+                },
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "project_settings",
+        "description": (
+            "Get project settings — visibility, variables, tokens, members, and integrate channels."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "project_id": {
+                    "type": "string",
+                    "description": "Project id from /projects list",
+                },
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "list_projects",
+        "description": (
+            "List flow canvas projects on the panel (id, name, environment, node count)."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "list_project_templates",
+        "description": "List community workflow templates available for new projects.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "description": "Optional category filter (gateway, scrape, catalog, …)",
+                },
+            },
+        },
+    },
+    {
+        "name": "use_project_template",
+        "description": "Create a new project from a community template id.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "template_id": {
+                    "type": "string",
+                    "description": "Template id from list_project_templates",
+                },
+                "name": {"type": "string", "description": "Optional project name override"},
+                "environment": {
+                    "type": "string",
+                    "enum": ["development", "staging", "production"],
+                    "description": "Deploy environment (default development)",
+                },
+                "description": {"type": "string", "description": "Optional project description"},
+            },
+            "required": ["template_id"],
+        },
+    },
+    {
         "name": "network_access_status",
         "description": (
             "Panel TCP bind, host firewall (ufw/firewalld), and cloud security group checklist."
@@ -403,6 +476,11 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "list_marketplaces": _list_marketplaces,
         "submit_batch": _submit_batch,
         "runtime_status": _runtime_status,
+        "project_runtime_status": _project_runtime_status,
+        "project_settings": _project_settings,
+        "list_projects": _list_projects,
+        "list_project_templates": _list_project_templates,
+        "use_project_template": _use_project_template,
         "network_access_status": _network_access_status,
         "apply_panel_firewall": _apply_panel_firewall,
         "setup_network_access": _setup_network_access,
@@ -517,6 +595,79 @@ async def _runtime_status(_manager: Any) -> dict[str, Any]:
     from server.services.runtime import get_service_runtime
 
     return get_service_runtime()
+
+
+async def _project_runtime_status(_manager: Any, *, project_id: str) -> dict[str, Any]:
+    from server.services.project_service import get_project_service
+
+    svc = get_project_service()
+    record = svc.get_project(project_id.strip())
+    if not record:
+        return {"ok": False, "error": f"project not found: {project_id}"}
+    payload = svc.get_runtime(record)
+    return {"ok": True, **payload}
+
+
+async def _project_settings(_manager: Any, *, project_id: str) -> dict[str, Any]:
+    from server.services.project_service import get_project_service
+
+    svc = get_project_service()
+    record = svc.get_project(project_id.strip())
+    if not record:
+        return {"ok": False, "error": f"project not found: {project_id}"}
+    payload = svc.build_settings(record)
+    return {"ok": True, **payload}
+
+
+async def _list_projects(_manager: Any) -> dict[str, Any]:
+    from server.services.project_service import get_project_service
+
+    rows = get_project_service().list_projects()
+    items = [
+        {
+            "id": row.get("id"),
+            "name": row.get("name"),
+            "environment": row.get("environment"),
+            "nodes": len(row.get("nodes") or []),
+            "updated_at": row.get("updated_at"),
+        }
+        for row in rows
+    ]
+    return {"projects": items, "total": len(items)}
+
+
+async def _list_project_templates(_manager: Any, *, category: str | None = None) -> dict[str, Any]:
+    from server.services.project_templates_service import get_project_templates_service
+
+    return get_project_templates_service().list_templates(category=category)
+
+
+async def _use_project_template(
+    _manager: Any,
+    *,
+    template_id: str,
+    name: str | None = None,
+    environment: str = "development",
+    description: str | None = None,
+) -> dict[str, Any]:
+    from server.schemas.project_templates import ProjectTemplateUseRequest
+    from server.schemas.projects import ProjectEnvironment
+    from server.services.project_templates_service import get_project_templates_service
+
+    env: ProjectEnvironment = (
+        environment if environment in ("development", "staging", "production") else "development"
+    )
+    try:
+        return get_project_templates_service().use_template(
+            template_id.strip(),
+            ProjectTemplateUseRequest(
+                name=name,
+                environment=env,
+                description=description,
+            ),
+        )
+    except LookupError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 async def _network_access_status(_manager: Any, *, port: int | None = None) -> dict[str, Any]:

@@ -70,6 +70,12 @@ class Settings(BaseSettings):
     # UI preference (overridden by config/ui_config.json when set)
     scrape_default_workers: int | None = None
 
+    # Project canvas collaboration — optional Redis pub/sub for multi-instance sync
+    project_collab_redis_url: str | None = Field(
+        default=None,
+        validation_alias="CROSSBORDER_PROJECT_COLLAB_REDIS_URL",
+    )
+
     # Pricing (resell margin)
     price_markup_percent: float = 35.0
     default_currency: str = "USD"

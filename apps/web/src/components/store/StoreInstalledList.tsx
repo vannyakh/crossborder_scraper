@@ -1,11 +1,11 @@
 import { Box, Button, HStack, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react'
 import { Settings } from 'lucide-react'
-import { ListCardRowsSkeleton } from '../ui/PanelSkeleton'
+import type { StoreInstalled } from '../../lib/api'
 import { DataList, DataListEmpty } from '../ui/DataList'
 import { Panel, PanelBody } from '../ui/Panel'
+import { ListCardRowsSkeleton } from '../ui/PanelSkeleton'
 import { StatusBadge } from '../ui/StatusBadge'
-import type { StoreInstalled } from '../../lib/api'
-import { pluginIcon, statusTone, STORE_CATEGORY_LABEL, type StoreViewMode } from './store-utils'
+import { STORE_CATEGORY_LABEL, pluginIcon, statusTone, type StoreViewMode } from './store-utils'
 
 function InstalledActions({ onSettings }: { onSettings: () => void }) {
   return (

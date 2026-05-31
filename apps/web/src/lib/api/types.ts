@@ -406,7 +406,7 @@ export type PanelAccess = {
   entrance_url?: string | null
 }
 
-export type LogCategory = 'operation' | 'run' | 'cron'
+export type LogCategory = 'operation' | 'run' | 'cron' | 'runtime'
 
 export type ServiceLogEntry = {
   id: string
@@ -424,6 +424,125 @@ export type ServiceLogListResponse = {
   total: number
   limit: number
   offset: number
+}
+
+export type ProjectRuntimeServiceSeries = {
+  id: string
+  name: string
+  color: string
+  values: number[]
+}
+
+export type ProjectRuntimeMetricsBlock = {
+  labels: string[]
+  cpu: ProjectRuntimeServiceSeries[]
+  memory: ProjectRuntimeServiceSeries[]
+  network: ProjectRuntimeServiceSeries[]
+  disk: ProjectRuntimeServiceSeries[]
+}
+
+export type ProjectRuntimeState = {
+  services_online: number
+  services_total: number
+  nodes: number
+  flow_revision: number
+  host_cpu_percent: number
+  host_memory_percent: number
+  host_disk_percent: number
+  collected_at: string
+}
+
+export type ProjectRuntimeRecentLog = {
+  id: string
+  level: string
+  message: string
+  node_label?: string | null
+  created_at: string
+}
+
+export type ProjectRuntimeResponse = {
+  project_id: string
+  live: boolean
+  simulated?: boolean
+  state: ProjectRuntimeState
+  metrics: ProjectRuntimeMetricsBlock
+  recent_logs: ProjectRuntimeRecentLog[]
+}
+
+export type ProjectVisibility = 'private' | 'workspace'
+export type ProjectVariableScope = 'project' | 'shared'
+
+export type ProjectEnvironment = 'production' | 'staging' | 'development'
+
+export type ProjectSettingsGeneral = {
+  name: string
+  description: string
+  environment: ProjectEnvironment
+  visibility: ProjectVisibility
+}
+
+export type ProjectSettingsUsage = {
+  services_online: number
+  services_total: number
+  nodes: number
+  environment: ProjectEnvironment
+  flow_revision: number
+  updated_at: string
+}
+
+export type ProjectSettingsVariable = {
+  key: string
+  scope: ProjectVariableScope
+  masked: boolean
+  value: string
+}
+
+export type ProjectSettingsWebhook = {
+  node_id: string
+  label: string
+  subtitle?: string | null
+  kind: string
+  status: string
+}
+
+export type ProjectSettingsMember = {
+  id: string
+  name: string
+  role: string
+  username?: string | null
+}
+
+export type ProjectSettingsToken = {
+  id: string
+  label: string
+  prefix: string
+  created_at: string
+}
+
+export type ProjectSettingsIntegration = {
+  id: string
+  label: string
+  linked: boolean
+  configured: boolean
+  runtime_active: boolean
+}
+
+export type ProjectSettingsResponse = {
+  project_id: string
+  general: ProjectSettingsGeneral
+  usage: ProjectSettingsUsage
+  variables: ProjectSettingsVariable[]
+  webhooks: ProjectSettingsWebhook[]
+  members: ProjectSettingsMember[]
+  tokens: ProjectSettingsToken[]
+  integrations: ProjectSettingsIntegration[]
+  tokens_preview?: boolean
+}
+
+export type ProjectTokenCreateResponse = {
+  token: ProjectSettingsToken
+  secret: string
+  message: string
 }
 
 export type PluginProfileFieldType =
@@ -452,6 +571,9 @@ export type PluginProfileField = {
   default?: string | boolean | number | null
   placeholder?: string | null
   hint?: string | null
+  bind?: 'label' | 'subtitle' | 'host' | 'detail' | 'agentPrompt'
+  resolve?: 'label' | 'subtitle' | 'host' | 'detail' | 'id' | 'kind' | 'role' | 'status' | 'image'
+  rows?: number | null
   options?: PluginProfileSelectOption[]
 }
 
@@ -481,6 +603,7 @@ export type PluginProfile = {
   plugin_id?: string | null
   node_kinds: string[]
   slot_index?: number | null
+  parameters_layout?: 'default' | 'agent-slots' | null
   tabs: PluginProfileTab[]
   sections: PluginProfileSection[]
   variable_keys: PluginVariableKey[]
@@ -666,6 +789,36 @@ export type PanelGuideList = {
   categories: { id: string; label: string }[]
 }
 
+export type ModuleProfileLink = {
+  label: string
+  path: string
+}
+
+export type ModuleProfileSummary = {
+  id: string
+  kind: string
+  name: string
+  category: string
+  category_label: string
+  icon: string
+  summary: string
+  tags: string[]
+  links: ModuleProfileLink[]
+  has_guide: boolean
+  source_path: string
+}
+
+export type ModuleProfileDetail = ModuleProfileSummary & {
+  body_md: string
+}
+
+export type ModuleProfileMeta = {
+  modules: ModuleProfileSummary[]
+  categories: { id: string; label: string; kinds: string[] }[]
+  icons: Record<string, string>
+  total: number
+}
+
 export type ServiceSupportLink = {
   id: string
   label: string
@@ -826,6 +979,11 @@ export type GatewaySkill = {
   registry_url?: string
   installed_at?: string
   registry_version?: string
+  has_guide?: boolean
+  guide_summary?: string
+  category_label?: string
+  icon?: string
+  module_kind?: string
 }
 
 export type GatewaySkillList = {
@@ -961,6 +1119,11 @@ export type StoreCatalogItem = {
   sandboxed?: boolean
   permissions?: Record<string, boolean>
   scrape_spec?: PluginScrapeSpec
+  has_guide?: boolean
+  guide_summary?: string
+  category_label?: string
+  icon?: string
+  module_kind?: string
 }
 
 export type StoreEnvironment = {

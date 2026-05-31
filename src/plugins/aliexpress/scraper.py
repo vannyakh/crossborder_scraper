@@ -3,19 +3,7 @@ import re
 
 from core.base_scraper import BaseScraper
 from core.models import ScrapedProduct, SourcePlatform
-from core.plugins.base import SourcePluginManifest
-from core.plugins.builtin_specs import PLUGIN_SPECS
-
-MANIFEST = SourcePluginManifest(
-    id="aliexpress",
-    name="AliExpress",
-    category="ecommerce",
-    description="AliExpress product scraper (embedded JSON + browser fallback).",
-    version="1.0.0",
-    domains=("aliexpress.com", "aliexpress.us"),
-    tags=("ecommerce", "builtin", "playwright"),
-    scrape_spec=PLUGIN_SPECS["aliexpress"],
-)
+from plugins.aliexpress.manifest import MANIFEST
 
 
 class AliExpressScraper(BaseScraper):

@@ -1,3 +1,6 @@
-from plugins.tiktok.plugin import MANIFEST, TikTokScraper
+from plugins.tiktok.manifest import FLOW_NODE, MANIFEST, SCRAPE_SPEC
+from plugins.tiktok.scraper import TikTokScraper
 
-__all__ = ["TikTokScraper", "MANIFEST"]
+SCRAPER = TikTokScraper
+
+__all__ = ["FLOW_NODE", "MANIFEST", "SCRAPE_SPEC", "SCRAPER", "TikTokScraper"]

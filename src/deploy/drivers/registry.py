@@ -94,6 +94,12 @@ DRIVER_SPECS: dict[str, DriverSpec] = {
             DriverVersion("3.12", "rabbitmq:3.12-management-alpine"),
         ),
     ),
+    "ollama": DriverSpec(
+        plugin_id="ollama",
+        systemd_unit="ollama",
+        default_version="latest",
+        versions=(DriverVersion("latest", "ollama/ollama:latest"),),
+    ),
 }
 
 

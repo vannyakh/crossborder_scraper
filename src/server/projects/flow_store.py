@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from core.paths import data_dir
-from server.projects.derive import finalize_project
-from server.projects.seeds import DEV_SEED_PROJECTS
+from server.projects.derive import apply_derived_fields, strip_derived_fields
 
 _PROJECT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
@@ -64,7 +63,7 @@ def load_project(project_id: str) -> dict[str, Any] | None:
     raw = _read_json(_project_path(project_id))
     if not isinstance(raw, dict):
         return None
-    return finalize_project(raw)
+    return apply_derived_fields(raw)
 
 
 def load_all_projects() -> list[dict[str, Any]]:
@@ -75,9 +74,9 @@ def save_project(record: dict[str, Any]) -> dict[str, Any]:
     project_id = str(record.get("id") or "")
     if not project_id:
         raise ValueError("project id is required")
-    finalized = finalize_project({**record, "updated_at": _now_iso()})
-    _write_json(_project_path(project_id), finalized)
-    return finalized
+    persisted = strip_derived_fields({**record, "updated_at": _now_iso()})
+    _write_json(_project_path(project_id), persisted)
+    return apply_derived_fields(persisted)
 
 
 def delete_project(project_id: str) -> bool:
@@ -86,17 +85,6 @@ def delete_project(project_id: str) -> bool:
         return False
     path.unlink()
     return True
-
-
-def seed_projects_if_empty() -> int:
-    ensure_projects_dir()
-    if list_project_ids():
-        return 0
-    count = 0
-    for item in DEV_SEED_PROJECTS:
-        save_project(item)
-        count += 1
-    return count
 
 
 def slugify_name(name: str) -> str:

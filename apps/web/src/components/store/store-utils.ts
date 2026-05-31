@@ -1,4 +1,5 @@
 import {
+  Brain,
   CircleDot,
   Database,
   HardDrive,
@@ -18,6 +19,7 @@ export const STORE_CATEGORY_LABEL: Record<string, string> = {
   cache: 'Cache',
   queue: 'Queue',
   search: 'Search',
+  ai: 'AI runtime',
   ecommerce: 'E-commerce scrape',
   social: 'Social scrape',
   custom: 'Custom scrape',
@@ -31,6 +33,7 @@ export const STORE_CATEGORY_FILTERS = [
   { id: 'database', label: 'Databases' },
   { id: 'cache', label: 'Cache' },
   { id: 'queue', label: 'Queues' },
+  { id: 'ai', label: 'AI' },
 ] as const
 
 export type StoreCategoryFilter = (typeof STORE_CATEGORY_FILTERS)[number]['id']
@@ -45,6 +48,11 @@ const PLUGIN_ICONS: Record<string, LucideIcon> = {
   mongodb: Server,
   memcached: HardDrive,
   rabbitmq: Rabbit,
+  ollama: Brain,
+  brain: Brain,
+  'circle-dot': CircleDot,
+  database: Database,
+  server: Server,
   '1688': Database,
   taobao: Database,
   aliexpress: Database,
@@ -54,7 +62,8 @@ const PLUGIN_ICONS: Record<string, LucideIcon> = {
   custom_plugin: Puzzle,
 }
 
-export function pluginIcon(id: string): LucideIcon {
+export function pluginIcon(id: string, iconKey?: string | null): LucideIcon {
+  if (iconKey && PLUGIN_ICONS[iconKey]) return PLUGIN_ICONS[iconKey]
   return PLUGIN_ICONS[id] ?? Server
 }
 

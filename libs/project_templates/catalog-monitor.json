@@ -1,0 +1,65 @@
+{
+  "id": "catalog-monitor",
+  "name": "Catalog monitor",
+  "summary": "Daily schedule → gateway agent checks product catalog and runtime health.",
+  "description": "Runs once per day: the gateway agent lists recent catalog items and reports runtime status — useful for ops monitoring.",
+  "category": "catalog",
+  "category_label": "Catalog ops",
+  "tags": ["catalog", "monitor", "agent", "schedule"],
+  "author": "Cross-Border",
+  "featured": false,
+  "nodes": [
+    {
+      "id": "tpl-schedule-1",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "Daily snapshot",
+      "subtitle": "cron: 0 9 * * *",
+      "status": "online",
+      "x": 100,
+      "y": 160
+    },
+    {
+      "id": "tpl-agent-1",
+      "kind": "agent",
+      "role": "agent",
+      "label": "Catalog agent",
+      "subtitle": "catalog-monitor skill",
+      "host": "gateway-tools",
+      "status": "online",
+      "agentPrompt": "List the latest products and summarize runtime status.",
+      "options": {
+        "skillId": "catalog-monitor"
+      },
+      "x": 340,
+      "y": 160
+    },
+    {
+      "id": "tpl-notify-1",
+      "kind": "notify",
+      "role": "action",
+      "label": "Notify team",
+      "subtitle": "Telegram / email",
+      "status": "online",
+      "options": {
+        "channel": "telegram"
+      },
+      "x": 580,
+      "y": 160
+    }
+  ],
+  "edges": [
+    {
+      "id": "tpl-e-schedule-agent",
+      "from": "tpl-schedule-1",
+      "to": "tpl-agent-1",
+      "kind": "main"
+    },
+    {
+      "id": "tpl-e-agent-notify",
+      "from": "tpl-agent-1",
+      "to": "tpl-notify-1",
+      "kind": "main"
+    }
+  ]
+}

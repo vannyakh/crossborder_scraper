@@ -62,6 +62,9 @@ class PluginManager:
 
     def reload(self) -> None:
         """Re-scan built-in and installed plugin directories."""
+        from core.plugins.discovery import reload_builtin_discovery
+
+        reload_builtin_discovery()
         self._builtin_cache = None
         self._installed_specs = self._discover_installed()
 
@@ -165,30 +168,9 @@ class PluginManager:
         if self._builtin_cache is not None:
             return self._builtin_cache
 
-        from plugins.alibaba_1688 import MANIFEST as alibaba_manifest
-        from plugins.alibaba_1688 import Alibaba1688Scraper
-        from plugins.aliexpress import MANIFEST as aliexpress_manifest
-        from plugins.aliexpress import AliExpressScraper
-        from plugins.custom_plugin import MANIFEST as custom_manifest
-        from plugins.custom_plugin import CustomPluginScraper
-        from plugins.instagram import MANIFEST as instagram_manifest
-        from plugins.instagram import InstagramScraper
-        from plugins.linkedin import MANIFEST as linkedin_manifest
-        from plugins.linkedin import LinkedInScraper
-        from plugins.taobao import MANIFEST as taobao_manifest
-        from plugins.taobao import TaobaoScraper
-        from plugins.tiktok import MANIFEST as tiktok_manifest
-        from plugins.tiktok import TikTokScraper
+        from core.plugins.discovery import discover_builtin_packages
 
-        self._builtin_cache = [
-            SourcePluginSpec(alibaba_manifest, Alibaba1688Scraper),
-            SourcePluginSpec(taobao_manifest, TaobaoScraper),
-            SourcePluginSpec(aliexpress_manifest, AliExpressScraper),
-            SourcePluginSpec(instagram_manifest, InstagramScraper),
-            SourcePluginSpec(tiktok_manifest, TikTokScraper),
-            SourcePluginSpec(linkedin_manifest, LinkedInScraper),
-            SourcePluginSpec(custom_manifest, CustomPluginScraper),
-        ]
+        self._builtin_cache = list(discover_builtin_packages())
         return self._builtin_cache
 
     def list_specs(self) -> list[SourcePluginSpec]:
@@ -248,6 +230,8 @@ class PluginManager:
             row["domains"] = list(self.all_domains(spec))
             row["trusted"] = True
             row["sandboxed"] = False
+            if spec.flow_node is not None:
+                row["flow_node"] = spec.flow_node.to_dict()
             if not enabled and not is_installed:
                 row["status"] = "disabled"
             elif enabled and is_installed:

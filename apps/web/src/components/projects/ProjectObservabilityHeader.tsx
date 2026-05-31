@@ -14,14 +14,24 @@ export function ProjectObservabilityHeader({
   icon,
   stats,
   live,
+  simulated,
+  actions,
 }: {
   title: string
   description?: string
   icon?: ReactNode
   stats?: ObservabilityStat[]
   live?: boolean
+  simulated?: boolean
+  actions?: ReactNode
 }) {
   const { t } = useLocale()
+  const badgeKey = simulated
+    ? 'projects.observe.simulatedBadge'
+    : live
+      ? 'projects.observe.liveBadge'
+      : 'projects.observe.previewBadge'
+  const badgePalette = simulated ? 'orange' : live ? 'green' : 'gray'
 
   return (
     <Box className="project-observe-header" px={{ base: 3, md: 4 }} pt={{ base: 3, md: 4 }} pb={3}>
@@ -37,13 +47,8 @@ export function ProjectObservabilityHeader({
               <Text fontWeight="semibold" fontSize="lg" lineHeight="1.2">
                 {title}
               </Text>
-              <Badge
-                size="sm"
-                variant="subtle"
-                colorPalette={live ? 'green' : 'gray'}
-                textTransform="none"
-              >
-                {t(live ? 'projects.observe.liveBadge' : 'projects.observe.previewBadge')}
+              <Badge size="sm" variant="subtle" colorPalette={badgePalette} textTransform="none">
+                {t(badgeKey)}
               </Badge>
             </HStack>
             {description ? (
@@ -61,6 +66,8 @@ export function ProjectObservabilityHeader({
             ))}
           </HStack>
         ) : null}
+
+        {actions ? <Box flexShrink={0}>{actions}</Box> : null}
       </HStack>
     </Box>
   )

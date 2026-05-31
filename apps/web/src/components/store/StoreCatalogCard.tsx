@@ -1,10 +1,10 @@
 import { Badge, Box, HStack, Text } from '@chakra-ui/react'
-import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { StoreCatalogItem, StoreEnvironment } from '../../lib/api'
-import { StoreCatalogActions } from './StoreCatalogActions'
-import { pluginIcon, statusTone, STORE_CATEGORY_LABEL } from './store-utils'
+import { StatusBadge } from '../ui/StatusBadge'
 import { PluginScrapeSpecSummary } from './PluginScrapeSpecPanel'
+import { StoreCatalogActions } from './StoreCatalogActions'
+import { STORE_CATEGORY_LABEL, pluginIcon, statusTone } from './store-utils'
 
 export function StoreCatalogCard({
   item,

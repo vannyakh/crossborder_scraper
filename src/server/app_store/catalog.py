@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from deploy.drivers.registry import get_driver_spec
 
-PluginCategory = Literal["database", "cache", "queue", "search"]
+PluginCategory = Literal["database", "cache", "queue", "search", "ai"]
 InstallMode = Literal["native", "docker", "external", "source"]
 
 StorePluginStatus = Literal[
@@ -206,6 +206,27 @@ PLUGINS: dict[str, StorePluginDefinition] = {
         ),
         tags=("queue", "amqp"),
     ),
+    "ollama": StorePluginDefinition(
+        id="ollama",
+        name="Ollama",
+        category="ai",
+        description=(
+            "Local LLM runtime for gateway agent workflows — run open models on your VPS "
+            "without sending prompts to a cloud API."
+        ),
+        version="latest",
+        default_port=11434,
+        supports_docker=True,
+        supports_external=True,
+        docker_image="ollama/ollama:latest",
+        compose_service="ollama",
+        container_name="cbscraper-ollama",
+        connection_fields=(
+            ConnectionField("host", "Host", default="127.0.0.1"),
+            ConnectionField("port", "Port", "number", default=11434),
+        ),
+        tags=("llm", "ai", "local"),
+    ),
 }
 
 
@@ -299,5 +320,19 @@ def render_compose(
       - "{port}:5672"
       - "{mgmt}:15672"
     restart: unless-stopped
+"""
+    if plugin.id == "ollama":
+        return f"""services:
+  ollama:
+    image: {image}
+    container_name: {plugin.container_name}
+    ports:
+      - "{port}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
 """
     raise ValueError(f"no compose template for {plugin.id}")

@@ -1,3 +1,6 @@
-from plugins.aliexpress.plugin import MANIFEST, AliExpressScraper
+from plugins.aliexpress.manifest import FLOW_NODE, MANIFEST, SCRAPE_SPEC
+from plugins.aliexpress.scraper import AliExpressScraper
 
-__all__ = ["AliExpressScraper", "MANIFEST"]
+SCRAPER = AliExpressScraper
+
+__all__ = ["FLOW_NODE", "MANIFEST", "SCRAPE_SPEC", "SCRAPER", "AliExpressScraper"]

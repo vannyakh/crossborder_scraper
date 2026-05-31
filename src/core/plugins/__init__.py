@@ -7,6 +7,7 @@ Submodules:
   ``security`` — ZIP validation, AST scan, permissions
   ``sandbox`` — untrusted plugin loader + adapter
   ``manager`` — registry, catalog, URL routing
+  ``discovery`` — auto-load built-in packages under ``src/plugins/``
   ``installer`` — ZIP install / uninstall
 """
 
@@ -18,6 +19,19 @@ from core.plugins.base import (
     SourcePluginSpec,
 )
 from core.plugins.builtin_specs import PLUGIN_SPECS, SITE_SPECS
+from core.plugins.capabilities import (
+    CUSTOM_TEMPLATE,
+    ECOMMERCE_RETAIL,
+    ECOMMERCE_WHOLESALE,
+    SOCIAL_CONTENT,
+)
+from core.plugins.discovery import (
+    discover_builtin_packages,
+    plugin_package_dir,
+    reload_builtin_discovery,
+    root_plugin_dirs,
+)
+from core.plugins.flow_node import FlowNodeSpec, resolve_flow_node
 from core.plugins.installer import PluginInstaller, get_plugin_installer
 from core.plugins.manager import (
     InstalledPluginSpec,
@@ -59,6 +73,16 @@ __all__ = [
     "PLUGIN_SPECS",
     "SITE_SPECS",
     "STANDARD_DATA_FIELDS",
+    "CUSTOM_TEMPLATE",
+    "ECOMMERCE_RETAIL",
+    "ECOMMERCE_WHOLESALE",
+    "SOCIAL_CONTENT",
+    "discover_builtin_packages",
+    "plugin_package_dir",
+    "reload_builtin_discovery",
+    "root_plugin_dirs",
+    "FlowNodeSpec",
+    "resolve_flow_node",
     "CustomDomainScraper",
     "EcommerceScrapeSpec",
     "InstalledPluginManifest",

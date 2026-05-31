@@ -14,18 +14,22 @@ import { Copy } from 'lucide-react'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { notifySuccess } from '../../lib/toast'
+import { projectBearerCurlExample } from '../../lib/api/project-token-auth'
 import { PanelSelect } from '../ui/PanelSelect'
 import { SettingsField } from '../settings/SettingsFields'
 import { fieldStyles } from '../ui/field-styles'
 import { SubtitleText } from '../ui/Section'
-import {
-  environmentLabelKey,
-  sampleMembers,
-  sampleTokens,
-  sampleVariables,
-  type ProjectSettingsForm,
-} from './project-settings-sample'
+import { environmentLabelKey, type ProjectSettingsForm } from './project-settings-sample'
 import type { ProjectDetail, ProjectEnvironment } from './project-sample-data'
+import type {
+  ProjectSettingsIntegration,
+  ProjectSettingsMember,
+  ProjectSettingsToken,
+  ProjectSettingsUsage,
+  ProjectSettingsVariable,
+  ProjectSettingsWebhook,
+  ProjectVisibility,
+} from '../../lib/api/types'
 
 function SettingsBlock({
   title,
@@ -149,11 +153,27 @@ export function ProjectSettingsGeneralSection({
           </Button>
         </VStack>
       </SettingsBlock>
+
+      <SettingsBlock
+        title={t('projects.settings.general.visibilityTitle')}
+        description={`${t('projects.settings.general.visibilityLead')} ${t(form.visibility === 'workspace' ? 'projects.settings.general.visibilityWorkspace' : 'projects.settings.general.visibilityPrivate')} ${t('projects.settings.general.visibilityTail')}`}
+      >
+        <PanelSelect
+          value={form.visibility}
+          options={[
+            { value: 'private', label: t('projects.settings.general.visibilityPrivate') },
+            { value: 'workspace', label: t('projects.settings.general.visibilityWorkspace') },
+          ]}
+          onChange={(value) => {
+            onPatch({ visibility: value as ProjectVisibility })
+          }}
+        />
+      </SettingsBlock>
     </VStack>
   )
 }
 
-export function ProjectSettingsUsageSection({ project }: { project: ProjectDetail }) {
+export function ProjectSettingsUsageSection({ usage }: { usage: ProjectSettingsUsage }) {
   const { t } = useLocale()
   return (
     <SettingsBlock
@@ -163,15 +183,16 @@ export function ProjectSettingsUsageSection({ project }: { project: ProjectDetai
       <HStack gap={3} flexWrap="wrap">
         <UsageStat
           label={t('projects.settings.usage.services')}
-          value={`${project.servicesOnline}/${project.servicesTotal}`}
+          value={`${usage.services_online}/${usage.services_total}`}
         />
-        <UsageStat
-          label={t('projects.settings.usage.nodes')}
-          value={String(project.nodes.length)}
-        />
+        <UsageStat label={t('projects.settings.usage.nodes')} value={String(usage.nodes)} />
         <UsageStat
           label={t('projects.settings.usage.env')}
-          value={t(environmentLabelKey(project.environment))}
+          value={t(environmentLabelKey(usage.environment))}
+        />
+        <UsageStat
+          label={t('projects.settings.usage.revision')}
+          value={String(usage.flow_revision)}
         />
       </HStack>
       <Text fontSize="xs" color="fg.muted" mt={4}>
@@ -224,9 +245,12 @@ export function ProjectSettingsEnvironmentsSection({ project }: { project: Proje
   )
 }
 
-export function ProjectSettingsVariablesSection({ project }: { project: ProjectDetail }) {
+export function ProjectSettingsVariablesSection({
+  variables,
+}: {
+  variables: ProjectSettingsVariable[]
+}) {
   const { t } = useLocale()
-  const rows = sampleVariables(project)
   return (
     <SettingsBlock
       title={t('projects.settings.variables.title')}
@@ -240,7 +264,7 @@ export function ProjectSettingsVariablesSection({ project }: { project: ProjectD
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {rows.map((row) => (
+          {variables.map((row) => (
             <Table.Row key={row.key}>
               <Table.Cell fontFamily="mono" fontSize="xs">
                 {row.key}
@@ -265,35 +289,49 @@ export function ProjectSettingsVariablesSection({ project }: { project: ProjectD
   )
 }
 
-export function ProjectSettingsWebhooksSection({ project }: { project: ProjectDetail }) {
+export function ProjectSettingsWebhooksSection({
+  webhooks,
+}: {
+  webhooks: ProjectSettingsWebhook[]
+}) {
   const { t } = useLocale()
-  const hooks = project.nodes.filter((n) => n.kind === 'webhook' || n.kind === 'schedule')
   return (
     <SettingsBlock
       title={t('projects.settings.webhooks.title')}
       description={t('projects.settings.webhooks.desc')}
     >
-      {hooks.length === 0 ? (
+      {webhooks.length === 0 ? (
         <Text fontSize="sm" color="fg.muted">
           {t('projects.settings.webhooks.empty')}
         </Text>
       ) : (
         <VStack align="stretch" gap={2}>
-          {hooks.map((node) => (
+          {webhooks.map((node) => (
             <Box
-              key={node.id}
+              key={node.node_id}
               px={3}
               py={2}
               borderWidth="1px"
               borderColor="border.subtle"
               borderRadius="var(--radius-input)"
             >
-              <Text fontWeight="medium" fontSize="sm">
-                {node.label}
-              </Text>
-              <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-                {node.subtitle ?? 'webhook'}
-              </Text>
+              <HStack justify="space-between" gap={2}>
+                <Box minW={0}>
+                  <Text fontWeight="medium" fontSize="sm">
+                    {node.label}
+                  </Text>
+                  <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+                    {node.subtitle ?? node.kind}
+                  </Text>
+                </Box>
+                <Badge
+                  size="sm"
+                  variant="subtle"
+                  colorPalette={node.status === 'online' ? 'green' : 'gray'}
+                >
+                  {node.status}
+                </Badge>
+              </HStack>
             </Box>
           ))}
         </VStack>
@@ -302,9 +340,8 @@ export function ProjectSettingsWebhooksSection({ project }: { project: ProjectDe
   )
 }
 
-export function ProjectSettingsMembersSection() {
+export function ProjectSettingsMembersSection({ members }: { members: ProjectSettingsMember[] }) {
   const { t } = useLocale()
-  const members = sampleMembers()
   return (
     <SettingsBlock
       title={t('projects.settings.members.title')}
@@ -321,9 +358,16 @@ export function ProjectSettingsMembersSection() {
             borderColor="border.subtle"
             borderRadius="var(--radius-input)"
           >
-            <Text fontSize="sm" fontWeight="medium">
-              {m.name}
-            </Text>
+            <Box minW={0}>
+              <Text fontSize="sm" fontWeight="medium">
+                {m.name}
+              </Text>
+              {m.username ? (
+                <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+                  @{m.username}
+                </Text>
+              ) : null}
+            </Box>
             <Badge size="sm" variant="subtle">
               {m.role}
             </Badge>
@@ -334,53 +378,141 @@ export function ProjectSettingsMembersSection() {
   )
 }
 
-export function ProjectSettingsTokensSection() {
+export function ProjectSettingsTokensSection({
+  projectId,
+  tokens,
+  creating,
+  revokingId,
+  onCreate,
+  onRevoke,
+}: {
+  projectId: string
+  tokens: ProjectSettingsToken[]
+  creating?: boolean
+  revokingId?: string | null
+  onCreate: () => void
+  onRevoke: (tokenId: string) => void
+}) {
   const { t } = useLocale()
-  const tokens = sampleTokens()
+  const accentPalette = useAccentPalette()
+  const bearerExample = projectBearerCurlExample(projectId)
+
+  async function copyExample() {
+    try {
+      await navigator.clipboard.writeText(bearerExample)
+      notifySuccess(t('projects.settings.tokens.copiedExample'))
+    } catch {
+      /* clipboard blocked */
+    }
+  }
+
   return (
     <SettingsBlock
       title={t('projects.settings.tokens.title')}
       description={t('projects.settings.tokens.desc')}
     >
+      <Box
+        mb={4}
+        p={3}
+        borderWidth="1px"
+        borderColor="border.subtle"
+        borderRadius="var(--radius-input)"
+        bg="bg.subtle"
+      >
+        <HStack justify="space-between" align="start" gap={2} mb={2}>
+          <Text fontSize="xs" fontWeight="medium" color="fg.muted">
+            {t('projects.settings.tokens.exampleTitle')}
+          </Text>
+          <IconButton
+            aria-label={t('projects.settings.tokens.copyExample')}
+            size="xs"
+            variant="ghost"
+            onClick={() => void copyExample()}
+          >
+            <Copy size={14} />
+          </IconButton>
+        </HStack>
+        <Text
+          as="pre"
+          fontSize="xs"
+          fontFamily="mono"
+          whiteSpace="pre-wrap"
+          wordBreak="break-all"
+          color="fg.muted"
+          m={0}
+        >
+          {bearerExample}
+        </Text>
+      </Box>
+      <Button
+        size="sm"
+        variant="outline"
+        colorPalette={accentPalette}
+        mb={3}
+        loading={creating}
+        onClick={onCreate}
+      >
+        {t('projects.settings.tokens.create')}
+      </Button>
       <Table.Root size="sm" variant="line">
         <Table.Header>
           <Table.Row>
             <Table.ColumnHeader>{t('projects.settings.tokens.colLabel')}</Table.ColumnHeader>
             <Table.ColumnHeader>{t('projects.settings.tokens.colToken')}</Table.ColumnHeader>
             <Table.ColumnHeader>{t('projects.settings.tokens.colCreated')}</Table.ColumnHeader>
+            <Table.ColumnHeader w="5rem" />
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {tokens.map((row) => (
-            <Table.Row key={row.id}>
-              <Table.Cell fontSize="sm">{row.label}</Table.Cell>
-              <Table.Cell fontFamily="mono" fontSize="xs" color="fg.muted">
-                {row.prefix}
-              </Table.Cell>
-              <Table.Cell fontSize="xs" color="fg.muted">
-                {row.createdAt}
+          {tokens.length === 0 ? (
+            <Table.Row>
+              <Table.Cell colSpan={4} py={6} color="fg.muted" fontSize="sm">
+                {t('projects.settings.tokens.empty')}
               </Table.Cell>
             </Table.Row>
-          ))}
+          ) : (
+            tokens.map((row) => (
+              <Table.Row key={row.id}>
+                <Table.Cell fontSize="sm">{row.label}</Table.Cell>
+                <Table.Cell fontFamily="mono" fontSize="xs" color="fg.muted">
+                  {row.prefix}
+                </Table.Cell>
+                <Table.Cell fontSize="xs" color="fg.muted">
+                  {row.created_at}
+                </Table.Cell>
+                <Table.Cell>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="red"
+                    loading={revokingId === row.id}
+                    onClick={() => onRevoke(row.id)}
+                  >
+                    {t('projects.settings.tokens.revoke')}
+                  </Button>
+                </Table.Cell>
+              </Table.Row>
+            ))
+          )}
         </Table.Body>
       </Table.Root>
     </SettingsBlock>
   )
 }
 
-export function ProjectSettingsIntegrationsSection() {
+export function ProjectSettingsIntegrationsSection({
+  integrations,
+}: {
+  integrations: ProjectSettingsIntegration[]
+}) {
   const { t } = useLocale()
-  const channels = [
-    { id: 'telegram', labelKey: 'projects.settings.integrations.telegram' },
-    { id: 'discord', labelKey: 'projects.settings.integrations.discord' },
-  ]
   return (
     <SettingsBlock
       title={t('projects.settings.integrations.title')}
       description={t('projects.settings.integrations.desc')}
     >
       <VStack align="stretch" gap={2}>
-        {channels.map((ch) => (
+        {integrations.map((ch) => (
           <HStack
             key={ch.id}
             justify="space-between"
@@ -390,9 +522,17 @@ export function ProjectSettingsIntegrationsSection() {
             borderColor="border.subtle"
             borderRadius="var(--radius-input)"
           >
-            <Text fontSize="sm">{t(ch.labelKey)}</Text>
-            <Badge size="sm" variant="outline" colorPalette="gray">
-              {t('projects.settings.integrations.notLinked')}
+            <Text fontSize="sm">{ch.label}</Text>
+            <Badge
+              size="sm"
+              variant="subtle"
+              colorPalette={ch.linked ? 'green' : ch.configured ? 'orange' : 'gray'}
+            >
+              {ch.linked
+                ? t('projects.settings.integrations.linked')
+                : ch.configured
+                  ? t('projects.settings.integrations.configured')
+                  : t('projects.settings.integrations.notLinked')}
             </Badge>
           </HStack>
         ))}

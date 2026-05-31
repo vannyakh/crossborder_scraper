@@ -1,6 +1,8 @@
 import { Avatar, Badge, HStack, Text } from '@chakra-ui/react'
 import { Tooltip } from '@/components/ui/tooltip'
 import {
+  formatCollaboratorDisplayName,
+  isTokenCollaborator,
   peerAccentColor,
   peerInitials,
   type ProjectCollaboratorPeer,
@@ -10,19 +12,24 @@ import { useProjectWorkspace } from '../layout/project-shell/project-workspace-c
 
 function CollaboratorAvatar({ peer, isSelf }: { peer: ProjectCollaboratorPeer; isSelf?: boolean }) {
   const color = peerAccentColor(peer.clientId)
-  const label = isSelf ? `${peer.username} (you)` : peer.username
+  const displayName = formatCollaboratorDisplayName(peer.username)
+  const label = isSelf
+    ? `${displayName} (you)`
+    : isTokenCollaborator(peer.username)
+      ? `${displayName} (API token)`
+      : displayName
 
   return (
     <Tooltip content={label}>
       <Avatar.Root size="xs" borderWidth="2px" borderColor={color} title={label} aria-label={label}>
         <Avatar.Fallback
-          name={peer.username}
+          name={displayName}
           bg={color}
           color="white"
           fontSize="2xs"
           fontWeight="bold"
         >
-          {peerInitials(peer.username)}
+          {peerInitials(displayName)}
         </Avatar.Fallback>
       </Avatar.Root>
     </Tooltip>

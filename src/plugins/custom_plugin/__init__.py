@@ -1,3 +1,6 @@
-from plugins.custom_plugin.plugin import MANIFEST, CustomPluginScraper
+from plugins.custom_plugin.manifest import FLOW_NODE, MANIFEST, SCRAPE_SPEC
+from plugins.custom_plugin.scraper import CustomPluginScraper
 
-__all__ = ["CustomPluginScraper", "MANIFEST"]
+SCRAPER = CustomPluginScraper
+
+__all__ = ["FLOW_NODE", "MANIFEST", "SCRAPE_SPEC", "SCRAPER", "CustomPluginScraper"]

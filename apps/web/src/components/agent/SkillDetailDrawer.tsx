@@ -15,6 +15,7 @@ import { Trash2, X } from 'lucide-react'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { GatewaySkill } from '../../lib/api'
+import { ModuleGuidePanel } from '../modules/ModuleGuidePanel'
 import { SKILL_CATEGORY_LABEL, skillStatusLabel, skillStatusTone } from './skill-utils'
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -98,8 +99,17 @@ export function SkillDetailDrawer({
                   </HStack>
 
                   <Text fontSize="sm" color="fg.muted" lineHeight="tall">
-                    {skill.description}
+                    {skill.guide_summary || skill.description}
                   </Text>
+
+                  {skill.has_guide ? (
+                    <Box>
+                      <Text fontSize="sm" fontWeight="semibold" mb={2}>
+                        Module guide
+                      </Text>
+                      <ModuleGuidePanel moduleId={skill.id} />
+                    </Box>
+                  ) : null}
 
                   <Box>
                     <Text fontSize="sm" fontWeight="semibold" mb={2}>

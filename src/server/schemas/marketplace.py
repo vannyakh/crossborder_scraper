@@ -63,6 +63,11 @@ class StoreCatalogItem(BaseModel):
     sandboxed: bool | None = None
     permissions: dict[str, bool] | None = None
     scrape_spec: PluginScrapeSpecResponse | None = None
+    has_guide: bool = False
+    guide_summary: str = ""
+    category_label: str = ""
+    icon: str = ""
+    module_kind: str | None = None
 
 
 class StoreCatalogResponse(BaseModel):

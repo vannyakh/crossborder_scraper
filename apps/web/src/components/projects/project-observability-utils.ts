@@ -27,6 +27,10 @@ export function countLogSeverity(entries: ProjectLogEntry[], severity: ProjectLo
   return entries.filter((e) => e.severity === severity).length
 }
 
+export function countLogErrors(entries: ProjectLogEntry[]): number {
+  return entries.filter((e) => e.severity === 'error').length
+}
+
 export function formatLogPayload(data: string): string {
   try {
     const parsed = JSON.parse(data) as { message?: string; severity?: string }
@@ -38,9 +42,9 @@ export function formatLogPayload(data: string): string {
 }
 
 export function logSeverityLabelKey(severity: ProjectLogSeverity): string {
-  return severity === 'error'
-    ? 'projects.logs.severity.error'
-    : severity === 'warn'
-      ? 'projects.logs.severity.warn'
-      : 'projects.logs.severity.info'
+  if (severity === 'error') return 'projects.logs.severity.error'
+  if (severity === 'warn') return 'projects.logs.severity.warn'
+  if (severity === 'debug') return 'projects.logs.severity.debug'
+  if (severity === 'success') return 'projects.logs.severity.success'
+  return 'projects.logs.severity.info'
 }

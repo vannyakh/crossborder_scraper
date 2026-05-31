@@ -12,6 +12,7 @@ from server.middleware.panel_entrance_html import (
     panel_entrance_html,
     wants_panel_html,
 )
+from server.middleware.project_token import add_project_token_middleware
 
 
 def create_app() -> FastAPI:
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
         lifespan=panel_lifespan,
     )
     register_routes(application)
+    add_project_token_middleware(application)
     add_panel_entrance_middleware(application)
 
     @application.get("/", response_model=None)

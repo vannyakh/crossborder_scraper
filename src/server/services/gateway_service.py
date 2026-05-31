@@ -126,10 +126,12 @@ class GatewayService:
 
     def list_skills(self) -> dict[str, Any]:
         from gateway.skills import get_skill_manager
+        from server.module_profiles import enrich_catalog_row
 
         mgr = get_skill_manager()
+        items = [enrich_catalog_row(row, expected_kind="skill") for row in mgr.list_catalog()]
         return {
-            "items": mgr.list_catalog(),
+            "items": items,
             "total": len(mgr.all_manifests()),
             "enabled": sorted(mgr.enabled_ids()),
         }

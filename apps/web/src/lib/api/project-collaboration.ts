@@ -30,6 +30,19 @@ export type ProjectCollaborationState = {
   publishLayout: (patches: ProjectNodeLayoutPatch[]) => void
 }
 
+/** Panel usernames from project API tokens arrive as ``token:<label>``. */
+export function isTokenCollaborator(username: string): boolean {
+  return username.startsWith('token:')
+}
+
+export function formatCollaboratorDisplayName(username: string): string {
+  if (isTokenCollaborator(username)) {
+    const label = username.slice('token:'.length).trim()
+    return label || 'API token'
+  }
+  return username
+}
+
 export function getOrCreateCollaborationClientId(): string {
   const key = 'crossborder-project-collab-client'
   try {

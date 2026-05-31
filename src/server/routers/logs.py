@@ -12,7 +12,7 @@ from server.schemas import MessageResponse, ServiceLogListResponse
 
 router = protected_router(prefix="/logs", tags=["logs"])
 
-LogCategory = Literal["operation", "run", "cron"]
+LogCategory = Literal["operation", "run", "cron", "runtime"]
 
 
 @router.get("", response_model=ServiceLogListResponse)

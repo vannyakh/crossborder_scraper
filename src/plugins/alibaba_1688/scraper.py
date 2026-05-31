@@ -2,31 +2,18 @@ import re
 
 from core.base_scraper import BaseScraper
 from core.models import ScrapedProduct, SourcePlatform
-from core.plugins.base import SourcePluginManifest
-from core.plugins.builtin_specs import PLUGIN_SPECS
-
-MANIFEST = SourcePluginManifest(
-    id="taobao",
-    name="Taobao",
-    category="ecommerce",
-    description="Taobao / Tmall product scraper (login cookies recommended).",
-    version="1.0.0",
-    domains=("taobao.com", "tmall.com"),
-    tags=("ecommerce", "builtin", "playwright"),
-    scrape_spec=PLUGIN_SPECS["taobao"],
-)
+from plugins.alibaba_1688.manifest import MANIFEST
 
 
-class TaobaoScraper(BaseScraper):
-    platform = SourcePlatform.TAOBAO
-    site_key = "taobao"
+class Alibaba1688Scraper(BaseScraper):
+    """Scraper for https://www.1688.com/ — run ``crossborder login 1688`` for cookies."""
+
+    platform = SourcePlatform.ALIBABA_1688
+    site_key = "1688"
     base_domains = MANIFEST.domains
 
     def extract_product_id(self, url: str) -> str | None:
-        match = re.search(r"[?&]id=(\d+)", url)
-        if match:
-            return match.group(1)
-        match = re.search(r"/item/(\d+)", url)
+        match = re.search(r"/offer/(\d+)", url)
         return match.group(1) if match else None
 
     async def scrape_product(self, url: str) -> ScrapedProduct:
@@ -40,22 +27,21 @@ class TaobaoScraper(BaseScraper):
             self.first_text(
                 soup,
                 [
-                    "h1[data-spm]",
-                    "h1[class*='ItemHeader']",
+                    "h1.d-title",
                     "h1[class*='title']",
-                    ".tb-main-title",
+                    ".mod-detail-title h1",
                     "h1",
                 ],
             )
-            or f"Taobao Product {product_id}"
+            or f"1688 Product {product_id}"
         )
 
         price_text = self.first_text(
             soup,
             [
-                "[class*='Price']",
-                ".tb-rmb-num",
+                ".price-original",
                 "[class*='price']",
+                ".mod-detail-price",
             ],
         )
         price = self.parse_price(price_text)
@@ -63,20 +49,30 @@ class TaobaoScraper(BaseScraper):
         images = self.collect_images(
             soup,
             [
-                "#J_UlThumb img",
-                "[class*='PicGallery'] img",
+                ".detail-gallery img",
+                ".tab-content-container img",
+                "[class*='gallery'] img",
                 "img[src*='alicdn']",
             ],
             max_count=self.settings.max_images_per_product,
         )
+
+        description = self.first_text(
+            soup,
+            [".mod-detail-desc", "#desc-lazyload-container", "[class*='description']"],
+        )
+
+        seller = self.first_text(soup, [".company-name", "[class*='seller']", ".shop-company-name"])
 
         return ScrapedProduct(
             source=self.platform,
             source_url=url,
             source_product_id=product_id,
             title=title,
+            description=description,
             price=price,
             currency="CNY",
             images=images,
+            seller_name=seller,
             attributes={"price_raw": price_text},
         )

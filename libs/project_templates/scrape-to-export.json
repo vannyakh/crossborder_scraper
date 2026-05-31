@@ -1,0 +1,68 @@
+{
+  "id": "scrape-to-export",
+  "name": "Scrape to export",
+  "summary": "Webhook trigger → scrape product URL → prepare marketplace export preview.",
+  "description": "Ingest a product URL via webhook, scrape listing details, then run an export dry-run for your target marketplace.",
+  "category": "scrape",
+  "category_label": "Scrape pipeline",
+  "tags": ["scrape", "export", "webhook", "ecommerce"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "tpl-webhook-1",
+      "kind": "webhook",
+      "role": "trigger",
+      "label": "Product webhook",
+      "subtitle": "POST /hooks/scrape",
+      "status": "online",
+      "x": 80,
+      "y": 180
+    },
+    {
+      "id": "tpl-scrape-1",
+      "kind": "scrape",
+      "role": "action",
+      "label": "Scrape product",
+      "subtitle": "1688.com",
+      "pluginId": "1688",
+      "pluginProfile": "scraper-1688",
+      "status": "online",
+      "options": {
+        "plugin_id": "1688",
+        "ai_extraction": true,
+        "batch_mode": false
+      },
+      "x": 300,
+      "y": 180
+    },
+    {
+      "id": "tpl-export-1",
+      "kind": "export",
+      "role": "action",
+      "label": "Export listing",
+      "subtitle": "Dry-run marketplace export",
+      "status": "online",
+      "options": {
+        "marketplace": "shopify",
+        "dryRun": true
+      },
+      "x": 520,
+      "y": 180
+    }
+  ],
+  "edges": [
+    {
+      "id": "tpl-e-webhook-scrape",
+      "from": "tpl-webhook-1",
+      "to": "tpl-scrape-1",
+      "kind": "main"
+    },
+    {
+      "id": "tpl-e-scrape-export",
+      "from": "tpl-scrape-1",
+      "to": "tpl-export-1",
+      "kind": "main"
+    }
+  ]
+}

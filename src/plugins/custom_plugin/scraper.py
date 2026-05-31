@@ -1,23 +1,8 @@
 from urllib.parse import urlparse
 
 from core.models import SourcePlatform
-from core.plugins import (
-    PLUGIN_SPECS,
-    CustomDomainScraper,
-    SourcePluginManifest,
-    get_plugin_manager,
-)
-
-MANIFEST = SourcePluginManifest(
-    id="custom_plugin",
-    name="Custom plugin",
-    category="custom",
-    description="Template plugin — add domains in config/plugins.yaml (extra_domains).",
-    version="0.1.0",
-    domains=(),
-    tags=("custom", "template", "ecommerce"),
-    scrape_spec=PLUGIN_SPECS["custom_plugin"],
-)
+from core.plugins.base import CustomDomainScraper
+from core.plugins.manager import get_plugin_manager
 
 
 class CustomPluginScraper(CustomDomainScraper):

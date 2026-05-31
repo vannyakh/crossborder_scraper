@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 from core.base_scraper import BaseScraper
 from core.models import ScrapedProduct
+from core.plugins.flow_node import FlowNodeSpec
 from core.plugins.spec import EcommerceScrapeSpec, ScrapeCategory
 
 PluginKind = Literal["source", "service", "site"]
@@ -68,6 +69,7 @@ class SourcePluginManifest:
 class SourcePluginSpec:
     manifest: SourcePluginManifest
     scraper_cls: type[BaseScraper]
+    flow_node: FlowNodeSpec | None = None
 
     @property
     def id(self) -> str:

@@ -2,7 +2,7 @@ import { Box, Text } from '@chakra-ui/react'
 import type { CSSProperties } from 'react'
 import { Tooltip } from '@/components/ui/tooltip'
 import { useLocale } from '../../hooks/use-locale'
-import { peerInitials } from '../../lib/api/project-collaboration'
+import { formatCollaboratorDisplayName, peerInitials } from '../../lib/api/project-collaboration'
 import type { RemotePeerHighlight } from './project-flow-types'
 
 type ProjectRemotePeerFocusBadgeProps = {
@@ -15,12 +15,17 @@ export function ProjectRemotePeerFocusBadge({ peers }: ProjectRemotePeerFocusBad
 
   const primary = peers[0]!
   const extra = peers.length - 1
+  const primaryName = formatCollaboratorDisplayName(primary.username)
   const tooltip =
     extra > 0
       ? peers
-          .map((peer) => t('projects.collaboration.peerFocus', { name: peer.username }))
+          .map((peer) =>
+            t('projects.collaboration.peerFocus', {
+              name: formatCollaboratorDisplayName(peer.username),
+            }),
+          )
           .join('\n')
-      : t('projects.collaboration.peerFocus', { name: primary.username })
+      : t('projects.collaboration.peerFocus', { name: primaryName })
 
   return (
     <Tooltip content={tooltip}>
@@ -31,7 +36,7 @@ export function ProjectRemotePeerFocusBadge({ peers }: ProjectRemotePeerFocusBad
       >
         <Box className="project-flow-remote-peer-badge__dot" aria-hidden />
         <Text className="project-flow-remote-peer-badge__name" lineClamp={1}>
-          {primary.username}
+          {primaryName}
         </Text>
         {extra > 0 ? (
           <Text className="project-flow-remote-peer-badge__more" aria-hidden>
@@ -39,7 +44,7 @@ export function ProjectRemotePeerFocusBadge({ peers }: ProjectRemotePeerFocusBad
           </Text>
         ) : null}
         <Text className="project-flow-remote-peer-badge__initials" aria-hidden>
-          {peerInitials(primary.username)}
+          {peerInitials(primaryName)}
         </Text>
       </Box>
     </Tooltip>

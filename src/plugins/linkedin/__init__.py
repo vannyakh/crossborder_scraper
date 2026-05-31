@@ -1,3 +1,6 @@
-from plugins.linkedin.plugin import MANIFEST, LinkedInScraper
+from plugins.linkedin.manifest import FLOW_NODE, MANIFEST, SCRAPE_SPEC
+from plugins.linkedin.scraper import LinkedInScraper
 
-__all__ = ["LinkedInScraper", "MANIFEST"]
+SCRAPER = LinkedInScraper
+
+__all__ = ["FLOW_NODE", "MANIFEST", "SCRAPE_SPEC", "SCRAPER", "LinkedInScraper"]

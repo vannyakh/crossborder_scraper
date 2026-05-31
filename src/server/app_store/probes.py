@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import socket
+import urllib.error
+import urllib.request
 from typing import Any
 
 from server.app_store.catalog import StorePluginDefinition
@@ -40,6 +43,27 @@ def _redis_ping(
         return False, str(exc)
 
 
+def _ollama_api_reachable(host: str, port: int, timeout: float = 5.0) -> tuple[bool, str]:
+    url = f"http://{host}:{int(port)}/api/tags"
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            if resp.status != 200:
+                return False, f"HTTP {resp.status}"
+            body = resp.read().decode(errors="replace")
+            try:
+                payload = json.loads(body)
+            except json.JSONDecodeError:
+                return False, "invalid JSON response"
+            models = payload.get("models")
+            if isinstance(models, list):
+                return True, f"API OK · {len(models)} model(s) loaded"
+            return True, "API OK"
+    except urllib.error.HTTPError as exc:
+        return False, f"HTTP {exc.code}"
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        return False, str(exc)
+
+
 def probe_plugin(plugin: StorePluginDefinition, config: dict[str, Any]) -> dict[str, Any]:
     host = str(config.get("host") or "127.0.0.1")
     port = int(config.get("port") or plugin.default_port)
@@ -48,6 +72,10 @@ def probe_plugin(plugin: StorePluginDefinition, config: dict[str, Any]) -> dict[
 
     if plugin.id == "redis":
         ok, message = _redis_ping(host, port, str(password) if password else None)
+        return {"ok": ok, "message": message, "host": host, "port": port}
+
+    if plugin.id == "ollama":
+        ok, message = _ollama_api_reachable(host, port)
         return {"ok": ok, "message": message, "host": host, "port": port}
 
     if plugin.id in {"postgresql", "mysql", "mongodb", "memcached", "rabbitmq"}:

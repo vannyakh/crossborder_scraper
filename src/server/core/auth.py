@@ -3,7 +3,7 @@
 import base64
 import secrets
 
-from fastapi import Depends, HTTPException, WebSocket, status
+from fastapi import Depends, HTTPException, Request, WebSocket, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from config import get_settings
@@ -22,9 +22,18 @@ def verify_panel_credentials(username: str, password: str) -> bool:
     return user_ok and pass_ok
 
 
+def _project_token_user(request: Request) -> str | None:
+    return getattr(request.state, "project_token_auth", None)
+
+
 def require_panel_auth(
+    request: Request,
     credentials: HTTPBasicCredentials | None = Depends(_security),
 ) -> str:
+    token_user = _project_token_user(request)
+    if token_user:
+        return token_user
+
     settings = get_settings()
     if not settings.panel_auth_enabled:
         return credentials.username if credentials else "anonymous"
@@ -60,21 +69,44 @@ def _parse_basic_authorization(value: str) -> tuple[str, str] | None:
     return username, password
 
 
-def authenticate_websocket(websocket: WebSocket) -> str | None:
-    """Validate panel credentials for a WebSocket upgrade (query or header)."""
+def _parse_bearer_authorization(value: str) -> str | None:
+    raw_value = value.strip()
+    if not raw_value.lower().startswith("bearer "):
+        return None
+    token = raw_value[6:].strip()
+    return token or None
+
+
+def authenticate_websocket(websocket: WebSocket, *, project_id: str | None = None) -> str | None:
+    """Validate panel credentials or a project API token for a WebSocket upgrade."""
     settings = get_settings()
-    if not settings.panel_auth_enabled:
+    if not settings.panel_auth_enabled and project_id is None:
         return "anonymous"
 
     auth = websocket.query_params.get("authorization") or websocket.headers.get("authorization")
-    if not auth:
-        return None
+    if auth:
+        parsed = _parse_basic_authorization(auth)
+        if parsed:
+            username, password = parsed
+            if verify_panel_credentials(username, password):
+                return username
 
-    parsed = _parse_basic_authorization(auth)
-    if not parsed:
-        return None
+        bearer = _parse_bearer_authorization(auth)
+        if bearer and project_id:
+            from server.projects.settings_store import verify_project_token
 
-    username, password = parsed
-    if verify_panel_credentials(username, password):
-        return username
+            entry = verify_project_token(project_id, bearer)
+            if entry:
+                return f"token:{entry.get('label') or 'API token'}"
+
+    project_token = websocket.query_params.get("project_token")
+    if project_token and project_id:
+        from server.projects.settings_store import verify_project_token
+
+        entry = verify_project_token(project_id, project_token)
+        if entry:
+            return f"token:{entry.get('label') or 'API token'}"
+
+    if not settings.panel_auth_enabled:
+        return "anonymous"
     return None

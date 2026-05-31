@@ -12,7 +12,7 @@ from gateway.schedules_store import ensure_schedules_file
 from server.app_store.state import ensure_store_state
 from server.audit.service_logs import ensure_logs_file
 from server.core.panel_bind import configure_panel_bind
-from server.projects.store import ensure_projects_dir, seed_projects_if_empty
+from server.projects.flow_store import ensure_projects_dir
 from server.services.audit import log_operation
 
 
@@ -33,18 +33,17 @@ async def panel_lifespan(_app: FastAPI):
 
     ensure_schedules_file()
     ensure_projects_dir()
-    seeded = seed_projects_if_empty()
-    if seeded:
-        log_operation(
-            user="system",
-            operation_type="Project",
-            details=f"Seeded {seeded} dev project(s) from server.projects.seeds",
-        )
     get_scheduler().start()
     from gateway.integrate.lifecycle import start_all_channels, stop_all_channels
 
     await start_all_channels()
+    from server.projects.collaboration import start_project_collaboration_hub
+
+    await start_project_collaboration_hub()
     yield
 
+    from server.projects.collaboration import stop_project_collaboration_hub
+
+    await stop_project_collaboration_hub()
     await stop_all_channels()
     await get_scheduler().stop()

@@ -24,9 +24,10 @@ type MetricCardProps = {
   metric: RuntimeMetricId
   title: string
   metrics: ProjectRuntimeMetrics
+  onRefresh?: () => void
 }
 
-export function ProjectRuntimeMetricCard({ metric, title, metrics }: MetricCardProps) {
+export function ProjectRuntimeMetricCard({ metric, title, metrics, onRefresh }: MetricCardProps) {
   const { t } = useLocale()
   const theme = useChartTheme()
   const [expanded, setExpanded] = useState(false)
@@ -130,7 +131,10 @@ export function ProjectRuntimeMetricCard({ metric, title, metrics }: MetricCardP
                     </Menu.Item>
                     <Menu.Item
                       value="refresh"
-                      onClick={() => notifySuccess(t('projects.runtime.refreshQueued'))}
+                      onClick={() => {
+                        onRefresh?.()
+                        notifySuccess(t('projects.runtime.refreshQueued'))
+                      }}
                     >
                       {t('projects.runtime.refresh')}
                     </Menu.Item>

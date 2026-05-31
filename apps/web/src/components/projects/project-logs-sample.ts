@@ -1,7 +1,4 @@
-import type { ProjectDetail } from './project-sample-data'
-import { projectServiceNames } from './project-utils'
-
-export type ProjectLogSeverity = 'info' | 'warn' | 'error'
+export type ProjectLogSeverity = 'info' | 'warn' | 'error' | 'debug' | 'success'
 
 export type ProjectLogEntry = {
   id: string
@@ -19,98 +16,12 @@ export type LogHistogramBucket = {
   error: number
 }
 
-export type ProjectLogsBundle = {
-  entries: ProjectLogEntry[]
-  histogram: LogHistogramBucket[]
-  timezoneLabel: string
-}
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function formatProjectLogTime(at: number): string {
   const d = new Date(at)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${MONTHS[d.getMonth()]} ${d.getDate()} ${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
-
-function servicesForProject(project: ProjectDetail): string[] {
-  return projectServiceNames(project)
-}
-
-function telegramPayload(status: number): string {
-  return JSON.stringify({
-    message: `HTTP Request: POST https://api.telegram.org/bot***/sendMessage "HTTP/1.1 ${status} OK"`,
-    severity: 'info',
-  })
-}
-
-function dbCheckpointPayload(phase: 'starting' | 'complete'): string {
-  return JSON.stringify({
-    message:
-      phase === 'starting'
-        ? 'checkpoint starting: time'
-        : 'checkpoint complete: wrote 24 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.104 s, sync=0.003 s, total=0.112 s; sync files=6, longest=0.002 s, average=0.001 s; distance=163 kB, estimate=163 kB',
-    severity: 'error',
-  })
-}
-
-export function buildProjectLogs(project: ProjectDetail): ProjectLogsBundle {
-  const now = Date.now()
-  const services = servicesForProject(project)
-  const primary = services[0] ?? 'service'
-  const database = services.find((s) => s.toLowerCase().includes('db')) ?? services[1] ?? primary
-
-  const entries: ProjectLogEntry[] = []
-  let seq = 0
-
-  const add = (
-    offsetMin: number,
-    offsetSec: number,
-    service: string,
-    data: string,
-    severity: ProjectLogSeverity,
-  ) => {
-    const at = now - offsetMin * 60_000 - offsetSec * 1000
-    entries.push({
-      id: `log-${project.id}-${seq++}`,
-      at,
-      service,
-      data,
-      severity,
-    })
-  }
-
-  for (let m = 14; m >= 0; m -= 1) {
-    for (let i = 0; i < 3; i += 1) {
-      add(m, 50 - i * 11, primary, telegramPayload(200), 'info')
-    }
-    if (m === 1) {
-      add(m, 21, database, dbCheckpointPayload('starting'), 'error')
-      add(m, 21, database, dbCheckpointPayload('complete'), 'error')
-    }
-    if (m === 4 || m === 9) {
-      add(m, 18, database, dbCheckpointPayload('starting'), 'error')
-    }
-  }
-
-  add(0, 8, primary, telegramPayload(200), 'info')
-  add(
-    0,
-    3,
-    services[2] ?? primary,
-    JSON.stringify({ message: 'catalog sync idle', severity: 'info' }),
-    'info',
-  )
-
-  entries.sort((a, b) => a.at - b.at)
-
-  const histogram = buildLogHistogram(entries, '15m', now)
-
-  return {
-    entries,
-    histogram,
-    timezoneLabel: 'GMT+7',
-  }
 }
 
 const HISTOGRAM_CONFIG: Record<LogTimeRangeId, { buckets: number; bucketMs: number }> = {

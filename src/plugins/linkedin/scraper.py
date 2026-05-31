@@ -1,16 +1,6 @@
 from core.models import SourcePlatform
-from core.plugins import PLUGIN_SPECS, SocialPageScraper, SourcePluginManifest
-
-MANIFEST = SourcePluginManifest(
-    id="linkedin",
-    name="LinkedIn",
-    category="social",
-    description="Scrape public LinkedIn posts and company updates via Open Graph metadata.",
-    version="0.1.0",
-    domains=("linkedin.com",),
-    tags=("social", "b2b", "og"),
-    scrape_spec=PLUGIN_SPECS["linkedin"],
-)
+from core.plugins.base import SocialPageScraper
+from plugins.linkedin.manifest import MANIFEST
 
 
 class LinkedInScraper(SocialPageScraper):
