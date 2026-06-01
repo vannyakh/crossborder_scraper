@@ -207,3 +207,11 @@ class PanelAccessResponse(BaseModel):
     copy_text: str
     entry_path: str | None = None
     entrance_url: str | None = None
+
+
+class StoreInstallLogResponse(BaseModel):
+    plugin_id: str
+    status: str
+    mode: str | None = None
+    lines: list[str] = Field(default_factory=list)
+    tail: int = 0

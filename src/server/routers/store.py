@@ -28,6 +28,7 @@ from server.schemas import (
     StoreInstalledResponse,
     StoreInstallRequest,
     StoreManagedDatabaseResponse,
+    StoreInstallLogResponse,
     StorePluginCredentialsResponse,
     StorePluginDetailResponse,
     StoreUpdateConfigRequest,
@@ -139,6 +140,15 @@ async def store_connect(
         meta={"plugin_id": plugin_id, "mode": "external"},
     )
     return StoreInstalledResponse(**result)
+
+
+@router.get("/plugins/{plugin_id}/install-log", response_model=StoreInstallLogResponse)
+async def store_install_log(
+    plugin_id: str,
+    _username: str = Depends(require_panel_auth),
+) -> StoreInstallLogResponse:
+    """Return accumulated install / setup log lines for a plugin (native or docker)."""
+    return StoreInstallLogResponse(**get_store_manager().get_install_log(plugin_id))
 
 
 @router.get("/plugins/{plugin_id}/credentials", response_model=StorePluginCredentialsResponse)

@@ -5,6 +5,7 @@ import {
   type StoreCatalogItem,
   type StoreConnectRequest,
   type StoreEnvironment,
+  type StoreInstallLog,
   type StoreInstalled,
   type StoreInstallRequest,
   type StorePluginCredentials,
@@ -34,7 +35,11 @@ export function useStoreInstalledQuery() {
     queryKey: queryKeys.storeInstalled,
     queryFn: () =>
       api<{ items: StoreInstalled[]; total: number }>('/store/installed').then((r) => r.items),
-    refetchInterval: 10_000,
+    // Poll faster while any plugin is still installing so the status badge updates promptly.
+    refetchInterval: (query) => {
+      const items = query.state.data as StoreInstalled[] | undefined
+      return items?.some((i) => i.status === 'installing') ? 3_000 : 10_000
+    },
   })
 }
 
@@ -126,6 +131,20 @@ export function useStorePluginDetailQuery(pluginId: string | null) {
     queryKey: queryKeys.storePlugin(pluginId ?? ''),
     queryFn: () => api<StorePluginDetail>(`/store/plugins/${pluginId}`),
     enabled: Boolean(pluginId),
+  })
+}
+
+export function useStoreInstallLogQuery(pluginId: string | null, enabled = false) {
+  return useQuery({
+    queryKey: [...queryKeys.storePlugin(pluginId ?? ''), 'install-log'] as const,
+    queryFn: () => api<StoreInstallLog>(`/store/plugins/${pluginId}/install-log`),
+    enabled: Boolean(pluginId) && enabled,
+    // Poll every 2s while the install is still running, stop once done
+    refetchInterval: (query) => {
+      const data = query.state.data as StoreInstallLog | undefined
+      return data?.status === 'installing' ? 2_000 : false
+    },
+    staleTime: 0,
   })
 }
 

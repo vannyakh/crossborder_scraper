@@ -39,8 +39,8 @@ def run_native_install(
         return {
             "ok": False,
             "message": (
-                "Native driver install runs on Linux VPS hosts (apt or yum). "
-                "Use Docker install or connect an external instance on this machine."
+                "Native driver install is not available on this platform. "
+                "Use Docker install or connect an external instance."
             ),
         }
 
@@ -56,9 +56,9 @@ def run_native_install(
         "DATABASE": "panel",
         "CONFIG_DIR": str(workspace),
     }
-    result = run_driver_script(plugin_id, "install", env=env)
-    if result.get("log"):
-        log_path.write_text(str(result["log"]), encoding="utf-8")
+    # Pass log_path so the script output is streamed to the file in real time,
+    # enabling the panel to tail it while the install is still running.
+    result = run_driver_script(plugin_id, "install", env=env, log_path=log_path)
 
     if not result.get("ok"):
         return result

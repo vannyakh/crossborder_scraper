@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
+from ollama import AsyncClient as OllamaAsyncClient
+from ollama import ResponseError as OllamaResponseError
 
 from config import Settings
 from config.llm_providers import get_provider
@@ -16,6 +18,12 @@ SRC_DEFAULT = "default"
 SRC_MISSING_KEY = "missing_key"
 SRC_OLLAMA_OFFLINE = "ollama_offline"
 SRC_OLLAMA_EMPTY = "ollama_empty"
+
+
+def _ollama_root(base_url: str) -> str:
+    """Strip /v1 suffix to get the bare Ollama host URL."""
+    root = base_url.rstrip("/")
+    return root[:-3] if root.endswith("/v1") else root
 
 
 def _model_items(ids: list[str]) -> list[dict[str, str]]:
@@ -31,17 +39,10 @@ def _model_items(ids: list[str]) -> list[dict[str, str]]:
 
 
 async def _fetch_ollama_tags(base_url: str, timeout: float) -> list[str]:
-    root = base_url.rstrip("/")
-    if root.endswith("/v1"):
-        root = root[:-3]
-    async with httpx.AsyncClient(timeout=timeout) as http:
-        resp = await http.get(f"{root}/api/tags")
-        resp.raise_for_status()
-        body = resp.json()
-    models = body.get("models") if isinstance(body, dict) else None
-    if not isinstance(models, list):
-        return []
-    return [str(m.get("name", "")).strip() for m in models if isinstance(m, dict)]
+    """List locally installed Ollama models via the official SDK."""
+    client = OllamaAsyncClient(host=_ollama_root(base_url), timeout=timeout)
+    response = await client.list()
+    return [m.model for m in (response.models or []) if m.model]
 
 
 async def _fetch_openai_models(base_url: str, headers: dict[str, str], timeout: float) -> list[str]:
@@ -99,18 +100,25 @@ async def fetch_agent_llm_models(settings: Settings) -> dict[str, Any]:
     is_ollama = cfg.provider_id == "ollama" or cfg.is_local
 
     if is_ollama:
-        # Try Ollama /api/tags first; classify the failure with a specific source
+        # Try Ollama SDK list(); classify the failure with a specific source
         try:
             ids = await _fetch_ollama_tags(cfg.base_url, timeout)
-        except (httpx.ConnectError, httpx.ConnectTimeout):
+        except (httpx.ConnectError, httpx.ConnectTimeout, ConnectionRefusedError):
             return {
                 **base_payload,
                 "models": fallback,
                 "source": SRC_OLLAMA_OFFLINE,
-                "message": f"Cannot connect to Ollama at {cfg.base_url.rstrip('/v1').rstrip('/')}",
+                "message": f"Cannot connect to Ollama at {_ollama_root(cfg.base_url)}",
+            }
+        except OllamaResponseError as exc:
+            return {
+                **base_payload,
+                "models": fallback,
+                "source": SRC_OLLAMA_OFFLINE,
+                "message": f"Ollama error {exc.status_code}: {exc.error}",
             }
         except Exception:
-            # Fallback: try OpenAI-compatible /models endpoint
+            # Fallback: try OpenAI-compatible /models endpoint (custom local servers)
             try:
                 ids = await _fetch_openai_models(cfg.base_url, client._openai_headers(), timeout)
             except Exception as exc:

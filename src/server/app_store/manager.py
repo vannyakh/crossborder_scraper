@@ -174,6 +174,7 @@ class StoreManager:
         version: str | None = None,
         port: int | None = None,
     ) -> dict[str, Any]:
+        """Validate, register the install record, then run the driver script in background."""
         plugin = self._require_plugin(plugin_id)
         driver = get_driver_spec(plugin_id)
         if not driver:
@@ -186,7 +187,7 @@ class StoreManager:
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "Native driver install requires a Linux VPS with apt or yum. "
+                    "Native driver install is not available on this platform. "
                     "Use Docker install or connect an external instance."
                 ),
             )
@@ -215,6 +216,25 @@ class StoreManager:
         )
         state.save_installed(plugin_id, record)
 
+        # Return immediately; the driver script runs in the background.
+        asyncio.ensure_future(
+            self._bg_native_install(
+                plugin, plugin_id, config, record, password, resolved, bind_port
+            )
+        )
+        return self._public_installed(plugin_id, record)
+
+    async def _bg_native_install(
+        self,
+        plugin: Any,
+        plugin_id: str,
+        config: dict[str, Any],
+        record: dict[str, Any],
+        password: str,
+        resolved: Any,
+        bind_port: int,
+    ) -> None:
+        """Background task: run native driver script and update install record."""
         pdir = state.plugin_dir(plugin_id)
         try:
             result = await asyncio.to_thread(
@@ -237,12 +257,10 @@ class StoreManager:
                 probe=probe,
                 error=None if probe.get("ok") else probe.get("message"),
             )
-            state.save_installed(plugin_id, record)
-            return self._public_installed(plugin_id, record)
         except Exception as exc:
             record = state.touch_record(record, status="error", error=str(exc))
+        finally:
             state.save_installed(plugin_id, record)
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     async def install_docker(
         self,
@@ -251,6 +269,7 @@ class StoreManager:
         port: int | None = None,
         version: str | None = None,
     ) -> dict[str, Any]:
+        """Validate, register the install record, then bring up the container in background."""
         plugin = self._require_plugin(plugin_id)
         if not plugin.supports_docker:
             raise HTTPException(status_code=400, detail="plugin does not support docker install")
@@ -290,6 +309,23 @@ class StoreManager:
         )
         state.save_installed(plugin_id, record)
 
+        # Return immediately; docker compose up runs in the background.
+        asyncio.ensure_future(
+            self._bg_docker_install(plugin, plugin_id, config, record, bind_port, password, image)
+        )
+        return self._public_installed(plugin_id, record)
+
+    async def _bg_docker_install(
+        self,
+        plugin: Any,
+        plugin_id: str,
+        config: dict[str, Any],
+        record: dict[str, Any],
+        bind_port: int,
+        password: str,
+        image: str,
+    ) -> None:
+        """Background task: run docker compose up and update install record."""
         try:
             await asyncio.to_thread(
                 self._write_compose_and_up,
@@ -308,12 +344,10 @@ class StoreManager:
                 probe=probe,
                 error=None if probe.get("ok") else probe.get("message"),
             )
-            state.save_installed(plugin_id, record)
-            return self._public_installed(plugin_id, record)
         except Exception as exc:
             record = state.touch_record(record, status="error", error=str(exc))
+        finally:
             state.save_installed(plugin_id, record)
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     async def connect_external(self, plugin_id: str, config: dict[str, Any]) -> dict[str, Any]:
         plugin = self._require_plugin(plugin_id)
@@ -451,7 +485,35 @@ class StoreManager:
         return {"plugin_id": plugin_id, "removed": True}
 
     async def refresh_status(self, plugin_id: str) -> dict[str, Any]:
-        record = self._require_installed(plugin_id)
+        record = state.get_installed(plugin_id)
+        if not record:
+            # Return a not_installed stub for known catalog/source plugins so the
+            # settings drawer can open without 404 noise when the plugin is not yet installed.
+            plugin = get_plugin(plugin_id)
+            source = get_source_spec(plugin_id)
+            if plugin:
+                return {
+                    "plugin_id": plugin_id,
+                    "name": plugin.name,
+                    "category": plugin.category,
+                    "mode": None,
+                    "status": "not_installed",
+                    "config": {},
+                    "probe": None,
+                    "error": None,
+                }
+            if source:
+                return {
+                    "plugin_id": plugin_id,
+                    "name": source.manifest.name,
+                    "category": source.manifest.category,
+                    "mode": None,
+                    "status": "not_installed",
+                    "config": {},
+                    "probe": None,
+                    "error": None,
+                }
+            raise HTTPException(status_code=404, detail="plugin not installed")
         if record.get("mode") == "source":
             spec = get_source_spec(plugin_id)
             ok = bool(spec and spec.is_enabled())
@@ -544,6 +606,51 @@ class StoreManager:
             "probe": entry.get("probe"),
             "error": entry.get("error"),
             "container_name": entry.get("container_name") or config.get("container_name"),
+        }
+
+    def get_install_log(self, plugin_id: str) -> dict[str, Any]:
+        """Return accumulated install log lines for a plugin."""
+        record = state.get_installed(plugin_id)
+        status = record.get("status", "not_installed") if record else "not_installed"
+        mode = record.get("mode") if record else None
+
+        lines: list[str] = []
+
+        if mode == "native":
+            log_path = state.plugin_dir(plugin_id) / "install.log"
+            if log_path.is_file():
+                try:
+                    raw = log_path.read_text(encoding="utf-8", errors="replace")
+                    lines = raw.splitlines()
+                except OSError:
+                    lines = ["(log file not readable)"]
+            elif status == "installing":
+                lines = ["Install script starting — log will appear here shortly…"]
+
+        elif mode == "docker":
+            pdir = state.plugin_dir(plugin_id)
+            compose_file = pdir / "docker-compose.yml"
+            if compose_file.is_file():
+                try:
+                    result = docker.compose_logs(pdir, tail=200)
+                    lines = result.splitlines() if result else []
+                except Exception as exc:
+                    lines = [f"(docker logs unavailable: {exc})"]
+
+        if not lines and record:
+            error = record.get("error")
+            probe_msg = (record.get("probe") or {}).get("message")
+            if error:
+                lines = [f"Error: {error}"]
+            elif probe_msg:
+                lines = [probe_msg]
+
+        return {
+            "plugin_id": plugin_id,
+            "status": status,
+            "mode": mode,
+            "lines": lines,
+            "tail": len(lines),
         }
 
     def _require_plugin(self, plugin_id: str) -> StorePluginDefinition:

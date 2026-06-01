@@ -1,4 +1,4 @@
-import { Box, Button, HStack, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, HStack, SimpleGrid, Spinner, Table, Text, VStack } from '@chakra-ui/react'
 import { Settings } from 'lucide-react'
 import type { StoreInstalled } from '../../lib/api'
 import { DataList, DataListEmpty } from '../ui/DataList'
@@ -51,7 +51,10 @@ function InstalledGridCard({
               </Text>
             </Box>
           </HStack>
-          <StatusBadge status={statusTone(row.status)} label={row.status} />
+          <HStack gap={1.5}>
+            {row.status === 'installing' && <Spinner size="xs" color="fg.muted" />}
+            <StatusBadge status={statusTone(row.status)} label={row.status} />
+          </HStack>
         </HStack>
         <Text fontFamily="mono" fontSize="xs" color="fg.muted" lineClamp={1} title={endpoint}>
           {endpoint}
@@ -147,7 +150,10 @@ export function StoreInstalledList({
                   </Text>
                 </Table.Cell>
                 <Table.Cell>
-                  <StatusBadge status={statusTone(row.status)} label={row.status} />
+                  <HStack gap={1.5}>
+                    {row.status === 'installing' && <Spinner size="xs" color="fg.muted" />}
+                    <StatusBadge status={statusTone(row.status)} label={row.status} />
+                  </HStack>
                   {row.probe?.message ? (
                     <Text
                       fontSize="xs"

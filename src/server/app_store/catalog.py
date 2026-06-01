@@ -211,8 +211,9 @@ PLUGINS: dict[str, StorePluginDefinition] = {
         name="Ollama",
         category="ai",
         description=(
-            "Local LLM runtime for gateway agent workflows — run open models on your VPS "
-            "without sending prompts to a cloud API."
+            "Local LLM runtime for gateway agent workflows — run open models on Linux or macOS "
+            "without sending prompts to a cloud API. Install natively (systemd on Linux, "
+            "Homebrew on macOS) or via Docker for container setups."
         ),
         version="latest",
         default_port=11434,

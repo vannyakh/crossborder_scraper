@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-import httpx
+from ollama import AsyncClient as OllamaAsyncClient
 
 from config import Settings, get_settings
 from config.llm_providers import list_providers
@@ -136,17 +136,18 @@ class AgentLlmService:
             },
         ]
 
-    async def pull_ollama_model(self, model: str, base_url: str = "http://127.0.0.1:11434/v1") -> dict[str, Any]:
+    async def pull_ollama_model(
+        self, model: str, base_url: str = "http://127.0.0.1:11434/v1"
+    ) -> dict[str, Any]:
         """Trigger an Ollama model pull in the background; returns immediately."""
         root = base_url.rstrip("/")
         if root.endswith("/v1"):
             root = root[:-3]
-        pull_url = f"{root}/api/pull"
 
         async def _do_pull() -> None:
             try:
-                async with httpx.AsyncClient(timeout=600) as http:
-                    await http.post(pull_url, json={"name": model, "stream": False})
+                client = OllamaAsyncClient(host=root, timeout=600)
+                await client.pull(model, stream=False)
             except Exception:
                 pass
 

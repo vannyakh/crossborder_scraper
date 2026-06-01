@@ -63,20 +63,20 @@ export function StorePanels() {
     )
   }
 
-  async function handleInstallConfirm(options: StoreInstallOptions) {
+  function handleInstallConfirm(options: StoreInstallOptions) {
+    // Close modal and switch tab immediately — install runs in background on the server.
+    setInstallTarget(null)
+    setTab('installed')
     setInstallingId(options.pluginId)
-    try {
-      await installMutation.mutateAsync({
+    installMutation.mutate(
+      {
         pluginId: options.pluginId,
         mode: options.mode,
         version: options.version,
         port: options.port,
-      })
-      setInstallTarget(null)
-      setTab('installed')
-    } finally {
-      setInstallingId(null)
-    }
+      },
+      { onSettled: () => setInstallingId(null) },
+    )
   }
 
   function handleInstallClick(id: string) {

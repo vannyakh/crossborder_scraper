@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import socket
-import urllib.error
-import urllib.request
 from typing import Any
+
+from ollama import Client as OllamaClient
+from ollama import ResponseError as OllamaResponseError
 
 from server.app_store.catalog import StorePluginDefinition
 
@@ -44,23 +44,15 @@ def _redis_ping(
 
 
 def _ollama_api_reachable(host: str, port: int, timeout: float = 5.0) -> tuple[bool, str]:
-    url = f"http://{host}:{int(port)}/api/tags"
+    """Probe Ollama using the official Python SDK (sync)."""
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
-            if resp.status != 200:
-                return False, f"HTTP {resp.status}"
-            body = resp.read().decode(errors="replace")
-            try:
-                payload = json.loads(body)
-            except json.JSONDecodeError:
-                return False, "invalid JSON response"
-            models = payload.get("models")
-            if isinstance(models, list):
-                return True, f"API OK · {len(models)} model(s) loaded"
-            return True, "API OK"
-    except urllib.error.HTTPError as exc:
-        return False, f"HTTP {exc.code}"
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        client = OllamaClient(host=f"http://{host}:{int(port)}", timeout=timeout)
+        response = client.list()
+        count = len(response.models or [])
+        return True, f"API OK · {count} model(s) loaded"
+    except OllamaResponseError as exc:
+        return False, f"HTTP {exc.status_code}: {exc.error}"
+    except Exception as exc:
         return False, str(exc)
 
 

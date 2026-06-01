@@ -83,12 +83,24 @@ const API_PROXY_PATHS = [
 async function probeDevApiPort(port: number): Promise<boolean> {
   try {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 600)
+    const timer = setTimeout(() => controller.abort(), 800)
     const res = await fetch(`http://127.0.0.1:${port}/panel/access`, {
       signal: controller.signal,
     })
     clearTimeout(timer)
-    return res.ok
+    if (!res.ok) return false
+    // Confirm this server has full route coverage. Old/background panels may be
+    // missing newer routes (e.g. /projects/templates) and would return 404.
+    // A 401 (auth-required) means the route exists on this server — that's fine.
+    try {
+      const routeCheck = await fetch(`http://127.0.0.1:${port}/projects/templates`, {
+        signal: AbortSignal.timeout(600),
+      })
+      return routeCheck.status !== 404
+    } catch {
+      // Network error means port not reachable — let caller retry
+      return false
+    }
   } catch {
     return false
   }

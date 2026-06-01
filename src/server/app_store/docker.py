@@ -89,6 +89,12 @@ def compose_down(plugin_dir: Path, *, volumes: bool = False) -> tuple[bool, str]
     return True, (stdout or "removed").strip()
 
 
+def compose_logs(plugin_dir: Path, *, tail: int = 200) -> str:
+    """Return the last *tail* lines of compose service logs as a plain string."""
+    code, stdout, stderr = run_compose(plugin_dir, "logs", "--no-color", f"--tail={tail}")
+    return (stdout or stderr or "").strip()
+
+
 def container_running(name: str) -> bool:
     if not name or not docker_cli_available():
         return False

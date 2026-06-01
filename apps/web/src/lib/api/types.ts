@@ -1399,6 +1399,14 @@ export type StorePluginCredentials = {
   has_password: boolean
 }
 
+export type StoreInstallLog = {
+  plugin_id: string
+  status: string
+  mode?: string | null
+  lines: string[]
+  tail: number
+}
+
 export type StorePluginDetail = StoreCatalogItem & {
   installation?: StoreInstalled | null
 }

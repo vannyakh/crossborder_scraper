@@ -2,19 +2,22 @@ import {
   Badge,
   Box,
   Button,
+  Code,
   Drawer,
   HStack,
   IconButton,
   Portal,
   Separator,
+  Spinner,
   Switch,
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { RefreshCw, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useManagedDatabaseQuery } from '../../hooks/queries/use-database-engine-query'
 import {
+  useStoreInstallLogQuery,
   useStoreLifecycleMutation,
   useStorePluginDetailQuery,
   useStoreRefreshMutation,
@@ -33,6 +36,119 @@ import { sectionsForPlugin, type StorePluginSectionId } from './store-plugin-sec
 import { InfoRow } from '../ui/InfoRow'
 import { pluginIcon, statusTone } from './store-utils'
 import { ModuleGuidePanel } from '../modules/ModuleGuidePanel'
+
+function InstallLogPanel({
+  pluginId,
+  status,
+  mode,
+}: {
+  pluginId: string | null
+  status: string
+  mode: string | null
+}) {
+  const isInstalling = status === 'installing'
+  const hasLog = mode === 'native' || mode === 'docker'
+  const logQuery = useStoreInstallLogQuery(pluginId, hasLog)
+  const logData = logQuery.data
+  const lines = logData?.lines ?? []
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to newest line while installing
+  useEffect(() => {
+    if (isInstalling && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [lines.length, isInstalling])
+
+  if (!hasLog) {
+    return (
+      <DataListEmpty>
+        Install logs are available for native driver and Docker installs.
+      </DataListEmpty>
+    )
+  }
+
+  return (
+    <VStack align="stretch" gap={3}>
+      <HStack justify="space-between">
+        <HStack gap={2}>
+          <Text fontSize="sm" fontWeight="medium">
+            {mode === 'docker' ? 'Container logs' : 'Install log'}
+          </Text>
+          {isInstalling && <Spinner size="xs" color="fg.muted" />}
+        </HStack>
+        <IconButton
+          aria-label="Refresh log"
+          size="xs"
+          variant="ghost"
+          loading={logQuery.isFetching}
+          onClick={() => void logQuery.refetch()}
+        >
+          <RefreshCw size={13} />
+        </IconButton>
+      </HStack>
+
+      {logQuery.isLoading ? (
+        <HStack gap={2} py={4} justify="center">
+          <Spinner size="sm" />
+          <Text fontSize="sm" color="fg.muted">
+            Loading log…
+          </Text>
+        </HStack>
+      ) : lines.length === 0 ? (
+        <DataListEmpty>
+          {isInstalling
+            ? 'Install starting — log will appear here shortly.'
+            : 'No log output recorded for this install.'}
+        </DataListEmpty>
+      ) : (
+        <Box
+          bg="bg.canvas"
+          borderWidth="1px"
+          borderColor="border.subtle"
+          borderRadius="var(--radius-card)"
+          overflow="auto"
+          maxH="480px"
+          p={3}
+          fontFamily="mono"
+          fontSize="xs"
+        >
+          {lines.map((line, i) => (
+            <Code
+              key={i}
+              display="block"
+              bg="transparent"
+              color={
+                line.startsWith('[ERROR]') || line.includes('error') || line.includes('Error')
+                  ? 'red.400'
+                  : line.startsWith('[') && line.includes('Exit code: 0')
+                    ? 'green.400'
+                    : line.startsWith('[')
+                      ? 'fg.muted'
+                      : 'fg'
+              }
+              whiteSpace="pre-wrap"
+              wordBreak="break-all"
+              lineHeight="tall"
+            >
+              {line}
+            </Code>
+          ))}
+          <div ref={bottomRef} />
+        </Box>
+      )}
+
+      {!isInstalling && logData && (
+        <Text fontSize="xs" color="fg.subtle">
+          {lines.length} line{lines.length !== 1 ? 's' : ''} · status:{' '}
+          <Text as="span" fontWeight="medium">
+            {logData.status}
+          </Text>
+        </Text>
+      )}
+    </VStack>
+  )
+}
 
 function isDatabaseService(item?: StoreCatalogItem | null): boolean {
   if (!item) return false
@@ -122,7 +238,7 @@ export function StorePluginSettingsDrawer({
     if (open && pluginId) {
       setSection(merged?.has_guide ? 'guide' : scrapePlugin ? 'specification' : 'service')
       if (!scrapePlugin) {
-        void refreshMutation.mutateAsync(pluginId)
+        refreshMutation.mutate(pluginId)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when drawer opens (services only)
@@ -359,10 +475,11 @@ export function StorePluginSettingsDrawer({
 
       case 'logs':
         return (
-          <DataListEmpty>
-            Container log streaming will be added in a future release. Use Docker logs on the host
-            for now.
-          </DataListEmpty>
+          <InstallLogPanel
+            pluginId={pluginId}
+            status={status}
+            mode={installation?.mode ?? null}
+          />
         )
 
       default:
