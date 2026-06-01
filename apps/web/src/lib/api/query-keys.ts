@@ -72,5 +72,7 @@ export const queryKeys = {
   projectTemplate: (id: string) => ['projects', 'templates', id] as const,
   projectRuntime: (projectId: string) => ['projects', projectId, 'runtime'] as const,
   projectSettings: (projectId: string) => ['projects', projectId, 'settings'] as const,
+  projectRuns: (projectId: string) => ['projects', projectId, 'runs'] as const,
+  projectRun: (projectId: string, runId: string) => ['projects', projectId, 'runs', runId] as const,
   pluginProfiles: ['projects', 'plugin-profiles'] as const,
 }

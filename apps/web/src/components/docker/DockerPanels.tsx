@@ -29,25 +29,9 @@ import type { DockerHubItem } from '../../lib/api'
 import { ROUTE_PATHS } from '../../routes/route-config'
 import { Toolbar } from '../layout/Toolbar'
 import { DataListEmpty } from '../ui/DataList'
+import { InfoRow } from '../ui/InfoRow'
 import { SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <HStack
-      justify="space-between"
-      py={2}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      fontSize="sm"
-    >
-      <Text color="fg.muted">{label}</Text>
-      <Text fontWeight="medium" fontFamily="mono" fontSize="xs" textAlign="right" lineClamp={2}>
-        {value || '—'}
-      </Text>
-    </HStack>
-  )
-}
 
 function statusTone(status: string): 'success' | 'running' | 'neutral' | 'danger' {
   if (status === 'running') return 'success'

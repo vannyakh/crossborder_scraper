@@ -14,34 +14,9 @@ import { notifyError, notifySuccess } from '../../lib/toast'
 import { PanelSelect } from '../ui/PanelSelect'
 import { SectionCard } from '../ui/Section'
 import { fieldStyles } from '../ui/field-styles'
+import { InfoRow } from '../ui/InfoRow'
 import { DB_ACCESS_OPTIONS } from './database-access'
 import type { DatabaseConfigSectionId } from './database-config-sections'
-
-function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <HStack
-      justify="space-between"
-      py={2}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      fontSize="sm"
-      gap={4}
-    >
-      <Text color="fg.muted" flexShrink={0}>
-        {label}
-      </Text>
-      <Text
-        fontWeight="medium"
-        fontFamily={mono ? 'mono' : undefined}
-        fontSize="xs"
-        textAlign="right"
-        lineClamp={2}
-      >
-        {value}
-      </Text>
-    </HStack>
-  )
-}
 
 export function DatabaseConfigSectionBody({
   section,

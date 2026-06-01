@@ -74,13 +74,27 @@ Node config is **JSON-driven** — see `node-config/schemas/*.json` and `node-co
 
 **Agent parameters:** schema `parametersLayout: "agent-slots"` + editable `agentPrompt` field in `agent.json`. Footer slot chips — `ProjectAgentSlotChips.tsx` (Model / Memory / Tool). Occupied chip → `focusCanvasNode(id, { openConfig: true })`; empty → `openSlotAdd(agentId, slotIndex)`.
 
+## Undo / redo
+
+`useProjectHistory` hook (`use-project-history.ts`) maintains `pastRef` / `futureRef` arrays (max 50 snapshots).
+
+- Call `pushHistory(project)` **before** any structural mutation (add node, delete, move, connect)
+- Exposed: `undo()`, `redo()`, `canUndo`, `canRedo` — wired to toolbar buttons and `Cmd/Ctrl+Z` / `Cmd/Ctrl+Shift+Z`
+
+## Server-side run execution
+
+`POST /projects/{id}/run` → `ProjectRunnerService.start_run()` (background task, topological step order) → poll `GET /projects/{id}/runs/{run_id}` at 800 ms until terminal status.
+
+Frontend hooks: `useProjectRunMutation`, `useProjectRunStopMutation`, `useProjectRunQuery` — `hooks/queries/use-project-run-mutation.ts`.
+Run records: `src/server/projects/run_store.py` → `data/projects/_runs/{id}.json`.
+
 ## Live log console
 
 Bottom **Splitter** panel — `ProjectFlowCanvasSplitter.tsx` uses Chakra `Splitter` (vertical) between canvas and logs.
 
 - Drag the handle to resize canvas vs live logs (10–55% for logs panel)
 - Opens automatically when a workflow run or single-step execute starts
-- Preview log lines from `buildNodeConsoleLines()` in `project-flow-console.ts` (mock until flow API)
+- Log lines sourced from `ProjectRunRecord.steps[].log` during real server runs
 - Toolbar **Terminal** icon toggles the console
 - Node config drawer **Output** tab — `ProjectNodeConfigOutput.tsx`
 

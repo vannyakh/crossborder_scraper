@@ -1,13 +1,23 @@
 import { Box, type BoxProps } from '@chakra-ui/react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+
+type ShimmerSurfaceProps = BoxProps & {
+  /** Stagger shimmer sweep (e.g. `0.12s`) via `--shimmer-delay`. */
+  delay?: string
+}
 
 /** Card / panel shell with diagonal shimmer sweep */
-export function ShimmerSurface({ children, className, ...rest }: BoxProps) {
+export function ShimmerSurface({ children, className, delay, style, ...rest }: ShimmerSurfaceProps) {
   return (
     <Box
       className={['skeleton-shimmer', className].filter(Boolean).join(' ')}
       position="relative"
       overflow="hidden"
+      style={
+        delay
+          ? ({ ...style, '--shimmer-delay': delay } as CSSProperties)
+          : style
+      }
       {...rest}
     >
       {children}
@@ -43,14 +53,15 @@ export function ShimmerBar({
   w = 'full',
   h = '14px',
   radius = 'var(--radius-card)',
+  delay,
   ...rest
-}: BoxProps & {
+}: ShimmerSurfaceProps & {
   w?: string | number
   h?: string | number
   radius?: string
 }) {
   return (
-    <ShimmerSurface borderRadius={radius} h={h} w={w} {...rest}>
+    <ShimmerSurface borderRadius={radius} delay={delay} h={h} w={w} {...rest}>
       <ShimmerBlock w="full" h="full" radius={radius} />
     </ShimmerSurface>
   )

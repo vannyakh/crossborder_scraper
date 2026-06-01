@@ -1,0 +1,143 @@
+{
+  "id": "smart-notification-flow",
+  "name": "Smart Notification Monitor",
+  "summary": "Scrape on schedule → multi-condition quality gate → AI analysis agent → tiered Telegram alerts.",
+  "description": "Run a scrape job on a schedule, pass results through a quality condition gate, route passing items to a Telegram success notification, and route failures to an AI analysis agent that diagnoses the issue before sending an urgent alert. Ideal for catalog monitoring with smart alerting.",
+  "category": "agent",
+  "category_label": "Agent automation",
+  "tags": ["notify", "telegram", "condition", "agent", "monitor", "alert", "smart"],
+  "author": "Cross-Border",
+  "featured": false,
+  "nodes": [
+    {
+      "id": "n-schedule-1",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "Hourly monitor",
+      "subtitle": "cron: 0 * * * *",
+      "status": "online",
+      "x": 60,
+      "y": 220
+    },
+    {
+      "id": "n-scrape-1",
+      "kind": "scrape",
+      "role": "action",
+      "label": "Catalog scrape check",
+      "subtitle": "1688.com",
+      "pluginId": "1688",
+      "pluginProfile": "scraper-1688",
+      "status": "online",
+      "options": {
+        "plugin_id": "1688",
+        "ai_extraction": true,
+        "batch_mode": false
+      },
+      "x": 280,
+      "y": 220
+    },
+    {
+      "id": "n-condition-quality",
+      "kind": "condition",
+      "role": "action",
+      "label": "Quality gate",
+      "subtitle": "success_rate >= 0.9",
+      "status": "online",
+      "x": 500,
+      "y": 220
+    },
+    {
+      "id": "n-notify-ok",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: All OK",
+      "subtitle": "Catalog healthy ✅",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "info"
+      },
+      "x": 720,
+      "y": 120
+    },
+    {
+      "id": "n-agent-diagnose",
+      "kind": "agent",
+      "role": "agent",
+      "label": "Failure diagnosis agent",
+      "subtitle": "Root cause analysis",
+      "agentPrompt": "The catalog scrape monitor detected a quality failure. Analyze the most recent run results: check which URLs failed, identify common error patterns (CAPTCHA, timeout, blocked IPs, structural change), and provide a short root-cause summary with recommended actions. Format the response as a brief Telegram message.",
+      "status": "online",
+      "x": 720,
+      "y": 320
+    },
+    {
+      "id": "n-notify-warn",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: Urgent alert",
+      "subtitle": "Failure with AI diagnosis",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "error"
+      },
+      "x": 940,
+      "y": 320
+    },
+    {
+      "id": "n-condition-retry",
+      "kind": "condition",
+      "role": "action",
+      "label": "Retry threshold?",
+      "subtitle": "fail_count < 3",
+      "status": "online",
+      "x": 500,
+      "y": 400
+    },
+    {
+      "id": "n-sticky-note",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Alert levels",
+      "noteBody": "🟢 Success path: Telegram info message every hour.\n🔴 Failure path: AI agent diagnoses root cause and sends urgent alert.\n\nAdjust the quality gate threshold in the condition node config.",
+      "noteColor": "yellow",
+      "noteWidth": 260,
+      "noteHeight": 120,
+      "x": 60,
+      "y": 400
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-schedule-scrape",
+      "from": "n-schedule-1",
+      "to": "n-scrape-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-scrape-quality",
+      "from": "n-scrape-1",
+      "to": "n-condition-quality",
+      "kind": "main"
+    },
+    {
+      "id": "e-quality-ok",
+      "from": "n-condition-quality",
+      "to": "n-notify-ok",
+      "kind": "main"
+    },
+    {
+      "id": "e-quality-fail",
+      "from": "n-condition-quality",
+      "to": "n-agent-diagnose",
+      "kind": "main"
+    },
+    {
+      "id": "e-agent-notify",
+      "from": "n-agent-diagnose",
+      "to": "n-notify-warn",
+      "kind": "main"
+    }
+  ]
+}

@@ -749,6 +749,117 @@ button:focus-visible {
   background: var(--chat-assistant-bubble);
   color: var(--app-fg);
   border: 1px solid var(--app-border);
+  position: relative;
+}
+
+/* markdown inside assistant bubbles */
+.agent-chat__md { white-space: normal; }
+.agent-chat__md p { margin: 0 0 0.55em; }
+.agent-chat__md p:last-child { margin-bottom: 0; }
+.agent-chat__md strong { font-weight: 600; }
+.agent-chat__md em { font-style: italic; }
+.agent-chat__md code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82em;
+  background: var(--chakra-colors-bg-muted, rgba(99,110,123,0.15));
+  border: 1px solid var(--app-border);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.agent-chat__md pre {
+  margin: 0.6em 0;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--app-border);
+  background: var(--chakra-colors-bg-subtle, #161b22);
+  overflow: auto;
+}
+.agent-chat__md pre code {
+  display: block;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 0;
+  font-size: 0.8125em;
+  white-space: pre;
+  line-height: 1.5;
+}
+.agent-chat__md ul, .agent-chat__md ol {
+  margin: 0.4em 0 0.4em 1.25em;
+  padding: 0;
+}
+.agent-chat__md li { margin-bottom: 0.2em; }
+.agent-chat__md a { color: var(--app-accent); text-decoration: underline; }
+.agent-chat__md h1,.agent-chat__md h2,.agent-chat__md h3 {
+  font-weight: 600; margin: 0.5em 0 0.3em;
+}
+.agent-chat__md h1 { font-size: 1.1em; }
+.agent-chat__md h2 { font-size: 1em; }
+.agent-chat__md h3 { font-size: 0.92em; }
+.agent-chat__md hr {
+  border: none;
+  border-top: 1px solid var(--app-border);
+  margin: 0.75em 0;
+}
+
+/* copy button on hover */
+.agent-chat__bubble-wrap { position: relative; }
+.agent-chat__copy {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 0.25rem;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--app-border);
+  background: var(--chakra-colors-bg-panel);
+  color: var(--chakra-colors-fg-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.agent-chat__bubble-wrap:hover .agent-chat__copy { opacity: 1; }
+.agent-chat__copy:hover { color: var(--app-fg); background: var(--chakra-colors-bg-muted); }
+
+/* starter prompts */
+.agent-chat__starters {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
+  padding: 2rem;
+}
+.agent-chat__starters-title {
+  font-size: 0.875rem;
+  color: var(--chakra-colors-fg-muted);
+  text-align: center;
+}
+.agent-chat__starters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  max-width: 28rem;
+  width: 100%;
+}
+.agent-chat__starter {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--app-border);
+  background: var(--chakra-colors-bg-panel);
+  color: var(--app-fg);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.agent-chat__starter:hover {
+  background: var(--chakra-colors-bg-muted);
+  border-color: color-mix(in srgb, var(--app-accent) 40%, var(--app-border));
 }
 
 .agent-chat__row--user .agent-chat__bubble {
@@ -975,12 +1086,15 @@ button:focus-visible {
 /* —— Skeleton shimmer (dashboard & panels) —— */
 :root {
   --skeleton-line: color-mix(in srgb, var(--app-border) 72%, transparent);
-  --skeleton-shine: color-mix(in srgb, var(--app-fg) 6%, transparent);
+  --skeleton-shine: color-mix(in srgb, var(--app-fg) 8%, transparent);
+  --skeleton-shine-mid: color-mix(in srgb, var(--app-fg) 14%, transparent);
+  --shimmer-duration: 1.6s;
 }
 
 .dark {
   --skeleton-line: color-mix(in srgb, var(--app-border) 55%, #21262d);
-  --skeleton-shine: color-mix(in srgb, white 10%, transparent);
+  --skeleton-shine: color-mix(in srgb, white 8%, transparent);
+  --skeleton-shine-mid: color-mix(in srgb, white 16%, transparent);
 }
 
 .skeleton-block {
@@ -993,22 +1107,32 @@ button:focus-visible {
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  will-change: transform;
   background: linear-gradient(
     105deg,
     transparent 0%,
-    transparent 38%,
-    var(--skeleton-shine) 50%,
-    transparent 62%,
+    transparent 32%,
+    var(--skeleton-shine) 44%,
+    var(--skeleton-shine-mid) 50%,
+    var(--skeleton-shine) 56%,
+    transparent 68%,
     transparent 100%
   );
-  transform: translateX(-120%);
-  animation: skeleton-shimmer-sweep 1.35s ease-in-out infinite;
+  transform: translateX(-130%);
+  animation: skeleton-shimmer-sweep var(--shimmer-duration) linear infinite;
+  animation-delay: var(--shimmer-delay, 0s);
 }
 
 @keyframes skeleton-shimmer-sweep {
   100% {
-    transform: translateX(120%);
+    transform: translateX(130%);
   }
+}
+
+.agent-chat--skeleton .agent-chat__scroll {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2826,35 +2950,28 @@ button:focus-visible {
 
 .project-flow-out-rail__entry-label {
   position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.6875rem;
+  /* Center over the trigger card using --node-body-w set on the node root */
+  left: calc(var(--node-body-w, 108px) / -2);
+  transform: translateX(-50%);
+  /* Sit above the card: rail center is at anchorTopPx (54px for triggers);
+     -88px brings the label ~34px above the node-root top, clearing the hover toolbar */
+  top: -88px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 0.625rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
-  color: #fff;
-  background: color-mix(in srgb, var(--app-accent) 88%, #0f172a);
-  box-shadow: var(--flyout-shadow);
+  color: color-mix(in srgb, var(--app-accent) 85%, #000);
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--chakra-colors-bg-panel));
+  border: 1px solid color-mix(in srgb, var(--app-accent) 30%, transparent);
   pointer-events: none;
+  z-index: 3;
 }
 
-.project-flow-out-rail__entry-label::before {
-  content: '';
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  margin-right: 2px;
-  border: 5px solid transparent;
-  border-right-color: color-mix(in srgb, var(--app-accent) 88%, #0f172a);
-  transform: translateY(-50%);
-}
-
-.project-flow-node-root--flow-entry {
-  padding-right: 148px !important;
-}
+/* No arrow — label sits directly above the card */
 
 /* Main-path “add step” port — square + at end of out-rail line */
 .project-flow-handle--add-step {

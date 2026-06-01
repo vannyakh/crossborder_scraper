@@ -1,12 +1,60 @@
 {
   "kind": "postgres",
-  "defaultTab": "source",
+  "defaultTab": "credentials",
   "tabs": [
+    { "id": "credentials", "labelKey": "projects.config.tabs.credentials" },
     { "id": "source", "labelKey": "projects.config.tabs.source" },
     { "id": "network", "labelKey": "projects.config.tabs.network" },
     { "id": "settings", "labelKey": "projects.config.tabs.settings" }
   ],
   "sections": [
+    {
+      "id": "credentials",
+      "labelKey": "projects.config.sections.credentials",
+      "tab": "credentials",
+      "fields": [
+        {
+          "id": "pg-host",
+          "labelKey": "projects.config.fields.host",
+          "type": "mono",
+          "bind": "host",
+          "editable": true,
+          "placeholderText": "127.0.0.1"
+        },
+        {
+          "id": "pg-port",
+          "labelKey": "projects.config.fields.port",
+          "type": "text",
+          "optionKey": "port",
+          "editable": true,
+          "placeholderText": "5432"
+        },
+        {
+          "id": "pg-db",
+          "labelKey": "projects.config.fields.dbName",
+          "type": "text",
+          "optionKey": "dbName",
+          "editable": true,
+          "placeholderText": "postgres"
+        },
+        {
+          "id": "pg-user",
+          "labelKey": "projects.config.fields.username",
+          "type": "text",
+          "optionKey": "username",
+          "editable": true,
+          "placeholderText": "postgres"
+        },
+        {
+          "id": "pg-pass",
+          "labelKey": "projects.config.fields.password",
+          "type": "secret",
+          "optionKey": "password",
+          "editable": true,
+          "hintKey": "projects.config.credentialHint"
+        }
+      ]
+    },
     {
       "id": "source",
       "labelKey": "projects.config.sections.source",

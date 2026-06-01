@@ -385,31 +385,73 @@ export function BatchJobsSkeleton({ rows = 6 }: { rows?: number }) {
   )
 }
 
+function ChatMessageSkeleton({
+  align,
+  bubbleW,
+  bubbleH,
+  delay,
+}: {
+  align: 'start' | 'end'
+  bubbleW: string
+  bubbleH: string
+  delay?: string
+}) {
+  const isUser = align === 'end'
+  return (
+    <div className={`agent-chat__row${isUser ? ' agent-chat__row--user' : ''}`}>
+      <ShimmerBar
+        w="2rem"
+        h="2rem"
+        radius="calc(var(--radius-input) - 2px)"
+        flexShrink={0}
+        delay={delay}
+      />
+      <Box className="agent-chat__bubble-wrap" w={bubbleW} maxW={bubbleW}>
+        <ShimmerBar w="full" h={bubbleH} radius="var(--radius-panel)" delay={delay} />
+      </Box>
+    </div>
+  )
+}
+
 export function ChatPanelSkeleton() {
   return (
-    <Box className="agent-chat" minH="min(480px, 62vh)">
-      <HStack justify="space-between" mb={4} flexWrap="wrap" gap={2}>
-        <Box flex={1} minW="10rem">
-          <ShimmerBlock w="72px" h="18px" mb={1.5} />
-          <ShimmerBlock w="min(240px, 80%)" h="11px" radius="sm" />
+    <Box
+      className="agent-chat agent-chat--skeleton"
+      flex="1 1 auto"
+      minH={0}
+      h="100%"
+      aria-hidden
+    >
+      <header className="agent-chat__header">
+        <Box flex={1} minW={0}>
+          <ShimmerBar w="4.5rem" h="1.125rem" mb={1} />
+          <ShimmerBar w="min(16rem, 72%)" h="0.8125rem" radius="sm" delay="0.08s" />
         </Box>
-        <HStack gap={2}>
-          <ShimmerBlock w="96px" h="2rem" radius="var(--radius-input)" />
-          <ShimmerBlock w="2rem" h="2rem" radius="var(--radius-input)" />
+        <HStack gap={2} flexShrink={0}>
+          <ShimmerBar w="6rem" h="2rem" radius="var(--radius-input)" delay="0.04s" />
+          <ShimmerBar w="2rem" h="2rem" radius="var(--radius-input)" delay="0.1s" />
         </HStack>
-      </HStack>
-      <VStack align="stretch" gap={3} flex={1} mb={4}>
-        <HStack justify="flex-start">
-          <ShimmerBlock w="65%" h="52px" radius="var(--radius-card)" />
-        </HStack>
-        <HStack justify="flex-end">
-          <ShimmerBlock w="48%" h="40px" radius="var(--radius-card)" />
-        </HStack>
-        <HStack justify="flex-start">
-          <ShimmerBlock w="72%" h="64px" radius="var(--radius-card)" />
-        </HStack>
-      </VStack>
-      <ShimmerBlock w="full" h="2.75rem" radius="var(--radius-input)" />
+      </header>
+
+      <Box className="agent-chat__scroll" flex={1}>
+        <ChatMessageSkeleton align="start" bubbleW="min(60%, 22rem)" bubbleH="3.25rem" />
+        <ChatMessageSkeleton
+          align="end"
+          bubbleW="min(45%, 16rem)"
+          bubbleH="2.5rem"
+          delay="0.12s"
+        />
+        <ChatMessageSkeleton
+          align="start"
+          bubbleW="min(68%, 26rem)"
+          bubbleH="3.75rem"
+          delay="0.24s"
+        />
+      </Box>
+
+      <footer className="agent-chat__footer">
+        <ShimmerBar w="full" h="2.75rem" radius="var(--radius-input)" delay="0.16s" />
+      </footer>
     </Box>
   )
 }

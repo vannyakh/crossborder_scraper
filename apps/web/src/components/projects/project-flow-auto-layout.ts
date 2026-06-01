@@ -1,12 +1,12 @@
 import { AGENT_SLOT_DEFS } from './project-flow-layout'
 import { ROLE_DEFAULTS, roleForKind } from './project-node-meta'
-import {
-  STICKY_NOTE_DEFAULT_H,
-  STICKY_NOTE_DEFAULT_W,
-  STICKY_NOTE_MIN_H,
-  STICKY_NOTE_MIN_W,
-} from './project-sticky-colors'
 import type { AgentSlotIndex, ProjectDetail, ProjectEdge, ProjectNode } from './project-sample-data'
+import {
+    STICKY_NOTE_DEFAULT_H,
+    STICKY_NOTE_DEFAULT_W,
+    STICKY_NOTE_MIN_H,
+    STICKY_NOTE_MIN_W,
+} from './project-sticky-colors'
 import { createWorkflowGraph } from './project-workflow-graph'
 
 const MAIN_GAP = 64

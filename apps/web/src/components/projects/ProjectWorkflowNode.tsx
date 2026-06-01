@@ -4,8 +4,8 @@ import { useLocale } from '../../hooks/use-locale'
 import { ProjectAgentToolsStrip } from './ProjectAgentToolsStrip'
 import { ProjectNodeIconTile } from './ProjectNodeIconTile'
 import type { ConfigInputPort } from './project-flow-layout'
-import { NODE_VISUAL, ROLE_DEFAULTS, roleForKind } from './project-node-meta'
 import type { FlowExecutionStatus } from './project-flow-types'
+import { NODE_VISUAL, ROLE_DEFAULTS, roleForKind } from './project-node-meta'
 import type { ProjectNode } from './project-sample-data'
 
 const AGENT_TOOLS_H = 72
@@ -89,7 +89,7 @@ export function ProjectWorkflowNode({
   const online = node.status !== 'offline'
   const deactivated = node.status === 'offline'
   const statusTitle = online ? t('projects.serviceOnline') : t('projects.serviceOffline')
-  const captionWidth = isCompact ? Math.max(baseSize.w, 128) : baseSize.w
+  const captionWidth = isCompact ? Math.max(baseSize.w, 120) : baseSize.w
 
   const isDone = executionStatus === 'done'
   const isRunning = running && !isDone

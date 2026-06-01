@@ -1,26 +1,25 @@
-import { ActionBar, HStack, IconButton, Text } from '@chakra-ui/react'
 import { Tooltip } from '@/components/ui/tooltip'
+import { ActionBar, HStack, IconButton, Text } from '@chakra-ui/react'
 import type { LucideIcon } from 'lucide-react'
 import {
-  Copy,
-  CopyPlus,
-  FlaskConical,
-  GitBranch,
-  LayoutGrid,
-  PenLine,
-  Pin,
-  Play,
-  Power,
-  RefreshCw,
-  Settings2,
-  Square,
-  Trash2,
+    Copy,
+    CopyPlus,
+    FlaskConical,
+    GitBranch,
+    LayoutGrid,
+    PenLine,
+    Pin,
+    Play,
+    Power,
+    RefreshCw,
+    Settings2,
+    Square,
+    Trash2,
 } from 'lucide-react'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { useProjectFlowActions } from './project-flow-actions-context'
 import type { ProjectNode } from './project-sample-data'
-import { useProjectWorkspace } from '../layout/project-shell/project-workspace-context'
 
 type ProjectFlowCanvasActionBarProps = {
   selectedNode: ProjectNode | null
@@ -67,7 +66,6 @@ export function ProjectFlowCanvasActionBar({
   const { t } = useLocale()
   const accentPalette = useAccentPalette()
   const actions = useProjectFlowActions()
-  const { setRunning } = useProjectWorkspace()
 
   const isNote = selectedNode?.role === 'note'
   const isSubNode = selectedNode?.role === 'config'
@@ -199,7 +197,7 @@ export function ProjectFlowCanvasActionBar({
                         colorPalette={running ? undefined : accentPalette}
                         onClick={() => {
                           if (running) {
-                            setRunning(false)
+                            actions.stopWorkflow()
                           } else {
                             actions.runWorkflow()
                           }
@@ -221,7 +219,7 @@ export function ProjectFlowCanvasActionBar({
                     <ActionIcon
                       label={t('projects.stopFlow')}
                       icon={Square}
-                      onClick={() => setRunning(false)}
+                      onClick={() => actions.stopWorkflow()}
                     />
                   ) : null}
                 </>
@@ -238,7 +236,7 @@ export function ProjectFlowCanvasActionBar({
               <ActionIcon
                 label={t('projects.stopFlow')}
                 icon={Square}
-                onClick={() => setRunning(false)}
+                onClick={() => actions.stopWorkflow()}
               />
             </>
           ) : null}

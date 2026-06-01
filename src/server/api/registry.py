@@ -25,6 +25,7 @@ from server.routers import (
     plugins,
     products,
     project_observability,
+    project_run,
     project_settings,
     project_templates,
     project_ws,
@@ -68,6 +69,7 @@ def register_routes(app: FastAPI) -> None:
     # Project flow canvas (template routes before /{project_id} paths)
     app.include_router(project_templates.router)
     app.include_router(projects.router)
+    app.include_router(project_run.router)
     app.include_router(project_settings.router)
     app.include_router(project_observability.router)
     app.include_router(project_ws.ws_router)

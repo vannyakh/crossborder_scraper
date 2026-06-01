@@ -10,6 +10,13 @@ from config import Settings
 from config.llm_providers import get_provider
 from core.ai.llm_client import LLMClient, resolve_llm_config
 
+# Source label constants
+SRC_API = "api"
+SRC_DEFAULT = "default"
+SRC_MISSING_KEY = "missing_key"
+SRC_OLLAMA_OFFLINE = "ollama_offline"
+SRC_OLLAMA_EMPTY = "ollama_empty"
+
 
 def _model_items(ids: list[str]) -> list[dict[str, str]]:
     seen: set[str] = set()
@@ -79,23 +86,62 @@ async def fetch_agent_llm_models(settings: Settings) -> dict[str, Any]:
     else:
         fallback = []
 
+    # Cloud providers require an API key before we can list models
     if cfg.requires_api_key and not cfg.api_key and not cfg.is_local:
         return {
             **base_payload,
             "models": fallback,
-            "source": "default",
-            "message": f"Add an API key for {cfg.provider_label} to load models from the provider",
+            "source": SRC_MISSING_KEY,
+            "message": f"Enter an API key for {cfg.provider_label} to load available models",
         }
 
     client = LLMClient(settings)
+    is_ollama = cfg.provider_id == "ollama" or cfg.is_local
+
+    if is_ollama:
+        # Try Ollama /api/tags first; classify the failure with a specific source
+        try:
+            ids = await _fetch_ollama_tags(cfg.base_url, timeout)
+        except (httpx.ConnectError, httpx.ConnectTimeout):
+            return {
+                **base_payload,
+                "models": fallback,
+                "source": SRC_OLLAMA_OFFLINE,
+                "message": f"Cannot connect to Ollama at {cfg.base_url.rstrip('/v1').rstrip('/')}",
+            }
+        except Exception:
+            # Fallback: try OpenAI-compatible /models endpoint
+            try:
+                ids = await _fetch_openai_models(cfg.base_url, client._openai_headers(), timeout)
+            except Exception as exc:
+                return {
+                    **base_payload,
+                    "models": fallback,
+                    "source": SRC_OLLAMA_OFFLINE,
+                    "message": f"Ollama not reachable: {exc}",
+                }
+
+        if not ids:
+            # Ollama is running but no models have been pulled yet
+            return {
+                **base_payload,
+                "models": [],
+                "source": SRC_OLLAMA_EMPTY,
+                "message": "Ollama is running but no models are installed. Pull a model to get started.",
+            }
+
+        models = _model_items(ids)
+        return {
+            **base_payload,
+            "models": models,
+            "source": SRC_API,
+            "message": f"{len(models)} local model(s) from Ollama",
+        }
+
+    # Cloud / custom provider
     try:
         ids: list[str] = []
-        if cfg.provider_id == "ollama" or cfg.is_local:
-            try:
-                ids = await _fetch_ollama_tags(cfg.base_url, timeout)
-            except Exception:
-                ids = await _fetch_openai_models(cfg.base_url, client._openai_headers(), timeout)
-        elif cfg.api_style == "anthropic":
+        if cfg.api_style == "anthropic":
             ids = await _fetch_anthropic_models(cfg.base_url, client._anthropic_headers(), timeout)
         else:
             ids = await _fetch_openai_models(cfg.base_url, client._openai_headers(), timeout)
@@ -105,7 +151,7 @@ async def fetch_agent_llm_models(settings: Settings) -> dict[str, Any]:
             return {
                 **base_payload,
                 "models": models,
-                "source": "api",
+                "source": SRC_API,
                 "message": f"{len(models)} model(s) from {cfg.provider_label}",
             }
     except Exception as exc:
@@ -113,20 +159,20 @@ async def fetch_agent_llm_models(settings: Settings) -> dict[str, Any]:
             return {
                 **base_payload,
                 "models": fallback,
-                "source": "default",
+                "source": SRC_DEFAULT,
                 "message": f"Could not list models ({exc}); showing default",
             }
         return {
             **base_payload,
             "models": [],
-            "source": "default",
+            "source": SRC_DEFAULT,
             "message": str(exc),
         }
 
     return {
         **base_payload,
         "models": fallback,
-        "source": "default",
+        "source": SRC_DEFAULT,
         "message": "No models returned — using provider default",
     }
 

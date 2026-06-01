@@ -9,6 +9,7 @@ export type FlowCanvasMenuId = 'layout' | 'display' | null
 type ToolbarButtonProps = {
   'aria-label': string
   active?: boolean
+  disabled?: boolean
   onClick: () => void
   children: ReactNode
 }
@@ -79,6 +80,7 @@ export function FlowCanvasToolbarDivider() {
 export function FlowCanvasToolbarButton({
   'aria-label': ariaLabel,
   active,
+  disabled,
   onClick,
   children,
 }: ToolbarButtonProps) {
@@ -91,6 +93,7 @@ export function FlowCanvasToolbarButton({
       size="sm"
       variant={active ? 'subtle' : 'ghost'}
       colorPalette={active ? accentPalette : undefined}
+      disabled={disabled}
       onClick={onClick}
     >
       {children}
@@ -152,6 +155,7 @@ export function FlowCanvasToolbarActionGroup({
     icon: LucideIcon
     onClick: () => void
     active?: boolean
+    disabled?: boolean
     badge?: number
   }>
 }) {
@@ -170,6 +174,7 @@ export function FlowCanvasToolbarActionGroup({
               <FlowCanvasToolbarButton
                 aria-label={item.label}
                 active={item.active}
+                disabled={item.disabled}
                 onClick={item.onClick}
               >
                 <item.icon size={16} strokeWidth={1.75} />

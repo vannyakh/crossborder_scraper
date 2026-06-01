@@ -1,12 +1,37 @@
 {
   "kind": "github",
-  "defaultTab": "source",
+  "defaultTab": "credentials",
   "tabs": [
+    { "id": "credentials", "labelKey": "projects.config.tabs.credentials" },
     { "id": "source", "labelKey": "projects.config.tabs.source" },
     { "id": "network", "labelKey": "projects.config.tabs.network" },
     { "id": "settings", "labelKey": "projects.config.tabs.settings" }
   ],
   "sections": [
+    {
+      "id": "credentials",
+      "labelKey": "projects.config.sections.credentials",
+      "tab": "credentials",
+      "fields": [
+        {
+          "id": "gh-user",
+          "labelKey": "projects.config.fields.username",
+          "type": "text",
+          "optionKey": "username",
+          "editable": true,
+          "placeholderText": "github-username"
+        },
+        {
+          "id": "gh-token",
+          "labelKey": "projects.config.fields.accessToken",
+          "type": "secret",
+          "optionKey": "token",
+          "editable": true,
+          "placeholderText": "ghp_••••••••••••",
+          "hintKey": "projects.config.credentialHint"
+        }
+      ]
+    },
     {
       "id": "source",
       "labelKey": "projects.config.sections.source",

@@ -1,12 +1,52 @@
 {
   "kind": "redis",
-  "defaultTab": "source",
+  "defaultTab": "credentials",
   "tabs": [
+    { "id": "credentials", "labelKey": "projects.config.tabs.credentials" },
     { "id": "source", "labelKey": "projects.config.tabs.source" },
     { "id": "network", "labelKey": "projects.config.tabs.network" },
     { "id": "settings", "labelKey": "projects.config.tabs.settings" }
   ],
   "sections": [
+    {
+      "id": "credentials",
+      "labelKey": "projects.config.sections.credentials",
+      "tab": "credentials",
+      "fields": [
+        {
+          "id": "redis-host",
+          "labelKey": "projects.config.fields.host",
+          "type": "mono",
+          "bind": "host",
+          "editable": true,
+          "placeholderText": "127.0.0.1"
+        },
+        {
+          "id": "redis-port",
+          "labelKey": "projects.config.fields.port",
+          "type": "text",
+          "optionKey": "port",
+          "editable": true,
+          "placeholderText": "6379"
+        },
+        {
+          "id": "redis-db",
+          "labelKey": "projects.config.fields.dbIndex",
+          "type": "text",
+          "optionKey": "dbIndex",
+          "editable": true,
+          "placeholderText": "0"
+        },
+        {
+          "id": "redis-pass",
+          "labelKey": "projects.config.fields.password",
+          "type": "secret",
+          "optionKey": "password",
+          "editable": true,
+          "hintKey": "projects.config.credentialHint"
+        }
+      ]
+    },
     {
       "id": "source",
       "labelKey": "projects.config.sections.source",

@@ -1,9 +1,26 @@
-import { Box, Button, HStack, Input, SimpleGrid, Text } from '@chakra-ui/react'
-import { BookOpen, Bot, CalendarClock, Check, Circle, Sparkles, Wrench } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { Box, Button, Code, HStack, Input, SimpleGrid, Text } from '@chakra-ui/react'
+import {
+  AlertTriangle,
+  BookOpen,
+  Bot,
+  CalendarClock,
+  Check,
+  Circle,
+  Download,
+  ExternalLink,
+  RefreshCw,
+  Sparkles,
+  Wrench,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { formatModelRef } from '../../config/llm-providers'
-import { useAgentLlmSetupQuery, useLlmModelsQuery, useLlmProvidersQuery } from '../../hooks'
+import {
+  useAgentLlmSetupQuery,
+  useLlmModelsQuery,
+  useLlmProvidersQuery,
+  useOllamaPullMutation,
+} from '../../hooks'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { AgentLlmSetupStep, LLMHealth } from '../../lib/api'
 import { agentSectionPath } from '../agent/agent-sections'
@@ -15,6 +32,16 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { fieldStyles } from '../ui/field-styles'
 import { SettingsCheckbox, SettingsField } from './SettingsFields'
 import type { PanelSettingsForm } from './use-panel-settings-form'
+
+const OLLAMA_POPULAR_MODELS = [
+  { label: 'llama3.2 (3B)', value: 'llama3.2' },
+  { label: 'llama3.1 (8B)', value: 'llama3.1' },
+  { label: 'mistral (7B)', value: 'mistral' },
+  { label: 'gemma2 (9B)', value: 'gemma2' },
+  { label: 'phi3 (3.8B)', value: 'phi3' },
+  { label: 'qwen2.5 (7B)', value: 'qwen2.5' },
+  { label: 'deepseek-r1 (7B)', value: 'deepseek-r1:7b' },
+]
 
 function healthTone(ok: boolean | undefined): 'success' | 'danger' | 'neutral' {
   if (ok === true) return 'success'
@@ -98,6 +125,11 @@ export function AgentLlmSetupPanel({
   const selectedProvider = providers.find((p) => p.id === form.provider)
   const modelRef = formatModelRef(form.provider, form.model)
 
+  // Key guard: block model fetch when provider requires an API key and none is set
+  const keyIsSet = Boolean(form.panel?.ai_api_key_set) || form.aiApiKey.trim().length > 0
+  const requiresKey = selectedProvider?.requires_api_key === true
+  const modelSelectionBlocked = requiresKey && !keyIsSet
+
   const modelsProbe = useMemo(
     () => ({
       ai_provider: form.provider,
@@ -107,8 +139,23 @@ export function AgentLlmSetupPanel({
     [form.provider, form.aiBaseUrl, form.aiApiKey],
   )
 
-  const modelsQuery = useLlmModelsQuery(modelsProbe)
+  // Disable models query when API key is required but not set
+  const modelsQuery = useLlmModelsQuery(modelsProbe, !modelSelectionBlocked)
+  const modelsSource = modelsQuery.data?.source
   const models = modelsQuery.data?.models ?? []
+
+  // Ollama-specific state
+  const isOllama = form.provider === 'ollama'
+  const ollamaOffline = isOllama && modelsSource === 'ollama_offline'
+  const ollamaEmpty = isOllama && modelsSource === 'ollama_empty'
+  const ollamaBaseUrl = form.aiBaseUrl || 'http://127.0.0.1:11434/v1'
+
+  const [pullModel, setPullModel] = useState(OLLAMA_POPULAR_MODELS[0].value)
+  const pullMutation = useOllamaPullMutation()
+
+  const handlePullModel = () => {
+    pullMutation.mutate({ model: pullModel, base_url: ollamaBaseUrl })
+  }
 
   useEffect(() => {
     if (!models.length || modelsQuery.isLoading) return
@@ -138,12 +185,18 @@ export function AgentLlmSetupPanel({
   const providerOptions = providers.map((p) => ({ label: p.label, value: p.id }))
   const modelOptions = models.map((m) => ({ label: m.label || m.id, value: m.id }))
 
-  const modelsHint = modelsQuery.isError
-    ? 'Could not load models from provider'
-    : modelsQuery.data?.message ||
-      (modelsQuery.data?.source === 'api'
-        ? 'Models loaded from provider API'
-        : 'Add API key or use local Ollama to list models')
+  const modelsHint = modelSelectionBlocked
+    ? `Enter an API key for ${selectedProvider?.label ?? 'this provider'} to load available models`
+    : ollamaOffline
+      ? 'Ollama is not reachable — install or start it first'
+      : ollamaEmpty
+        ? 'No models installed — pull one below'
+        : modelsQuery.isError
+          ? 'Could not load models from provider'
+          : modelsQuery.data?.message ||
+            (modelsSource === 'api'
+              ? 'Models loaded from provider API'
+              : 'Add API key or use local Ollama to list models')
 
   return (
     <SectionCard>
@@ -256,11 +309,24 @@ export function AgentLlmSetupPanel({
             <PanelSelect
               value={form.model}
               options={modelOptions}
-              disabled={!form.provider || modelsQuery.isFetching || modelOptions.length === 0}
+              disabled={
+                !form.provider ||
+                modelSelectionBlocked ||
+                ollamaOffline ||
+                ollamaEmpty ||
+                modelsQuery.isFetching ||
+                modelOptions.length === 0
+              }
               placeholder={
-                modelsQuery.isFetching
-                  ? 'Loading models…'
-                  : selectedProvider?.default_model || 'Select model'
+                modelSelectionBlocked
+                  ? 'API key required'
+                  : ollamaOffline
+                    ? 'Ollama not running'
+                    : ollamaEmpty
+                      ? 'No models installed'
+                      : modelsQuery.isFetching
+                        ? 'Loading models…'
+                        : selectedProvider?.default_model || 'Select model'
               }
               w="full"
               onChange={form.setModel}
@@ -304,6 +370,136 @@ export function AgentLlmSetupPanel({
           </Text>
         ) : null}
       </Box>
+
+      {/* Ollama offline — install or start Ollama */}
+      {ollamaOffline ? (
+        <Box
+          mb={4}
+          p={4}
+          borderWidth="1px"
+          borderColor="orange.muted"
+          borderRadius="var(--radius-card)"
+          bg="orange.subtle"
+        >
+          <HStack gap={2} mb={1}>
+            <AlertTriangle size={14} />
+            <Text fontSize="sm" fontWeight="semibold">
+              Ollama not detected
+            </Text>
+          </HStack>
+          <Text fontSize="xs" color="fg.muted" mb={3}>
+            Cannot connect to Ollama at{' '}
+            <Code fontSize="xs">{ollamaBaseUrl.replace('/v1', '')}</Code>. Make sure the Ollama
+            service is running.
+          </Text>
+          <HStack gap={2} flexWrap="wrap">
+            <Button
+              asChild
+              size="xs"
+              variant="outline"
+              borderRadius="var(--radius-input)"
+              colorPalette={accentPalette}
+            >
+              <RouterLink to="/store">
+                <ExternalLink size={12} />
+                Install from App Store
+              </RouterLink>
+            </Button>
+            <Button
+              size="xs"
+              variant="ghost"
+              borderRadius="var(--radius-input)"
+              onClick={() => void modelsQuery.refetch()}
+            >
+              <RefreshCw size={12} />
+              Retry
+            </Button>
+          </HStack>
+        </Box>
+      ) : null}
+
+      {/* Ollama running but no models pulled */}
+      {ollamaEmpty ? (
+        <Box
+          mb={4}
+          p={4}
+          borderWidth="1px"
+          borderColor="blue.muted"
+          borderRadius="var(--radius-card)"
+          bg="blue.subtle"
+        >
+          <HStack gap={2} mb={1}>
+            <Download size={14} />
+            <Text fontSize="sm" fontWeight="semibold">
+              No local models installed
+            </Text>
+          </HStack>
+          <Text fontSize="xs" color="fg.muted" mb={3}>
+            Ollama is running but has no models. Pull a model to start using the local LLM.
+          </Text>
+          <HStack gap={2} flexWrap="wrap" align="center" mb={2}>
+            <Box flex={1} minW="10rem" maxW="16rem">
+              <PanelSelect
+                value={pullModel}
+                options={OLLAMA_POPULAR_MODELS}
+                w="full"
+                onChange={setPullModel}
+              />
+            </Box>
+            <Button
+              size="sm"
+              colorPalette={accentPalette}
+              borderRadius="var(--radius-input)"
+              onClick={handlePullModel}
+              loading={pullMutation.isPending}
+              disabled={pullMutation.isPending}
+            >
+              <Download size={13} />
+              Pull model
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              borderRadius="var(--radius-input)"
+              onClick={() => void modelsQuery.refetch()}
+            >
+              <RefreshCw size={13} />
+              Refresh
+            </Button>
+          </HStack>
+          {pullMutation.isSuccess ? (
+            <Text fontSize="xs" color="green.600">
+              {pullMutation.data?.message}
+            </Text>
+          ) : null}
+          <Text fontSize="xs" color="fg.subtle">
+            Or run in terminal:{' '}
+            <Code fontSize="xs">
+              ollama pull {pullModel}
+            </Code>
+          </Text>
+        </Box>
+      ) : null}
+
+      {/* Key guard hint for cloud providers */}
+      {modelSelectionBlocked ? (
+        <Box
+          mb={4}
+          p={3}
+          borderWidth="1px"
+          borderColor="border.subtle"
+          borderRadius="var(--radius-card)"
+          bg="bg.elevated"
+        >
+          <HStack gap={2}>
+            <AlertTriangle size={14} color="var(--chakra-colors-fg-muted)" />
+            <Text fontSize="xs" color="fg.muted">
+              Enter an API key in the <strong>Credentials</strong> section below, then save — model
+              list will load automatically.
+            </Text>
+          </HStack>
+        </Box>
+      ) : null}
 
       <Box
         mb={4}

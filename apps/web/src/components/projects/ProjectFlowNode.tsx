@@ -224,16 +224,17 @@ function ProjectFlowNodeComponent({
         'project-flow-node-root',
         primaryRemotePeer ? 'project-flow-node-root--remote-peer' : '',
         useOutRail ? 'project-flow-node-root--has-out-rail' : '',
-        useOutRail && isTrigger ? 'project-flow-node-root--flow-entry' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       style={
-        primaryRemotePeer
-          ? ({ '--remote-peer-color': primaryRemotePeer.color } as CSSProperties)
-          : undefined
+        {
+          '--node-body-w': `${ROLE_DEFAULTS[role].w}px`,
+          ...(primaryRemotePeer
+            ? { '--remote-peer-color': primaryRemotePeer.color }
+            : undefined),
+        } as CSSProperties
       }
-      {...nodeHoverHandlers}
     >
       {remotePeers.length > 0 ? <ProjectRemotePeerFocusBadge peers={remotePeers} /> : null}
       <ProjectFlowNodeMenu
@@ -261,13 +262,15 @@ function ProjectFlowNodeComponent({
           chromeHoverHandlers={chromeHoverHandlers}
         />
       ) : null}
-      <ProjectWorkflowNode
-        node={data.node}
-        selected={selected}
-        running={data.running}
-        executionStatus={data.executionStatus}
-        configInputs={data.configInputs}
-      />
+      <Box className="project-flow-node-body" {...nodeHoverHandlers}>
+        <ProjectWorkflowNode
+          node={data.node}
+          selected={selected}
+          running={data.running}
+          executionStatus={data.executionStatus}
+          configInputs={data.configInputs}
+        />
+      </Box>
       {useOutRail ? (
         <ProjectFlowOutRail anchorTopPx={outRailTopPx} showEntryLabel={isTrigger} />
       ) : null}

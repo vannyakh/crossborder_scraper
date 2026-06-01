@@ -34,12 +34,4 @@ export function projectEnvLabelKey(environment: ProjectEnvironment): string {
   return ENV_LABEL_KEY[environment]
 }
 
-export function formatProjectUpdatedAt(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime()
-  if (Number.isNaN(ms)) return ''
-  const sec = Math.floor(ms / 1000)
-  if (sec < 60) return 'just now'
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`
-  return new Date(iso).toLocaleDateString()
-}
+export { formatRelativeTime as formatProjectUpdatedAt } from '../../lib/datetime'

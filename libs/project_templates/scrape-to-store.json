@@ -1,0 +1,161 @@
+{
+  "id": "scrape-to-store",
+  "name": "Scrape & Store to Database",
+  "summary": "Webhook trigger → scrape product → quality gate → Postgres catalog + Redis cache → Telegram confirm.",
+  "description": "Accepts a product URL via webhook, scrapes listing data, validates the result through a quality condition node, writes the enriched record to a Postgres catalog database, caches the hot-path data in Redis for low-latency access, and sends a Telegram confirmation when done.",
+  "category": "data",
+  "category_label": "Data pipeline",
+  "tags": ["webhook", "scrape", "postgres", "redis", "store", "cache", "notify"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "n-webhook-1",
+      "kind": "webhook",
+      "role": "trigger",
+      "label": "Product URL ingest",
+      "subtitle": "POST /hooks/store",
+      "status": "online",
+      "options": {
+        "webhookActive": true
+      },
+      "x": 60,
+      "y": 220
+    },
+    {
+      "id": "n-scrape-1",
+      "kind": "scrape",
+      "role": "action",
+      "label": "Scrape product data",
+      "subtitle": "1688.com / Taobao",
+      "pluginId": "1688",
+      "pluginProfile": "scraper-1688",
+      "status": "online",
+      "options": {
+        "plugin_id": "1688",
+        "ai_extraction": true,
+        "batch_mode": false,
+        "marketplace": "1688"
+      },
+      "x": 280,
+      "y": 220
+    },
+    {
+      "id": "n-condition-1",
+      "kind": "condition",
+      "role": "action",
+      "label": "Data quality check",
+      "subtitle": "product.title && product.price > 0",
+      "status": "online",
+      "x": 500,
+      "y": 220
+    },
+    {
+      "id": "n-postgres-1",
+      "kind": "postgres",
+      "role": "action",
+      "label": "Postgres catalog",
+      "subtitle": "Persist product record",
+      "status": "online",
+      "options": {
+        "dbName": "crossborder",
+        "username": "app",
+        "port": "5432"
+      },
+      "x": 720,
+      "y": 140
+    },
+    {
+      "id": "n-redis-1",
+      "kind": "redis",
+      "role": "action",
+      "label": "Redis cache",
+      "subtitle": "Hot product cache",
+      "status": "online",
+      "options": {
+        "port": "6379",
+        "dbIndex": "0"
+      },
+      "x": 940,
+      "y": 140
+    },
+    {
+      "id": "n-notify-ok",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram confirmation",
+      "subtitle": "Product stored successfully",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "info"
+      },
+      "x": 1160,
+      "y": 140
+    },
+    {
+      "id": "n-notify-fail",
+      "kind": "notify",
+      "role": "action",
+      "label": "Quality fail alert",
+      "subtitle": "Telegram error alert",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "error"
+      },
+      "x": 720,
+      "y": 340
+    },
+    {
+      "id": "n-sticky-2",
+      "kind": "sticky",
+      "role": "note",
+      "label": "DB setup",
+      "noteBody": "🗄️ Set Postgres credentials in the node config before running.\n\n⚡ Redis caches the last 1000 product IDs for fast lookup.\n\n🔔 Telegram alerts fire on every ingest — configure your chat ID in Integrate settings.",
+      "noteColor": "green",
+      "noteWidth": 240,
+      "noteHeight": 130,
+      "x": 60,
+      "y": 400
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-webhook-scrape",
+      "from": "n-webhook-1",
+      "to": "n-scrape-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-scrape-condition",
+      "from": "n-scrape-1",
+      "to": "n-condition-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-postgres",
+      "from": "n-condition-1",
+      "to": "n-postgres-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-fail",
+      "from": "n-condition-1",
+      "to": "n-notify-fail",
+      "kind": "main"
+    },
+    {
+      "id": "e-postgres-redis",
+      "from": "n-postgres-1",
+      "to": "n-redis-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-redis-notify",
+      "from": "n-redis-1",
+      "to": "n-notify-ok",
+      "kind": "main"
+    }
+  ]
+}

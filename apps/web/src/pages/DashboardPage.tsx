@@ -89,8 +89,9 @@ export function DashboardPage() {
             hardware={hardware}
             gatewayTools={gateway.data?.tools_count ?? 0}
             gatewayWorkflows={gateway.data?.workflows_count ?? 0}
-            scheduleCount={schedules.data?.items.length ?? 0}
+            scheduleCount={enabledSchedules}
             marketplaceConfigured={marketplaceConfigured}
+            failedRunCount={recentFailures}
             loading={overviewLoading}
           />
         </StaggerItem>

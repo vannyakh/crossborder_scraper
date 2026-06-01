@@ -1,0 +1,122 @@
+---
+description: Project flow templates — JSON schema, node kinds, edge structure, categories, positioning conventions for libs/project_templates/
+globs:
+  - "libs/project_templates/**"
+  - "src/server/projects/community/**"
+  - "src/server/services/project_templates_service.py"
+  - "src/server/routers/project_templates.py"
+alwaysApply: false
+---
+
+# Project flow templates
+
+Templates live in `libs/project_templates/*.json`. The loader derives `preview_nodes` / `preview_edges` automatically — do not add them to JSON.
+
+## JSON schema
+
+```json
+{
+  "id": "kebab-case-id",         // also the filename stem
+  "name": "Human readable name",
+  "summary": "One-line description shown in template grid",
+  "description": "Longer paragraph shown in detail view",
+  "category": "scrape|agent|data|infra|general",
+  "category_label": "Human label",
+  "tags": ["tag1", "tag2"],
+  "author": "Cross-Border",
+  "featured": false,
+  "nodes": [ /* ProjectNode objects */ ],
+  "edges": [ /* ProjectEdge objects */ ]
+}
+```
+
+## Node structure
+
+```json
+{
+  "id": "n-unique-id",
+  "kind": "schedule|webhook|scrape|agent|export|condition|notify|postgres|redis|github|sticky",
+  "role": "trigger|action|agent|config|note",
+  "label": "Display name",
+  "subtitle": "Secondary line (cron, platform, condition expression, etc.)",
+  "status": "online",
+  "x": 60,   // canvas x — increment 220-260px per step
+  "y": 240,  // base y; branch up -80..100 / down +80..120 for forks
+  "pluginId": "1688",           // scrape nodes only
+  "pluginProfile": "scraper-1688",
+  "agentPrompt": "...",         // agent nodes
+  "options": { "key": "value" } // optionKey values from node-config schemas
+}
+```
+
+**Role defaults by kind:**
+
+| Kind | Default role |
+|------|-------------|
+| `webhook`, `schedule` | `trigger` |
+| `agent` | `agent` |
+| `sticky` | `note` |
+| everything else | `action` |
+
+## Edge structure
+
+```json
+{ "id": "e-from-to", "from": "n-from-id", "to": "n-to-id", "kind": "main" }
+```
+
+- `kind: "main"` for workflow connections; `kind: "config"` for sub-node (plugin/model) wiring
+- Fan-out from a `condition` node is valid: one edge per branch target
+- All `from` and `to` must reference IDs that exist in `nodes`
+
+## Canvas layout conventions
+
+| Pattern | x gap | y offset |
+|---------|-------|----------|
+| Linear chain | +220–260 | same y |
+| Branch up (success) | same x | −100 to −120 |
+| Branch down (fail/alt) | same x | +100 to +140 |
+| Sticky note (below) | 60–300 | +180–220 below lowest node |
+
+Start first node at `x: 60, y: 220`.
+
+## Available node kinds & typical options
+
+| Kind | Common options |
+|------|----------------|
+| `schedule` | subtitle: `"cron: 0 8 * * *"` |
+| `webhook` | `options.webhookActive: true`, subtitle: `"POST /hooks/..."` |
+| `scrape` | `pluginId`, `options.plugin_id`, `options.ai_extraction`, `options.batch_mode` |
+| `agent` | `agentPrompt` (multi-line string) |
+| `condition` | subtitle: condition expression, e.g. `"items.length > 0"` |
+| `export` | `options.exportTarget: "shopee"`, `options.dryRun: true` |
+| `notify` | `options.integrateChannel: "telegram"`, `options.level: "info|warning|error"` |
+| `postgres` | `options.dbName`, `options.username`, `options.port: "5432"` |
+| `redis` | `options.port: "6379"`, `options.dbIndex: "0"` |
+| `sticky` | `noteBody`, `noteColor: "blue|green|yellow|red|purple"`, `noteWidth`, `noteHeight` |
+
+## Categories in use
+
+| id | label |
+|----|-------|
+| `scrape` | Scrape pipeline |
+| `agent` | Agent automation |
+| `data` | Data pipeline |
+| `infra` | Infrastructure |
+| `general` | General |
+
+## Validation
+
+After adding/editing a template, run:
+
+```bash
+python -c "
+import json, pathlib, sys
+for f in pathlib.Path('libs/project_templates').glob('*.json'):
+    d = json.loads(f.read_text())
+    ids = {n['id'] for n in d.get('nodes',[])}
+    for e in d.get('edges',[]):
+        assert e['from'] in ids, f'{f.name}: bad edge from {e[\"from\"]}'
+        assert e['to'] in ids, f'{f.name}: bad edge to {e[\"to\"]}'
+    print('OK', f.name)
+"
+```

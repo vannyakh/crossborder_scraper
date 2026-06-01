@@ -37,15 +37,9 @@ import { FormFieldsSkeleton } from '../ui/PanelSkeleton'
 import { SectionCard } from '../ui/Section'
 import { fieldStyles } from '../ui/field-styles'
 import { errorMessageFromUnknown } from './database-form-utils'
+import { formatBytes } from '../../lib/utils'
 import { SqlQueryBar } from './database-sql-bar'
 import { AddColumnDialog, CreateTableDialog, InsertRowDialog } from './database-table-dialogs'
-
-function formatBytes(bytes: number | null | undefined): string {
-  if (bytes == null || bytes <= 0) return '0 B'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 function formatRows(n: number | null | undefined): string {
   if (n == null) return '—'

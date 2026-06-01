@@ -13,7 +13,7 @@ export function ProjectNodeIconTile({
   round?: 'md' | 'full'
   children: ReactNode
 }) {
-  const dim = size === 'sm' ? 32 : size === 'lg' ? 42 : 36
+  const dim = size === 'sm' ? 32 : size === 'lg' ? 44 : 36
 
   return (
     <Box

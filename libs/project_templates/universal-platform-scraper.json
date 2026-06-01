@@ -1,0 +1,210 @@
+{
+  "id": "universal-platform-scraper",
+  "name": "Universal Platform Scraper",
+  "summary": "Webhook or schedule trigger → configurable platform scrape → AI transform → condition → multi-marketplace export → Telegram delivery.",
+  "description": "A flexible scraping pipeline that works with any supported source platform (1688, Taobao, Shopee, or custom). The webhook accepts a product URL with platform hint, the AI transform agent normalizes the data to a standard schema, a quality condition gates bad results, and the export node publishes to your configured marketplace. Swap the scrape node's plugin to target any platform without changing the rest of the flow.",
+  "category": "scrape",
+  "category_label": "Scrape pipeline",
+  "tags": ["universal", "1688", "taobao", "shopee", "webhook", "ai", "export", "multi-platform"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "n-webhook-in",
+      "kind": "webhook",
+      "role": "trigger",
+      "label": "Inbound URL webhook",
+      "subtitle": "POST /hooks/scrape-any",
+      "status": "online",
+      "options": {
+        "webhookActive": true
+      },
+      "x": 60,
+      "y": 220
+    },
+    {
+      "id": "n-scrape-any",
+      "kind": "scrape",
+      "role": "action",
+      "label": "Platform scraper",
+      "subtitle": "Any supported platform",
+      "pluginId": "1688",
+      "pluginProfile": "scraper-1688",
+      "status": "online",
+      "options": {
+        "plugin_id": "1688",
+        "ai_extraction": true,
+        "batch_mode": false,
+        "marketplace": "1688"
+      },
+      "x": 300,
+      "y": 220
+    },
+    {
+      "id": "n-agent-transform",
+      "kind": "agent",
+      "role": "agent",
+      "label": "AI data transformer",
+      "subtitle": "Normalize to standard schema",
+      "agentPrompt": "You are a product data transformation agent. Take the raw scraped product data and normalize it to the Cross-Border standard schema:\n\n- title: string (translated to English if needed)\n- price_usd: number (convert from source currency)\n- category: string (classify from title/description)\n- images: string[] (direct URLs)\n- attributes: Record<string, string> (size, color, material, etc.)\n- source_platform: string\n- source_url: string\n- quality_score: 0-100 (based on data completeness)\n\nReturn only the JSON object. Mark quality_score < 50 for items with missing title, price, or images.",
+      "status": "online",
+      "x": 540,
+      "y": 220
+    },
+    {
+      "id": "n-condition-quality",
+      "kind": "condition",
+      "role": "action",
+      "label": "Quality gate",
+      "subtitle": "quality_score >= 60",
+      "status": "online",
+      "x": 780,
+      "y": 220
+    },
+    {
+      "id": "n-postgres-catalog",
+      "kind": "postgres",
+      "role": "action",
+      "label": "Product catalog DB",
+      "subtitle": "Universal catalog store",
+      "status": "online",
+      "options": {
+        "dbName": "crossborder_catalog",
+        "username": "catalog_user",
+        "port": "5432"
+      },
+      "x": 1020,
+      "y": 140
+    },
+    {
+      "id": "n-export-marketplace",
+      "kind": "export",
+      "role": "action",
+      "label": "Marketplace export",
+      "subtitle": "Publish to Shopee / Lazada",
+      "status": "online",
+      "options": {
+        "exportTarget": "shopee",
+        "dryRun": true
+      },
+      "x": 1260,
+      "y": 140
+    },
+    {
+      "id": "n-notify-success",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: Published",
+      "subtitle": "Product live on marketplace",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "info"
+      },
+      "x": 1500,
+      "y": 140
+    },
+    {
+      "id": "n-notify-low-quality",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: Low quality",
+      "subtitle": "Manual review required",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "warning"
+      },
+      "x": 1020,
+      "y": 340
+    },
+    {
+      "id": "n-redis-queue",
+      "kind": "redis",
+      "role": "action",
+      "label": "Retry queue",
+      "subtitle": "Queue for manual review",
+      "status": "online",
+      "options": {
+        "port": "6379",
+        "dbIndex": "1"
+      },
+      "x": 1260,
+      "y": 340
+    },
+    {
+      "id": "n-sticky-platform",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Platform config",
+      "noteBody": "🔌 Change the platform by updating the scrape node plugin:\n• 1688 → plugin_id: \"1688\"\n• Taobao → plugin_id: \"taobao\"\n• Shopee → plugin_id: \"shopee\"\n\n🤖 The AI transformer auto-detects the source language and converts to English.",
+      "noteColor": "blue",
+      "noteWidth": 280,
+      "noteHeight": 140,
+      "x": 60,
+      "y": 420
+    },
+    {
+      "id": "n-sticky-export",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Export note",
+      "noteBody": "📦 Set dryRun: false in the export node when you're ready to publish live.\n\n⭐ Low-quality items go to Redis retry queue for manual review instead of being discarded.",
+      "noteColor": "yellow",
+      "noteWidth": 240,
+      "noteHeight": 120,
+      "x": 1020,
+      "y": 460
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-webhook-scrape",
+      "from": "n-webhook-in",
+      "to": "n-scrape-any",
+      "kind": "main"
+    },
+    {
+      "id": "e-scrape-agent",
+      "from": "n-scrape-any",
+      "to": "n-agent-transform",
+      "kind": "main"
+    },
+    {
+      "id": "e-agent-condition",
+      "from": "n-agent-transform",
+      "to": "n-condition-quality",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-postgres",
+      "from": "n-condition-quality",
+      "to": "n-postgres-catalog",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-lowquality",
+      "from": "n-condition-quality",
+      "to": "n-notify-low-quality",
+      "kind": "main"
+    },
+    {
+      "id": "e-postgres-export",
+      "from": "n-postgres-catalog",
+      "to": "n-export-marketplace",
+      "kind": "main"
+    },
+    {
+      "id": "e-export-notify",
+      "from": "n-export-marketplace",
+      "to": "n-notify-success",
+      "kind": "main"
+    },
+    {
+      "id": "e-lowquality-redis",
+      "from": "n-notify-low-quality",
+      "to": "n-redis-queue",
+      "kind": "main"
+    }
+  ]
+}

@@ -59,7 +59,6 @@ import {
   isValidMainConnection,
   mainConnectionToEdge,
 } from './project-flow-connect'
-import { buildNodeConsoleLines } from './project-flow-console'
 import { ProjectFlowConsoleProvider } from './project-flow-console-context'
 import { insertMainNodeAfter, insertMainNodeBetween } from './project-flow-insert'
 import type { ProjectCanvasNode, ProjectServiceEdge } from './project-flow-types'
@@ -82,8 +81,14 @@ import type {
   ProjectNodeKind,
   ProjectNodeStatus,
 } from './project-sample-data'
+import {
+  useProjectRunMutation,
+  useProjectRunQuery,
+  useProjectRunStopMutation,
+} from '../../hooks/queries/use-project-run-mutation'
 import { buildFlowExecutionPlan } from './project-workflow-graph'
 import { useFlowConsole } from './use-flow-console'
+import { useProjectHistory } from './use-project-history'
 
 const nodeTypes = { workflow: ProjectFlowNode, sticky: ProjectFlowStickyNode }
 const edgeTypes = { workflow: ProjectFlowMainEdge, config: ProjectFlowConfigEdge }
@@ -93,6 +98,7 @@ function ProjectFlowCanvasInner() {
   const accentPalette = useAccentPalette()
   const colorMode = useColorMode()
   const { project, setProject, running, setRunning, collaboration } = useProjectWorkspace()
+  const { pushHistory, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useProjectHistory(project, setProject)
   const flowConsole = useFlowConsole()
   const flowConsoleRef = useRef(flowConsole)
   useEffect(() => {
@@ -100,8 +106,6 @@ function ProjectFlowCanvasInner() {
   })
   const { fitView, zoomIn, zoomOut } = useReactFlow()
   const motionEnabled = useMotionEnabled()
-  const panelTransition = useMotionTransition(0.28)
-  const backdropTransition = useMotionTransition(0.22)
 
   const [focusedNode, setFocusedNode] = useState<ProjectNode | null>(null)
   const [configNode, setConfigNode] = useState<ProjectNode | null>(null)
@@ -126,6 +130,13 @@ function ProjectFlowCanvasInner() {
   const [runningStepIndex, setRunningStepIndex] = useState<number | null>(null)
   const [removeTarget, setRemoveTarget] = useState<ProjectNode | null>(null)
   const [stickyEditId, setStickyEditId] = useState<string | null>(null)
+  const [activeRunId, setActiveRunId] = useState<string | null>(null)
+
+  const runMutation = useProjectRunMutation(project.id)
+  const stopMutation = useProjectRunStopMutation(project.id)
+  const { data: activeRunData } = useProjectRunQuery(project.id, activeRunId)
+  const panelTransition = useMotionTransition(0.28)
+  const backdropTransition = useMotionTransition(0.22)
   const layoutBaselineRef = useRef(snapshotNodePositions(project))
   const layoutSyncGenRef = useRef(0)
   const flowSyncRef = useRef({ structure: '', options: '', layout: '', layoutGen: -1 })
@@ -233,6 +244,7 @@ function ProjectFlowCanvasInner() {
 
   const runPlanRef = useRef<ReturnType<typeof buildFlowExecutionPlan>>([])
 
+  // When running stops (user cancel, no active run), clean up UI
   useEffect(() => {
     if (!running) {
       if (runWasActiveRef.current && !runFinishedRef.current) {
@@ -250,82 +262,68 @@ function ProjectFlowCanvasInner() {
       })
       return () => window.cancelAnimationFrame(frame)
     }
+  }, [running, t])
 
-    runWasActiveRef.current = true
-    runFinishedRef.current = false
-    lastLoggedStepRef.current = null
+  // Sync real run data from API poll into canvas state
+  useEffect(() => {
+    if (!activeRunData || !running) return
 
-    const plan = buildFlowExecutionPlan(project)
-    runPlanRef.current = plan
-    flowConsoleRef.current.clearConsole()
-    flowConsoleRef.current.expandConsole()
-    flowConsoleRef.current.setFilterNodeId(null)
-    flowConsoleRef.current.appendLine(t('projects.flowConsole.runStarted'))
+    const { steps, status } = activeRunData
+    const TERMINAL = ['completed', 'failed', 'stopped']
 
-    if (plan.length === 0) {
-      flowConsoleRef.current.appendLine(t('projects.flowConsole.runEmpty'), 'warn')
-      return
+    // Derive completed and currently-running node IDs from step results
+    const successIds = steps
+      .filter((s) => s.status === 'success' && s.phase === 'main')
+      .map((s) => s.node_id)
+    const failedIds = steps
+      .filter((s) => s.status === 'failed' && s.phase === 'main')
+      .map((s) => s.node_id)
+    const runningStep = steps.find((s) => s.status === 'running' && s.phase === 'main')
+
+    setCompletedNodeIds([...successIds, ...failedIds])
+    setRunningStepIndex(runningStep ? 1 : null)
+    if (runningStep) setActiveNodeId(runningStep.node_id)
+
+    // Append newly-finished step output to console
+    for (const step of steps) {
+      const key = `${step.node_id}-${step.phase}`
+      if (
+        (step.status === 'success' || step.status === 'failed') &&
+        lastLoggedStepRef.current !== (key as unknown as number)
+      ) {
+        lastLoggedStepRef.current = key as unknown as number
+        const level = step.status === 'success' ? 'success' : 'error'
+        const msg = step.output || step.error || step.node_label
+        flowConsoleRef.current.appendLine(
+          `${step.status === 'success' ? '✓' : '✗'} ${step.node_label}: ${msg}`,
+          level,
+          step.node_id,
+          step.node_label,
+        )
+      }
     }
 
-    runStepRef.current = 0
-    const frame = window.requestAnimationFrame(() => {
-      setCompletedNodeIds([])
-      setRunningStepIndex(0)
-      setActiveNodeId(plan[0].nodeId)
-    })
-
-    const timer = window.setInterval(() => {
-      const index = runStepRef.current
-      const steps = runPlanRef.current
-      if (index >= steps.length) {
-        window.clearInterval(timer)
-        setRunningStepIndex(null)
-        return
-      }
-
-      setCompletedNodeIds(steps.slice(0, index + 1).map((s) => s.nodeId))
-      const nextIndex = index + 1
-      runStepRef.current = nextIndex
-      setRunningStepIndex(nextIndex < steps.length ? nextIndex : null)
-
-      if (nextIndex < steps.length) {
-        setActiveNodeId(steps[nextIndex].nodeId)
+    if (TERMINAL.includes(status)) {
+      runFinishedRef.current = true
+      const stepCount = steps.filter((s) => s.phase === 'main').length
+      if (status === 'completed') {
+        setRunSuccessNodeIds(successIds)
+        flowConsoleRef.current.appendLine(
+          t('projects.flowConsole.runComplete', { count: String(stepCount) }),
+          'success',
+        )
       } else {
-        window.clearInterval(timer)
+        flowConsoleRef.current.appendLine(
+          status === 'stopped'
+            ? t('projects.flowConsole.runStopped')
+            : `Flow run failed (${activeRunData.error ?? 'unknown error'})`,
+          'warn',
+        )
       }
-    }, 750)
-
-    return () => {
-      window.cancelAnimationFrame(frame)
-      window.clearInterval(timer)
+      setRunning(false)
+      setActiveRunId(null)
     }
-  }, [running, project, t])
-
-  useEffect(() => {
-    if (!running || runningStepIndex === null) return
-    if (lastLoggedStepRef.current === runningStepIndex) return
-    lastLoggedStepRef.current = runningStepIndex
-
-    const step = runPlanRef.current[runningStepIndex]
-    if (!step) return
-    const node = project.nodes.find((n) => n.id === step.nodeId)
-    if (node) {
-      flowConsoleRef.current.appendLines(buildNodeConsoleLines(node, step.phase))
-    }
-  }, [running, runningStepIndex, project.nodes])
-
-  useEffect(() => {
-    if (!running || runningStepIndex !== null) return
-    if (runPlanRef.current.length === 0) return
-    if (runFinishedRef.current) return
-    runFinishedRef.current = true
-    setRunSuccessNodeIds(runPlanRef.current.map((step) => step.nodeId))
-    flowConsoleRef.current.appendLine(
-      t('projects.flowConsole.runComplete', { count: String(runPlanRef.current.length) }),
-      'success',
-    )
-    setRunning(false)
-  }, [running, runningStepIndex, t, setRunning])
+  }, [activeRunData, running, t, setRunning])
 
   const onNodeClick: NodeMouseHandler = useCallback((_event, flowNode) => {
     const data = flowNode.data as { node?: ProjectNode } | undefined
@@ -362,6 +360,7 @@ function ProjectFlowCanvasInner() {
 
   const addStickyNote = useCallback(() => {
     const note = createStickyNote(project.nodes, t('projects.sticky.defaultTitle'))
+    pushHistory(project)
     setProject((prev) => ({
       ...prev,
       nodes: [...prev.nodes, note],
@@ -371,7 +370,7 @@ function ProjectFlowCanvasInner() {
     setActiveNodeId(note.id)
     setFocusedNode(note)
     notifySuccess(t('projects.sticky.added'))
-  }, [project.nodes, setProject, t])
+  }, [project, pushHistory, setProject, t])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -392,6 +391,23 @@ function ProjectFlowCanvasInner() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [addOpen, addStickyNote, configOpen])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const mod = event.metaKey || event.ctrlKey
+      if (!mod || event.key.toLowerCase() !== 'z') return
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, [contenteditable="true"], [role="dialog"]')) return
+      event.preventDefault()
+      if (event.shiftKey) {
+        historyRedo()
+      } else {
+        historyUndo()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [historyUndo, historyRedo])
 
   const openAddAfter = useCallback(
     (nodeId: string) => {
@@ -433,13 +449,14 @@ function ProjectFlowCanvasInner() {
     (edgeId: string) => {
       const removed = project.edges.find((e) => e.id === edgeId)
       if (!removed) return
+      pushHistory(project)
       setProject((prev) => ({
         ...prev,
         edges: prev.edges.filter((e) => e.id !== edgeId),
       }))
       notifySuccess(t('projects.flow.edgeRemoved'))
     },
-    [project.edges, setProject, t],
+    [project, pushHistory, setProject, t],
   )
 
   const handleAddNode = useCallback(
@@ -464,6 +481,7 @@ function ProjectFlowCanvasInner() {
             kind: 'config' as const,
             slotIndex,
           }
+          pushHistory(project)
           setProject((prev) => ({
             ...prev,
             nodes: [...prev.nodes, node],
@@ -492,6 +510,7 @@ function ProjectFlowCanvasInner() {
         )
         if (inserted) {
           const { node, edges, removeEdgeId } = inserted
+          pushHistory(project)
           setProject((prev) => ({
             ...prev,
             nodes: [...prev.nodes, node],
@@ -514,6 +533,7 @@ function ProjectFlowCanvasInner() {
         const inserted = insertMainNodeAfter(project, insertAfterNodeId, kind, label)
         if (inserted) {
           const { node, edge } = inserted
+          pushHistory(project)
           setProject((prev) => ({
             ...prev,
             nodes: [...prev.nodes, node],
@@ -532,6 +552,7 @@ function ProjectFlowCanvasInner() {
       }
 
       const node = createProjectNode(kind, label, project.nodes)
+      pushHistory(project)
       setProject((prev) => ({
         ...prev,
         nodes: [...prev.nodes, node],
@@ -546,7 +567,7 @@ function ProjectFlowCanvasInner() {
       setConfigNode(null)
       notifySuccess(t('projects.addNode.added', { type: label }))
     },
-    [insertAfterNodeId, insertBetween, insertConfigSlot, project, setProject, t],
+    [insertAfterNodeId, insertBetween, insertConfigSlot, project, pushHistory, setProject, t],
   )
 
   const isValidConnection = useCallback<IsValidConnection<ProjectServiceEdge>>(
@@ -562,6 +583,7 @@ function ProjectFlowCanvasInner() {
         const sourceNode = project.nodes.find((n) => n.id === edge.from)
         const targetNode = project.nodes.find((n) => n.id === edge.to)
         if (!sourceNode || !targetNode) return
+        pushHistory(project)
         setProject((prev) => {
           if (prev.edges.some((e) => e.id === edge.id)) return prev
           return { ...prev, edges: [...prev.edges, edge] }
@@ -578,6 +600,7 @@ function ProjectFlowCanvasInner() {
         if (!edge) return
         const sourceNode = project.nodes.find((n) => n.id === edge.from)
         if (!sourceNode) return
+        pushHistory(project)
         setProject((prev) => {
           if (prev.edges.some((e) => e.id === edge.id)) return prev
           return { ...prev, edges: [...prev.edges, edge] }
@@ -585,7 +608,7 @@ function ProjectFlowCanvasInner() {
         notifySuccess(t('projects.flow.pluginLinked', { name: sourceNode.label }))
       }
     },
-    [project, setProject, t],
+    [project, pushHistory, setProject, t],
   )
 
   const onConnectStart: OnConnectStart = useCallback((event, { nodeId, handleId }) => {
@@ -626,12 +649,13 @@ function ProjectFlowCanvasInner() {
 
       if (removedIds.length === 0) return
 
+      pushHistory(project)
       setProject((prev) => ({
         ...prev,
         edges: prev.edges.filter((edge) => !removedIds.includes(edge.id)),
       }))
     },
-    [onEdgesChange, setProject],
+    [onEdgesChange, project, pushHistory, setProject],
   )
 
   const onPaneClick = useCallback(() => {
@@ -696,6 +720,7 @@ function ProjectFlowCanvasInner() {
       }
       pendingLayoutPatchRef.current = null
       publishNodeLayout(flowNode.id, flowNode.position.x, flowNode.position.y)
+      pushHistory(project)
       setProject((prev) => ({
         ...prev,
         nodes: prev.nodes.map((n) =>
@@ -703,11 +728,12 @@ function ProjectFlowCanvasInner() {
         ),
       }))
     },
-    [publishNodeLayout, setProject],
+    [project, publishNodeLayout, pushHistory, setProject],
   )
 
   const handleAutoLayout = useCallback(() => {
     layoutSyncGenRef.current += 1
+    pushHistory(project)
     setProject((prev) => ({
       ...prev,
       nodes: applyFlowAutoLayout(prev),
@@ -716,10 +742,11 @@ function ProjectFlowCanvasInner() {
     window.requestAnimationFrame(() => {
       fitView({ padding: 0.4, maxZoom: 1, duration: motionEnabled ? 280 : 0 })
     })
-  }, [setProject, t, fitView, motionEnabled])
+  }, [project, pushHistory, setProject, t, fitView, motionEnabled])
 
   const handleResetCanvas = useCallback(() => {
     layoutSyncGenRef.current += 1
+    pushHistory(project)
     setProject((prev) => ({
       ...prev,
       nodes: restoreNodePositions(prev.nodes, layoutBaselineRef.current),
@@ -728,7 +755,7 @@ function ProjectFlowCanvasInner() {
     window.requestAnimationFrame(() => {
       fitView({ padding: 0.4, maxZoom: 1, duration: motionEnabled ? 280 : 0 })
     })
-  }, [setProject, t, fitView, motionEnabled])
+  }, [project, pushHistory, setProject, t, fitView, motionEnabled])
 
   const handleFitView = useCallback(() => {
     fitView({
@@ -760,6 +787,7 @@ function ProjectFlowCanvasInner() {
   const performRemoveNode = useCallback(
     (nodeId: string) => {
       const removed = project.nodes.find((n) => n.id === nodeId)
+      pushHistory(project)
       setProject((prev) => ({
         ...prev,
         nodes: prev.nodes.filter((n) => n.id !== nodeId),
@@ -781,7 +809,7 @@ function ProjectFlowCanvasInner() {
         notifySuccess(t('projects.nodeMenu.removed', { name: removed.label }))
       }
     },
-    [project.nodes, focusedNode?.id, configNode?.id, setProject, clearFocus, closeConfig, t],
+    [project, pushHistory, focusedNode?.id, configNode?.id, setProject, clearFocus, closeConfig, t],
   )
 
   const flowActions = useMemo(
@@ -798,6 +826,7 @@ function ProjectFlowCanvasInner() {
         const source = project.nodes.find((n) => n.id === nodeId)
         if (!source) return
         const copy = duplicateProjectNode(source)
+        pushHistory(project)
         setProject((prev) => ({
           ...prev,
           nodes: [...prev.nodes, copy],
@@ -830,14 +859,61 @@ function ProjectFlowCanvasInner() {
           node.id,
           node.label,
         )
-        flowConsoleRef.current.appendLines(buildNodeConsoleLines(node, 'single'))
-        notifySuccess(t('projects.nodeMenu.executePreview'))
+        void runMutation.mutateAsync({ node_id: nodeId }).then((res) => {
+          setActiveRunId(res.run_id)
+          setRunSuccessNodeIds([])
+          setRunning(true)
+          runWasActiveRef.current = true
+          runFinishedRef.current = false
+          flowConsoleRef.current.clearConsole()
+          flowConsoleRef.current.expandConsole()
+          flowConsoleRef.current.appendLine(
+            t('projects.flowConsole.stepStart', { name: node.label }),
+            'info',
+            node.id,
+            node.label,
+          )
+        }).catch(() => {
+          flowConsoleRef.current.appendLine(
+            `Failed to start step: ${node.label}`,
+            'error',
+            node.id,
+            node.label,
+          )
+        })
       },
       runWorkflow: () => {
-        setRunSuccessNodeIds([])
-        setRunning(true)
+        if (running) return
+        flowConsoleRef.current.clearConsole()
+        flowConsoleRef.current.expandConsole()
+        flowConsoleRef.current.setFilterNodeId(null)
+        flowConsoleRef.current.appendLine(t('projects.flowConsole.runStarted'))
+        const plan = buildFlowExecutionPlan(project)
+        if (plan.length === 0) {
+          flowConsoleRef.current.appendLine(t('projects.flowConsole.runEmpty'), 'warn')
+          return
+        }
+        void runMutation.mutateAsync({}).then((res) => {
+          setActiveRunId(res.run_id)
+          setRunSuccessNodeIds([])
+          setRunning(true)
+          runWasActiveRef.current = true
+          runFinishedRef.current = false
+          // Show first step as active immediately
+          if (plan[0]) setActiveNodeId(plan[0].nodeId)
+        }).catch(() => {
+          flowConsoleRef.current.appendLine('Failed to start flow run', 'error')
+        })
+      },
+      stopWorkflow: () => {
+        if (activeRunId) {
+          void stopMutation.mutateAsync(activeRunId).catch(() => {})
+        }
+        setRunning(false)
+        setActiveRunId(null)
       },
       toggleNodeActive: (nodeId: string) => {
+        pushHistory(project)
         setProject((prev) => {
           const target = prev.nodes.find((n) => n.id === nodeId)
           if (!target || target.status === undefined) return prev
@@ -911,7 +987,8 @@ function ProjectFlowCanvasInner() {
       },
     }),
     [
-      project.nodes,
+      project,
+      pushHistory,
       setProject,
       setNodes,
       closeConfig,
@@ -924,6 +1001,11 @@ function ProjectFlowCanvasInner() {
       fitView,
       motionEnabled,
       sidePanelOpen,
+      running,
+      runMutation,
+      stopMutation,
+      activeRunId,
+      setRunning,
       t,
     ],
   )
@@ -1020,6 +1102,10 @@ function ProjectFlowCanvasInner() {
                 onAutoLayout={handleAutoLayout}
                 onResetCanvas={handleResetCanvas}
                 onAddStickyNote={addStickyNote}
+                onUndo={historyUndo}
+                onRedo={historyRedo}
+                canUndo={canUndo}
+                canRedo={canRedo}
                 consoleOpen={flowConsole.open}
                 consoleExpanded={flowConsole.expanded}
                 consoleLineCount={flowConsole.lines.length}

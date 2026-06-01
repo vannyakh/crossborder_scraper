@@ -121,12 +121,25 @@ export type LlmModelItem = {
   label?: string | null
 }
 
+export type LlmModelsSource = 'api' | 'default' | 'missing_key' | 'ollama_offline' | 'ollama_empty'
+
 export type LlmModelsList = {
   provider: LlmProviderId
   provider_label: string
   models: LlmModelItem[]
-  source: 'api' | 'default'
+  source: LlmModelsSource
   message?: string
+}
+
+export type OllamaPullRequest = {
+  model: string
+  base_url?: string
+}
+
+export type OllamaPullResponse = {
+  ok: boolean
+  model: string
+  message: string
 }
 
 export type LlmModelsProbe = {

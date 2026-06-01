@@ -10,6 +10,8 @@ from server.schemas import (
     LLMModelsListResponse,
     LLMModelsProbeRequest,
     LLMProviderListResponse,
+    OllamaPullRequest,
+    OllamaPullResponse,
 )
 from server.services.agent_llm_service import get_agent_llm_service
 
@@ -64,3 +66,10 @@ async def llm_health_probe(body: LLMHealthProbeRequest | None = None) -> LLMHeal
     probe = body.model_dump(exclude_unset=True) if body else None
     result = await get_agent_llm_service().check_health(probe)
     return LLMHealthResponse(**result)
+
+
+@router.post("/ollama/pull", response_model=OllamaPullResponse)
+async def ollama_pull_model(body: OllamaPullRequest) -> OllamaPullResponse:
+    """Trigger an Ollama model pull in the background (fire-and-forget)."""
+    result = await get_agent_llm_service().pull_ollama_model(body.model, body.base_url)
+    return OllamaPullResponse(**result)

@@ -115,8 +115,19 @@ class LLMModelsListResponse(BaseModel):
     provider: str
     provider_label: str
     models: list[LLMModelItem]
-    source: Literal["api", "default"] = "default"
+    source: Literal["api", "default", "missing_key", "ollama_offline", "ollama_empty"] = "default"
     message: str = ""
+
+
+class OllamaPullRequest(BaseModel):
+    model: str
+    base_url: str = "http://127.0.0.1:11434/v1"
+
+
+class OllamaPullResponse(BaseModel):
+    ok: bool
+    model: str
+    message: str
 
 
 class AIConfigResponse(BaseModel):

@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { useCallback } from 'react'
 import { useLocale } from '../../hooks/use-locale'
-import { notifySuccess } from '../../lib/toast'
 import type { ProjectFlowCanvasOptions } from './project-flow-canvas-options'
 import {
   FlowCanvasFlyout,
@@ -39,6 +38,10 @@ type ToolbarProps = {
   onAutoLayout: () => void
   onResetCanvas: () => void
   onAddStickyNote: () => void
+  onUndo: () => void
+  onRedo: () => void
+  canUndo: boolean
+  canRedo: boolean
   consoleOpen?: boolean
   consoleExpanded?: boolean
   consoleLineCount?: number
@@ -56,6 +59,10 @@ export function ProjectFlowCanvasToolbar({
   onAutoLayout,
   onResetCanvas,
   onAddStickyNote,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   onToggleConsole,
   consoleOpen = false,
   consoleExpanded = true,
@@ -126,13 +133,15 @@ export function ProjectFlowCanvasToolbar({
             key: 'undo',
             label: t('projects.canvas.undo'),
             icon: Undo2,
-            onClick: () => notifySuccess(t('projects.canvas.undoPreview')),
+            disabled: !canUndo,
+            onClick: onUndo,
           },
           {
             key: 'redo',
             label: t('projects.canvas.redo'),
             icon: Redo2,
-            onClick: () => notifySuccess(t('projects.canvas.redoPreview')),
+            disabled: !canRedo,
+            onClick: onRedo,
           },
         ]}
       />

@@ -1,0 +1,175 @@
+{
+  "id": "1688-ecommerce-full",
+  "name": "1688 E-Commerce Full Pipeline",
+  "summary": "Schedule trigger → 1688 scrape → AI enrichment agent → quality gate → Postgres catalog → Shopee export → Telegram report.",
+  "description": "End-to-end 1688.com product pipeline. A daily cron fires the 1688 scraper with AI extraction enabled, routes data through an enrichment agent, gates on item quality, persists to a Postgres catalog, publishes to Shopee via export dry-run, and sends a Telegram success summary or error alert.",
+  "category": "scrape",
+  "category_label": "Scrape pipeline",
+  "tags": ["1688", "ecommerce", "ai", "postgres", "shopee", "telegram", "full-pipeline"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "n-schedule-1",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "Daily 1688 crawl",
+      "subtitle": "cron: 0 8 * * *",
+      "status": "online",
+      "x": 60,
+      "y": 240
+    },
+    {
+      "id": "n-scrape-1",
+      "kind": "scrape",
+      "role": "action",
+      "label": "Scrape 1688 listing",
+      "subtitle": "1688.com",
+      "pluginId": "1688",
+      "pluginProfile": "scraper-1688",
+      "status": "online",
+      "options": {
+        "plugin_id": "1688",
+        "ai_extraction": true,
+        "batch_mode": true,
+        "marketplace": "1688"
+      },
+      "x": 300,
+      "y": 240
+    },
+    {
+      "id": "n-condition-1",
+      "kind": "condition",
+      "role": "action",
+      "label": "Items found?",
+      "subtitle": "items.length > 0",
+      "status": "online",
+      "x": 540,
+      "y": 240
+    },
+    {
+      "id": "n-agent-1",
+      "kind": "agent",
+      "role": "agent",
+      "label": "AI Enrichment agent",
+      "subtitle": "Classify & translate",
+      "agentPrompt": "Analyze the scraped 1688 products. Translate Chinese titles and descriptions to English. Classify each product into a category, estimate retail price in USD, and flag any items with incomplete data. Return a structured summary.",
+      "status": "online",
+      "x": 780,
+      "y": 160
+    },
+    {
+      "id": "n-postgres-1",
+      "kind": "postgres",
+      "role": "action",
+      "label": "Catalog DB",
+      "subtitle": "Store enriched products",
+      "status": "online",
+      "options": {
+        "dbName": "crossborder_catalog",
+        "username": "catalog_user",
+        "port": "5432"
+      },
+      "x": 1020,
+      "y": 160
+    },
+    {
+      "id": "n-export-1",
+      "kind": "export",
+      "role": "action",
+      "label": "Shopee export",
+      "subtitle": "Publish to Shopee",
+      "status": "online",
+      "options": {
+        "exportTarget": "shopee",
+        "dryRun": false
+      },
+      "x": 1260,
+      "y": 160
+    },
+    {
+      "id": "n-notify-ok",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram success report",
+      "subtitle": "Daily pipeline report",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "info"
+      },
+      "x": 1500,
+      "y": 160
+    },
+    {
+      "id": "n-notify-fail",
+      "kind": "notify",
+      "role": "action",
+      "label": "Error alert",
+      "subtitle": "Telegram urgent alert",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "error"
+      },
+      "x": 780,
+      "y": 360
+    },
+    {
+      "id": "n-sticky-1",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Pipeline note",
+      "noteBody": "⚙️ Configure the scrape node with your 1688 product URLs.\n\n🤖 The agent node translates and classifies products automatically.\n\n🗄️ Set Postgres credentials in the Catalog DB node before running.",
+      "noteColor": "blue",
+      "noteWidth": 260,
+      "noteHeight": 140,
+      "x": 60,
+      "y": 440
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-schedule-scrape",
+      "from": "n-schedule-1",
+      "to": "n-scrape-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-scrape-condition",
+      "from": "n-scrape-1",
+      "to": "n-condition-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-agent",
+      "from": "n-condition-1",
+      "to": "n-agent-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-fail",
+      "from": "n-condition-1",
+      "to": "n-notify-fail",
+      "kind": "main"
+    },
+    {
+      "id": "e-agent-postgres",
+      "from": "n-agent-1",
+      "to": "n-postgres-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-postgres-export",
+      "from": "n-postgres-1",
+      "to": "n-export-1",
+      "kind": "main"
+    },
+    {
+      "id": "e-export-notify",
+      "from": "n-export-1",
+      "to": "n-notify-ok",
+      "kind": "main"
+    }
+  ]
+}

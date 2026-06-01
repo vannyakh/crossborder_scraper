@@ -10,7 +10,7 @@ import {
   Text,
   Textarea,
 } from '@chakra-ui/react'
-import { ExternalLink } from 'lucide-react'
+import { Eye, EyeOff, ExternalLink } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useLlmModelsQuery } from '../../hooks/queries/use-ai-query'
 import type { LlmProviderId } from '../../lib/api/types'
@@ -77,6 +77,10 @@ export function ProjectNodeConfigField({ node, field }: ProjectNodeConfigFieldPr
     field.options?.length
   ) {
     return <SelectField node={node} field={field} label={label} onPersist={persist} t={t} />
+  }
+
+  if (field.type === 'secret' && editable) {
+    return <SecretField node={node} field={field} label={label} onPersist={persist} t={t} />
   }
 
   if (field.type === 'llm_model' && editable) {
@@ -337,5 +341,74 @@ function ToggleField({
         <Switch.Control />
       </Switch.Root>
     </HStack>
+  )
+}
+
+function SecretField({
+  node,
+  field,
+  label,
+  onPersist,
+  t,
+}: {
+  node: ProjectNode
+  field: ProjectConfigField
+  label: string
+  onPersist: (value: string) => void
+  t: (key: string) => string
+}) {
+  const initial = String(readFieldValue(node, field) ?? '')
+  const [draft, setDraft] = useState(initial)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() =>
+      setDraft(String(readFieldValue(node, field) ?? '')),
+    )
+    return () => window.cancelAnimationFrame(frame)
+  }, [node, field])
+
+  const hasValue = draft.length > 0
+
+  return (
+    <Field.Root className="project-config-field project-config-field--edit project-config-field--secret">
+      <Field.Label className="project-config-field__label">{label}</Field.Label>
+      <HStack gap={1}>
+        <Input
+          className="project-config-field__control"
+          size="sm"
+          type={visible ? 'text' : 'password'}
+          autoComplete="new-password"
+          value={draft}
+          placeholder={
+            field.placeholderText ?? (field.placeholderKey ? t(field.placeholderKey) : '••••••••')
+          }
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => onPersist(draft)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setDraft(String(readFieldValue(node, field) ?? ''))
+              ;(e.target as HTMLElement).blur()
+            }
+          }}
+          flex={1}
+        />
+        <IconButton
+          size="sm"
+          variant="ghost"
+          aria-label={visible ? t('projects.config.hideSecret') : t('projects.config.showSecret')}
+          onClick={() => setVisible((v) => !v)}
+          flexShrink={0}
+          color={hasValue ? 'fg.default' : 'fg.subtle'}
+        >
+          {visible ? <EyeOff size={14} /> : <Eye size={14} />}
+        </IconButton>
+      </HStack>
+      {field.hintText || field.hintKey ? (
+        <Field.HelperText className="project-config-field__hint">
+          {field.hintText ?? (field.hintKey ? t(field.hintKey) : '')}
+        </Field.HelperText>
+      ) : null}
+    </Field.Root>
   )
 }

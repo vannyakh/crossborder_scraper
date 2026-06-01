@@ -1,0 +1,199 @@
+{
+  "id": "infra-network-monitor",
+  "name": "Infrastructure & Network Monitor",
+  "summary": "Scheduled agent health check → Postgres status log + Redis probe → tiered alerts for healthy / degraded / critical states.",
+  "description": "An infrastructure monitoring flow that runs every 30 minutes. The gateway agent checks service health (CPU, memory, disk, proxy pool, DB connectivity), logs status to Postgres, probes Redis latency, then branches based on severity: healthy state gets a brief info ping, degraded state triggers a warning, and critical state fires an immediate urgent Telegram alert.",
+  "category": "infra",
+  "category_label": "Infrastructure",
+  "tags": ["infrastructure", "network", "health", "postgres", "redis", "monitor", "ops", "telegram"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "n-schedule-infra",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "30-min health check",
+      "subtitle": "cron: */30 * * * *",
+      "status": "online",
+      "x": 60,
+      "y": 240
+    },
+    {
+      "id": "n-agent-health",
+      "kind": "agent",
+      "role": "agent",
+      "label": "Infrastructure health agent",
+      "subtitle": "Probe services & network",
+      "agentPrompt": "Run a comprehensive infrastructure health check:\n1. Check CPU, memory, disk usage — flag if > 85%\n2. Verify proxy pool size and success rate — flag if < 60%\n3. Check gateway agent runtime status and last run errors\n4. Test database connectivity (Postgres, Redis)\n5. Report scrape engine slot utilization\n6. Check for stalled or overdue cron schedules\n\nReturn a JSON-like summary with severity: healthy | degraded | critical, plus a short human-readable status for Telegram.",
+      "status": "online",
+      "x": 300,
+      "y": 240
+    },
+    {
+      "id": "n-postgres-status",
+      "kind": "postgres",
+      "role": "action",
+      "label": "Status log DB",
+      "subtitle": "Persist health snapshot",
+      "status": "online",
+      "options": {
+        "dbName": "crossborder_infra",
+        "username": "monitor",
+        "port": "5432"
+      },
+      "x": 540,
+      "y": 240
+    },
+    {
+      "id": "n-redis-probe",
+      "kind": "redis",
+      "role": "action",
+      "label": "Redis latency probe",
+      "subtitle": "Cache health check",
+      "status": "online",
+      "options": {
+        "port": "6379",
+        "dbIndex": "0"
+      },
+      "x": 780,
+      "y": 240
+    },
+    {
+      "id": "n-condition-severity",
+      "kind": "condition",
+      "role": "action",
+      "label": "Severity check",
+      "subtitle": "severity !== 'healthy'",
+      "status": "online",
+      "x": 1020,
+      "y": 240
+    },
+    {
+      "id": "n-notify-healthy",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: All systems OK",
+      "subtitle": "Healthy status ping",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "info"
+      },
+      "x": 1260,
+      "y": 140
+    },
+    {
+      "id": "n-condition-critical",
+      "kind": "condition",
+      "role": "action",
+      "label": "Critical?",
+      "subtitle": "severity === 'critical'",
+      "status": "online",
+      "x": 1260,
+      "y": 340
+    },
+    {
+      "id": "n-notify-warn",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: Degraded warning",
+      "subtitle": "Performance degraded ⚠️",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "warning"
+      },
+      "x": 1500,
+      "y": 280
+    },
+    {
+      "id": "n-notify-critical",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: CRITICAL alert",
+      "subtitle": "Immediate action needed 🚨",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "error"
+      },
+      "x": 1500,
+      "y": 400
+    },
+    {
+      "id": "n-sticky-infra",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Monitoring setup",
+      "noteBody": "🏗️ Set Postgres/Redis credentials in node config.\n\n⚠️ Degraded = any metric above 85% threshold.\n🚨 Critical = service down or proxy pool < 20%.\n\nRuns every 30 minutes. Quiet hours can be set via the schedule cron expression.",
+      "noteColor": "red",
+      "noteWidth": 260,
+      "noteHeight": 150,
+      "x": 60,
+      "y": 440
+    },
+    {
+      "id": "n-sticky-legend",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Network note",
+      "noteBody": "🔗 Connect Postgres and Redis nodes to your actual infra.\n\nFor cloud deployments, use the host field in each DB node (e.g. db.internal or 127.0.0.1 for local).",
+      "noteColor": "blue",
+      "noteWidth": 220,
+      "noteHeight": 110,
+      "x": 540,
+      "y": 440
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-schedule-agent",
+      "from": "n-schedule-infra",
+      "to": "n-agent-health",
+      "kind": "main"
+    },
+    {
+      "id": "e-agent-postgres",
+      "from": "n-agent-health",
+      "to": "n-postgres-status",
+      "kind": "main"
+    },
+    {
+      "id": "e-postgres-redis",
+      "from": "n-postgres-status",
+      "to": "n-redis-probe",
+      "kind": "main"
+    },
+    {
+      "id": "e-redis-condition",
+      "from": "n-redis-probe",
+      "to": "n-condition-severity",
+      "kind": "main"
+    },
+    {
+      "id": "e-severity-healthy",
+      "from": "n-condition-severity",
+      "to": "n-notify-healthy",
+      "kind": "main"
+    },
+    {
+      "id": "e-severity-issue",
+      "from": "n-condition-severity",
+      "to": "n-condition-critical",
+      "kind": "main"
+    },
+    {
+      "id": "e-critical-warn",
+      "from": "n-condition-critical",
+      "to": "n-notify-warn",
+      "kind": "main"
+    },
+    {
+      "id": "e-critical-alert",
+      "from": "n-condition-critical",
+      "to": "n-notify-critical",
+      "kind": "main"
+    }
+  ]
+}

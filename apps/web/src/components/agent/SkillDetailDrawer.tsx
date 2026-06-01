@@ -17,26 +17,7 @@ import { useAccentPalette } from '../../hooks/use-ui-config'
 import type { GatewaySkill } from '../../lib/api'
 import { ModuleGuidePanel } from '../modules/ModuleGuidePanel'
 import { SKILL_CATEGORY_LABEL, skillStatusLabel, skillStatusTone } from './skill-utils'
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <HStack
-      justify="space-between"
-      py={2}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      fontSize="sm"
-      gap={4}
-    >
-      <Text color="fg.muted" flexShrink={0}>
-        {label}
-      </Text>
-      <Text fontWeight="medium" fontFamily="mono" fontSize="xs" textAlign="right" lineClamp={2}>
-        {value}
-      </Text>
-    </HStack>
-  )
-}
+import { InfoRow } from '../ui/InfoRow'
 
 export function SkillDetailDrawer({
   skill,

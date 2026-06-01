@@ -1,0 +1,130 @@
+---
+description: Agent panel UI patterns — chat markdown, runs filter bar, dashboard deep links, workflow step chain, LiveStatsBar layout
+globs:
+  - "apps/web/src/components/agent/**"
+  - "apps/web/src/components/dashboard/**"
+  - "apps/web/src/components/monitor/**"
+  - "apps/web/src/pages/DashboardPage.tsx"
+alwaysApply: false
+---
+
+# Agent panel UI patterns
+
+## Chat panel (`AgentChatPanel.tsx`)
+
+### Markdown rendering
+Assistant messages use `<ChatMarkdown>` — a JSX-based renderer (no external library). It handles:
+- Fenced code blocks ` ``` ` → `<pre><code>`
+- `**bold**`, `*italic*`, `` `inline code` ``
+- Bullet / ordered lists, headings (`#`, `##`, `###`), `---` rules
+- Auto-linked `https://` URLs and `[text](url)` links
+
+User messages stay as plain text (`white-space: pre-wrap`).
+
+### Copy button
+`<button className="agent-chat__copy">` sits inside `.agent-chat__bubble-wrap` — opacity 0, revealed on parent hover (CSS). Uses `navigator.clipboard.writeText()`. Shows `<Check>` for 1.8s after copy.
+
+### Starter prompts
+Shown when `messages.length === 0 && !runMutation.isPending`:
+- `STARTER_PROMPTS` array of `{ label, text }` defined at file top
+- Grid: `.agent-chat__starters-grid` (2-col)
+- Clicking sets `input` state — does not auto-send
+
+Add new starters directly to `STARTER_PROMPTS` — no API needed.
+
+### CSS classes
+`.agent-chat__md`, `.agent-chat__copy`, `.agent-chat__starters`, `.agent-chat__starter` — all in `index.css` under the `/* markdown inside assistant bubbles */` block.
+
+---
+
+## Runs panel (`AgentRunsPanel.tsx`)
+
+### Filter bar
+Uses `<NativeSelect.Root>` (Chakra) for status and trigger filters — not custom dropdowns:
+
+```tsx
+<NativeSelect.Root size="sm" minW="7rem">
+  <NativeSelect.Field value={filter} onChange={(e) => setFilter(e.target.value)}>
+    <option value="all">All</option>
+    <option value="success">Success</option>
+    <option value="failed">Failed</option>
+  </NativeSelect.Field>
+  <NativeSelect.Indicator />
+</NativeSelect.Root>
+```
+
+Filter state is local (`useState`), applied client-side to `allRuns`.
+
+### Duration
+`formatDuration(startedAt, finishedAt)` → `"1.4s"` / `"2m 3s"` — shown next to timestamp, `color="fg.subtle"`.
+
+### Failed run styling
+`borderColor={run.ok === false ? 'red.subtle' : 'border.subtle'}` on the card `<Box>`.
+
+---
+
+## Dashboard overview (`OverviewPanel.tsx`)
+
+### Deep links
+`OverviewColumn` accepts `href?: string` on both the column title and individual `rows`:
+
+```tsx
+type OverviewRow = {
+  label: string; value: string | number
+  tone?: 'success' | 'danger' | 'neutral'
+  href?: string   // wraps value in <RouterLink>
+}
+```
+
+Column title with `href` wraps in `<RouterLink>` with `_hover={{ opacity: 0.8 }}`.
+Row value with `href` wraps in `<RouterLink>` with `_hover={{ color: 'var(--app-accent)' }}`.
+
+### Agent metrics wired to gateway
+`failedRunCount` prop → sourced from `gatewaySummary?.recent_failed_runs` in `DashboardPage`.
+`scheduleCount` uses `enabledSchedules` (enabled-only count), not total.
+
+---
+
+## Workflow panel (`AgentAutomationPanels.tsx`)
+
+### Step chain component
+`<StepChain steps={wf.steps} />` renders steps connected with `<ChevronRight>` icons:
+
+```tsx
+<HStack gap={0} flexWrap="wrap">
+  {steps.map((step, i) => (
+    <>
+      <Badge size="sm" variant="subtle" colorPalette="gray" borderRadius="full">{step}</Badge>
+      {i < steps.length - 1 && <ChevronRight size={12} />}
+    </>
+  ))}
+</HStack>
+```
+
+### Run result summary
+After `runMutation.mutateAsync()`, call `parseResultSummary(result)` → `{ ok, summary }`.
+Result displayed as a colored card (`green.subtle` / `red.subtle`) with a "Show raw output" toggle for the JSON dump.
+
+### In-memory run history
+`runHistory` state (max 10) shows recent runs in the left sidebar with `<CheckCircle>` / `<XCircle>` icons.
+
+---
+
+## LiveStatsBar (`LiveStatsBar.tsx`)
+
+6-cell grid: `engine slots | running batches | products | gateway LLM | CPU | uptime`
+
+- `StatCell` accepts optional `href` → wraps the whole card in `<RouterLink>`
+- LLM status uses `<StatusBadge>` instead of a text value — pull from `runtime?.ai?.llm_ready` and `runtime?.ai?.ai_enabled`
+- Grid: `base: 1fr 1fr / sm: repeat(3) / md: repeat(6)`
+- Skeleton count matches cell count: `<StatsGridSkeleton count={6} />`
+
+---
+
+## Project run execution
+
+Server-side run flow: `POST /projects/{id}/run` → `ProjectRunnerService.start_run()` → background `_run_flow_task` → poll `GET /projects/{id}/runs/{run_id}` (800ms interval until terminal status).
+
+Frontend hooks: `useProjectRunMutation`, `useProjectRunStopMutation`, `useProjectRunQuery` — in `hooks/queries/use-project-run-mutation.ts`.
+
+Run store: `src/server/projects/run_store.py` — JSON files at `data/projects/_runs/{id}.json`.

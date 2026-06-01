@@ -1,4 +1,4 @@
-export { useCheckLLMHealthMutation } from './mutations/use-ai-mutations'
+export { useCheckLLMHealthMutation, useOllamaPullMutation } from './mutations/use-ai-mutations'
 export { useExportProductMutation } from './mutations/use-export-mutations'
 export { useDeleteFileMutation } from './mutations/use-file-mutations'
 export { useUpdatePanelConfigMutation } from './mutations/use-panel-mutations'
@@ -84,6 +84,72 @@ export {
   useStoreUninstallMutation,
   useStoreUpdateConfigMutation,
 } from './queries/use-store-query'
+// Projects
+export {
+  useCreateProjectMutation,
+  useDeleteProjectMutation,
+  useProjectQuery,
+  useProjectsListQuery,
+  useProjectsPresenceQuery,
+  useUpdateProjectFlowMutation,
+  useUpdateProjectMutation,
+} from './queries/use-projects-query'
+export {
+  useProjectRunMutation,
+  useProjectRunQuery,
+  useProjectRunsQuery,
+  useProjectRunStopMutation,
+} from './queries/use-project-run-mutation'
+export {
+  useProjectTemplateQuery,
+  useProjectTemplatesQuery,
+  useProjectTemplateUseMutation,
+} from './queries/use-project-templates-query'
+export { useProjectLogsQuery } from './queries/use-project-logs-query'
+export {
+  useCreateProjectTokenMutation,
+  usePatchProjectSettingsMutation,
+  useProjectSettingsQuery,
+  useRevokeProjectTokenMutation,
+} from './queries/use-project-settings-query'
+export { useProjectRuntimeQuery } from './queries/use-project-runtime-query'
+
+// Infrastructure
+export {
+  useDockerConfigMutation,
+  useDockerConfigQuery,
+  useDockerContainerActionMutation,
+  useDockerContainersQuery,
+  useDockerHubQuery,
+  useDockerInstallMutation,
+  useDockerRunMutation,
+  useDockerServiceMutation,
+  useDockerStatusQuery,
+} from './queries/use-docker-query'
+export {
+  useCreateFirewallRuleMutation,
+  useDeleteFirewallRuleMutation,
+  useExportFirewallRulesQuery,
+  useFirewallGroupsQuery,
+  useFirewallIcmpMutation,
+  useFirewallRulesQuery,
+  useFirewallStatusQuery,
+  useFirewallToggleMutation,
+  useImportFirewallRulesMutation,
+  useInstallUfwMutation,
+  useUpsertFirewallGroupMutation,
+} from './queries/use-firewall-query'
+export {
+  useCreateVhostSiteMutation,
+  useDeleteVhostSiteMutation,
+  useInstallNginxMutation,
+  useReloadVhostNginxMutation,
+  useToggleVhostSiteMutation,
+  useVhostCertbotMutation,
+  useVhostSitesQuery,
+  useVhostStatusQuery,
+} from './queries/use-vhost-query'
+
 export { useAuth, useAuthStatusQuery } from './use-auth'
 export { useChartTheme } from './use-chart-theme'
 export { useDashboard } from './use-dashboard'

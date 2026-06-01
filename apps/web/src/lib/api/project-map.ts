@@ -56,6 +56,49 @@ export type ApiProjectTemplateUseResponse = {
   project: ApiProjectDetail
 }
 
+// --- Project flow run types ---
+
+export type ApiProjectStepStatus = 'pending' | 'running' | 'success' | 'failed' | 'skipped'
+export type ApiProjectRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'stopped'
+
+export type ApiProjectStepResult = {
+  node_id: string
+  node_label: string
+  kind: string
+  phase: string
+  status: ApiProjectStepStatus
+  duration_ms: number
+  output?: string | null
+  error?: string | null
+  started_at?: string | null
+  finished_at?: string | null
+}
+
+export type ApiProjectRunRecord = {
+  id: string
+  project_id: string
+  status: ApiProjectRunStatus
+  trigger: string
+  triggered_by: string
+  node_id?: string | null
+  steps: ApiProjectStepResult[]
+  started_at: string
+  finished_at?: string | null
+  error?: string | null
+}
+
+export type ApiProjectRunResponse = {
+  run_id: string
+  status: ApiProjectRunStatus
+  project_id: string
+  started_at: string
+}
+
+export type ApiProjectRunListResponse = {
+  items: ApiProjectRunRecord[]
+  total: number
+}
+
 export function mapProjectDetail(raw: ApiProjectDetail): ProjectDetail {
   return {
     id: raw.id,

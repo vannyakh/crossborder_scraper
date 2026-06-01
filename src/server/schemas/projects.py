@@ -236,3 +236,56 @@ class ProjectRuntimeResponse(BaseModel):
     state: ProjectRuntimeState
     metrics: ProjectRuntimeMetricsBlock
     recent_logs: list[ProjectRuntimeRecentLog] = Field(default_factory=list)
+
+
+# --- Flow run / execution ---
+
+ProjectStepStatus = Literal["pending", "running", "success", "failed", "skipped"]
+ProjectRunStatus = Literal["pending", "running", "completed", "failed", "stopped"]
+
+
+class ProjectRunRequest(BaseModel):
+    """Body for POST /projects/{id}/run. Omit node_id to run the full flow."""
+
+    node_id: str | None = Field(default=None, description="Run a single node if provided.")
+    triggered_by: str = Field(default="manual", max_length=120)
+
+
+class ProjectStepResult(BaseModel):
+    node_id: str
+    node_label: str
+    kind: str
+    phase: str = "main"
+    status: ProjectStepStatus = "pending"
+    duration_ms: int = 0
+    output: str | None = None
+    error: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+
+
+class ProjectRunRecord(BaseModel):
+    id: str
+    project_id: str
+    status: ProjectRunStatus = "pending"
+    trigger: str = "manual"
+    triggered_by: str = "system"
+    node_id: str | None = None
+    steps: list[ProjectStepResult] = Field(default_factory=list)
+    started_at: str = ""
+    finished_at: str | None = None
+    error: str | None = None
+
+
+class ProjectRunResponse(BaseModel):
+    """Immediate response from POST /run before steps complete."""
+
+    run_id: str
+    status: ProjectRunStatus
+    project_id: str
+    started_at: str
+
+
+class ProjectRunListResponse(BaseModel):
+    items: list[ProjectRunRecord] = Field(default_factory=list)
+    total: int = 0

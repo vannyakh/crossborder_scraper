@@ -1,5 +1,6 @@
 import { Box, Grid, HStack, Text } from '@chakra-ui/react'
 import { Bot, Cpu, Database, Globe, Shield, type LucideIcon } from 'lucide-react'
+import { Link as RouterLink } from 'react-router-dom'
 import type { HardwareMonitor, LLMHealth, RuntimeStatus, Stats } from '../../lib/api'
 import { useAccentPalette } from '../../hooks/use-ui-config'
 import { Section, SectionCard } from '../ui/Section'
@@ -7,45 +8,82 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { countCookieSessions, formatUptime } from './dashboard-utils'
 import { OverviewSkeleton } from './DashboardSkeleton'
 
+type OverviewRow = {
+  label: string
+  value: string | number
+  tone?: 'success' | 'danger' | 'neutral'
+  href?: string
+}
+
 function OverviewColumn({
   icon: Icon,
   title,
   rows,
   accentPalette,
+  href,
 }: {
   icon: LucideIcon
   title: string
-  rows: { label: string; value: string | number; tone?: 'success' | 'danger' | 'neutral' }[]
+  rows: OverviewRow[]
   accentPalette: string
+  href?: string
 }) {
+  const titleEl = (
+    <HStack gap={2} mb={2}>
+      <Box
+        p={1.5}
+        borderRadius="var(--radius-card)"
+        colorPalette={accentPalette}
+        bg="colorPalette.subtle"
+        color="colorPalette.fg"
+      >
+        <Icon size={16} strokeWidth={2} />
+      </Box>
+      <Text fontSize="sm" fontWeight="semibold">
+        {title}
+      </Text>
+    </HStack>
+  )
+
   return (
     <Box px={{ base: 3, md: 4 }} py={4}>
-      <HStack gap={2} mb={2}>
-        <Box
-          p={1.5}
-          borderRadius="var(--radius-card)"
-          colorPalette={accentPalette}
-          bg="colorPalette.subtle"
-          color="colorPalette.fg"
-        >
-          <Icon size={16} strokeWidth={2} />
-        </Box>
-        <Text fontSize="sm" fontWeight="semibold">
-          {title}
-        </Text>
-      </HStack>
-      {rows.map((row) => (
-        <HStack key={row.label} justify="space-between" py={0.5} fontSize="xs">
-          <Text color="fg.muted">{row.label}</Text>
-          {typeof row.value === 'string' && row.tone ? (
+      {href ? (
+        <RouterLink to={href} style={{ textDecoration: 'none' }}>
+          <Box _hover={{ opacity: 0.8 }} transition="opacity 0.12s">
+            {titleEl}
+          </Box>
+        </RouterLink>
+      ) : (
+        titleEl
+      )}
+      {rows.map((row) => {
+        const valueEl =
+          typeof row.value === 'string' && row.tone ? (
             <StatusBadge status={row.tone} label={row.value} />
           ) : (
             <Text fontWeight="medium" color="fg">
               {row.value}
             </Text>
-          )}
-        </HStack>
-      ))}
+          )
+
+        return (
+          <HStack key={row.label} justify="space-between" py={0.5} fontSize="xs">
+            <Text color="fg.muted">{row.label}</Text>
+            {row.href ? (
+              <RouterLink
+                to={row.href}
+                style={{ color: 'inherit', textDecoration: 'none' }}
+              >
+                <Box _hover={{ color: 'var(--app-accent)' }} transition="color 0.12s">
+                  {valueEl}
+                </Box>
+              </RouterLink>
+            ) : (
+              valueEl
+            )}
+          </HStack>
+        )
+      })}
     </Box>
   )
 }
@@ -56,9 +94,10 @@ export function OverviewPanel({
   llm,
   hardware,
   gatewayTools,
-  gatewayWorkflows,
+  gatewayWorkflows: _gatewayWorkflows,
   scheduleCount,
   marketplaceConfigured,
+  failedRunCount,
   loading,
 }: {
   runtime?: RuntimeStatus
@@ -69,6 +108,7 @@ export function OverviewPanel({
   gatewayWorkflows: number
   scheduleCount: number
   marketplaceConfigured: number
+  failedRunCount?: number
   loading?: boolean
 }) {
   const accentPalette = useAccentPalette()
@@ -96,6 +136,9 @@ export function OverviewPanel({
         ? 'danger'
         : 'neutral'
 
+  const failedTone: 'danger' | 'success' | 'neutral' =
+    (failedRunCount ?? 0) > 0 ? 'danger' : 'neutral'
+
   return (
     <Section title="Overview" description="Runtime snapshot across scrape, AI, and data">
       <SectionCard p={0}>
@@ -104,6 +147,7 @@ export function OverviewPanel({
             accentPalette={accentPalette}
             icon={Cpu}
             title="Host"
+            href="/health"
             rows={[
               { label: 'CPU', value: hardware ? `${hardware.cpu.percent}%` : '—' },
               { label: 'Memory', value: hardware ? `${hardware.memory.percent}%` : '—' },
@@ -115,8 +159,9 @@ export function OverviewPanel({
             accentPalette={accentPalette}
             icon={Globe}
             title="Scrape engine"
+            href="/workflow/batches"
             rows={[
-              { label: 'Running', value: running },
+              { label: 'Running', value: running, href: running > 0 ? '/workflow/batches' : undefined },
               { label: 'Active tasks', value: runtime?.active_tasks ?? 0 },
               {
                 label: 'Uptime',
@@ -128,20 +173,32 @@ export function OverviewPanel({
             accentPalette={accentPalette}
             icon={Bot}
             title="AI & gateway"
+            href="/agent/chat"
             rows={[
-              { label: 'LLM', value: llmLabel, tone: llmTone },
-              { label: 'Model', value: runtime?.ai?.ai_model ?? '—' },
-              { label: 'Tools', value: gatewayTools },
-              { label: 'Workflows', value: gatewayWorkflows },
+              { label: 'LLM', value: llmLabel, tone: llmTone, href: '/settings/ai' },
+              { label: 'Model', value: runtime?.ai?.ai_model ?? '—', href: '/settings/ai' },
+              { label: 'Tools', value: gatewayTools, href: '/agent/workflows' },
+              { label: 'Schedules', value: scheduleCount, href: '/agent/schedules' },
+              ...(failedRunCount !== undefined
+                ? [
+                    {
+                      label: 'Failed runs',
+                      value: failedRunCount > 0 ? String(failedRunCount) : '0',
+                      tone: failedTone,
+                      href: '/agent/runs',
+                    } as OverviewRow,
+                  ]
+                : []),
             ]}
           />
           <OverviewColumn
             accentPalette={accentPalette}
             icon={Database}
             title="Data store"
+            href="/artifact/products"
             rows={[
-              { label: 'Products', value: products },
-              { label: 'Batches', value: batches },
+              { label: 'Products', value: products, href: '/artifact/products' },
+              { label: 'Batches', value: batches, href: '/workflow/batches' },
               { label: 'Output files', value: files },
             ]}
           />
@@ -151,8 +208,8 @@ export function OverviewPanel({
             title="Sessions & export"
             rows={[
               { label: 'Cookie sessions', value: sessions },
-              { label: 'Marketplaces', value: marketplaceConfigured },
-              { label: 'Agent schedules', value: scheduleCount },
+              { label: 'Marketplaces', value: marketplaceConfigured, href: '/settings/marketplaces' },
+              { label: 'Agent schedules', value: scheduleCount, href: '/agent/schedules' },
               {
                 label: 'Proxies',
                 value: runtime?.engine.proxy_count ?? 0,

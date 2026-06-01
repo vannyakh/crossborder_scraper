@@ -1,0 +1,93 @@
+---
+description: Node config field system — JSON schema format, field types (including secret/credentials), bind vs optionKey, adding new fields to node config drawers
+globs:
+  - "apps/web/src/components/projects/node-config/**"
+  - "apps/web/src/components/projects/ProjectNodeConfig*.tsx"
+alwaysApply: false
+---
+
+# Node config field system
+
+JSON-driven config drawer for project flow nodes. Schema files live in `node-config/schemas/<kind>.json`; field rendering in `ProjectNodeConfigField.tsx`.
+
+## Field types (`ProjectConfigFieldType`)
+
+| Type | Renders as | Editable |
+|------|-----------|----------|
+| `text` | Plain `<Input>` | ✅ with `bind` or `optionKey` |
+| `mono` | Monospace `<Input>` | ✅ |
+| `textarea` | `<Textarea>` | ✅ |
+| `url` | Editable `<Input>` or clickable link | ✅/read-only |
+| `secret` | Password `<Input>` with eye-toggle | ✅ requires `optionKey` |
+| `toggle` | `<Switch>` | ✅ requires `optionKey` |
+| `select` | `<NativeSelect>` + static `options[]` | ✅ |
+| `llm_provider` | Provider select from catalog | ✅ |
+| `llm_model` | Model select filtered by provider | ✅ |
+| `source_plugin` | Plugin select from profiles | ✅ |
+| `variable_key` | Variable select | ✅ |
+| `image` | Read-only image tag + Upgrade button | — |
+| `hint` | Muted help text | — |
+
+## Field binding
+
+```json
+{ "bind": "host" }        // writes to top-level ProjectNode prop
+{ "optionKey": "port" }   // writes to node.options["port"]
+{ "resolve": "image" }    // read-only computed value
+```
+
+**`bind` targets:** `label`, `subtitle`, `host`, `detail`, `agentPrompt`
+
+A field needs **either** `bind` or `optionKey` to be writable. Also set `"editable": true`.
+
+## Credential section pattern
+
+For `postgres`, `redis`, `github` nodes — use tab `"credentials"` (opened by default) with `"id": "credentials"` section:
+
+```json
+{
+  "id": "credentials",
+  "labelKey": "projects.config.sections.credentials",
+  "tab": "credentials",
+  "fields": [
+    { "id": "host",  "labelKey": "projects.config.fields.host",     "type": "mono",   "bind": "host",          "editable": true, "placeholderText": "127.0.0.1" },
+    { "id": "port",  "labelKey": "projects.config.fields.port",     "type": "text",   "optionKey": "port",     "editable": true, "placeholderText": "5432" },
+    { "id": "db",    "labelKey": "projects.config.fields.dbName",   "type": "text",   "optionKey": "dbName",   "editable": true },
+    { "id": "user",  "labelKey": "projects.config.fields.username", "type": "text",   "optionKey": "username", "editable": true },
+    { "id": "pass",  "labelKey": "projects.config.fields.password", "type": "secret", "optionKey": "password", "editable": true, "hintKey": "projects.config.credentialHint" }
+  ]
+}
+```
+
+**`secret` field** stores in `node.options`; renders as `type="password"` with eye-toggle. Use for passwords, API tokens (`token` optionKey), and signing secrets.
+
+## Tabs and sections — available IDs
+
+**Tabs:** `parameters` | `source` | `network` | `credentials` | `variables` | `settings` | `export` | `output`
+
+**Sections:** `trigger` | `source` | `networking` | `credentials` | `scale` | `deploy` | `model` | `memory` | `tools` | `scrape` | `export` | `danger` | `overview` | `prompt` | `agent-settings` | `keys` | `fields` | `proxy`
+
+## i18n keys for credential fields
+
+All defined in `en.ts` / `zh.ts` / `km.ts` under `projects.config`:
+
+```
+projects.config.tabs.credentials
+projects.config.sections.credentials
+projects.config.fields.port
+projects.config.fields.dbName
+projects.config.fields.dbIndex
+projects.config.fields.username
+projects.config.fields.password
+projects.config.fields.accessToken
+projects.config.showSecret
+projects.config.hideSecret
+projects.config.credentialHint
+```
+
+## Adding a new field type
+
+1. Add the type string to `ProjectConfigFieldType` union in `node-config/types.ts`
+2. Add a renderer branch + sub-component in `ProjectNodeConfigField.tsx` (follow `SecretField` pattern)
+3. Update the relevant `<kind>.json` schema
+4. Add i18n keys to all three locale files

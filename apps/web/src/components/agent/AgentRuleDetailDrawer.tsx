@@ -22,26 +22,7 @@ import type { AgentRule } from '../../lib/api'
 import { MarkdownContent } from '../ui/MarkdownContent'
 import { StatusBadge } from '../ui/StatusBadge'
 import { RULE_CATEGORY_LABEL, ruleStatusLabel, ruleStatusTone } from './agent-rule-utils'
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <HStack
-      justify="space-between"
-      py={2}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      fontSize="sm"
-      gap={4}
-    >
-      <Text color="fg.muted" flexShrink={0}>
-        {label}
-      </Text>
-      <Text fontWeight="medium" fontFamily="mono" fontSize="xs" textAlign="right" lineClamp={2}>
-        {value}
-      </Text>
-    </HStack>
-  )
-}
+import { InfoRow } from '../ui/InfoRow'
 
 export function AgentRuleDetailDrawer({
   rule,

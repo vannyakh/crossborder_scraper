@@ -1,0 +1,151 @@
+{
+  "id": "agent-runtime-report",
+  "name": "Agent Runtime Execution Report",
+  "summary": "Schedule → gateway agent generates runtime report → quality check → export CSV → Telegram delivery.",
+  "description": "A scheduled agent flow for operational reporting. The gateway agent collects runtime metrics (active batches, catalog stats, error rates, proxy health) and produces a structured report. A condition node validates the data completeness, then the report is exported as a file and delivered via Telegram notification.",
+  "category": "agent",
+  "category_label": "Agent automation",
+  "tags": ["report", "agent", "runtime", "schedule", "export", "telegram", "ops"],
+  "author": "Cross-Border",
+  "featured": true,
+  "nodes": [
+    {
+      "id": "n-schedule-1",
+      "kind": "schedule",
+      "role": "trigger",
+      "label": "Daily report trigger",
+      "subtitle": "cron: 0 9 * * *",
+      "status": "online",
+      "x": 60,
+      "y": 220
+    },
+    {
+      "id": "n-agent-report",
+      "kind": "agent",
+      "role": "agent",
+      "label": "Runtime report agent",
+      "subtitle": "Collect & format metrics",
+      "agentPrompt": "Generate a daily operations report for the Cross-Border panel. Include:\n1. Total products in catalog (today vs yesterday delta)\n2. Active and completed scrape batches in last 24h\n3. Error rate and top failing URLs\n4. Proxy health summary\n5. Export success count\n6. Any agent schedule failures\n\nFormat as a clean summary with emojis suitable for Telegram. Be concise — max 10 lines.",
+      "status": "online",
+      "x": 300,
+      "y": 220
+    },
+    {
+      "id": "n-condition-data",
+      "kind": "condition",
+      "role": "action",
+      "label": "Report complete?",
+      "subtitle": "report.sections.length >= 4",
+      "status": "online",
+      "x": 540,
+      "y": 220
+    },
+    {
+      "id": "n-export-report",
+      "kind": "export",
+      "role": "action",
+      "label": "Export report",
+      "subtitle": "Save to output file",
+      "status": "online",
+      "options": {
+        "exportTarget": "file",
+        "dryRun": false
+      },
+      "x": 760,
+      "y": 140
+    },
+    {
+      "id": "n-notify-report",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: Daily report",
+      "subtitle": "Send report to team",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "info"
+      },
+      "x": 980,
+      "y": 140
+    },
+    {
+      "id": "n-notify-fail",
+      "kind": "notify",
+      "role": "action",
+      "label": "Telegram: Report failed",
+      "subtitle": "Incomplete report alert",
+      "status": "online",
+      "options": {
+        "integrateChannel": "telegram",
+        "level": "error"
+      },
+      "x": 760,
+      "y": 340
+    },
+    {
+      "id": "n-postgres-log",
+      "kind": "postgres",
+      "role": "action",
+      "label": "Report log DB",
+      "subtitle": "Persist report history",
+      "status": "online",
+      "options": {
+        "dbName": "crossborder_reports",
+        "username": "reporter",
+        "port": "5432"
+      },
+      "x": 1200,
+      "y": 140
+    },
+    {
+      "id": "n-sticky-1",
+      "kind": "sticky",
+      "role": "note",
+      "label": "Report flow",
+      "noteBody": "📊 The agent collects live metrics from the gateway runtime.\n\n📄 Report is exported to the output directory and stored in Postgres.\n\n📱 Telegram delivers a concise summary every morning at 9:00 AM.",
+      "noteColor": "purple",
+      "noteWidth": 260,
+      "noteHeight": 130,
+      "x": 60,
+      "y": 400
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-schedule-agent",
+      "from": "n-schedule-1",
+      "to": "n-agent-report",
+      "kind": "main"
+    },
+    {
+      "id": "e-agent-condition",
+      "from": "n-agent-report",
+      "to": "n-condition-data",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-export",
+      "from": "n-condition-data",
+      "to": "n-export-report",
+      "kind": "main"
+    },
+    {
+      "id": "e-condition-fail",
+      "from": "n-condition-data",
+      "to": "n-notify-fail",
+      "kind": "main"
+    },
+    {
+      "id": "e-export-notify",
+      "from": "n-export-report",
+      "to": "n-notify-report",
+      "kind": "main"
+    },
+    {
+      "id": "e-notify-postgres",
+      "from": "n-notify-report",
+      "to": "n-postgres-log",
+      "kind": "main"
+    }
+  ]
+}

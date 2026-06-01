@@ -4,6 +4,7 @@ import {
   Brain,
   Check,
   ChevronDown,
+  Copy,
   Maximize2,
   Minimize2,
   Plus,
@@ -13,6 +14,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { formatModelRef } from '../../config/llm-providers'
+import { formatRelativeTime } from '../../lib/datetime'
 import {
   useAgentChatSessionsQuery,
   useCreateChatSessionMutation,
@@ -28,6 +30,149 @@ import { AgentToolTrace } from './AgentToolTrace'
 import { AgentThinkToggle } from './AgentThinkToggle'
 
 const AGENT_THINK_STORAGE_KEY = 'crossborder.agent-chat.think'
+
+const STARTER_PROMPTS = [
+  { label: 'Scrape a product URL', text: 'Scrape the product at https://' },
+  { label: 'Check catalog health', text: 'Check the catalog health and show me the latest products.' },
+  { label: 'List running batches', text: 'What scrape batches are currently running?' },
+  { label: 'Export to marketplace', text: 'Export the latest product to the configured marketplace.' },
+  { label: 'Show schedule status', text: 'List all active cron schedules and their next run times.' },
+  { label: 'Gateway runtime status', text: 'Show the gateway runtime status and tool list.' },
+]
+
+/** Minimal markdown renderer — handles code blocks, inline code, bold, italic, links, lists */
+function ChatMarkdown({ content }: { content: string }) {
+  const parts: React.ReactNode[] = []
+  const codeBlockRe = /```(\w*)\n?([\s\S]*?)```/g
+  let last = 0
+  let match: RegExpExecArray | null
+
+  while ((match = codeBlockRe.exec(content)) !== null) {
+    if (match.index > last) {
+      parts.push(<InlineMarkdown key={`t-${last}`} text={content.slice(last, match.index)} />)
+    }
+    parts.push(
+      <pre key={`pre-${match.index}`}>
+        <code>{match[2].trimEnd()}</code>
+      </pre>,
+    )
+    last = match.index + match[0].length
+  }
+  if (last < content.length) {
+    parts.push(<InlineMarkdown key={`t-${last}`} text={content.slice(last)} />)
+  }
+
+  return <div className="agent-chat__md">{parts}</div>
+}
+
+function InlineMarkdown({ text }: { text: string }) {
+  const lines = text.split('\n')
+  const nodes: React.ReactNode[] = []
+
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    // Bullet list
+    if (/^[-*•]\s/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^[-*•]\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-*•]\s/, ''))
+        i++
+      }
+      nodes.push(
+        <ul key={`ul-${i}`}>
+          {items.map((it, idx) => (
+            <li key={idx}>{applyInline(it)}</li>
+          ))}
+        </ul>,
+      )
+      continue
+    }
+    // Ordered list
+    if (/^\d+\.\s/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s/, ''))
+        i++
+      }
+      nodes.push(
+        <ol key={`ol-${i}`}>
+          {items.map((it, idx) => (
+            <li key={idx}>{applyInline(it)}</li>
+          ))}
+        </ol>,
+      )
+      continue
+    }
+    // Heading
+    const h = line.match(/^(#{1,3})\s(.+)/)
+    if (h) {
+      const level = h[1].length
+      const Tag = `h${level}` as 'h1' | 'h2' | 'h3'
+      nodes.push(<Tag key={`h-${i}`}>{applyInline(h[2])}</Tag>)
+      i++
+      continue
+    }
+    // HR
+    if (/^---+$/.test(line.trim())) {
+      nodes.push(<hr key={`hr-${i}`} />)
+      i++
+      continue
+    }
+    // Paragraph (blank line = separator)
+    if (line.trim() === '') {
+      i++
+      continue
+    }
+    // Normal paragraph
+    const paraLines: string[] = []
+    while (i < lines.length && lines[i].trim() !== '' && !/^[-*•\d#]/.test(lines[i]) && !/^---+$/.test(lines[i].trim())) {
+      paraLines.push(lines[i])
+      i++
+    }
+    if (paraLines.length) {
+      nodes.push(<p key={`p-${i}`}>{applyInline(paraLines.join('\n'))}</p>)
+    }
+  }
+
+  return <>{nodes}</>
+}
+
+type InlineNode = string | React.ReactElement
+
+function applyInline(text: string): React.ReactNode {
+  // tokenise: inline code, bold+italic, bold, italic, link, url
+  const re = /(`[^`]+`|\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|https?:\/\/\S+)/g
+  const result: InlineNode[] = []
+  let last = 0
+  let m: RegExpExecArray | null
+
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) result.push(text.slice(last, m.index))
+    const tok = m[0]
+    if (tok.startsWith('`')) {
+      result.push(<code key={m.index}>{tok.slice(1, -1)}</code>)
+    } else if (tok.startsWith('***')) {
+      result.push(<strong key={m.index}><em>{tok.slice(3, -3)}</em></strong>)
+    } else if (tok.startsWith('**')) {
+      result.push(<strong key={m.index}>{tok.slice(2, -2)}</strong>)
+    } else if (tok.startsWith('*')) {
+      result.push(<em key={m.index}>{tok.slice(1, -1)}</em>)
+    } else if (tok.startsWith('[')) {
+      const linkMatch = tok.match(/\[([^\]]+)\]\(([^)]+)\)/)
+      if (linkMatch) {
+        result.push(<a key={m.index} href={linkMatch[2]} target="_blank" rel="noreferrer">{linkMatch[1]}</a>)
+      }
+    } else if (tok.startsWith('http')) {
+      result.push(<a key={m.index} href={tok} target="_blank" rel="noreferrer">{tok}</a>)
+    } else {
+      result.push(tok)
+    }
+    last = m.index + tok.length
+  }
+  if (last < text.length) result.push(text.slice(last))
+  return result.length === 1 ? result[0] : result
+}
 
 function readThinkPref(): boolean {
   try {
@@ -110,16 +255,7 @@ function sessionMessagesToUi(session: AgentChatSession): ChatMessage[] {
   }))
 }
 
-function formatRelativeTime(iso: string | undefined): string {
-  if (!iso) return ''
-  const ms = Date.now() - new Date(iso).getTime()
-  if (Number.isNaN(ms)) return ''
-  const sec = Math.floor(ms / 1000)
-  if (sec < 60) return 'just now'
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`
-  return new Date(iso).toLocaleDateString()
-}
+// formatRelativeTime imported from lib/datetime
 
 function platformKindLabel(kind: AgentChatSession['platform_chat_kind']): string {
   if (kind === 'group') return 'group'
@@ -457,6 +593,14 @@ function ChatMessageRow({
   const isUser = message.role === 'user'
   const isSession = message.kind === 'session'
   const label = isUser ? 'You' : 'Assistant'
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(() => {
+    void navigator.clipboard.writeText(message.content).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }, [message.content])
 
   const Row = motionEnabled ? motion.div : 'div'
   const rowMotion = motionEnabled
@@ -475,8 +619,10 @@ function ChatMessageRow({
               <span aria-hidden>✅ </span>
               {message.content}
             </>
-          ) : (
+          ) : isUser ? (
             message.content
+          ) : (
+            <ChatMarkdown content={message.content} />
           )}
           {message.toolCalls?.length ? (
             <Box mt={2} pt={2} borderTopWidth="1px" borderColor="border.subtle">
@@ -497,8 +643,24 @@ function ChatMessageRow({
             </Box>
           ) : null}
         </div>
+        {!isUser && !isSession ? (
+          <button
+            type="button"
+            className="agent-chat__copy"
+            aria-label="Copy message"
+            onClick={handleCopy}
+            title={copied ? 'Copied!' : 'Copy'}
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        ) : null}
         <div className="agent-chat__meta">
           {label} {formatChatTime(message.createdAt)}
+          {message.model ? (
+            <Text as="span" color="fg.subtle" ml={1}>
+              · {message.model}
+            </Text>
+          ) : null}
           {!isUser && message.ok === false ? (
             <Text as="span" color="red.500" ml={1}>
               · failed
@@ -821,9 +983,25 @@ export function AgentChatPanel() {
 
         <div ref={scrollRef} className="agent-chat__scroll app-scroll">
           {messages.length === 0 && !runMutation.isPending ? (
-            <div className="agent-chat__empty">
-              Pick a role and send a message — scrape URLs, check catalog health, preview exports.
-              History is kept per session on the gateway.
+            <div className="agent-chat__starters">
+              <p className="agent-chat__starters-title">
+                Ask the gateway agent — scrape, catalog, export, schedules, server ops
+              </p>
+              <div className="agent-chat__starters-grid">
+                {STARTER_PROMPTS.map((sp) => (
+                  <button
+                    key={sp.label}
+                    type="button"
+                    className="agent-chat__starter"
+                    disabled={!canRun || !sessionId}
+                    onClick={() => {
+                      setInput(sp.text)
+                    }}
+                  >
+                    {sp.label}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <>
@@ -937,9 +1115,7 @@ export function AgentChatPanel() {
   return (
     <>
       {bootLoading ? (
-        <Box className="agent-chat" flex="1 1 auto" minH={0} h="100%" p={{ base: 3, md: 4 }}>
-          <ChatPanelSkeleton />
-        </Box>
+        <ChatPanelSkeleton />
       ) : (
         <>
           {fullscreen ? <Box className="agent-chat-placeholder" aria-hidden /> : null}

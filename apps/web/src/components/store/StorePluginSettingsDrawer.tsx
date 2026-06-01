@@ -30,6 +30,7 @@ import { SectionCard } from '../ui/Section'
 import { StatusBadge } from '../ui/StatusBadge'
 import { PluginScrapeSpecPanel } from './PluginScrapeSpecPanel'
 import { sectionsForPlugin, type StorePluginSectionId } from './store-plugin-sections'
+import { InfoRow } from '../ui/InfoRow'
 import { pluginIcon, statusTone } from './store-utils'
 import { ModuleGuidePanel } from '../modules/ModuleGuidePanel'
 
@@ -61,26 +62,6 @@ function NavItem({
     >
       {label}
     </Button>
-  )
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <HStack
-      justify="space-between"
-      py={2}
-      borderBottomWidth="1px"
-      borderColor="border.subtle"
-      fontSize="sm"
-      gap={4}
-    >
-      <Text color="fg.muted" flexShrink={0}>
-        {label}
-      </Text>
-      <Text fontWeight="medium" fontFamily="mono" fontSize="xs" textAlign="right" lineClamp={2}>
-        {value}
-      </Text>
-    </HStack>
   )
 }
 

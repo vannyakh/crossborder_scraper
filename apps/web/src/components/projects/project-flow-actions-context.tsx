@@ -14,6 +14,7 @@ export type ProjectFlowActions = {
   openSlotAdd: (agentId: string, slotIndex: AgentSlotIndex) => void
   executeStep: (nodeId: string) => void
   runWorkflow: () => void
+  stopWorkflow: () => void
   toggleNodeActive: (nodeId: string) => void
   copyNode: (nodeId: string) => void
   tidyWorkflow: () => void
