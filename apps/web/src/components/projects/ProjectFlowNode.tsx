@@ -230,9 +230,7 @@ function ProjectFlowNodeComponent({
       style={
         {
           '--node-body-w': `${ROLE_DEFAULTS[role].w}px`,
-          ...(primaryRemotePeer
-            ? { '--remote-peer-color': primaryRemotePeer.color }
-            : undefined),
+          ...(primaryRemotePeer ? { '--remote-peer-color': primaryRemotePeer.color } : undefined),
         } as CSSProperties
       }
     >

@@ -15,6 +15,8 @@ if [[ "$port" != "$preferred" ]]; then
   echo "⚠  Port ${preferred} in use (self-hosted panel?). Dev API → ${port}" >&2
   echo "   Stop background panel: crossborder service stop" >&2
   echo "   Or disable autostart: crossborder deploy autostart disable" >&2
+  echo "   Telegram bot: skipped on this dev instance (primary panel owns polling)" >&2
+  export CROSSBORDER_SKIP_TELEGRAM_POLL=1
 fi
 
 repo_python - <<PY

@@ -25,6 +25,11 @@ AI_UI_KEYS = frozenset(
         "ai_model",
         "ai_max_html_chars",
         "ai_timeout_seconds",
+        "ai_image_enabled",
+        "ai_image_model",
+        "ai_video_enabled",
+        "ai_video_model",
+        "ai_video_timeout_seconds",
     }
 )
 

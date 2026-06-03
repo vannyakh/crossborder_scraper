@@ -143,6 +143,13 @@ class AIConfigResponse(BaseModel):
     ai_timeout_seconds: float
     ai_api_key_set: bool
     ai_api_key_masked: str | None = None
+    ai_image_enabled: bool = True
+    ai_image_model: str = "dall-e-3"
+    image_ready: bool = False
+    ai_video_enabled: bool = True
+    ai_video_model: str = "sora-2"
+    ai_video_timeout_seconds: float = 300.0
+    video_ready: bool = False
     llm_ready: bool = False
     ui_config_path: str
     secrets_from_env: bool = True
@@ -158,6 +165,11 @@ class AIConfigUpdate(BaseModel):
     ai_api_key: str | None = None
     ai_max_html_chars: int | None = Field(default=None, ge=1000, le=200_000)
     ai_timeout_seconds: float | None = Field(default=None, ge=5.0, le=300.0)
+    ai_image_enabled: bool | None = None
+    ai_image_model: str | None = Field(default=None, min_length=1, max_length=120)
+    ai_video_enabled: bool | None = None
+    ai_video_model: str | None = Field(default=None, min_length=1, max_length=120)
+    ai_video_timeout_seconds: float | None = Field(default=None, ge=30.0, le=900.0)
 
 
 class LLMHealthResponse(BaseModel):

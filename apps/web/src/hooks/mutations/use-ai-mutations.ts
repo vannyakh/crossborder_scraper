@@ -1,5 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, queryKeys, type LLMHealth, type LlmModelsProbe, type OllamaPullRequest, type OllamaPullResponse } from '../../lib/api'
+import {
+  api,
+  queryKeys,
+  type LLMHealth,
+  type LlmModelsProbe,
+  type OllamaPullRequest,
+  type OllamaPullResponse,
+} from '../../lib/api'
 
 export function useCheckLLMHealthMutation() {
   const queryClient = useQueryClient()

@@ -38,8 +38,17 @@ class AgentLlmService:
         snapshot = agent_llm_snapshot(self.settings, panel=panel)
         if not snapshot.get("ai_api_key_masked") and self.settings.ai_api_key:
             snapshot["ai_api_key_masked"] = mask_api_key(self.settings.ai_api_key)
+        from core.ai.image_client import ImageGenerationClient
+        from core.ai.video_client import VideoGenerationClient
+
+        image_client = ImageGenerationClient(self.settings)
+        video_client = VideoGenerationClient(self.settings)
         return {
             **snapshot,
+            "image_ready": image_client.enabled,
+            "ai_image_model": image_client.model,
+            "video_ready": video_client.enabled,
+            "ai_video_model": video_client.model,
             "ui_config_path": str(UI_CONFIG_PATH),
             "secrets_from_env": False,
         }

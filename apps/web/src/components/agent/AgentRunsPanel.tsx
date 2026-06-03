@@ -57,9 +57,7 @@ export function AgentRunsPanel() {
             <NativeSelect.Root size="sm" minW="7rem">
               <NativeSelect.Field
                 value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value as 'all' | 'success' | 'failed')
-                }
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'success' | 'failed')}
               >
                 <option value="all">All ({allRuns.length})</option>
                 <option value="success">Success</option>
@@ -76,9 +74,7 @@ export function AgentRunsPanel() {
               <NativeSelect.Field
                 value={triggerFilter}
                 onChange={(e) =>
-                  setTriggerFilter(
-                    e.target.value as 'all' | 'manual' | 'schedule' | 'workflow',
-                  )
+                  setTriggerFilter(e.target.value as 'all' | 'manual' | 'schedule' | 'workflow')
                 }
               >
                 <option value="all">All</option>

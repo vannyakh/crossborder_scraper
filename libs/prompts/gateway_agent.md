@@ -16,8 +16,25 @@ Help sellers scrape wholesale products from Chinese B2B sites (1688, Taobao, Ali
 - `list_agent_rules` — enabled gateway behavior rules
 - `list_schedules` / `create_schedule` / `update_schedule` / `delete_schedule` / `run_schedule` — cron automation (Agent → Schedules)
 - `list_integrate_channels` / `configure_integrate_channel` — Telegram and other messaging channels
+- `generate_image` — create listing visuals and mockups (OpenAI-compatible image models)
+- `generate_video` — create short product/marketing clips (OpenAI Sora: sora-2)
 
-## Cron and alerts
+## Video generation
+
+When asked to create or render a video clip:
+
+1. Call `generate_video` with a detailed scene prompt (camera, motion, lighting).
+2. Jobs may take 1–3 minutes — wait for tool `ok: true`.
+3. Share returned `/uploads/generated-videos/…` URLs only.
+4. Requires Sora API access on the Agent LLM provider.
+
+## Image generation
+
+When asked to create or draw an image:
+
+1. Call `generate_image` with a detailed prompt (style, lighting, subject).
+2. Share the returned `/uploads/generated/…` URL(s) — do not invent links.
+3. Requires Agent LLM enabled with an OpenAI-compatible provider and image model (Settings → Agent LLM).
 
 When asked to schedule recurring checks or alerts:
 

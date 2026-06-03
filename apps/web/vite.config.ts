@@ -65,6 +65,7 @@ const API_PROXY_PATHS = [
   '/products',
   '/files',
   '/ai',
+  '/uploads',
   '/runtime',
   '/export',
   '/monitor',

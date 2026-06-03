@@ -415,13 +415,7 @@ function ChatMessageSkeleton({
 
 export function ChatPanelSkeleton() {
   return (
-    <Box
-      className="agent-chat agent-chat--skeleton"
-      flex="1 1 auto"
-      minH={0}
-      h="100%"
-      aria-hidden
-    >
+    <Box className="agent-chat agent-chat--skeleton" flex="1 1 auto" minH={0} h="100%" aria-hidden>
       <header className="agent-chat__header">
         <Box flex={1} minW={0}>
           <ShimmerBar w="4.5rem" h="1.125rem" mb={1} />
@@ -435,12 +429,7 @@ export function ChatPanelSkeleton() {
 
       <Box className="agent-chat__scroll" flex={1}>
         <ChatMessageSkeleton align="start" bubbleW="min(60%, 22rem)" bubbleH="3.25rem" />
-        <ChatMessageSkeleton
-          align="end"
-          bubbleW="min(45%, 16rem)"
-          bubbleH="2.5rem"
-          delay="0.12s"
-        />
+        <ChatMessageSkeleton align="end" bubbleW="min(45%, 16rem)" bubbleH="2.5rem" delay="0.12s" />
         <ChatMessageSkeleton
           align="start"
           bubbleW="min(68%, 26rem)"

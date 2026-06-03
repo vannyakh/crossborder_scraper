@@ -95,7 +95,9 @@ def upsert_step(
             continue
         steps: list[dict[str, Any]] = run.get("steps", [])
         for i, existing in enumerate(steps):
-            if existing.get("node_id") == step.get("node_id") and existing.get("phase") == step.get("phase"):
+            if existing.get("node_id") == step.get("node_id") and existing.get("phase") == step.get(
+                "phase"
+            ):
                 steps[i] = step
                 break
         else:

@@ -277,6 +277,7 @@ class GatewayService:
         prompt_id: str | None = None,
         skill_ids: list[str] | None = None,
         session_id: str | None = None,
+        attachments: list[dict[str, Any]] | None = None,
         think: bool = False,
     ) -> dict[str, Any]:
         from gateway.chat_sessions import (
@@ -309,6 +310,7 @@ class GatewayService:
             skill_ids=skill_ids,
             history=history,
             session_context=session_context,
+            attachments=attachments,
             think=think,
         )
 

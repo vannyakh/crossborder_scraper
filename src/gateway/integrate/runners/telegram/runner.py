@@ -60,6 +60,9 @@ class TelegramGatewayRunner:
         self._app.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, self._on_text),
         )
+        self._app.add_handler(
+            MessageHandler(filters.PHOTO & ~filters.COMMAND, self._on_photo),
+        )
         self._app.add_error_handler(self._on_error)
 
         await self._app.initialize()
@@ -95,6 +98,49 @@ class TelegramGatewayRunner:
         text = extract_agent_message(text, update, context, cfg)
         if not text:
             return
+        await self._dispatch_agent(update, context, cfg, text=text, attachments=None)
+
+    async def _on_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        cfg = load_telegram_config()
+        if not cfg.get("enabled"):
+            return
+        if is_group_chat(update) and not is_message_to_agent(update, context, cfg):
+            return
+        if not is_authorized(update, cfg):
+            await send_text(
+                update,
+                "Unauthorized. Send /getid, add the chat id under Integrate → Telegram, save, "
+                "then try again.",
+            )
+            return
+        message = update.effective_message
+        if message is None or not message.photo:
+            return
+
+        from gateway.integrate.runners.telegram.media_inbound import download_largest_photo
+
+        try:
+            attachment = await download_largest_photo(context.bot, list(message.photo))
+        except Exception as exc:
+            await send_text(update, f"Could not download image: {exc}"[:500])
+            return
+
+        caption = (message.caption or "").strip()
+        text = caption or "The user sent an image. Describe it or help as requested."
+        if caption:
+            text = extract_agent_message(text, update, context, cfg) or text
+
+        await self._dispatch_agent(update, context, cfg, text=text, attachments=[attachment])
+
+    async def _dispatch_agent(
+        self,
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
+        cfg: dict[str, Any],
+        *,
+        text: str,
+        attachments: list[dict[str, Any]] | None,
+    ) -> None:
         chat = update.effective_chat
         user = update.effective_user
         if chat is None or user is None:
@@ -134,6 +180,7 @@ class TelegramGatewayRunner:
             chat=chat,
             text=text,
             prompt_id=prompt_id,
+            attachments=attachments,
         )
 
     async def _on_error(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:

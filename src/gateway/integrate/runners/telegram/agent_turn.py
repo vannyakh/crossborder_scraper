@@ -11,6 +11,7 @@ from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 
 from gateway.integrate.bot_sessions import run_agent_via_bot_session
+from gateway.integrate.media_delivery import send_generated_images, send_generated_videos
 from gateway.integrate.runners.telegram.chat_meta import telegram_chat_title
 from gateway.integrate.runners.telegram.config import load_telegram_config
 from gateway.integrate.runners.telegram.grounded_replies import (
@@ -29,6 +30,7 @@ async def run_agent_for_chat(
     chat: Any,
     text: str,
     prompt_id: str | None = None,
+    attachments: list[dict[str, Any]] | None = None,
 ) -> None:
     cfg = load_telegram_config()
     resolved_prompt = prompt_id or str(cfg.get("prompt_id") or "telegram_agent")
@@ -55,6 +57,7 @@ async def run_agent_for_chat(
             text=text,
             prompt_id=resolved_prompt,
             max_chars=max_chars,
+            attachments=attachments,
         )
     )
     chat_runs.track(chat_id, task)
@@ -75,6 +78,7 @@ async def _execute_turn(
     text: str,
     prompt_id: str,
     max_chars: int,
+    attachments: list[dict[str, Any]] | None = None,
 ) -> None:
     try:
         result = await try_grounded_telegram_turn(
@@ -93,9 +97,14 @@ async def _execute_turn(
                 platform_chat_title=telegram_chat_title(chat),
                 message=augment_message_for_grounding(text),
                 prompt_id=prompt_id,
+                attachments=attachments,
             )
     except Exception as exc:
         logger.exception("Telegram agent run failed")
         await send_text(update, f"Error: {exc}"[:4000])
         return
     await send_text(update, format_agent_reply(result, max_chars))
+    tool_calls = list(result.get("tool_calls") or [])
+    if tool_calls:
+        await send_generated_images(update, tool_calls)
+        await send_generated_videos(update, tool_calls)

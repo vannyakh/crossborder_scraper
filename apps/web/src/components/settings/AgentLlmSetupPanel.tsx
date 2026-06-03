@@ -473,10 +473,7 @@ export function AgentLlmSetupPanel({
             </Text>
           ) : null}
           <Text fontSize="xs" color="fg.subtle">
-            Or run in terminal:{' '}
-            <Code fontSize="xs">
-              ollama pull {pullModel}
-            </Code>
+            Or run in terminal: <Code fontSize="xs">ollama pull {pullModel}</Code>
           </Text>
         </Box>
       ) : null}

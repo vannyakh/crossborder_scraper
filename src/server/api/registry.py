@@ -35,6 +35,7 @@ from server.routers import (
     service,
     store,
     system,
+    uploads,
     vhost,
 )
 
@@ -48,6 +49,7 @@ def register_routes(app: FastAPI) -> None:
 
     # Settings, health, observability
     app.include_router(ai.router)
+    app.include_router(uploads.router)
     app.include_router(runtime.router)
     app.include_router(monitor.router)
     app.include_router(logs.router)

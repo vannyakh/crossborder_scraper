@@ -464,6 +464,64 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "generate_image",
+        "description": (
+            "Generate an image from a text prompt using the configured Agent LLM image model "
+            "(OpenAI-compatible providers such as OpenAI dall-e-3). Returns saved panel URLs."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Detailed description of the image to generate",
+                },
+                "size": {
+                    "type": "string",
+                    "enum": ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"],
+                    "description": "Output dimensions (default 1024x1024)",
+                },
+                "n": {
+                    "type": "integer",
+                    "description": "Number of images (1-4, default 1)",
+                },
+                "quality": {
+                    "type": "string",
+                    "enum": ["standard", "hd"],
+                    "description": "Quality for dall-e-3 / gpt-image models",
+                },
+            },
+            "required": ["prompt"],
+        },
+    },
+    {
+        "name": "generate_video",
+        "description": (
+            "Generate a short video clip from a text prompt (OpenAI Sora: sora-2 / sora-2-pro). "
+            "Returns saved panel MP4 URLs when the render job completes."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Detailed scene description (camera, motion, lighting, subject)",
+                },
+                "size": {
+                    "type": "string",
+                    "enum": ["720x1280", "1280x720", "1024x1792", "1792x1024"],
+                    "description": "Output resolution (default 1280x720 landscape)",
+                },
+                "seconds": {
+                    "type": "string",
+                    "enum": ["4", "8", "12"],
+                    "description": "Clip length in seconds (default 8)",
+                },
+            },
+            "required": ["prompt"],
+        },
+    },
 ]
 
 
@@ -503,6 +561,8 @@ async def execute_tool(name: str, arguments: dict[str, Any], *, manager: Any) ->
         "update_schedule": _update_schedule,
         "delete_schedule": _delete_schedule,
         "run_schedule": _run_schedule,
+        "generate_image": _generate_image,
+        "generate_video": _generate_video,
     }
     handler = handlers.get(name)
     if not handler:
@@ -1007,6 +1067,46 @@ async def _run_schedule(
     sid = _resolve_schedule_id(schedule_id=schedule_id, name=name)
     result = await get_gateway_service().run_schedule_now(sid)
     return {"schedule_id": sid, **result}
+
+
+async def _generate_image(
+    _manager: Any,
+    *,
+    prompt: str,
+    size: str = "1024x1024",
+    n: int = 1,
+    quality: str | None = None,
+) -> dict[str, Any]:
+    from server.services.image_generation_service import get_image_generation_service
+
+    result = await get_image_generation_service().generate(
+        prompt,
+        size=size,
+        n=n,
+        quality=quality,
+    )
+    if not result.get("ok"):
+        raise RuntimeError(str(result.get("error") or "image generation failed"))
+    return result
+
+
+async def _generate_video(
+    _manager: Any,
+    *,
+    prompt: str,
+    size: str = "1280x720",
+    seconds: str = "8",
+) -> dict[str, Any]:
+    from server.services.video_generation_service import get_video_generation_service
+
+    result = await get_video_generation_service().generate(
+        prompt,
+        size=size,
+        seconds=seconds,
+    )
+    if not result.get("ok"):
+        raise RuntimeError(str(result.get("error") or "video generation failed"))
+    return result
 
 
 def tools_for_llm(*, allow_names: set[str] | None = None) -> list[dict[str, Any]]:

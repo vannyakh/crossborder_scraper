@@ -135,7 +135,9 @@ async def fetch_agent_llm_models(settings: Settings) -> dict[str, Any]:
                 **base_payload,
                 "models": [],
                 "source": SRC_OLLAMA_EMPTY,
-                "message": "Ollama is running but no models are installed. Pull a model to get started.",
+                "message": (
+                    "Ollama is running but no models are installed. Pull a model to get started."
+                ),
             }
 
         models = _model_items(ids)

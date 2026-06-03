@@ -87,7 +87,12 @@ function TemplateCard({
       bg={selected ? 'colorPalette.subtle' : 'bg.elevated'}
       colorPalette={accentPalette}
       transition="all var(--motion-duration)"
-      _hover={{ borderColor: selected ? 'colorPalette.emphasized' : 'border.default', bg: selected ? 'colorPalette.subtle' : 'bg.panelHover', transform: 'translateY(-1px)', shadow: 'sm' }}
+      _hover={{
+        borderColor: selected ? 'colorPalette.emphasized' : 'border.default',
+        bg: selected ? 'colorPalette.subtle' : 'bg.panelHover',
+        transform: 'translateY(-1px)',
+        shadow: 'sm',
+      }}
       onClick={onSelect}
       cursor="pointer"
       display="flex"
@@ -278,13 +283,7 @@ export function ProjectTemplatesDialog({
               alignItems="center"
               gap={3}
             >
-              <Box
-                p={1.5}
-                borderRadius="md"
-                bg="bg.muted"
-                color="fg.muted"
-                flexShrink={0}
-              >
+              <Box p={1.5} borderRadius="md" bg="bg.muted" color="fg.muted" flexShrink={0}>
                 <LayoutTemplate size={16} />
               </Box>
               <Box minW={0}>
@@ -375,12 +374,7 @@ export function ProjectTemplatesDialog({
 
                 {/* Selected template — project options */}
                 {selected && (
-                  <Box
-                    borderTopWidth="1px"
-                    borderColor="border.subtle"
-                    p={4}
-                    mt="auto"
-                  >
+                  <Box borderTopWidth="1px" borderColor="border.subtle" p={4} mt="auto">
                     <Text fontWeight="medium" fontSize="xs" mb={3} color="fg.default">
                       {t('projects.templates.optionsTitle')}
                     </Text>

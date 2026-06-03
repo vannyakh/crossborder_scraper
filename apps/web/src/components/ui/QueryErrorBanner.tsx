@@ -9,13 +9,7 @@ import { formatServerErrorMessage } from '../../lib/format-server-error'
  * Usage:
  *   {myQuery.isError && <QueryErrorBanner error={myQuery.error} />}
  */
-export function QueryErrorBanner({
-  error,
-  label,
-}: {
-  error: unknown
-  label?: string
-}) {
+export function QueryErrorBanner({ error, label }: { error: unknown; label?: string }) {
   const message = formatServerErrorMessage(error)
   return (
     <Box

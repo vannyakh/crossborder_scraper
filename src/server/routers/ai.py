@@ -5,6 +5,9 @@ from server.schemas import (
     AgentLlmSetupResponse,
     AIConfigResponse,
     AIConfigUpdate,
+    ImageGenerateRequest,
+    ImageGenerateResponse,
+    ImageGenerationStatusResponse,
     LLMHealthProbeRequest,
     LLMHealthResponse,
     LLMModelsListResponse,
@@ -12,8 +15,13 @@ from server.schemas import (
     LLMProviderListResponse,
     OllamaPullRequest,
     OllamaPullResponse,
+    VideoGenerateRequest,
+    VideoGenerateResponse,
+    VideoGenerationStatusResponse,
 )
 from server.services.agent_llm_service import get_agent_llm_service
+from server.services.image_generation_service import get_image_generation_service
+from server.services.video_generation_service import get_video_generation_service
 
 router = protected_router(prefix="/ai", tags=["ai"])
 
@@ -73,3 +81,36 @@ async def ollama_pull_model(body: OllamaPullRequest) -> OllamaPullResponse:
     """Trigger an Ollama model pull in the background (fire-and-forget)."""
     result = await get_agent_llm_service().pull_ollama_model(body.model, body.base_url)
     return OllamaPullResponse(**result)
+
+
+@router.get("/images/status", response_model=ImageGenerationStatusResponse)
+async def image_generation_status() -> ImageGenerationStatusResponse:
+    return ImageGenerationStatusResponse(**get_image_generation_service().get_status())
+
+
+@router.post("/images/generate", response_model=ImageGenerateResponse)
+async def generate_image(body: ImageGenerateRequest) -> ImageGenerateResponse:
+    """Generate images via the configured Agent LLM provider."""
+    result = await get_image_generation_service().generate(
+        body.prompt,
+        size=body.size,
+        n=body.n,
+        quality=body.quality,
+    )
+    return ImageGenerateResponse(**result)
+
+
+@router.get("/videos/status", response_model=VideoGenerationStatusResponse)
+async def video_generation_status() -> VideoGenerationStatusResponse:
+    return VideoGenerationStatusResponse(**get_video_generation_service().get_status())
+
+
+@router.post("/videos/generate", response_model=VideoGenerateResponse)
+async def generate_video(body: VideoGenerateRequest) -> VideoGenerateResponse:
+    """Generate a short video via the configured Sora-compatible provider."""
+    result = await get_video_generation_service().generate(
+        body.prompt,
+        size=body.size,
+        seconds=body.seconds,
+    )
+    return VideoGenerateResponse(**result)

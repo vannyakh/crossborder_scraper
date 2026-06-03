@@ -59,6 +59,7 @@ async def run_agent_via_bot_session(
     platform_chat_title: str | None = None,
     prompt_id: str | None = None,
     skill_ids: list[str] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     session = resolve_bot_session(
         channel_id,
@@ -72,6 +73,7 @@ async def run_agent_via_bot_session(
         prompt_id=resolved_prompt,
         skill_ids=skill_ids,
         session_id=session["id"],
+        attachments=attachments,
     )
     result["channel_id"] = channel_id
     result["platform_chat_id"] = str(platform_chat_id)

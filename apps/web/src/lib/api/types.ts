@@ -162,6 +162,13 @@ export type AIConfig = {
   ai_timeout_seconds: number
   ai_api_key_set: boolean
   ai_api_key_masked: string | null
+  ai_image_enabled?: boolean
+  ai_image_model?: string
+  image_ready?: boolean
+  ai_video_enabled?: boolean
+  ai_video_model?: string
+  ai_video_timeout_seconds?: number
+  video_ready?: boolean
   llm_ready?: boolean
   ui_config_path: string
   secrets_from_env: boolean
@@ -177,6 +184,11 @@ export type AIConfigUpdate = {
   ai_api_key?: string
   ai_max_html_chars?: number
   ai_timeout_seconds?: number
+  ai_image_enabled?: boolean
+  ai_image_model?: string
+  ai_video_enabled?: boolean
+  ai_video_model?: string
+  ai_video_timeout_seconds?: number
 }
 
 export type MarketplaceEntry = {
@@ -900,6 +912,8 @@ export type GatewayAgentResponse = {
   ok: boolean
   message: string
   tool_calls: GatewayToolCall[]
+  images?: GeneratedImageItem[]
+  videos?: GeneratedVideoItem[]
   model?: string | null
   provider?: string | null
   model_ref?: string | null
@@ -909,6 +923,24 @@ export type GatewayAgentResponse = {
   rule_ids?: string[]
   channel_id?: string | null
   platform_chat_id?: string | null
+}
+
+export type GeneratedImageItem = {
+  path: string
+  url: string
+  prompt: string
+  model: string
+  revised_prompt?: string | null
+}
+
+export type GeneratedVideoItem = {
+  path: string
+  url: string
+  prompt: string
+  model: string
+  seconds: string
+  size: string
+  job_id: string
 }
 
 export type AgentChatMessage = {

@@ -475,11 +475,7 @@ export function StorePluginSettingsDrawer({
 
       case 'logs':
         return (
-          <InstallLogPanel
-            pluginId={pluginId}
-            status={status}
-            mode={installation?.mode ?? null}
-          />
+          <InstallLogPanel pluginId={pluginId} status={status} mode={installation?.mode ?? null} />
         )
 
       default:

@@ -24,7 +24,14 @@ import {
   useUpdateChatSessionMutation,
 } from '../../hooks'
 import { useMotionEnabled, useMotionTransition } from '../../hooks/use-motion-props'
-import type { AgentChatSession, GatewayAgentResponse, GatewayPrompt } from '../../lib/api'
+import type {
+  AgentChatSession,
+  GatewayAgentResponse,
+  GatewayPrompt,
+  GeneratedImageItem,
+  GeneratedVideoItem,
+} from '../../lib/api'
+import { withPanelPrefix } from '../../lib/api/panel-prefix'
 import { ChatPanelSkeleton } from '../ui/PanelSkeleton'
 import { AgentToolTrace } from './AgentToolTrace'
 import { AgentThinkToggle } from './AgentThinkToggle'
@@ -33,10 +40,19 @@ const AGENT_THINK_STORAGE_KEY = 'crossborder.agent-chat.think'
 
 const STARTER_PROMPTS = [
   { label: 'Scrape a product URL', text: 'Scrape the product at https://' },
-  { label: 'Check catalog health', text: 'Check the catalog health and show me the latest products.' },
+  {
+    label: 'Check catalog health',
+    text: 'Check the catalog health and show me the latest products.',
+  },
   { label: 'List running batches', text: 'What scrape batches are currently running?' },
-  { label: 'Export to marketplace', text: 'Export the latest product to the configured marketplace.' },
-  { label: 'Show schedule status', text: 'List all active cron schedules and their next run times.' },
+  {
+    label: 'Export to marketplace',
+    text: 'Export the latest product to the configured marketplace.',
+  },
+  {
+    label: 'Show schedule status',
+    text: 'List all active cron schedules and their next run times.',
+  },
   { label: 'Gateway runtime status', text: 'Show the gateway runtime status and tool list.' },
 ]
 
@@ -126,7 +142,12 @@ function InlineMarkdown({ text }: { text: string }) {
     }
     // Normal paragraph
     const paraLines: string[] = []
-    while (i < lines.length && lines[i].trim() !== '' && !/^[-*•\d#]/.test(lines[i]) && !/^---+$/.test(lines[i].trim())) {
+    while (
+      i < lines.length &&
+      lines[i].trim() !== '' &&
+      !/^[-*•\d#]/.test(lines[i]) &&
+      !/^---+$/.test(lines[i].trim())
+    ) {
       paraLines.push(lines[i])
       i++
     }
@@ -142,7 +163,8 @@ type InlineNode = string | React.ReactElement
 
 function applyInline(text: string): React.ReactNode {
   // tokenise: inline code, bold+italic, bold, italic, link, url
-  const re = /(`[^`]+`|\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|https?:\/\/\S+)/g
+  const re =
+    /(`[^`]+`|\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|https?:\/\/\S+)/g
   const result: InlineNode[] = []
   let last = 0
   let m: RegExpExecArray | null
@@ -153,7 +175,11 @@ function applyInline(text: string): React.ReactNode {
     if (tok.startsWith('`')) {
       result.push(<code key={m.index}>{tok.slice(1, -1)}</code>)
     } else if (tok.startsWith('***')) {
-      result.push(<strong key={m.index}><em>{tok.slice(3, -3)}</em></strong>)
+      result.push(
+        <strong key={m.index}>
+          <em>{tok.slice(3, -3)}</em>
+        </strong>,
+      )
     } else if (tok.startsWith('**')) {
       result.push(<strong key={m.index}>{tok.slice(2, -2)}</strong>)
     } else if (tok.startsWith('*')) {
@@ -161,10 +187,18 @@ function applyInline(text: string): React.ReactNode {
     } else if (tok.startsWith('[')) {
       const linkMatch = tok.match(/\[([^\]]+)\]\(([^)]+)\)/)
       if (linkMatch) {
-        result.push(<a key={m.index} href={linkMatch[2]} target="_blank" rel="noreferrer">{linkMatch[1]}</a>)
+        result.push(
+          <a key={m.index} href={linkMatch[2]} target="_blank" rel="noreferrer">
+            {linkMatch[1]}
+          </a>,
+        )
       }
     } else if (tok.startsWith('http')) {
-      result.push(<a key={m.index} href={tok} target="_blank" rel="noreferrer">{tok}</a>)
+      result.push(
+        <a key={m.index} href={tok} target="_blank" rel="noreferrer">
+          {tok}
+        </a>,
+      )
     } else {
       result.push(tok)
     }
@@ -199,6 +233,8 @@ type ChatMessage = {
   kind?: 'session'
   createdAt: Date
   toolCalls?: GatewayAgentResponse['tool_calls']
+  images?: GeneratedImageItem[]
+  videos?: GeneratedVideoItem[]
   promptId?: string
   model?: string | null
   ok?: boolean
@@ -624,6 +660,50 @@ function ChatMessageRow({
           ) : (
             <ChatMarkdown content={message.content} />
           )}
+          {message.images?.length ? (
+            <Box mt={3} display="flex" flexWrap="wrap" gap={2}>
+              {message.images.map((image) => (
+                <Box
+                  key={image.url}
+                  as="a"
+                  href={withPanelPrefix(image.url)}
+                  target="_blank"
+                  rel="noreferrer"
+                  borderWidth="1px"
+                  borderColor="border.subtle"
+                  borderRadius="md"
+                  overflow="hidden"
+                  maxW="220px"
+                >
+                  <img
+                    src={withPanelPrefix(image.url)}
+                    alt={image.revised_prompt || image.prompt || 'Generated image'}
+                    style={{ display: 'block', width: '100%', height: 'auto' }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          ) : null}
+          {message.videos?.length ? (
+            <Box mt={3} display="flex" flexDirection="column" gap={2}>
+              {message.videos.map((video) => (
+                <Box
+                  key={video.url}
+                  borderWidth="1px"
+                  borderColor="border.subtle"
+                  borderRadius="md"
+                  overflow="hidden"
+                  maxW="320px"
+                >
+                  <video
+                    src={withPanelPrefix(video.url)}
+                    controls
+                    style={{ display: 'block', width: '100%', height: 'auto' }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          ) : null}
           {message.toolCalls?.length ? (
             <Box mt={2} pt={2} borderTopWidth="1px" borderColor="border.subtle">
               <button
@@ -824,6 +904,8 @@ export function AgentChatPanel() {
           content: result.message,
           createdAt: new Date(),
           toolCalls: result.tool_calls,
+          images: result.images,
+          videos: result.videos,
           promptId: result.prompt_id ?? promptId,
           model: result.model_ref ?? result.model,
           ok: result.ok,

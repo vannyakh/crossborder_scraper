@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     ai_max_html_chars: int = 24_000
     ai_timeout_seconds: float = 90.0
     ai_agent_enabled: bool = False  # validate + enrich listing copy after extraction
+    ai_image_enabled: bool = True  # gateway agent + bot image generation
+    ai_image_model: str = "dall-e-3"
+    ai_video_enabled: bool = True  # gateway agent + bot video generation (Sora)
+    ai_video_model: str = "sora-2"
+    ai_video_timeout_seconds: float = 300.0
 
     # UI preference (overridden by config/ui_config.json when set)
     scrape_default_workers: int | None = None

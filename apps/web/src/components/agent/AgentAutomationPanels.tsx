@@ -194,16 +194,8 @@ export function AgentWorkflowsPanel() {
                   <VStack align="stretch" gap={1}>
                     {runHistory.map((entry) => (
                       <HStack key={entry.id} gap={1.5} align="flex-start">
-                        <Box
-                          flexShrink={0}
-                          color={entry.ok ? 'green.fg' : 'red.fg'}
-                          mt={0.5}
-                        >
-                          {entry.ok ? (
-                            <CheckCircle size={12} />
-                          ) : (
-                            <XCircle size={12} />
-                          )}
+                        <Box flexShrink={0} color={entry.ok ? 'green.fg' : 'red.fg'} mt={0.5}>
+                          {entry.ok ? <CheckCircle size={12} /> : <XCircle size={12} />}
                         </Box>
                         <Box minW={0}>
                           <Text fontSize="xs" fontWeight="medium" lineClamp={1}>
@@ -294,11 +286,7 @@ export function AgentWorkflowsPanel() {
                     >
                       <HStack gap={2} mb={1}>
                         <Box color={resultSummary.ok ? 'green.fg' : 'red.fg'}>
-                          {resultSummary.ok ? (
-                            <CheckCircle size={14} />
-                          ) : (
-                            <XCircle size={14} />
-                          )}
+                          {resultSummary.ok ? <CheckCircle size={14} /> : <XCircle size={14} />}
                         </Box>
                         <Text
                           fontSize="sm"

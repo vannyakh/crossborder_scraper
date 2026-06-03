@@ -19,11 +19,11 @@ from .config import (
     OllamaPullRequest,
     OllamaPullResponse,
     PanelAccessResponse,
-    StoreInstallLogResponse,
     PanelConfigResponse,
     PanelConfigUpdate,
     ProxyStatusResponse,
     ProxyTestResponse,
+    StoreInstallLogResponse,
 )
 from .docker import (
     DockerConfigResponse,
@@ -118,6 +118,12 @@ from .guides import (
     PanelGuideLink,
     PanelGuideListResponse,
     PanelGuideSummary,
+)
+from .image_generation import (
+    GeneratedImageItem,
+    ImageGenerateRequest,
+    ImageGenerateResponse,
+    ImageGenerationStatusResponse,
 )
 from .jobs import (
     BatchDetailResponse,
@@ -256,6 +262,12 @@ from .vhost import (
     VhostSiteToggleRequest,
     VhostStatusResponse,
 )
+from .video_generation import (
+    GeneratedVideoItem,
+    VideoGenerateRequest,
+    VideoGenerateResponse,
+    VideoGenerationStatusResponse,
+)
 
 __all__ = [
     "AgentChatSession",
@@ -279,6 +291,14 @@ __all__ = [
     "AgentScheduleCreate",
     "AgentScheduleListResponse",
     "AgentScheduleUpdate",
+    "GeneratedImageItem",
+    "ImageGenerateRequest",
+    "ImageGenerateResponse",
+    "ImageGenerationStatusResponse",
+    "GeneratedVideoItem",
+    "VideoGenerateRequest",
+    "VideoGenerateResponse",
+    "VideoGenerationStatusResponse",
     "GatewayAgentRequest",
     "GatewayAgentResponse",
     "IntegrateChannelDetailResponse",

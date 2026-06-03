@@ -1,16 +1,16 @@
 import {
-    Bell,
-    Bot,
-    Clock,
-    Database,
-    GitBranch,
-    Globe,
-    Layers,
-    Package,
-    Server,
-    Split,
-    StickyNote,
-    type LucideIcon,
+  Bell,
+  Bot,
+  Clock,
+  Database,
+  GitBranch,
+  Globe,
+  Layers,
+  Package,
+  Server,
+  Split,
+  StickyNote,
+  type LucideIcon,
 } from 'lucide-react'
 import type { ProjectNodeKind, ProjectNodeRole } from './project-sample-data'
 

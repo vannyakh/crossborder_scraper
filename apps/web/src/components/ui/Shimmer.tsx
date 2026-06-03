@@ -7,17 +7,19 @@ type ShimmerSurfaceProps = BoxProps & {
 }
 
 /** Card / panel shell with diagonal shimmer sweep */
-export function ShimmerSurface({ children, className, delay, style, ...rest }: ShimmerSurfaceProps) {
+export function ShimmerSurface({
+  children,
+  className,
+  delay,
+  style,
+  ...rest
+}: ShimmerSurfaceProps) {
   return (
     <Box
       className={['skeleton-shimmer', className].filter(Boolean).join(' ')}
       position="relative"
       overflow="hidden"
-      style={
-        delay
-          ? ({ ...style, '--shimmer-delay': delay } as CSSProperties)
-          : style
-      }
+      style={delay ? ({ ...style, '--shimmer-delay': delay } as CSSProperties) : style}
       {...rest}
     >
       {children}

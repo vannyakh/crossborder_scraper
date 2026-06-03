@@ -33,6 +33,7 @@ def _ms(start: float) -> int:
 # Node-kind execution handlers
 # ---------------------------------------------------------------------------
 
+
 async def _execute_scrape_node(node: dict[str, Any]) -> tuple[str, str | None]:
     """Run a scrape node — returns (output_summary, error)."""
     url: str = node.get("host") or (node.get("options") or {}).get("url") or ""
@@ -51,8 +52,7 @@ async def _execute_scrape_node(node: dict[str, Any]) -> tuple[str, str | None]:
         if result.status.value == "success" and result.product:
             p = result.product
             return (
-                f"Scraped {url} · {p.get('title', 'product')} "
-                f"({result.duration_seconds:.1f}s)"
+                f"Scraped {url} · {p.get('title', 'product')} ({result.duration_seconds:.1f}s)"
             ), None
         return f"Scrape failed for {url}: {result.error}", result.error
     except Exception as exc:
@@ -158,6 +158,7 @@ async def _dispatch_node(
 # Execution plan helpers (mirrors project-workflow-graph.ts logic)
 # ---------------------------------------------------------------------------
 
+
 def _build_execution_plan(
     nodes: list[dict[str, Any]],
     edges: list[dict[str, Any]],
@@ -246,6 +247,7 @@ def _build_execution_plan(
 # Public runner API
 # ---------------------------------------------------------------------------
 
+
 async def _run_flow_task(
     run_id: str,
     project_id: str,
@@ -289,14 +291,16 @@ async def _run_flow_task(
     for entry in plan:
         # Check for stop signal
         if _active_runs.get(project_id) != run_id:
-            update_run(project_id, run_id, {
-                "status": "stopped",
-                "finished_at": _now_iso(),
-                "error": "Run stopped by user",
-            })
-            log_project_runtime(
-                project_id, message="Flow run stopped", level="warn", run_id=run_id
+            update_run(
+                project_id,
+                run_id,
+                {
+                    "status": "stopped",
+                    "finished_at": _now_iso(),
+                    "error": "Run stopped by user",
+                },
             )
+            log_project_runtime(project_id, message="Flow run stopped", level="warn", run_id=run_id)
             return
 
         node: dict[str, Any] = entry["node"]
@@ -322,11 +326,20 @@ async def _run_flow_task(
             duration = _ms(t_start)
             if error:
                 overall_ok = False
-                upsert_step(project_id, run_id, _step_dict(
-                    node, phase, "failed",
-                    duration_ms=duration, output=output, error=error,
-                    started_at=started_at, finished_at=finished_at,
-                ))
+                upsert_step(
+                    project_id,
+                    run_id,
+                    _step_dict(
+                        node,
+                        phase,
+                        "failed",
+                        duration_ms=duration,
+                        output=output,
+                        error=error,
+                        started_at=started_at,
+                        finished_at=finished_at,
+                    ),
+                )
                 log_project_runtime(
                     project_id,
                     message=f"✗ {node_label}: {error}",
@@ -336,11 +349,19 @@ async def _run_flow_task(
                     run_id=run_id,
                 )
             else:
-                upsert_step(project_id, run_id, _step_dict(
-                    node, phase, "success",
-                    duration_ms=duration, output=output,
-                    started_at=started_at, finished_at=finished_at,
-                ))
+                upsert_step(
+                    project_id,
+                    run_id,
+                    _step_dict(
+                        node,
+                        phase,
+                        "success",
+                        duration_ms=duration,
+                        output=output,
+                        started_at=started_at,
+                        finished_at=finished_at,
+                    ),
+                )
                 log_project_runtime(
                     project_id,
                     message=f"✓ {node_label}: {output or 'ok'}",
@@ -353,11 +374,19 @@ async def _run_flow_task(
             finished_at = _now_iso()
             duration = _ms(t_start)
             overall_ok = False
-            upsert_step(project_id, run_id, _step_dict(
-                node, phase, "failed",
-                duration_ms=duration, error=str(exc),
-                started_at=started_at, finished_at=finished_at,
-            ))
+            upsert_step(
+                project_id,
+                run_id,
+                _step_dict(
+                    node,
+                    phase,
+                    "failed",
+                    duration_ms=duration,
+                    error=str(exc),
+                    started_at=started_at,
+                    finished_at=finished_at,
+                ),
+            )
             log_project_runtime(
                 project_id,
                 message=f"✗ {node_label}: {exc}",
@@ -402,11 +431,15 @@ class ProjectRunnerService:
         # Abort any previous active run for this project
         prev_run_id = _active_runs.get(project_id)
         if prev_run_id:
-            update_run(project_id, prev_run_id, {
-                "status": "stopped",
-                "finished_at": _now_iso(),
-                "error": "Superseded by new run",
-            })
+            update_run(
+                project_id,
+                prev_run_id,
+                {
+                    "status": "stopped",
+                    "finished_at": _now_iso(),
+                    "error": "Superseded by new run",
+                },
+            )
 
         run = create_run(
             project_id,
@@ -433,11 +466,15 @@ class ProjectRunnerService:
         if active == run_id:
             # Clear token so background task exits on next iteration
             _active_runs.pop(project_id, None)
-        run = update_run(project_id, run_id, {
-            "status": "stopped",
-            "finished_at": _now_iso(),
-            "error": "Stopped by user",
-        })
+        run = update_run(
+            project_id,
+            run_id,
+            {
+                "status": "stopped",
+                "finished_at": _now_iso(),
+                "error": "Stopped by user",
+            },
+        )
         return run is not None
 
     def get_run(self, project_id: str, run_id: str) -> dict[str, Any] | None:

@@ -12,5 +12,5 @@ def test_fetch_provider_models_without_key_uses_default() -> None:
     )
     result = asyncio.run(fetch_provider_models(settings))
     assert result["provider"] == "openai"
-    assert result["source"] == "default"
+    assert result["source"] == "missing_key"
     assert any(m["id"] == "gpt-4o-mini" for m in result["models"])

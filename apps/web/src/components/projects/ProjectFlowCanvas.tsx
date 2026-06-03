@@ -98,7 +98,13 @@ function ProjectFlowCanvasInner() {
   const accentPalette = useAccentPalette()
   const colorMode = useColorMode()
   const { project, setProject, running, setRunning, collaboration } = useProjectWorkspace()
-  const { pushHistory, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useProjectHistory(project, setProject)
+  const {
+    pushHistory,
+    undo: historyUndo,
+    redo: historyRedo,
+    canUndo,
+    canRedo,
+  } = useProjectHistory(project, setProject)
   const flowConsole = useFlowConsole()
   const flowConsoleRef = useRef(flowConsole)
   useEffect(() => {
@@ -859,28 +865,31 @@ function ProjectFlowCanvasInner() {
           node.id,
           node.label,
         )
-        void runMutation.mutateAsync({ node_id: nodeId }).then((res) => {
-          setActiveRunId(res.run_id)
-          setRunSuccessNodeIds([])
-          setRunning(true)
-          runWasActiveRef.current = true
-          runFinishedRef.current = false
-          flowConsoleRef.current.clearConsole()
-          flowConsoleRef.current.expandConsole()
-          flowConsoleRef.current.appendLine(
-            t('projects.flowConsole.stepStart', { name: node.label }),
-            'info',
-            node.id,
-            node.label,
-          )
-        }).catch(() => {
-          flowConsoleRef.current.appendLine(
-            `Failed to start step: ${node.label}`,
-            'error',
-            node.id,
-            node.label,
-          )
-        })
+        void runMutation
+          .mutateAsync({ node_id: nodeId })
+          .then((res) => {
+            setActiveRunId(res.run_id)
+            setRunSuccessNodeIds([])
+            setRunning(true)
+            runWasActiveRef.current = true
+            runFinishedRef.current = false
+            flowConsoleRef.current.clearConsole()
+            flowConsoleRef.current.expandConsole()
+            flowConsoleRef.current.appendLine(
+              t('projects.flowConsole.stepStart', { name: node.label }),
+              'info',
+              node.id,
+              node.label,
+            )
+          })
+          .catch(() => {
+            flowConsoleRef.current.appendLine(
+              `Failed to start step: ${node.label}`,
+              'error',
+              node.id,
+              node.label,
+            )
+          })
       },
       runWorkflow: () => {
         if (running) return
@@ -893,17 +902,20 @@ function ProjectFlowCanvasInner() {
           flowConsoleRef.current.appendLine(t('projects.flowConsole.runEmpty'), 'warn')
           return
         }
-        void runMutation.mutateAsync({}).then((res) => {
-          setActiveRunId(res.run_id)
-          setRunSuccessNodeIds([])
-          setRunning(true)
-          runWasActiveRef.current = true
-          runFinishedRef.current = false
-          // Show first step as active immediately
-          if (plan[0]) setActiveNodeId(plan[0].nodeId)
-        }).catch(() => {
-          flowConsoleRef.current.appendLine('Failed to start flow run', 'error')
-        })
+        void runMutation
+          .mutateAsync({})
+          .then((res) => {
+            setActiveRunId(res.run_id)
+            setRunSuccessNodeIds([])
+            setRunning(true)
+            runWasActiveRef.current = true
+            runFinishedRef.current = false
+            // Show first step as active immediately
+            if (plan[0]) setActiveNodeId(plan[0].nodeId)
+          })
+          .catch(() => {
+            flowConsoleRef.current.appendLine('Failed to start flow run', 'error')
+          })
       },
       stopWorkflow: () => {
         if (activeRunId) {

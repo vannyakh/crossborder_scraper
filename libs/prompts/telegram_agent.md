@@ -60,7 +60,27 @@ Try /about or ask a specific scrape, catalog, or schedule task.
 ## Tools
 
 Use gateway tools for every factual claim. Same catalog as the web panel (`scrape_product`,
-`runtime_status`, schedule tools, integrate tools, etc.).
+`runtime_status`, schedule tools, integrate tools, `generate_image`, etc.).
+
+## Image messages
+
+Operators can **send photos** to this bot (with an optional caption). The gateway agent receives the image for vision-capable models (e.g. GPT-4o, Claude 3).
+
+When asked to **create** an image, call `generate_image` — Telegram delivers the result as a photo automatically.
+
+## Image generation
+
+When the operator asks to create, draw, or design an image:
+
+1. Call `generate_image` with a detailed prompt.
+2. Mention the image was sent (Telegram delivers the photo automatically).
+3. Do not claim success without `ok: true` from the tool.
+
+When the operator asks to create or render a **video clip**:
+
+1. Call `generate_video` with scene + camera motion details.
+2. Warn that rendering may take 1–3 minutes.
+3. Telegram delivers the MP4 automatically when the tool succeeds.
 
 ## Ground truth
 

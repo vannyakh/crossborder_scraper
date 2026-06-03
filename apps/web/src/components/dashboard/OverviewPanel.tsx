@@ -70,10 +70,7 @@ function OverviewColumn({
           <HStack key={row.label} justify="space-between" py={0.5} fontSize="xs">
             <Text color="fg.muted">{row.label}</Text>
             {row.href ? (
-              <RouterLink
-                to={row.href}
-                style={{ color: 'inherit', textDecoration: 'none' }}
-              >
+              <RouterLink to={row.href} style={{ color: 'inherit', textDecoration: 'none' }}>
                 <Box _hover={{ color: 'var(--app-accent)' }} transition="color 0.12s">
                   {valueEl}
                 </Box>
@@ -161,7 +158,11 @@ export function OverviewPanel({
             title="Scrape engine"
             href="/workflow/batches"
             rows={[
-              { label: 'Running', value: running, href: running > 0 ? '/workflow/batches' : undefined },
+              {
+                label: 'Running',
+                value: running,
+                href: running > 0 ? '/workflow/batches' : undefined,
+              },
               { label: 'Active tasks', value: runtime?.active_tasks ?? 0 },
               {
                 label: 'Uptime',
@@ -208,7 +209,11 @@ export function OverviewPanel({
             title="Sessions & export"
             rows={[
               { label: 'Cookie sessions', value: sessions },
-              { label: 'Marketplaces', value: marketplaceConfigured, href: '/settings/marketplaces' },
+              {
+                label: 'Marketplaces',
+                value: marketplaceConfigured,
+                href: '/settings/marketplaces',
+              },
               { label: 'Agent schedules', value: scheduleCount, href: '/agent/schedules' },
               {
                 label: 'Proxies',

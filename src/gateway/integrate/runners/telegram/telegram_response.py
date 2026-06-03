@@ -38,6 +38,8 @@ _TOOL_INTENT: dict[str, str] = {
     "apply_panel_firewall": "ops",
     "list_firewall_rules": "ops",
     "list_agent_rules": "ops",
+    "generate_image": "agent",
+    "generate_video": "agent",
 }
 
 _INTENT_PREFIX_RE = re.compile(
@@ -79,6 +81,8 @@ def subtitle_from_tools(tool_calls: list[dict[str, Any]]) -> str | None:
         "apply_panel_firewall": "Firewall change",
         "list_firewall_rules": "Firewall rules",
         "list_agent_rules": "Agent rules",
+        "generate_image": "Image generation",
+        "generate_video": "Video generation",
     }
     for call in tool_calls:
         name = str(call.get("name") or "").strip()

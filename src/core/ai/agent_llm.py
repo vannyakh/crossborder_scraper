@@ -15,6 +15,11 @@ AGENT_LLM_CONFIG_KEYS = frozenset(
         "ai_base_url",
         "ai_api_key",
         "ai_timeout_seconds",
+        "ai_image_enabled",
+        "ai_image_model",
+        "ai_video_enabled",
+        "ai_video_model",
+        "ai_video_timeout_seconds",
     }
 )
 
@@ -65,4 +70,9 @@ def agent_llm_snapshot(
         "ai_fallback": settings.ai_fallback,
         "ai_agent_enabled": settings.ai_agent_enabled,
         "ai_max_html_chars": settings.ai_max_html_chars,
+        "ai_image_enabled": settings.ai_image_enabled,
+        "ai_image_model": settings.ai_image_model,
+        "ai_video_enabled": settings.ai_video_enabled,
+        "ai_video_model": settings.ai_video_model,
+        "ai_video_timeout_seconds": settings.ai_video_timeout_seconds,
     }

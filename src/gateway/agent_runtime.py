@@ -9,6 +9,8 @@ from typing import Any
 from config import Settings
 from core.ai.agent_llm import agent_llm_ready
 from core.ai.llm_client import LLMClient, LLMRequestError
+from core.ai.vision_message import build_user_message_content
+from gateway.image_delivery import images_from_tool_calls, videos_from_tool_calls
 from gateway.prompts import DEFAULT_PROMPT_ID, load_prompt
 from gateway.rules import get_rule_manager
 from gateway.skills import get_skill_manager
@@ -27,6 +29,16 @@ def tool_outcome_for_llm(outcome: Any) -> str:
 
 def tool_outcome_for_log(outcome: Any) -> Any:
     return json.loads(json.dumps(outcome, ensure_ascii=False, default=_json_default))
+
+
+def _attach_media(payload: dict[str, Any], tool_calls_log: list[dict[str, Any]]) -> dict[str, Any]:
+    images = images_from_tool_calls(tool_calls_log)
+    videos = videos_from_tool_calls(tool_calls_log)
+    if images:
+        payload["images"] = images
+    if videos:
+        payload["videos"] = videos
+    return payload
 
 
 _THINK_MODE_APPEND = """
@@ -65,6 +77,7 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         skill_ids: list[str] | None = None,
         history: list[dict[str, str]] | None = None,
         session_context: str | None = None,
+        attachments: list[dict[str, Any]] | None = None,
         max_tool_rounds: int = 3,
         think: bool = False,
     ) -> dict[str, Any]:
@@ -105,7 +118,16 @@ Use available tools to scrape, list, export, and report status. Be concise."""
                 content = str(turn.get("content") or "").strip()
                 if role in ("user", "assistant") and content:
                     messages.append({"role": role, "content": content})
-        messages.append({"role": "user", "content": message})
+        messages.append(
+            {
+                "role": "user",
+                "content": build_user_message_content(
+                    message,
+                    attachments,
+                    api_style=self.llm.cfg.api_style,
+                ),
+            }
+        )
         tool_calls_log: list[dict[str, Any]] = []
 
         def _agent_error(message: str) -> dict[str, Any]:
@@ -132,17 +154,20 @@ Use available tools to scrape, list, export, and report status. Be concise."""
             tool_calls = result.tool_calls
 
             if not tool_calls:
-                return {
-                    "ok": True,
-                    "message": result.content or "",
-                    "tool_calls": tool_calls_log,
-                    "model": self.llm.cfg.model,
-                    "provider": self.llm.cfg.provider_id,
-                    "model_ref": self.llm.cfg.model_ref,
-                    "prompt_id": resolved_id,
-                    "skill_ids": resolved_skills,
-                    "rule_ids": resolved_rules,
-                }
+                return _attach_media(
+                    {
+                        "ok": True,
+                        "message": result.content or "",
+                        "tool_calls": tool_calls_log,
+                        "model": self.llm.cfg.model,
+                        "provider": self.llm.cfg.provider_id,
+                        "model_ref": self.llm.cfg.model_ref,
+                        "prompt_id": resolved_id,
+                        "skill_ids": resolved_skills,
+                        "rule_ids": resolved_rules,
+                    },
+                    tool_calls_log,
+                )
 
             assistant_msg: dict[str, Any] = {
                 "role": "assistant",
@@ -177,14 +202,17 @@ Use available tools to scrape, list, export, and report status. Be concise."""
         except LLMRequestError as exc:
             return _agent_error(str(exc))
         final = summary.content or "Done."
-        return {
-            "ok": True,
-            "message": final,
-            "tool_calls": tool_calls_log,
-            "model": self.llm.cfg.model,
-            "provider": self.llm.cfg.provider_id,
-            "model_ref": self.llm.cfg.model_ref,
-            "prompt_id": resolved_id,
-            "skill_ids": resolved_skills,
-            "rule_ids": resolved_rules,
-        }
+        return _attach_media(
+            {
+                "ok": True,
+                "message": final,
+                "tool_calls": tool_calls_log,
+                "model": self.llm.cfg.model,
+                "provider": self.llm.cfg.provider_id,
+                "model_ref": self.llm.cfg.model_ref,
+                "prompt_id": resolved_id,
+                "skill_ids": resolved_skills,
+                "rule_ids": resolved_rules,
+            },
+            tool_calls_log,
+        )

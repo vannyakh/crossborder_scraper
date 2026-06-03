@@ -19,7 +19,11 @@ function StatCell({
   href?: string
 }) {
   const inner = (
-    <SectionCard p={3} _hover={href ? { borderColor: 'border.muted' } : undefined} transition="border-color 0.12s">
+    <SectionCard
+      p={3}
+      _hover={href ? { borderColor: 'border.muted' } : undefined}
+      transition="border-color 0.12s"
+    >
       <Text fontSize="xs" color="fg.muted">
         {label}
       </Text>

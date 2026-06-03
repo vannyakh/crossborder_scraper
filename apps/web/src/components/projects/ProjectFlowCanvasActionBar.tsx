@@ -2,19 +2,19 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { ActionBar, HStack, IconButton, Text } from '@chakra-ui/react'
 import type { LucideIcon } from 'lucide-react'
 import {
-    Copy,
-    CopyPlus,
-    FlaskConical,
-    GitBranch,
-    LayoutGrid,
-    PenLine,
-    Pin,
-    Play,
-    Power,
-    RefreshCw,
-    Settings2,
-    Square,
-    Trash2,
+  Copy,
+  CopyPlus,
+  FlaskConical,
+  GitBranch,
+  LayoutGrid,
+  PenLine,
+  Pin,
+  Play,
+  Power,
+  RefreshCw,
+  Settings2,
+  Square,
+  Trash2,
 } from 'lucide-react'
 import { useLocale } from '../../hooks/use-locale'
 import { useAccentPalette } from '../../hooks/use-ui-config'

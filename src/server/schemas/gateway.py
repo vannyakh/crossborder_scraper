@@ -26,6 +26,8 @@ class GatewayAgentResponse(BaseModel):
     ok: bool
     message: str
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    images: list[dict[str, Any]] = Field(default_factory=list)
+    videos: list[dict[str, Any]] = Field(default_factory=list)
     model: str | None = None
     provider: str | None = None
     model_ref: str | None = None

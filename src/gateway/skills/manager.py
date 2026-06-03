@@ -20,6 +20,8 @@ _BUILTIN_DEFAULT_ENABLED = (
     "batch-ops",
     "agent-control",
     "panel-ops",
+    "creative-assistant",
+    "video-creative",
 )
 
 _SKILL_GROUND_TRUTH = """

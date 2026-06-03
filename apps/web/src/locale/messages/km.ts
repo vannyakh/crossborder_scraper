@@ -248,7 +248,8 @@ export const km: MessageTree = {
       },
       showSecret: 'Show',
       hideSecret: 'Hide',
-      credentialHint: 'Stored in the project session. Use environment variables for production secrets.',
+      credentialHint:
+        'Stored in the project session. Use environment variables for production secrets.',
       hostPlaceholder: 'host.internal or public URL',
       replicasPlaceholder: 'e.g. 1/1 replicas active',
       webhookPathPlaceholder: '/integrate/webhook/inbound',
